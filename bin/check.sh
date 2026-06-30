@@ -15,7 +15,11 @@
 #   4.  links        — repo-relative markdown links resolve
 #   5.  version      — VERSION is semver and CHANGELOG has an Unreleased section
 #
-# Usage: bin/check.sh
+# Usage:
+#   bin/check.sh                  # full aggregate (make check / CI)
+#   bin/check.sh --content-only   # only the claude-kit-specific checks
+#                                 # (2,4,5) — the pre-commit framework owns
+#                                 # shellcheck/shfmt/formatting at commit time
 #
 set -uo pipefail # intentionally NOT -e: run every check, then aggregate
 
@@ -29,30 +33,36 @@ problem() {
 }
 ok() { printf '  ✓ %s\n' "$1"; }
 
-# --- 1. shellcheck ---------------------------------------------------------
-echo "shellcheck:"
-if command -v shellcheck >/dev/null 2>&1; then
-  # Every tracked shell script: bin/*.sh plus the (extensionless) git hooks.
-  shell_files=(bin/*.sh .githooks/*)
-  if shellcheck "${shell_files[@]}"; then
-    ok "shell scripts clean"
-  else
-    problem "shellcheck reported issues"
-  fi
-else
-  echo "  - shellcheck not installed; skipping (CI enforces this)"
-fi
+# --content-only skips shellcheck/shfmt/formatting — the pre-commit framework
+# owns those at commit time. The checks unique to claude-kit always run, so this
+# script stays the full standalone aggregate (make check / CI) with no args.
+content_only=false
+[ "${1:-}" = "--content-only" ] && content_only=true
 
-# --- 1b. shfmt (formatting) ------------------------------------------------
-echo "shfmt:"
-if command -v shfmt >/dev/null 2>&1; then
-  if shfmt -i 2 -ci -d bin/*.sh .githooks/* >/dev/null 2>&1; then
-    ok "shell formatting consistent"
+if ! $content_only; then
+  # --- 1. shellcheck -------------------------------------------------------
+  echo "shellcheck:"
+  if command -v shellcheck >/dev/null 2>&1; then
+    if shellcheck bin/*.sh; then
+      ok "shell scripts clean"
+    else
+      problem "shellcheck reported issues"
+    fi
   else
-    problem "shell formatting differs (fix: shfmt -i 2 -ci -w bin/*.sh .githooks/*)"
+    echo "  - shellcheck not installed; skipping (CI enforces this)"
   fi
-else
-  echo "  - shfmt not installed; skipping (CI enforces this)"
+
+  # --- 1b. shfmt (formatting) ----------------------------------------------
+  echo "shfmt:"
+  if command -v shfmt >/dev/null 2>&1; then
+    if shfmt -i 2 -ci -d bin/*.sh >/dev/null 2>&1; then
+      ok "shell formatting consistent"
+    else
+      problem "shell formatting differs (fix: shfmt -i 2 -ci -w bin/*.sh)"
+    fi
+  else
+    echo "  - shfmt not installed; skipping (CI enforces this)"
+  fi
 fi
 
 # --- 2. frontmatter --------------------------------------------------------
@@ -110,21 +120,23 @@ done
 [ "$fail" -eq 0 ] && ok "${fm_checked} item(s) have valid frontmatter"
 
 # --- 3. formatting ---------------------------------------------------------
-echo "formatting:"
-fmt_problems=0
-while IFS= read -r f; do
-  [ -f "$f" ] || continue
-  case "$f" in *.png | *.jpg | *.jpeg | *.gif | *.ico) continue ;; esac
-  if grep -nE '[[:space:]]+$' "$f" >/dev/null 2>&1; then
-    problem "$f: trailing whitespace"
-    fmt_problems=$((fmt_problems + 1))
-  fi
-  if [ -s "$f" ] && [ -n "$(tail -c1 "$f")" ]; then
-    problem "$f: no final newline"
-    fmt_problems=$((fmt_problems + 1))
-  fi
-done < <(git ls-files)
-[ "$fmt_problems" -eq 0 ] && ok "no trailing whitespace, all files end in newline"
+if ! $content_only; then
+  echo "formatting:"
+  fmt_problems=0
+  while IFS= read -r f; do
+    [ -f "$f" ] || continue
+    case "$f" in *.png | *.jpg | *.jpeg | *.gif | *.ico) continue ;; esac
+    if grep -nE '[[:space:]]+$' "$f" >/dev/null 2>&1; then
+      problem "$f: trailing whitespace"
+      fmt_problems=$((fmt_problems + 1))
+    fi
+    if [ -s "$f" ] && [ -n "$(tail -c1 "$f")" ]; then
+      problem "$f: no final newline"
+      fmt_problems=$((fmt_problems + 1))
+    fi
+  done < <(git ls-files)
+  [ "$fmt_problems" -eq 0 ] && ok "no trailing whitespace, all files end in newline"
+fi
 
 # --- 4. links --------------------------------------------------------------
 # Catch markdown that points at a repo file/path that no longer exists. We only

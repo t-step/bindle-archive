@@ -1,0 +1,58 @@
+# Pre-commit checks for claude-kit. Enable locally with `bin/install-hooks.sh`
+# (installs the pre-commit + post-merge stages); CI runs `pre-commit run
+# --all-files`. shellcheck and shfmt are managed here, so they're enforced even
+# if you don't have them installed system-wide.
+default_install_hook_types: [pre-commit, post-merge]
+
+repos:
+  # Standard, widely-used hooks.
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v6.0.0
+    hooks:
+      - id: trailing-whitespace
+        args: [--markdown-linebreak-ext=md] # keep intentional md hard breaks
+      - id: end-of-file-fixer
+      - id: check-yaml
+      - id: check-added-large-files
+      - id: check-merge-conflict
+      - id: detect-private-key
+      - id: mixed-line-ending
+        args: [--fix=lf]
+      - id: check-executables-have-shebangs
+      - id: check-shebang-scripts-are-executable
+
+  # Managed shellcheck (no system install needed).
+  - repo: https://github.com/shellcheck-py/shellcheck-py
+    rev: v0.11.0.1
+    hooks:
+      - id: shellcheck
+
+  # Managed shfmt (downloads its own binary).
+  - repo: https://github.com/scop/pre-commit-shfmt
+    rev: v3.13.1-1
+    hooks:
+      - id: shfmt
+        args: [-i, "2", -ci, -d]
+
+  # claude-kit-specific checks and tests.
+  - repo: local
+    hooks:
+      - id: claude-kit-content
+        name: claude-kit content (frontmatter/name/links/version)
+        entry: bin/check.sh --content-only
+        language: script
+        pass_filenames: false
+        always_run: true
+      - id: claude-kit-install-test
+        name: install.sh link/conflict/prune tests
+        entry: bin/test-install.sh
+        language: script
+        pass_filenames: false
+        always_run: true
+      - id: claude-kit-link
+        name: link new items into ~/.claude (post-merge)
+        entry: bin/install.sh
+        language: script
+        pass_filenames: false
+        always_run: true
+        stages: [post-merge]

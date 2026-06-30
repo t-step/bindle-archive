@@ -5,21 +5,12 @@ on:
   pull_request:
 
 jobs:
-  hygiene:
+  pre-commit:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
-      - name: Install shellcheck
-        run: sudo apt-get update && sudo apt-get install -y shellcheck
-
-      - name: Install shfmt
-        run: |
-          sudo curl -fsSL https://github.com/mvdan/sh/releases/download/v3.13.1/shfmt_v3.13.1_linux_amd64 -o /usr/local/bin/shfmt
-          sudo chmod +x /usr/local/bin/shfmt
-
-      - name: Hygiene checks
-        run: bin/check.sh
-
-      - name: install.sh tests
-        run: bin/test-install.sh
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+      - run: pip install pre-commit
+      - run: pre-commit run --all-files --show-diff-on-failure

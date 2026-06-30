@@ -78,25 +78,35 @@ Lightweight, dependency-free checks keep the toolkit clean without touching the
 wording Claude actually reads.
 
 ```bash
-bin/check.sh           # shellcheck + frontmatter + formatting + link checks
-bin/test-install.sh    # exercise install.sh in throwaway dirs (link/conflict/prune)
-bin/install-hooks.sh   # run both automatically before each commit
+brew install pre-commit   # or: pipx install pre-commit
+bin/install-hooks.sh      # enable the pre-commit + post-merge git hooks
+pre-commit run --all-files  # run every check on demand
 ```
 
-- **`bin/check.sh`** — runs `shellcheck` and `shfmt` on the scripts, verifies every
-  skill/agent has `name` + `description` frontmatter (commands need `description`,
-  and the `name` must match the folder/filename), flags trailing whitespace /
-  missing final newlines, checks repo-relative markdown links resolve, and
-  validates `VERSION`. It only *reports* — it never reformats instruction text.
-- **`bin/test-install.sh`** — installs a fixture repo into a temp `--home` and
-  asserts links are created, re-runs are idempotent, foreign files/links are left
-  untouched, and `--prune` removes only broken links into the repo.
-- **`bin/install-hooks.sh`** — points git at `.githooks/` (sets `core.hooksPath`)
-  so the pre-commit hook runs both of the above. Bypass once with `--no-verify`.
-  A `post-merge` hook also re-runs `install.sh` after `git pull`, so new items
+Checks run through the [pre-commit](https://pre-commit.com/) framework
+(`.pre-commit-config.yaml`):
+
+- **Standard hooks** — trailing whitespace (markdown hard breaks preserved),
+  end-of-file newline, YAML validity, large-file / merge-conflict / private-key
+  guards, and shebang/executable consistency.
+- **Managed `shellcheck` + `shfmt`** — fetched by pre-commit, so they're enforced
+  even if you haven't installed them system-wide.
+- **`bin/check.sh --content-only`** (local hook) — the claude-kit-specific checks:
+  every skill/agent has `name` + `description` frontmatter (commands need
+  `description`, and `name` must match the folder/filename), repo-relative
+  markdown links resolve, and `VERSION` is valid. It only *reports* — it never
+  reformats instruction text. Run without `--content-only` (or `make check`) for
+  the full standalone aggregate.
+- **`bin/test-install.sh`** (local hook) — installs a fixture repo into a temp
+  `--home` and asserts links are created, re-runs are idempotent, foreign
+  files/links are left untouched, and `--prune` removes only broken links.
+- **`post-merge` stage** — re-runs `install.sh` after `git pull`, so new items
   added on another machine get linked automatically.
-- **CI** — `.github/workflows/ci.yml` runs the same checks on every push and PR;
-  Dependabot keeps the workflow actions current.
+
+Bypass hooks for one commit with `git commit --no-verify`. **CI**
+(`.github/workflows/ci.yml`) runs `pre-commit run --all-files` on every push and
+PR. Dependabot keeps the workflow actions current; run `pre-commit autoupdate`
+to bump the hook versions.
 
 No markdown formatter/linter is used on purpose: tools like Prettier/markdownlint
 reflow prose and rewrite headings, which would churn the carefully-phrased skill
