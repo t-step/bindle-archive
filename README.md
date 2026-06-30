@@ -1,4 +1,4 @@
-# claude-toolkit
+# claude-kit
 
 My personal, portable Claude Code toolkit. One local repo holding the agentic
 abilities I develop — **skills, subagents, slash commands, and global
@@ -14,7 +14,7 @@ symlinks each piece into `~/.claude/` so editing a file here is live everywhere
 instantly. Think "dotfiles, for Claude Code."
 
 ```
-claude-toolkit/
+claude-kit/
   skills/<name>/SKILL.md   ->  ~/.claude/skills/<name>      reusable techniques/knowledge
   agents/<name>.md         ->  ~/.claude/agents/<name>.md   specialized subagents
   commands/<name>.md       ->  ~/.claude/commands/<name>.md slash commands (/name)
