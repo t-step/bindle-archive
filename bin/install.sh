@@ -120,5 +120,9 @@ fi
 
 echo
 echo "Done: ${linked} linked, ${current} already current, ${conflicts} conflicts, ${pruned} pruned."
-echo "Installed into: $HOME_DIR"
+if [ -f "$REPO_ROOT/VERSION" ]; then
+  echo "claude-kit v$(cat "$REPO_ROOT/VERSION") installed into: $HOME_DIR"
+else
+  echo "Installed into: $HOME_DIR"
+fi
 [ "$conflicts" -eq 0 ] || echo "Conflicts left untouched — nothing owned by another source was modified."

@@ -121,6 +121,19 @@ while IFS= read -r mdfile; do
 done < <(git ls-files '*.md')
 [ "$link_problems" -eq 0 ] && ok "all repo-relative markdown links resolve"
 
+# --- 5. version ------------------------------------------------------------
+echo "version:"
+if [ ! -f VERSION ]; then
+  problem "VERSION file missing"
+elif ! [[ "$(cat VERSION)" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+  problem "VERSION ('$(cat VERSION)') is not semver MAJOR.MINOR.PATCH"
+else
+  ok "VERSION is valid semver ($(cat VERSION))"
+fi
+if [ -f CHANGELOG.md ] && ! grep -q '^## \[Unreleased\]' CHANGELOG.md; then
+  problem "CHANGELOG.md missing '## [Unreleased]' section"
+fi
+
 # --- result ----------------------------------------------------------------
 echo
 if [ "$fail" -eq 0 ]; then

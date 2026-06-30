@@ -93,6 +93,28 @@ No markdown formatter/linter is used on purpose: tools like Prettier/markdownlin
 reflow prose and rewrite headings, which would churn the carefully-phrased skill
 and agent text. We keep `.editorconfig` for whitespace/newline norms and stop there.
 
+## Versioning & releases
+
+The toolkit is versioned as a whole with [Semantic Versioning](https://semver.org/);
+the current version lives in `VERSION` and every release is an annotated git tag.
+
+- **major** — breaking change to how the toolkit installs/structures itself
+- **minor** — a new skill, agent, command, or capability
+- **patch** — a fix or tweak to something that already exists
+
+Jot changes under `## [Unreleased]` in `CHANGELOG.md` as you go. To cut a release:
+
+```bash
+bin/release.sh minor      # or: major | patch
+git push && git push --tags
+```
+
+`bin/release.sh` refuses to run on a dirty tree or failing checks, then bumps
+`VERSION`, rolls the `Unreleased` notes into a dated section, commits, and tags
+`vX.Y.Z`. It never pushes — you review first. Pushing the `v*` tag triggers
+`.github/workflows/release.yml`, which publishes a GitHub Release from that
+version's changelog section. `install.sh` prints the installed version too.
+
 ## Building on other sources (no vendoring)
 
 Don't copy other people's skills in here — consume them at their level and
