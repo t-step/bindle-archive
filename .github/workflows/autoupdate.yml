@@ -1,0 +1,31 @@
+name: pre-commit autoupdate
+
+# Weekly bump of the pinned hook revisions in .pre-commit-config.yaml, opened as
+# a PR for review. Dependabot can't update pre-commit hooks, so this fills that
+# gap. Also runnable on demand from the Actions tab.
+on:
+  schedule:
+    - cron: "0 6 * * 1" # Mondays 06:00 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  autoupdate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+      - run: pip install pre-commit
+      - run: pre-commit autoupdate
+      - uses: peter-evans/create-pull-request@v7
+        with:
+          commit-message: "ci: pre-commit autoupdate"
+          title: "ci: pre-commit autoupdate"
+          body: Automated `pre-commit autoupdate`. Review the bumped hook revisions before merging.
+          branch: ci/pre-commit-autoupdate
+          delete-branch: true

@@ -25,6 +25,8 @@ dated, versioned section at release time.
   large-files, merge-conflict, private-key, shebang/executable checks), managed
   `shellcheck` + `shfmt`, and local hooks for the content checks, install tests,
   and post-merge auto-link.
+- `LICENSE` (MIT) and `.gitattributes` (normalize text to LF).
+- Weekly `pre-commit autoupdate` workflow that opens a PR bumping hook versions.
 
 ### Changed
 - `bin/check.sh` now also enforces that a skill's `name:` matches its folder (and

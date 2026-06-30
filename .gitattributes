@@ -1,0 +1,10 @@
+# Normalize line endings: store text as LF in the repo regardless of platform.
+# Pairs with the mixed-line-ending pre-commit hook.
+* text=auto eol=lf
+
+# Treat common binaries as binary (never normalize or diff as text).
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary

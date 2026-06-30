@@ -105,8 +105,9 @@ Checks run through the [pre-commit](https://pre-commit.com/) framework
 
 Bypass hooks for one commit with `git commit --no-verify`. **CI**
 (`.github/workflows/ci.yml`) runs `pre-commit run --all-files` on every push and
-PR. Dependabot keeps the workflow actions current; run `pre-commit autoupdate`
-to bump the hook versions.
+PR. Dependabot keeps the workflow actions current, and a weekly
+`pre-commit autoupdate` workflow opens a PR bumping the hook versions (run it
+on demand from the Actions tab, or locally with `pre-commit autoupdate`).
 
 No markdown formatter/linter is used on purpose: tools like Prettier/markdownlint
 reflow prose and rewrite headings, which would churn the carefully-phrased skill
