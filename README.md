@@ -67,6 +67,32 @@ pin/sync setup — is left completely untouched.
   project that ships its own setup overrides this toolkit where they overlap —
   your toolkit fills in everywhere else.
 
+## Repo hygiene
+
+Lightweight, dependency-free checks keep the toolkit clean without touching the
+wording Claude actually reads.
+
+```bash
+bin/check.sh           # shellcheck + frontmatter + formatting + link checks
+bin/test-install.sh    # exercise install.sh in throwaway dirs (link/conflict/prune)
+bin/install-hooks.sh   # run both automatically before each commit
+```
+
+- **`bin/check.sh`** — runs `shellcheck` on the scripts, verifies every skill/agent
+  has `name` + `description` frontmatter (commands need `description`), flags
+  trailing whitespace / missing final newlines, and checks that repo-relative
+  markdown links resolve. It only *reports* — it never reformats instruction text.
+- **`bin/test-install.sh`** — installs a fixture repo into a temp `--home` and
+  asserts links are created, re-runs are idempotent, foreign files/links are left
+  untouched, and `--prune` removes only broken links into the repo.
+- **`bin/install-hooks.sh`** — points git at `.githooks/` (sets `core.hooksPath`)
+  so the pre-commit hook runs both of the above. Bypass once with `--no-verify`.
+- **CI** — `.github/workflows/ci.yml` runs the same checks on every push and PR.
+
+No markdown formatter/linter is used on purpose: tools like Prettier/markdownlint
+reflow prose and rewrite headings, which would churn the carefully-phrased skill
+and agent text. We keep `.editorconfig` for whitespace/newline norms and stop there.
+
 ## Building on other sources (no vendoring)
 
 Don't copy other people's skills in here — consume them at their level and

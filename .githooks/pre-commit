@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+#
+# claude-kit pre-commit hook. Runs the same checks CI runs, before each commit.
+# Enable it once with:  bin/install-hooks.sh
+# Skip it for one commit with:  git commit --no-verify
+#
+set -euo pipefail
+
+ROOT="$(git rev-parse --show-toplevel)"
+"$ROOT/bin/check.sh"
+"$ROOT/bin/test-install.sh"
