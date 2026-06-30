@@ -14,6 +14,18 @@ dated, versioned section at release time.
 
 ## [Unreleased]
 
+### Added
+- `bin/new.sh` — scaffold a new skill/agent/command from its template with the
+  name pre-filled.
+- `Makefile` — convenience targets (`check`, `test`, `install`, `hooks`, `new`,
+  `release`) wrapping the `bin/` scripts.
+- `post-merge` git hook — auto-link new items after `git pull`.
+- Dependabot config for the GitHub Actions workflows.
+
+### Changed
+- `bin/check.sh` now also runs `shfmt`, enforces that a skill's `name:` matches
+  its folder (and an agent's its filename), and CI installs `shfmt`.
+
 ## [0.1.0] - 2026-06-30
 
 ### Added

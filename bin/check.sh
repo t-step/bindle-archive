@@ -3,24 +3,31 @@
 # check.sh — repo hygiene checks for claude-kit. Runs locally (directly or via
 # the pre-commit hook) and in CI. Exits nonzero if any check fails.
 #
-# Checks:
-#   1. shellcheck — lint the shell scripts (skipped with a notice if not
-#      installed locally; CI installs and enforces it)
-#   2. frontmatter — every skill/agent has name+description, every command has
-#      description (the filename is the command name)
-#   3. formatting — no trailing whitespace, every tracked text file ends in a
-#      newline
+# Checks (shellcheck/shfmt are skipped with a notice if not installed locally;
+# CI installs and enforces them):
+#   1.  shellcheck   — lint the shell scripts
+#   1b. shfmt        — consistent shell formatting
+#   2.  frontmatter  — every skill/agent has name+description (command needs
+#                      description); a skill's name matches its folder and an
+#                      agent's matches its filename
+#   3.  formatting   — no trailing whitespace, every tracked text file ends in
+#                      a newline
+#   4.  links        — repo-relative markdown links resolve
+#   5.  version      — VERSION is semver and CHANGELOG has an Unreleased section
 #
 # Usage: bin/check.sh
 #
-set -uo pipefail   # intentionally NOT -e: run every check, then aggregate
+set -uo pipefail # intentionally NOT -e: run every check, then aggregate
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$REPO_ROOT" || exit 1
 
 fail=0
-problem() { printf '  ✗ %s\n' "$1"; fail=1; }
-ok()      { printf '  ✓ %s\n' "$1"; }
+problem() {
+  printf '  ✗ %s\n' "$1"
+  fail=1
+}
+ok() { printf '  ✓ %s\n' "$1"; }
 
 # --- 1. shellcheck ---------------------------------------------------------
 echo "shellcheck:"
@@ -36,11 +43,24 @@ else
   echo "  - shellcheck not installed; skipping (CI enforces this)"
 fi
 
+# --- 1b. shfmt (formatting) ------------------------------------------------
+echo "shfmt:"
+if command -v shfmt >/dev/null 2>&1; then
+  if shfmt -i 2 -ci -d bin/*.sh .githooks/* >/dev/null 2>&1; then
+    ok "shell formatting consistent"
+  else
+    problem "shell formatting differs (fix: shfmt -i 2 -ci -w bin/*.sh .githooks/*)"
+  fi
+else
+  echo "  - shfmt not installed; skipping (CI enforces this)"
+fi
+
 # --- 2. frontmatter --------------------------------------------------------
 echo "frontmatter:"
 # check_fm FILE KEY... — require a leading --- block containing each KEY.
 check_fm() {
-  local file="$1"; shift
+  local file="$1"
+  shift
   if [ "$(head -1 "$file")" != "---" ]; then
     problem "$file: missing frontmatter block"
     return
@@ -54,25 +74,38 @@ check_fm() {
   done
 }
 
+# fm_name FILE — print the frontmatter 'name:' value (empty if none).
+fm_name() { sed -n -E 's/^name:[[:space:]]*//p' "$1" | head -1; }
+
 fm_checked=0
 for dir in skills/*/; do
   name="$(basename "$dir")"
-  case "$name" in _*|.*) continue ;; esac
+  case "$name" in _* | .*) continue ;; esac
   [ -f "${dir}SKILL.md" ] || continue
   check_fm "${dir}SKILL.md" name description
-  fm_checked=$((fm_checked+1))
+  got="$(fm_name "${dir}SKILL.md")"
+  if [ -n "$got" ] && [ "$got" != "$name" ]; then
+    problem "${dir}SKILL.md: name '$got' must match its folder '$name'"
+  fi
+  fm_checked=$((fm_checked + 1))
 done
 for f in agents/*.md; do
   [ -e "$f" ] || continue
-  case "$(basename "$f")" in _*|.*) continue ;; esac
+  base="$(basename "$f")"
+  case "$base" in _* | .*) continue ;; esac
   check_fm "$f" name description
-  fm_checked=$((fm_checked+1))
+  got="$(fm_name "$f")"
+  expected="${base%.md}"
+  if [ -n "$got" ] && [ "$got" != "$expected" ]; then
+    problem "$f: name '$got' must match its filename '$expected'"
+  fi
+  fm_checked=$((fm_checked + 1))
 done
 for f in commands/*.md; do
   [ -e "$f" ] || continue
-  case "$(basename "$f")" in _*|.*) continue ;; esac
+  case "$(basename "$f")" in _* | .*) continue ;; esac
   check_fm "$f" description
-  fm_checked=$((fm_checked+1))
+  fm_checked=$((fm_checked + 1))
 done
 [ "$fail" -eq 0 ] && ok "${fm_checked} item(s) have valid frontmatter"
 
@@ -81,14 +114,14 @@ echo "formatting:"
 fmt_problems=0
 while IFS= read -r f; do
   [ -f "$f" ] || continue
-  case "$f" in *.png|*.jpg|*.jpeg|*.gif|*.ico) continue ;; esac
+  case "$f" in *.png | *.jpg | *.jpeg | *.gif | *.ico) continue ;; esac
   if grep -nE '[[:space:]]+$' "$f" >/dev/null 2>&1; then
     problem "$f: trailing whitespace"
-    fmt_problems=$((fmt_problems+1))
+    fmt_problems=$((fmt_problems + 1))
   fi
   if [ -s "$f" ] && [ -n "$(tail -c1 "$f")" ]; then
     problem "$f: no final newline"
-    fmt_problems=$((fmt_problems+1))
+    fmt_problems=$((fmt_problems + 1))
   fi
 done < <(git ls-files)
 [ "$fmt_problems" -eq 0 ] && ok "no trailing whitespace, all files end in newline"
@@ -106,16 +139,22 @@ while IFS= read -r mdfile; do
   # Pull markdown link targets: the (...) part of [text](target).
   while IFS= read -r target; do
     case "$target" in
-      ''|\#*|http://*|https://*|mailto:*) continue ;;   # anchors / external
+      '' | \#* | http://* | https://* | mailto:*) continue ;; # anchors / external
     esac
-    target="${target%%#*}"                              # strip #anchor
-    target="${target%% *}"                              # strip " \"title\""
+    target="${target%%#*}" # strip #anchor
+    target="${target%% *}" # strip " \"title\""
     [ -n "$target" ] || continue
     case "$target" in
-      /*) [ -e "$REPO_ROOT$target" ] || [ -e "$target" ] || \
-            { problem "$mdfile: link to missing '$target'"; link_problems=$((link_problems+1)); } ;;
-      *)  [ -e "$base/$target" ] || \
-            { problem "$mdfile: link to missing '$target'"; link_problems=$((link_problems+1)); } ;;
+      /*) [ -e "$REPO_ROOT$target" ] || [ -e "$target" ] ||
+        {
+          problem "$mdfile: link to missing '$target'"
+          link_problems=$((link_problems + 1))
+        } ;;
+      *) [ -e "$base/$target" ] ||
+        {
+          problem "$mdfile: link to missing '$target'"
+          link_problems=$((link_problems + 1))
+        } ;;
     esac
   done < <(grep -oE '\]\([^)]+\)' "$mdfile" 2>/dev/null | sed -E 's/^\]\(//; s/\)$//')
 done < <(git ls-files '*.md')

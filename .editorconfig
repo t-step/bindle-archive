@@ -11,3 +11,6 @@ indent_size = 2
 [*.md]
 # Markdown here uses normal prose wrapping, not trailing-space hard breaks,
 # so trimming trailing whitespace is safe.
+
+[Makefile]
+indent_style = tab

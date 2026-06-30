@@ -17,8 +17,11 @@ cd "$REPO_ROOT" || exit 1
 
 bump="${1:-}"
 case "$bump" in
-  major|minor|patch) ;;
-  *) echo "Usage: bin/release.sh <major|minor|patch>" >&2; exit 2 ;;
+  major | minor | patch) ;;
+  *)
+    echo "Usage: bin/release.sh <major|minor|patch>" >&2
+    exit 2
+    ;;
 esac
 
 # --- guardrails: never tag a dirty or broken state -------------------------
@@ -38,9 +41,16 @@ if ! [[ "$cur" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
 fi
 IFS=. read -r major minor patch <<<"$cur"
 case "$bump" in
-  major) major=$((major+1)); minor=0; patch=0 ;;
-  minor) minor=$((minor+1)); patch=0 ;;
-  patch) patch=$((patch+1)) ;;
+  major)
+    major=$((major + 1))
+    minor=0
+    patch=0
+    ;;
+  minor)
+    minor=$((minor + 1))
+    patch=0
+    ;;
+  patch) patch=$((patch + 1)) ;;
 esac
 new="${major}.${minor}.${patch}"
 today="$(date +%Y-%m-%d)"
@@ -50,7 +60,7 @@ if ! grep -q '^## \[Unreleased\]' CHANGELOG.md; then
   echo "CHANGELOG.md is missing a '## [Unreleased]' section." >&2
   exit 1
 fi
-printf '%s\n' "$new" > VERSION
+printf '%s\n' "$new" >VERSION
 
 # Insert a dated version header right after the [Unreleased] line; the existing
 # Unreleased notes become this release, leaving Unreleased empty for next time.
@@ -63,7 +73,7 @@ awk -v ver="$new" -v day="$today" '
     next
   }
   { print }
-' CHANGELOG.md > CHANGELOG.md.tmp && mv CHANGELOG.md.tmp CHANGELOG.md
+' CHANGELOG.md >CHANGELOG.md.tmp && mv CHANGELOG.md.tmp CHANGELOG.md
 
 # --- commit + tag ----------------------------------------------------------
 git add VERSION CHANGELOG.md

@@ -30,9 +30,18 @@ PRUNE=false
 
 while [ $# -gt 0 ]; do
   case "$1" in
-    --prune) PRUNE=true; shift ;;
-    --home) HOME_DIR="$2"; shift 2 ;;
-    *) echo "Unknown option: $1" >&2; exit 2 ;;
+    --prune)
+      PRUNE=true
+      shift
+      ;;
+    --home)
+      HOME_DIR="$2"
+      shift 2
+      ;;
+    *)
+      echo "Unknown option: $1" >&2
+      exit 2
+      ;;
   esac
 done
 
@@ -43,21 +52,34 @@ linked=0 current=0 conflicts=0 pruned=0
 
 # link_item SRC DEST — symlink SRC->DEST, but never clobber foreign files/links.
 link_item() {
-  local src="$1" dest="$2" name; name="$(basename "$dest")"
+  local src="$1" dest="$2" name
+  name="$(basename "$dest")"
   if [ -L "$dest" ]; then
-    local cur; cur="$(readlink "$dest")"
+    local cur
+    cur="$(readlink "$dest")"
     case "$cur" in
       "$REPO_ROOT"/*)
-        if [ "$cur" = "$src" ]; then current=$((current+1))
-        else rm "$dest"; ln -s "$src" "$dest"; echo "  relinked  $name"; linked=$((linked+1)); fi ;;
-      *) echo "  CONFLICT  $name -> $cur (owned elsewhere, left untouched)" >&2
-         conflicts=$((conflicts+1)) ;;
+        if [ "$cur" = "$src" ]; then
+          current=$((current + 1))
+        else
+          rm "$dest"
+          ln -s "$src" "$dest"
+          echo "  relinked  $name"
+          linked=$((linked + 1))
+        fi
+        ;;
+      *)
+        echo "  CONFLICT  $name -> $cur (owned elsewhere, left untouched)" >&2
+        conflicts=$((conflicts + 1))
+        ;;
     esac
   elif [ -e "$dest" ]; then
     echo "  CONFLICT  $name exists as a real file/dir (left untouched)" >&2
-    conflicts=$((conflicts+1))
+    conflicts=$((conflicts + 1))
   else
-    ln -s "$src" "$dest"; echo "  linked    $name"; linked=$((linked+1))
+    ln -s "$src" "$dest"
+    echo "  linked    $name"
+    linked=$((linked + 1))
   fi
 }
 
@@ -69,12 +91,15 @@ points_into_repo() {
 
 # prune_dir DIR — remove broken symlinks in DIR that point into this repo.
 prune_dir() {
-  local d="$1"; [ -d "$d" ] || return 0
+  local d="$1"
+  [ -d "$d" ] || return 0
   local link
   for link in "$d"/*; do
     [ -L "$link" ] || continue
     if points_into_repo "$link" && [ ! -e "$link" ]; then
-      echo "  pruned    $(basename "$link")"; rm "$link"; pruned=$((pruned+1))
+      echo "  pruned    $(basename "$link")"
+      rm "$link"
+      pruned=$((pruned + 1))
     fi
   done
 }
@@ -84,7 +109,7 @@ echo "skills:"
 mkdir -p "$HOME_DIR/skills"
 for dir in "$REPO_ROOT"/skills/*/; do
   name="$(basename "$dir")"
-  case "$name" in _*|.*) continue ;; esac
+  case "$name" in _* | .*) continue ;; esac
   [ -f "${dir}SKILL.md" ] || continue
   link_item "${REPO_ROOT}/skills/${name}" "${HOME_DIR}/skills/${name}"
 done
@@ -96,7 +121,7 @@ mkdir -p "$HOME_DIR/agents"
 for f in "$REPO_ROOT"/agents/*.md; do
   [ -e "$f" ] || continue
   name="$(basename "$f")"
-  case "$name" in _*|.*) continue ;; esac
+  case "$name" in _* | .*) continue ;; esac
   link_item "$f" "${HOME_DIR}/agents/${name}"
 done
 $PRUNE && prune_dir "$HOME_DIR/agents"
@@ -107,7 +132,7 @@ mkdir -p "$HOME_DIR/commands"
 for f in "$REPO_ROOT"/commands/*.md; do
   [ -e "$f" ] || continue
   name="$(basename "$f")"
-  case "$name" in _*|.*) continue ;; esac
+  case "$name" in _* | .*) continue ;; esac
   link_item "$f" "${HOME_DIR}/commands/${name}"
 done
 $PRUNE && prune_dir "$HOME_DIR/commands"

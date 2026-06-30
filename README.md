@@ -37,21 +37,26 @@ to pick up newly linked items.
 
 ## Add something
 
+Scaffold from the template with the name pre-filled, edit, then link:
+
 ```bash
-# A skill
-cp -r skills/_template skills/my-skill && $EDITOR skills/my-skill/SKILL.md
+bin/new.sh skill   my-skill      # -> skills/my-skill/SKILL.md
+bin/new.sh agent   my-agent      # -> agents/my-agent.md
+bin/new.sh command my-command    # -> commands/my-command.md  (becomes /my-command)
 
-# A subagent
-cp agents/_template.md agents/my-agent.md && $EDITOR agents/my-agent.md
-
-# A slash command  (becomes /my-command)
-cp commands/_template.md commands/my-command.md && $EDITOR commands/my-command.md
-
-bin/install.sh            # link the new item(s)
+$EDITOR skills/my-skill/SKILL.md  # fill it in
+bin/install.sh                    # link the new item(s)
 ```
 
 Each `_template` file documents the required frontmatter and the substitutions
-available.
+available. A skill's `name:` must match its folder and an agent's must match its
+filename — `bin/check.sh` enforces this.
+
+## Make targets
+
+`make help` lists the shortcuts: `check`, `test`, `install`, `hooks`,
+`new ARGS="skill x"`, and `release BUMP=minor`. They just wrap the `bin/`
+scripts, which remain the source of truth.
 
 ## Works alongside any project
 
@@ -78,16 +83,20 @@ bin/test-install.sh    # exercise install.sh in throwaway dirs (link/conflict/pr
 bin/install-hooks.sh   # run both automatically before each commit
 ```
 
-- **`bin/check.sh`** — runs `shellcheck` on the scripts, verifies every skill/agent
-  has `name` + `description` frontmatter (commands need `description`), flags
-  trailing whitespace / missing final newlines, and checks that repo-relative
-  markdown links resolve. It only *reports* — it never reformats instruction text.
+- **`bin/check.sh`** — runs `shellcheck` and `shfmt` on the scripts, verifies every
+  skill/agent has `name` + `description` frontmatter (commands need `description`,
+  and the `name` must match the folder/filename), flags trailing whitespace /
+  missing final newlines, checks repo-relative markdown links resolve, and
+  validates `VERSION`. It only *reports* — it never reformats instruction text.
 - **`bin/test-install.sh`** — installs a fixture repo into a temp `--home` and
   asserts links are created, re-runs are idempotent, foreign files/links are left
   untouched, and `--prune` removes only broken links into the repo.
 - **`bin/install-hooks.sh`** — points git at `.githooks/` (sets `core.hooksPath`)
   so the pre-commit hook runs both of the above. Bypass once with `--no-verify`.
-- **CI** — `.github/workflows/ci.yml` runs the same checks on every push and PR.
+  A `post-merge` hook also re-runs `install.sh` after `git pull`, so new items
+  added on another machine get linked automatically.
+- **CI** — `.github/workflows/ci.yml` runs the same checks on every push and PR;
+  Dependabot keeps the workflow actions current.
 
 No markdown formatter/linter is used on purpose: tools like Prettier/markdownlint
 reflow prose and rewrite headings, which would churn the carefully-phrased skill
