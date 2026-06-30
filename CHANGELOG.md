@@ -14,6 +14,8 @@ dated, versioned section at release time.
 
 ## [Unreleased]
 
+## [0.1.0] - 2026-06-30
+
 ### Added
 - Initial toolkit: skills, agents, commands, and global `CLAUDE.md`, installed
   into `~/.claude/` via `bin/install.sh`.
