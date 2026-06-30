@@ -22,7 +22,7 @@ jobs:
           python-version: "3.x"
       - run: pip install pre-commit
       - run: pre-commit autoupdate
-      - uses: peter-evans/create-pull-request@v7
+      - uses: peter-evans/create-pull-request@v8
         with:
           commit-message: "ci: pre-commit autoupdate"
           title: "ci: pre-commit autoupdate"
