@@ -1,9 +1,16 @@
 name: CI
 
+# Runs on PRs only: everything reaches main through a PR, so the PR run is the
+# gate. Enforce it in branch protection ("Require status checks" + "Require
+# branches to be up to date before merging") so main stays green without a
+# redundant post-merge run.
 on:
-  push:
-    branches: [main]
   pull_request:
+
+# A new push to a PR cancels the older in-flight run for that PR.
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   pre-commit:
@@ -14,4 +21,8 @@ jobs:
         with:
           python-version: "3.x"
       - run: pip install pre-commit
+        # Safety net: no-commit-to-branch is a local guard; skip in CI so a
+        # manual run against main (should never happen) can't fail the job.
       - run: pre-commit run --all-files --show-diff-on-failure
+        env:
+          SKIP: no-commit-to-branch
