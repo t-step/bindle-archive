@@ -20,6 +20,8 @@ repos:
         args: [--fix=lf]
       - id: check-executables-have-shebangs
       - id: check-shebang-scripts-are-executable
+      - id: no-commit-to-branch # block direct commits to main; work on a branch, PR to main
+        args: [--branch, main]
 
   # Managed shellcheck (no system install needed).
   - repo: https://github.com/shellcheck-py/shellcheck-py

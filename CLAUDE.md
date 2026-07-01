@@ -1,17 +1,24 @@
 <!--
-Global personal instructions — installed to ~/.claude/CLAUDE.md, so this applies
-in EVERY project. A project's own CLAUDE.md and explicit user instructions take
-precedence over this. Keep it short and broadly true; put project-specific rules
-in that project's CLAUDE.md, not here.
+Project memory for claude-kit ITSELF — auto-loaded only when working in this
+repo. This file is NOT installed anywhere: the every-project personal
+instructions live in `global/CLAUDE.md`, which `bin/install.sh` symlinks to
+~/.claude/CLAUDE.md. Keep claude-kit development guidance here; keep
+every-project preferences in `global/CLAUDE.md`. Nothing here leaks to other
+projects.
 -->
 
-# Personal preferences
+# Working on claude-kit
 
-## Working style
-<!-- e.g. "Prefer small, reviewable diffs." "Ask before large refactors." -->
+Read [`README.md`](README.md) (what this repo is; the install/symlink model) and
+[`CONTRIBUTING.md`](CONTRIBUTING.md) (branch discipline + the test-driven loop
+skills go through) before adding or changing items.
 
-## Tooling defaults
-<!-- e.g. preferred package manager, test runner, formatting conventions -->
-
-## Communication
-<!-- e.g. "Be concise." "Show commands before running them." -->
+- **This repo uses branch-and-PR.** A `no-commit-to-branch` hook protects `main`
+  — work on a `feature/<x>`/`fix/<x>` branch; `make check` must pass before every
+  commit.
+- **A skill isn't done until it's pressure-tested** per superpowers:writing-skills
+  (RED → GREEN → REFACTOR). Mark unverified skills as drafts in the CHANGELOG;
+  don't describe a draft as finished.
+- **Editing `global/CLAUDE.md` changes behavior in every project.** Keep each rule
+  there universally safe or gated on an observable repo signal — see that file's
+  header.

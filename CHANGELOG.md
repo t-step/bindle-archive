@@ -15,6 +15,17 @@ dated, versioned section at release time.
 ## [Unreleased]
 
 ### Added
+- First portable skills, derived from recurring patterns across my own project
+  history: `fork-pr-flow` (origin-vs-upstream and own-repo PR targeting; keep
+  `main` a clean mirror and branch off it), `verify-then-commit` (run
+  tests+typecheck+lint, commit only if green), `repo-hygiene-init` (scaffold
+  baseline tooling), and `scoped-sequential-prs` (ordered single-purpose PRs
+  with a contamination diff gate). `verify-then-commit` and
+  `scoped-sequential-prs` are drafts pending pressure-testing (see
+  `CONTRIBUTING.md`).
+- `no-commit-to-branch` pre-commit hook (`--branch main`) — blocks direct
+  commits to `main`; work on a branch and land via PR.
+- `CONTRIBUTING.md` — how to author, test, and version items in this toolkit.
 - `bin/new.sh` — scaffold a new skill/agent/command from its template with the
   name pre-filled.
 - `Makefile` — convenience targets (`check`, `test`, `install`, `hooks`, `new`,
@@ -29,6 +40,17 @@ dated, versioned section at release time.
 - Weekly `pre-commit autoupdate` workflow that opens a PR bumping hook versions.
 
 ### Changed
+- **Global instructions moved to `global/CLAUDE.md`** (installed to
+  `~/.claude/CLAUDE.md`), freeing the repo-root `CLAUDE.md` to be claude-kit's own
+  project memory — auto-loaded only when working in this repo and never installed,
+  so toolkit-development guidance can't leak into other projects. `install.sh` and
+  its tests updated; re-running `install.sh` relinks the global file automatically.
+- Global `CLAUDE.md` preferences codify branch/PR discipline, **gated on an
+  observable repo signal** so they don't leak into projects that don't use the
+  flow: when a repo signals branch-and-PR (a `no-commit-to-branch` hook, a
+  protected default branch, a fork, or its own docs), don't commit to `main` —
+  branch and land via PR. Plus universally-safe defaults: never push/deploy
+  without an explicit ask; verify before committing; one fix at a time.
 - `bin/check.sh` now also enforces that a skill's `name:` matches its folder (and
   an agent's its filename), and gained a `--content-only` mode used by the
   pre-commit hook (the framework owns shellcheck/shfmt/formatting at commit time).

@@ -10,7 +10,9 @@
 #   skills/<name>/SKILL.md  ->  ~/.claude/skills/<name>
 #   agents/<name>.md        ->  ~/.claude/agents/<name>.md
 #   commands/<name>.md      ->  ~/.claude/commands/<name>.md
-#   CLAUDE.md               ->  ~/.claude/CLAUDE.md   (global personal instructions)
+#   global/CLAUDE.md        ->  ~/.claude/CLAUDE.md   (global personal instructions)
+#
+# The repo-root CLAUDE.md is this repo's OWN project memory and is NOT installed.
 #
 # GOOD CITIZEN GUARANTEE: this script only ever creates, updates, or removes
 # symlinks that point INTO this repo. Anything else in ~/.claude — a real file,
@@ -138,9 +140,11 @@ done
 $PRUNE && prune_dir "$HOME_DIR/commands"
 
 # --- global CLAUDE.md (personal instructions for every project) ---
-if [ -f "$REPO_ROOT/CLAUDE.md" ]; then
+# Source is global/CLAUDE.md; the repo-root CLAUDE.md is this repo's own project
+# memory and is deliberately never installed (so it can't leak into other projects).
+if [ -f "$REPO_ROOT/global/CLAUDE.md" ]; then
   echo "global instructions:"
-  link_item "$REPO_ROOT/CLAUDE.md" "$HOME_DIR/CLAUDE.md"
+  link_item "$REPO_ROOT/global/CLAUDE.md" "$HOME_DIR/CLAUDE.md"
 fi
 
 echo

@@ -38,12 +38,12 @@ trap 'rm -rf "$TMP"' EXIT
 # build_repo DIR — a minimal fake claude-kit with one of each item type.
 build_repo() {
   local r="$1"
-  mkdir -p "$r/bin" "$r/skills/demo" "$r/agents" "$r/commands"
+  mkdir -p "$r/bin" "$r/skills/demo" "$r/agents" "$r/commands" "$r/global"
   cp "$INSTALL_SRC" "$r/bin/install.sh"
   printf -- '---\nname: demo\ndescription: demo\n---\n' >"$r/skills/demo/SKILL.md"
   printf -- '---\nname: demo\ndescription: d\n---\nbody\n' >"$r/agents/demo.md"
   printf -- '---\ndescription: d\n---\nbody\n' >"$r/commands/demo.md"
-  printf -- '# CLAUDE\n' >"$r/CLAUDE.md"
+  printf -- '# CLAUDE\n' >"$r/global/CLAUDE.md"
 }
 
 # ===========================================================================
@@ -56,7 +56,7 @@ build_repo "$REPO"
 check "skill linked" links_to "$REPO/skills/demo" "$HOME_DIR/skills/demo"
 check "agent linked" links_to "$REPO/agents/demo.md" "$HOME_DIR/agents/demo.md"
 check "command linked" links_to "$REPO/commands/demo.md" "$HOME_DIR/commands/demo.md"
-check "CLAUDE.md linked" links_to "$REPO/CLAUDE.md" "$HOME_DIR/CLAUDE.md"
+check "CLAUDE.md linked" links_to "$REPO/global/CLAUDE.md" "$HOME_DIR/CLAUDE.md"
 
 echo "idempotent re-run:"
 out="$("$REPO/bin/install.sh" --home "$HOME_DIR" 2>&1)"

@@ -18,12 +18,18 @@ claude-kit/
   skills/<name>/SKILL.md   ->  ~/.claude/skills/<name>      reusable techniques/knowledge
   agents/<name>.md         ->  ~/.claude/agents/<name>.md   specialized subagents
   commands/<name>.md       ->  ~/.claude/commands/<name>.md slash commands (/name)
-  CLAUDE.md                ->  ~/.claude/CLAUDE.md          global personal instructions
+  global/CLAUDE.md         ->  ~/.claude/CLAUDE.md          global personal instructions (every project)
+  CLAUDE.md                     (not installed)             this repo's own project memory
   bin/install.sh                                            symlink installer
 ```
 
 Folders/files starting with `_` (templates) or `.`, and `bin/`, are ignored by
 the installer.
+
+The **global** personal instructions live in `global/CLAUDE.md` (symlinked to
+`~/.claude/CLAUDE.md`, so they apply in every project). The repo-root `CLAUDE.md`
+is claude-kit's *own* project memory — read only when working in this repo, never
+installed — so nothing about developing the toolkit leaks into other projects.
 
 ## Install
 
@@ -34,6 +40,14 @@ bin/install.sh --prune    # also remove links for items deleted from this repo
 
 Re-run anytime — it's idempotent. Restart Claude Code (or start a new session)
 to pick up newly linked items.
+
+## Developing claude-kit
+
+Working *on* this repo (adding a skill, agent, or command)? Read
+[`CONTRIBUTING.md`](CONTRIBUTING.md) first — it covers the branch/commit
+discipline and, importantly, the test-driven loop skills go through before
+they're considered done (a skill is "done" when a fresh agent behaves
+differently because of it, not when the prose reads well).
 
 ## Add something
 
