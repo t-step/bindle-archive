@@ -1,0 +1,84 @@
+---
+name: session-continuity
+description: Use when starting or ending a working session, writing a handoff prompt for a future session, or deciding where session notes and project profiles should live — including when a session is about to end with undocumented decisions, or notes are about to be written inside a project repo.
+---
+
+# session-continuity
+
+## Overview
+
+Sessions die; context shouldn't. This skill defines one durable, portable home
+for cross-session context — **outside every project repo** — and the shape of
+the three artifacts that live there: project profiles, session notes, and
+handoffs. The `/session-start`, `/session-end`, `/handoff`, and
+`/project-profile` commands all follow these conventions.
+
+Core principle: **project repos hold code and project-owned config; everything
+about *your* work on them lives in the notes home.** A note inside a repo is
+one `git add -A` away from being published.
+
+## The notes home
+
+```
+~/.claude-kit/                        # or $CLAUDE_KIT_NOTES_DIR if set
+  private-denylist.txt                # personal terms for check-private-info
+  projects/<project>/
+    profile.md                        # durable facts: gates, commands, safety notes
+    sessions/YYYY-MM-DD-<slug>.md     # one note per session
+    handoffs/YYYY-MM-DD-<slug>.md     # paste-ready prompts for future sessions
+```
+
+- `<project>` = the repo's directory basename, lowercased, non `[a-z0-9-]`
+  characters replaced with `-` (e.g. `My_App.v2` → `my-app-v2`).
+- `<slug>` = 2–5 kebab-case words naming the session's goal. Same
+  character rule. Never put `/`, spaces, or personal names in filenames.
+- Honor `CLAUDE_KIT_NOTES_DIR` when set: it replaces `~/.claude-kit` as the
+  base. Pointing it at an Obsidian vault directory makes every note appear in
+  the vault — plain Markdown is all Obsidian needs. Nothing here may *require*
+  Obsidian (no plugin syntax, no sync assumptions).
+- Create directories on demand (`mkdir -p`). Plain Markdown only.
+
+## Rules
+
+1. **Read-only toward the project repo.** Starting or ending a session, or
+   writing a handoff, must not modify the repo being worked on. The only
+   exception: the user explicitly asks for an export (see `/project-profile`).
+2. **Notes are private by default.** Write them for yourself: local paths and
+   blunt assessments are fine *in the notes home*. The moment content is
+   destined for a repo (an exported profile, a handoff pasted into a PR),
+   sanitize it per claude-kit's `docs/privacy-boundaries.md` and run
+   `bin/check-private-info.sh` on it if the claude-kit repo is available.
+3. **Handoffs state scope boundaries.** A handoff that says only what to do
+   next invites the next session to redo or bulldoze finished work. Always
+   include what is DONE (don't redo), what is OUT of scope, and what must not
+   be touched.
+4. **Don't duplicate the repo's own memory.** Facts that belong to the project
+   (build commands every contributor uses, architecture) belong in the
+   project's CLAUDE.md/docs — the profile *points* at them and records what the
+   repo can't: your gates, your risk notes, your recurring instructions.
+
+## Session note shape (written by /session-end)
+
+```markdown
+# YYYY-MM-DD <goal, one line>
+repo / branch / commits made / files changed
+tests-checks: what ran, pass/fail
+decisions: what was chosen and why (one line each)
+risks: what could bite later
+deferred: what was consciously not done
+candidate workflow improvements: (see claude-kit's `docs/iterative-improvement.md`)
+next: the single best next prompt
+```
+
+Precision beats prose: a future session greps these files.
+
+## Common mistakes
+
+- Writing `SESSION_NOTES.md` into the project repo "temporarily" — that's the
+  leak vector this skill exists to close.
+- A handoff without scope boundaries ("continue the work") — the next session
+  re-litigates finished decisions.
+- Stuffing the profile with things already in the project's README — it goes
+  stale and drowns the personal signal.
+- Blocking on a missing notes home — `mkdir -p` and continue; never ask the
+  user to create directories.
