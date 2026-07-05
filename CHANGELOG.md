@@ -15,6 +15,13 @@ dated, versioned section at release time.
 ## [Unreleased]
 
 ### Added
+- `maintain-claude-md` skill (draft) — scaffold / update / lint `CLAUDE.md`. Lint now
+  resolves `@`-includes and FAILs on a loader-stub whose target is missing (the failure
+  that once left a repo loading nothing), is monorepo/nested-aware, checks command snippets
+  **statically** (never executes them), flags duplicated governance, and byte-budgets the
+  hot core. RED baseline: the v0.1 draft's lint PASSes a repo whose root `@.claude/CLAUDE.md`
+  stub target is absent (it only checked section presence and *ran* command snippets); this
+  version FAILs it. Draft pending the full RED→GREEN→REFACTOR pressure loop (see CONTRIBUTING).
 - First portable skills, derived from recurring patterns across my own project
   history: `fork-pr-flow` (origin-vs-upstream and own-repo PR targeting; keep
   `main` a clean mirror and branch off it), `verify-then-commit` (run
