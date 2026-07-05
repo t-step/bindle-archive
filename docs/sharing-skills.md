@@ -18,7 +18,7 @@ applies in reverse: don't import someone's directory dump into yours.
 | Stable, project-agnostic procedure | a skill/command/agent in a Git repo | clone + install, or a plugin |
 | Project-specific Claude behavior | that project's `CLAUDE.md` / `.claude/skills/` / `.claude/commands/` | the project repo itself |
 | Personal preferences (tone, git habits, editor) | your `global/CLAUDE.md` | never — personal by definition |
-| Evolving insights, session notes, half-formed ideas | Markdown notes under `~/.claude-kit/` (or your notes dir) | promoted to one of the above once stable — see `docs/iterative-improvement.md` |
+| Evolving insights, session notes, half-formed ideas | Markdown notes under `~/.claude-kit/` (or your notes dir) | promoted to one of the above once stable — see [iterative-improvement.md](iterative-improvement.md) |
 | Secrets, tokens, private context | nowhere in Git | never |
 
 Two rules of thumb:

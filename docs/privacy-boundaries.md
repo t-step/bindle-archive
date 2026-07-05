@@ -55,7 +55,7 @@ note) is committed anywhere:
 
 The commands themselves remind you: session notes are private by default, and
 promotion to a committed artifact is an explicit, reviewed step (see
-`docs/iterative-improvement.md`).
+[iterative-improvement.md](iterative-improvement.md)).
 
 ## Handling an accidental leak
 
