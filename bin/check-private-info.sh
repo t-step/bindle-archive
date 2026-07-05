@@ -138,8 +138,15 @@ self_test() {
       failed=1
     fi
   done
+  # a private-by-path filename must be refused even as an explicit argument
+  if "$0" "$t/session-notes/leak.md" >/dev/null 2>&1; then
+    printf '  ✗ self-test: private path session-notes/ NOT flagged\n'
+    failed=1
+  else
+    pass=$((pass + 1))
+  fi
   rm -rf "$t"
-  printf '  self-test: %d/7 fixtures behaved\n' "$pass"
+  printf '  self-test: %d/8 fixtures behaved\n' "$pass"
   return "$failed"
 }
 
