@@ -15,6 +15,11 @@ dated, versioned section at release time.
 ## [Unreleased]
 
 ### Added
+- `license-compliance-auditor` skill + `/license-audit` command — portable repo
+  license-compliance audit (declared license vs. dependencies, vendored code,
+  submodules, fonts, bundled assets, datasets, copied snippets), Python
+  stdlib-only helper scripts, terminal-first reports, grouped local issue
+  drafts, human/legal-review boundaries.
 - `maintain-claude-md` skill (draft) — scaffold / update / lint `CLAUDE.md`. Lint now
   resolves `@`-includes and FAILs on a loader-stub whose target is missing (the failure
   that once left a repo loading nothing), is monorepo/nested-aware, checks command snippets

@@ -1,0 +1,7 @@
+Copyright 2024, Fixture Foundry (https://example.com/fixture-foundry)
+
+This Font Software is licensed under the SIL Open Font License, Version 1.1.
+
+"DemoSans" is a Reserved Font Name for the purposes of the SIL Open Font
+License. Modified versions must not use the Reserved Font Name in their
+names.

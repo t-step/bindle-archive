@@ -185,6 +185,21 @@ if [ -f CHANGELOG.md ] && ! grep -q '^## \[Unreleased\]' CHANGELOG.md; then
   problem "CHANGELOG.md missing '## [Unreleased]' section"
 fi
 
+# --- 6. skill scripts (python selftests) -----------------------------------
+echo "skill-scripts:"
+lca_selftest="skills/license-compliance-auditor/scripts/selftest.py"
+if [ -f "$lca_selftest" ]; then
+  if command -v python3 >/dev/null 2>&1; then
+    if python3 "$lca_selftest" >/dev/null 2>&1; then
+      ok "license-compliance-auditor selftests pass"
+    else
+      problem "license-compliance-auditor selftests failed (run: python3 $lca_selftest)"
+    fi
+  else
+    echo "  - python3 not installed; skipping script selftests"
+  fi
+fi
+
 # --- result ----------------------------------------------------------------
 echo
 if [ "$fail" -eq 0 ]; then
