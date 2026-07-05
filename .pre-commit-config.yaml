@@ -39,6 +39,11 @@ repos:
   # claude-kit-specific checks and tests.
   - repo: local
     hooks:
+      - id: claude-kit-private-info
+        name: private-info scan (personal data stays out of commits)
+        entry: bin/check-private-info.sh
+        language: script
+        types: [text]
       - id: claude-kit-content
         name: claude-kit content (frontmatter/name/links/version)
         entry: bin/check.sh --content-only

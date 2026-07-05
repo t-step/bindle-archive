@@ -1,0 +1,39 @@
+# Gitleaks config for claude-kit: the default secret rules, extended with
+# personal-info rules mirroring bin/check-private-info.sh (which is the
+# always-on, dependency-free layer; Gitleaks adds history-wide sweeps).
+#
+# Run on demand (not required for basic repo use):
+#   brew install gitleaks
+#   gitleaks detect --source . --redact
+#
+# See docs/privacy-boundaries.md for the model.
+
+title = "claude-kit"
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "files whose job is to document/encode these patterns"
+paths = [
+  '''bin/check-private-info\.sh''',
+  '''\.gitleaks\.toml''',
+]
+
+[[rules]]
+id = "apple-private-relay-email"
+description = "Apple private-relay email (identifies a personal account)"
+regex = '''[A-Za-z0-9._%+-]+@privaterelay\.appleid\.com'''
+keywords = ["privaterelay"]
+
+[[rules]]
+id = "local-macos-home-path"
+description = "Absolute macOS home path (leaks the local username)"
+regex = '''/Users/[A-Za-z][A-Za-z0-9._-]*/'''
+keywords = ["/Users/"]
+
+[[rules]]
+id = "obsidian-vault-path"
+description = "Obsidian/iCloud vault path (personal notes location)"
+regex = '''iCloud~md~obsidian'''
+keywords = ["obsidian"]
