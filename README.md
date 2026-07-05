@@ -86,6 +86,46 @@ pin/sync setup — is left completely untouched.
   project that ships its own setup overrides this toolkit where they overlap —
   your toolkit fills in everywhere else.
 
+The full contract — what the kit owns, may read/write, and must never touch,
+plus conflict recovery — is in [docs/ownership-boundaries.md](docs/ownership-boundaries.md).
+
+## Session continuity & the improvement loop
+
+The kit carries context *across* sessions (Claude Code, Fable, Codex) with
+four slash commands and one notes directory — plain Markdown, no database, no
+daemon:
+
+- `/session-start` — orient: repo state, project profile, last session's
+  notes/handoff, validation gates. Read-only.
+- `/session-end` — write a durable session note: commits, checks actually run,
+  decisions, risks, deferred work, candidate workflow improvements.
+- `/handoff` — one self-contained, scope-bounded prompt a future session can
+  start from cold.
+- `/project-profile` — durable project facts (gates, commands, safety notes);
+  writes into the project repo only on an explicit "export", sanitized.
+
+Notes live **outside every project repo**, under `~/.claude-kit/projects/` by
+default; set `CLAUDE_KIT_NOTES_DIR` to move them — pointing it at an Obsidian
+vault is the entire Obsidian integration
+([docs/notes-home.md](docs/notes-home.md)).
+
+Repeated experience feeds back into the kit through `/workflow-review` (find
+recurring friction and proven patterns across recent notes) and
+`/promote-insight` (route one insight to its home — skill, project rule,
+profile, check, privacy rule — with explicit confirmation before anything is
+written). See [docs/iterative-improvement.md](docs/iterative-improvement.md).
+An optional SQLite index over the notes is designed but deliberately not
+implemented ([docs/sqlite-workflow-index.md](docs/sqlite-workflow-index.md));
+`grep` is the query language until that stops being enough.
+
+## Sharing with collaborators
+
+Share reusable skills/commands through Git at the right level — a shared
+workflow repo consumed by personal kits, or `.claude/` in the project repo —
+never by copying `~/.claude/` directories around. Personal preferences stay
+personal; private notes are never promoted automatically. The model and repo
+shapes are in [docs/sharing-skills.md](docs/sharing-skills.md).
+
 ## Repo hygiene
 
 Lightweight, dependency-free checks keep the toolkit clean without touching the
@@ -114,6 +154,16 @@ Checks run through the [pre-commit](https://pre-commit.com/) framework
 - **`bin/test-install.sh`** (local hook) — installs a fixture repo into a temp
   `--home` and asserts links are created, re-runs are idempotent, foreign
   files/links are left untouched, and `--prune` removes only broken links.
+- **`bin/check-private-info.sh`** (local hook) — keeps *personal* info out of
+  commits: private-relay emails, `/Users/…` paths, vault paths, pasted chat
+  transcripts, force-added private files, and your own denylist
+  (`~/.claude-kit/private-denylist.txt`, never committed). Offline, plain
+  grep, fails closed; `--self-test` proves the patterns against fixtures.
+  Mark a deliberate false positive by putting `private-ok` on that line. For
+  history-wide secret sweeps there's a [Gitleaks](https://github.com/gitleaks/gitleaks)
+  config (`.gitleaks.toml`) extending the default rules with the same
+  personal patterns: `gitleaks detect --source . --redact`. The full privacy
+  model is in [docs/privacy-boundaries.md](docs/privacy-boundaries.md).
 - **`post-merge` stage** — re-runs `install.sh` after `git pull`, so new items
   added on another machine get linked automatically.
 

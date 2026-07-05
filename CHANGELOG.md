@@ -20,6 +20,32 @@ dated, versioned section at release time.
   submodules, fonts, bundled assets, datasets, copied snippets), Python
   stdlib-only helper scripts, terminal-first reports, grouped local issue
   drafts, human/legal-review boundaries.
+- **Session continuity** (drafts pending pressure-testing): `session-continuity`
+  skill + `/session-start`, `/session-end`, `/handoff`, `/project-profile`
+  commands. Durable Markdown notes live outside every project repo under
+  `~/.claude-kit/projects/<project>/` (base overridable via
+  `CLAUDE_KIT_NOTES_DIR` — point it at an Obsidian vault if you like; see
+  `docs/notes-home.md`). Read-only toward project repos; profile export into a
+  repo happens only on an explicit "export", sanitized.
+- **Iterative improvement loop** (drafts pending pressure-testing):
+  `/workflow-review` (read-only sweep of recent notes for repeated friction,
+  proven patterns, and stale instructions) and `/promote-insight` (classify one
+  insight and route it — skill / project rule / profile / gate / privacy rule —
+  with explicit confirmation before anything is written). Model documented in
+  `docs/iterative-improvement.md`; no automatic promotion of private notes.
+- **Private-info guardrails**: `bin/check-private-info.sh` (offline scanner for
+  private-relay emails, local home paths, vault paths, chat-transcript markers,
+  force-added private files, and a personal denylist at
+  `~/.claude-kit/private-denylist.txt`; `--self-test` fixtures; wired into
+  pre-commit and `bin/check.sh`), `.gitleaks.toml` (default secret rules +
+  the same personal rules for on-demand history sweeps), and `.gitignore`
+  patterns for local/private workflow files (`.claude-private/`,
+  `*.private.md`, `session-notes/`, `.env`, …).
+- **v0.2 docs**: `docs/portable-workflow-review.md` (inventory + architecture
+  review), `docs/ownership-boundaries.md`, `docs/sharing-skills.md`,
+  `docs/privacy-boundaries.md`, `docs/notes-home.md`,
+  `docs/iterative-improvement.md`, and `docs/sqlite-workflow-index.md` (an
+  optional SQLite notes index: designed, deliberately deferred).
 - `maintain-claude-md` skill (draft) — scaffold / update / lint `CLAUDE.md`. Lint now
   resolves `@`-includes and FAILs on a loader-stub whose target is missing (the failure
   that once left a repo loading nothing), is monorepo/nested-aware, checks command snippets
