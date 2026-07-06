@@ -40,12 +40,35 @@ scanner a required blocking step in `commands/session-end.md` step 4, and
 reconciled the "never write into the repo" common-mistake with Rule 1's explicit
 exception.
 
+## Claim 2 — `/handoff` states scope boundaries (Rule 3)
+
+**Status: baseline already passes; no refactor (2026-07-05).**
+
+Claim: a handoff always carries what is DONE (don't redo), what is OUT of scope,
+and what must not be touched — otherwise the next session re-litigates finished
+work.
+
+Two RED variants, 5 reps each, scored on whether the written handoff explicitly
+surfaces each of the three boundary types:
+
+| Variant | Setup | Result |
+|---|---|---|
+| Spoon-fed | boundaries stated in the prompt as labeled facts | 5/5 preserved all three — but this only tests transcription, not the claim. Discarded as a pilot. |
+| Latent (the real test) | a casual session recap; the settled decision, the deferred item, and the vendored file are present but **not** labeled as boundaries | **5/5 still surfaced all three** — agents read the vendored file's own header and warned against editing it, kept the settled wrapper decision as "don't relitigate", and marked backoff "deferred / out of scope". |
+
+**No failing baseline → no edit.** Per the Iron Law (no skill change without a
+RED failure first), Rule 3 and the `/handoff` template were left unchanged. The
+boundary sections are defensible insurance, but with the current model they are
+not fixing a demonstrated failure.
+
+**Caveat — untested surface:** this tested whether an unconstrained handoff
+*contains* the boundaries. It did not test them under a terseness pressure
+("keep the handoff to a few lines") or on a weaker model, where a boundary-less
+"just finish the work" handoff is more plausible. If Rule 3 is ever to be called
+verified-as-necessary, that is the scenario to run.
+
 ## Not yet pressure-tested (still draft)
 
-These claims are structurally present but have **not** been through RED → GREEN,
-so they remain drafts:
-
-- `/handoff` — always includes DONE / OUT-OF-SCOPE / do-not-touch (Rule 3).
 - `/project-profile` — export happens only on explicit "export", sanitized to
   `docs/project-profile.md`, never as a side effect.
 - `/session-start` — stays read-only during orientation (no "cleanup").

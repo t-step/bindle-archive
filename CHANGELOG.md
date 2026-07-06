@@ -34,8 +34,12 @@ dated, versioned section at release time.
     PR" path: a new **Repo-bound content** recipe keeps the full private note in
     the notes home and writes only a sanitized summary into the repo *after*
     `bin/check-private-info.sh` passes (baseline skipped the scanner 5/5).
-  - **Still draft (not yet pressure-tested):** `/handoff` scope boundaries,
-    `/project-profile` export gating, `/session-start` read-only orientation.
+  - **Baseline already passes (no change):** `/handoff` scope boundaries — with
+    the current model, agents surface DONE / out-of-scope / do-not-touch even
+    when those are left latent (5/5), so Rule 3 was left unchanged rather than
+    edited without a failing test. See PRESSURE-TESTS.md for the caveat.
+  - **Still draft (not yet pressure-tested):** `/project-profile` export gating,
+    `/session-start` read-only orientation.
 - **Iterative improvement loop** (drafts pending pressure-testing):
   `/workflow-review` (read-only sweep of recent notes for repeated friction,
   proven patterns, and stale instructions) and `/promote-insight` (classify one
