@@ -42,12 +42,38 @@ one `git add -A` away from being published.
 
 1. **Read-only toward the project repo.** Starting or ending a session, or
    writing a handoff, must not modify the repo being worked on. The only
-   exception: the user explicitly asks for an export (see `/project-profile`).
+   exception: the user *explicitly* asks for content in the repo (a
+   `/project-profile` export, or "put the session summary in the repo/PR"). An
+   explicit request is honored — but only via the **Repo-bound content** recipe
+   below, never by writing the raw note into the repo.
 2. **Notes are private by default.** Write them for yourself: local paths and
-   blunt assessments are fine *in the notes home*. The moment content is
-   destined for a repo (an exported profile, a handoff pasted into a PR),
-   sanitize it per claude-kit's `docs/privacy-boundaries.md` and run
-   `bin/check-private-info.sh` on it if the claude-kit repo is available.
+   blunt assessments are fine *in the notes home*. Content destined for a repo
+   is a different artifact — see the recipe below; it is always the sanitized
+   summary, never the private note.
+
+## Repo-bound content (only on explicit request)
+
+A raw session note in the repo is the leak this skill exists to close, so an
+explicit "put it in the repo/PR" request does **not** relax the default — it
+produces two separate artifacts:
+
+1. **Full private note → notes home, always.** Write it first, in full (local
+   paths, blunt risk notes, the next-prompt). This is the durable record;
+   losing it to a repo-only write breaks cross-session continuity.
+2. **Sanitized summary → the repo, only after the scanner passes.** Then, and
+   only then, produce a *separate* teammate-facing summary and:
+   - sanitize per claude-kit's `docs/privacy-boundaries.md` — repo-relative
+     paths only, no personal names/emails/denylist terms, no pasted transcript,
+     no private "next-prompt for future-me" meta;
+   - **run the scanner and block on it.** If the claude-kit repo is reachable,
+     run `bin/check-private-info.sh <the summary file>`; if it flags anything,
+     do **not** leave the file in the repo — fix and re-run until it passes. A
+     manual `grep` is not a substitute for running the scanner.
+   - write it to the path the user named (or propose one and confirm); leave it
+     **unstaged and uncommitted** — staging is the user's call.
+
+If the claude-kit repo isn't reachable to run the scanner, say so and let the
+user decide, rather than writing an unscanned summary into the repo.
 3. **Handoffs state scope boundaries.** A handoff that says only what to do
    next invites the next session to redo or bulldoze finished work. Always
    include what is DONE (don't redo), what is OUT of scope, and what must not
@@ -74,8 +100,15 @@ Precision beats prose: a future session greps these files.
 
 ## Common mistakes
 
-- Writing `SESSION_NOTES.md` into the project repo "temporarily" — that's the
-  leak vector this skill exists to close.
+- Writing the raw session note into the project repo — even when the user asks
+  for it in the repo/PR. The note itself always goes to the notes home; only a
+  scanned, sanitized *summary* goes to the repo, per **Repo-bound content**.
+  "The user explicitly asked" is honored *through that recipe*, not by dumping
+  the private note into the repo.
+- Treating a manual `grep` as the privacy check. When a summary is repo-bound,
+  the recipe says *run `bin/check-private-info.sh`* — a grep is not that.
+- Writing a sanitized repo copy but skipping the full private note — the
+  continuity record is the point; the repo copy is the extra, not the swap.
 - A handoff without scope boundaries ("continue the work") — the next session
   re-litigates finished decisions.
 - Stuffing the profile with things already in the project's README — it goes

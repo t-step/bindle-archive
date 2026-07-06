@@ -42,6 +42,12 @@ Steps:
    but confirm nothing session-private (transcripts, personal details) was
    left in *repo* files or staged changes. Flag anything you find; don't
    silently fix it.
+   - If the user's closing note asks for the summary **in the repo or PR**
+     (e.g. "save it as NOTES.md" / "so my teammate sees it"), do not write the
+     note above into the repo. Follow the skill's **Repo-bound content** recipe:
+     keep the full note in the notes home (step 3), then produce a *separate*
+     sanitized summary and run `bin/check-private-info.sh` on it — block on the
+     result — before leaving it (unstaged) in the repo.
 5. If the session produced real profile-worthy facts (a new gate, a new safety
    rule), suggest updating the profile — one line, user's call.
 

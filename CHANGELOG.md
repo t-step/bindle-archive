@@ -20,13 +20,22 @@ dated, versioned section at release time.
   submodules, fonts, bundled assets, datasets, copied snippets), Python
   stdlib-only helper scripts, terminal-first reports, grouped local issue
   drafts, human/legal-review boundaries.
-- **Session continuity** (drafts pending pressure-testing): `session-continuity`
-  skill + `/session-start`, `/session-end`, `/handoff`, `/project-profile`
-  commands. Durable Markdown notes live outside every project repo under
+- **Session continuity** (partly pressure-tested; see
+  `skills/session-continuity/PRESSURE-TESTS.md`): `session-continuity` skill +
+  `/session-start`, `/session-end`, `/handoff`, `/project-profile` commands.
+  Durable Markdown notes live outside every project repo under
   `~/.claude-kit/projects/<project>/` (base overridable via
   `CLAUDE_KIT_NOTES_DIR` — point it at an Obsidian vault if you like; see
   `docs/notes-home.md`). Read-only toward project repos; profile export into a
   repo happens only on an explicit "export", sanitized.
+  - **Verified (RED→GREEN→REFACTOR):** `/session-end` keeps session notes out of
+    the project repo. Baseline agents leaked notes into the repo 5/5; with the
+    skill, 5/5 write to the notes home. Hardened the explicit "put it in the
+    PR" path: a new **Repo-bound content** recipe keeps the full private note in
+    the notes home and writes only a sanitized summary into the repo *after*
+    `bin/check-private-info.sh` passes (baseline skipped the scanner 5/5).
+  - **Still draft (not yet pressure-tested):** `/handoff` scope boundaries,
+    `/project-profile` export gating, `/session-start` read-only orientation.
 - **Iterative improvement loop** (drafts pending pressure-testing):
   `/workflow-review` (read-only sweep of recent notes for repeated friction,
   proven patterns, and stale instructions) and `/promote-insight` (classify one
