@@ -14,6 +14,8 @@
 #                      a newline
 #   4.  links        — repo-relative markdown links resolve
 #   5.  version      — VERSION is semver and CHANGELOG has an Unreleased section
+#   6.  skill scripts— python selftests for skills that ship scripts
+#   7.  private info — bin/check-private-info.sh self-test + full tracked scan
 #
 # Usage:
 #   bin/check.sh                  # full aggregate (make check / CI)
@@ -197,6 +199,27 @@ if [ -f "$lca_selftest" ]; then
     fi
   else
     echo "  - python3 not installed; skipping script selftests"
+  fi
+fi
+if [ -f bin/slugify.sh ]; then
+  if bin/slugify.sh --self-test >/dev/null 2>&1; then
+    ok "slugify self-test passes (session-continuity slug rule)"
+  else
+    problem "slugify self-test failed (run: bin/slugify.sh --self-test)"
+  fi
+fi
+
+# --- 7. private info ---------------------------------------------------------
+# Personal-info guard (relay emails, home paths, transcripts, denylist terms).
+# Skipped in --content-only: the dedicated pre-commit hook runs it on staged
+# files at commit time; here it sweeps every tracked file.
+if ! $content_only; then
+  echo "private info:"
+  if bin/check-private-info.sh --self-test >/dev/null 2>&1 &&
+    bin/check-private-info.sh >/dev/null 2>&1; then
+    ok "self-test passes; no private info in tracked files"
+  else
+    problem "private-info scan failed (run bin/check-private-info.sh)"
   fi
 fi
 

@@ -2,3 +2,21 @@
 .claude/settings.local.json
 __pycache__/
 *.pyc
+
+# Local/private Claude workflow files — session scratch, personal notes, env.
+# These must never be committed anywhere; bin/check-private-info.sh also
+# refuses them if force-added. See docs/privacy-boundaries.md.
+.claude-private/
+.claude-local/
+.claude-session/
+.claude-scratch/
+.superpowers/
+*.private.md
+*.local.md
+.scratch.md
+notes-private/
+session-notes/
+personal-notes/
+.env
+.env.*
+!.env.example
