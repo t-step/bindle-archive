@@ -168,9 +168,19 @@ loose ends before we start" request (which the command should still deflect to a
 proposal per "stop and wait for direction"), nor a weaker model. Those are where
 a read-only orientation is most likely to break.
 
+## Closed mechanically (not a subagent claim)
+
+- **Slug derivation** (`My_App.v2` → `my-app-v2`) — done 2026-07-07. This is
+  mechanical, so it earned an executable check, not a pressure scenario. The
+  prose rule as written ("replace non-`[a-z0-9-]` with `-`") silently produced
+  `my--app--` / `--spaces--` on adjacent specials and edge whitespace; the
+  happy-path example passed only by luck. Fixed by pinning the rule in
+  `bin/slugify.sh` (lowercase → collapse runs to one `-` → trim edges) with a
+  `--self-test` case table, wiring that self-test into `bin/check.sh`, and
+  tightening the SKILL.md rule to match and point at the tool.
+
 ## Not yet pressure-tested (still draft)
 
-- Slug derivation on messy project names (`My_App.v2` → `my-app-v2`).
 - The scanner's denylist pass under `/project-profile export` (see Claim 3's
   caveat).
 - An *explicit* cleanup/tidy request at `/session-start` (see Claim 4's caveat).

@@ -66,6 +66,12 @@ dated, versioned section at release time.
     pressure-tested (verified, or baseline-passes-unchanged); the skill is no
     longer a draft. Remaining draft surface is narrow — slug derivation, the
     scanner denylist pass, and an explicit-cleanup `/session-start` request.
+- `bin/slugify.sh` — canonical, dependency-free implementation of the
+  session-continuity slug rule (lowercase → collapse non-`[a-z0-9]` runs to one
+  `-` → trim edges), with a `--self-test` case table wired into `bin/check.sh`.
+  Closes the previously-untested slug derivation: the prose rule silently
+  produced `my--app--` / `--spaces--` on adjacent specials; SKILL.md now states
+  the collapse/trim behavior and points at the tool.
 - **Iterative improvement loop**: `/workflow-review` (read-only sweep of recent
   notes for repeated friction, proven patterns, and stale instructions) and
   `/promote-insight` (classify one insight and route it — skill / project rule /

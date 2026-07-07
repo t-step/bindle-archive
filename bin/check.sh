@@ -201,6 +201,13 @@ if [ -f "$lca_selftest" ]; then
     echo "  - python3 not installed; skipping script selftests"
   fi
 fi
+if [ -f bin/slugify.sh ]; then
+  if bin/slugify.sh --self-test >/dev/null 2>&1; then
+    ok "slugify self-test passes (session-continuity slug rule)"
+  else
+    problem "slugify self-test failed (run: bin/slugify.sh --self-test)"
+  fi
+fi
 
 # --- 7. private info ---------------------------------------------------------
 # Personal-info guard (relay emails, home paths, transcripts, denylist terms).

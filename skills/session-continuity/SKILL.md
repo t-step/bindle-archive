@@ -28,10 +28,13 @@ one `git add -A` away from being published.
     handoffs/YYYY-MM-DD-<slug>.md     # paste-ready prompts for future sessions
 ```
 
-- `<project>` = the repo's directory basename, lowercased, non `[a-z0-9-]`
-  characters replaced with `-` (e.g. `My_App.v2` → `my-app-v2`).
-- `<slug>` = 2–5 kebab-case words naming the session's goal. Same
-  character rule. Never put `/`, spaces, or personal names in filenames.
+- `<project>` = the repo's directory basename, kebab-cased: lowercase, every
+  run of non-`[a-z0-9]` characters collapses to a single `-`, and leading/
+  trailing `-` are trimmed (`My_App.v2` → `my-app-v2`, `My  App!!` → `my-app`).
+  `bin/slugify.sh` is the canonical implementation of this rule (with a
+  `--self-test`); pipe a name through it rather than hand-deriving edge cases.
+- `<slug>` = 2–5 kebab-case words naming the session's goal, same rule. Never
+  put `/`, spaces, or personal names in filenames.
 - Honor `CLAUDE_KIT_NOTES_DIR` when set: it replaces `~/.claude-kit` as the
   base. Pointing it at an Obsidian vault directory makes every note appear in
   the vault — plain Markdown is all Obsidian needs. Nothing here may *require*
