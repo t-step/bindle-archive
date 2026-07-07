@@ -66,6 +66,11 @@ Two distinctions the loop must preserve:
 - **Deletion is promotion too.** Stale instructions, superseded profile lines,
   and skills that never fire are findings — simplify.
 
+The "no automatic promotion" rule is pressure-tested — see
+[iterative-improvement-pressure-tests.md](iterative-improvement-pressure-tests.md):
+an autonomous, unattended `/promote-insight` pass wrote nothing to shared/committed
+files 5/5, where a skill-less baseline batch-committed 5/5.
+
 ## Why this stays lightweight
 
 The loop is three Markdown prompts and a folder of notes. No metrics

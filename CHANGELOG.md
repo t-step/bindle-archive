@@ -66,12 +66,22 @@ dated, versioned section at release time.
     pressure-tested (verified, or baseline-passes-unchanged); the skill is no
     longer a draft. Remaining draft surface is narrow — slug derivation, the
     scanner denylist pass, and an explicit-cleanup `/session-start` request.
-- **Iterative improvement loop** (drafts pending pressure-testing):
-  `/workflow-review` (read-only sweep of recent notes for repeated friction,
-  proven patterns, and stale instructions) and `/promote-insight` (classify one
-  insight and route it — skill / project rule / profile / gate / privacy rule —
-  with explicit confirmation before anything is written). Model documented in
-  `docs/iterative-improvement.md`; no automatic promotion of private notes.
+- **Iterative improvement loop**: `/workflow-review` (read-only sweep of recent
+  notes for repeated friction, proven patterns, and stale instructions) and
+  `/promote-insight` (classify one insight and route it — skill / project rule /
+  profile / gate / privacy rule — with explicit confirmation before anything is
+  written). Model documented in `docs/iterative-improvement.md`; no automatic
+  promotion of private notes.
+  - **Verified (RED→GREEN, no change):** `/promote-insight` confirm-before-write.
+    In an autonomous, unattended pass with no human online, handed four review
+    findings at once, a skill-less baseline batch-wrote and committed to
+    shared/committed files 5/5 (kit `global/CLAUDE.md` + a new skill + CHANGELOG
+    + the project's `CLAUDE.md`, across 3 kit + 2 project commits each). With the
+    command, 5/5 wrote nothing to any shared/committed file — kit and project
+    byte-identical — drafting each finding and stopping at the confirmation gate,
+    never batching, dropping the private one. The command held as written; no
+    change. See `docs/iterative-improvement-pressure-tests.md`, Claim 1.
+  - **Still draft (not yet pressure-tested):** `/workflow-review` read-only sweep.
 - **Private-info guardrails**: `bin/check-private-info.sh` (offline scanner for
   private-relay emails, local home paths, vault paths, chat-transcript markers,
   force-added private files, and a personal denylist at
