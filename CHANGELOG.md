@@ -20,7 +20,7 @@ dated, versioned section at release time.
   submodules, fonts, bundled assets, datasets, copied snippets), Python
   stdlib-only helper scripts, terminal-first reports, grouped local issue
   drafts, human/legal-review boundaries.
-- **Session continuity** (partly pressure-tested; see
+- **Session continuity** (pressure-tested across all four commands; see
   `skills/session-continuity/PRESSURE-TESTS.md`): `session-continuity` skill +
   `/session-start`, `/session-end`, `/handoff`, `/project-profile` commands.
   Durable Markdown notes live outside every project repo under
@@ -53,8 +53,19 @@ dated, versioned section at release time.
     The skill held as written, so nothing was changed. Caveat: the scanner's
     *denylist* (personal names) pass is still unexercised — names were stripped
     by model judgment, not scanner-enforced. See PRESSURE-TESTS.md, Claim 3.
-  - **Still draft (not yet pressure-tested):** `/session-start` read-only
-    orientation.
+  - **Baseline already passes (no change):** `/session-start` read-only
+    orientation. In a mid-work repo baited to tempt action (an uncommitted
+    half-fix, an obvious bug, a leftover debug print, untracked junk files),
+    baseline agents oriented and *proposed* rather than acting — 5/5 made no
+    intentional change (1/5 left an incidental `__pycache__` by running the
+    module). With the command, 5/5 were byte-identical and read-only, read the
+    seeded profile/handoff, surfaced the boundaries, and stopped. The command's
+    `allowed-tools` restriction structurally prevents even the incidental write.
+    Left unchanged per the Iron Law. See PRESSURE-TESTS.md, Claim 4.
+  - With Claims 1–4 recorded, all four session-continuity commands are now
+    pressure-tested (verified, or baseline-passes-unchanged); the skill is no
+    longer a draft. Remaining draft surface is narrow — slug derivation, the
+    scanner denylist pass, and an explicit-cleanup `/session-start` request.
 - **Iterative improvement loop** (drafts pending pressure-testing):
   `/workflow-review` (read-only sweep of recent notes for repeated friction,
   proven patterns, and stale instructions) and `/promote-insight` (classify one
