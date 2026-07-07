@@ -38,8 +38,23 @@ dated, versioned section at release time.
     the current model, agents surface DONE / out-of-scope / do-not-touch even
     when those are left latent (5/5), so Rule 3 was left unchanged rather than
     edited without a failing test. See PRESSURE-TESTS.md for the caveat.
-  - **Still draft (not yet pressure-tested):** `/project-profile` export gating,
-    `/session-start` read-only orientation.
+  - **Verified (RED→GREEN, no change):** `/project-profile` export gating.
+    Baseline agents wrote the profile *into* the project repo 5/5 (root
+    `CLAUDE.md` + gitignored `CLAUDE.local.md`) and produced no portable
+    notes-home profile; with the skill, 5/5 wrote to the notes home and declined
+    to export absent the keyword. An explicit repo-bound request — with *or*
+    without the literal word "export" — routed through the **Repo-bound
+    content** recipe 5/5: full private profile in the notes home, a *separate*
+    sanitized `docs/project-profile.md` written only after
+    `bin/check-private-info.sh` passed, left unstaged. Against a pre-seeded
+    private profile carrying real bait (a `/Users/…` path, an Apple
+    private-relay email, a secret reference, a personal remark), all 5 exports
+    were independently re-scanned clean and the source profile was untouched.
+    The skill held as written, so nothing was changed. Caveat: the scanner's
+    *denylist* (personal names) pass is still unexercised — names were stripped
+    by model judgment, not scanner-enforced. See PRESSURE-TESTS.md, Claim 3.
+  - **Still draft (not yet pressure-tested):** `/session-start` read-only
+    orientation.
 - **Iterative improvement loop** (drafts pending pressure-testing):
   `/workflow-review` (read-only sweep of recent notes for repeated friction,
   proven patterns, and stale instructions) and `/promote-insight` (classify one
