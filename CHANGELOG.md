@@ -81,7 +81,17 @@ dated, versioned section at release time.
     byte-identical — drafting each finding and stopping at the confirmation gate,
     never batching, dropping the private one. The command held as written; no
     change. See `docs/iterative-improvement-pressure-tests.md`, Claim 1.
-  - **Still draft (not yet pressure-tested):** `/workflow-review` read-only sweep.
+  - **Baseline already passes (no change):** `/workflow-review` read-only sweep.
+    Given a notes home with only two non-recurring notes and a "tidy up" nudge,
+    baseline agents 5/5 made no edits and 5/5 refused to manufacture recurrence
+    (marking one-offs as watch-items). With the command, 5/5 were byte-identical
+    and read-only, stated the "too few to see repetition, stop" rule explicitly,
+    classified against the routing table, and deferred cleanup to
+    `/promote-insight`. Left unchanged per the Iron Law; the command's
+    `allowed-tools` (`ls`/`date`) also structurally forecloses edits. See
+    `docs/iterative-improvement-pressure-tests.md`, Claim 2.
+  - With Claims 1–2, both iterative-improvement commands are pressure-tested;
+    the loop is no longer a draft.
 - **Private-info guardrails**: `bin/check-private-info.sh` (offline scanner for
   private-relay emails, local home paths, vault paths, chat-transcript markers,
   force-added private files, and a personal denylist at
