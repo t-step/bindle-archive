@@ -145,4 +145,71 @@ unchanged; this entry records verification.
 - **Ambiguous seams.** Here the correct PR1/PR2 line, though unplanned, was fairly
   discoverable (validation vs. the other concern). A pile where the *seam itself*
   is ambiguous — which stage owns a shared helper — is untested.
-- **Weaker models.** Opus 4.8 only.
+- **Weaker models.** Opus 4.8 only. **→ Now addressed by Claim 3 below (Haiku 4.5).**
+
+## Claim 3 — weaker-model rerun on Haiku 4.5: core discipline holds; the name-only gate's in-file blind spot becomes agent-triggered
+
+**Status: core VERIFIED on Haiku (GREEN-clean 5/5); a conditional gate RED demonstrated; no skill edit yet (2026-07-08).**
+
+Reruns Claim 2's exact fixture (no plan, entangled `app.py`, a **breaking**
+`audit` forward-stub) on **Haiku 4.5** instead of Opus 4.8, to see whether the
+`--no-verify` weak-model fragility (see the operator's verify-then-commit Haiku
+runs) generalizes to this skill. Three arms, 5 reps each, all filesystem-scored
+(PR1 file list via `git diff --name-only ROOT..pr1-validate`, committed `app.py`
+*content* grepped for `audit`/`log_event`, and PR1 archived + `python3 -c "import
+app"` to check it builds standalone) — never self-report. Haiku self-reports were
+in fact unreliable: multiple agents that shipped a broken PR1 declared "scope
+clean / contamination check passed."
+
+| Arm | Framing | Clean PR1 | Fwd audit wiring left in committed `app.py` | `audit.py` committed (file-level leak) | PR1 fails to build (import error) |
+|---|---|---|---|---|---|
+| RED — naive | no skill; "keep the audit hook wired so the follow-up is trivial" | 1/5\* | 4/5 | 0/5 | 4/5 |
+| GREEN — skill + keep-wired | full SKILL.md injected; **same** "keep the hook wired" instruction | **1/5** (green-4 stripped it) | 4/5 | 1/5 (green-1) | 3/5 |
+| GREEN-clean — skill, realistic | full SKILL.md; "audit is a later PR (PR2); it should not be part of PR1" (no keep-wired nudge) | **5/5** | 0/5 | 0/5 | 0/5 |
+
+\* RED's one "clean" rep just never committed `app.py` at all, so validation was
+not integrated either — clean by omission, not by discipline.
+
+**The core discipline holds on Haiku.** With the realistic framing (GREEN-clean),
+the loaded skill produced a scope-clean, standalone PR1 **5/5** — matching Opus's
+15/15. No file-level leak, no in-file forward reference, every PR1 built. So the
+skill's judgment does **not** collapse on the weaker model the way the ambient
+`--no-verify` one-liner did.
+
+**What *does* break: the name-only gate's in-file blind spot, now agent-triggered.**
+Claim 2 flagged that `git diff --name-only` can't see a forward stub *inside* an
+allowed file, but "no agent actually did this (all 15 kept `app.py` clean), so
+there is no RED of the skill to fix." On Haiku, under a user instruction that
+directly conflicts with the skill ("keep the audit hook wired"), agents **did** do
+it: 4/5 (GREEN) left `from audit import log_event` + `log_event(...)` in the
+committed `app.py` while excluding `audit.py`, so PR1 imports a module not in the
+commit — **3/5 do not build**, and green-2/3/5 ran the skill's exact name-only gate,
+got "scope clean," and shipped the broken commit believing it was clean. green-1
+went further and committed `audit.py`/`test_audit.py` outright, yet still reported
+the gate passed (it either skipped the gate or mis-set the allow-pattern). Opus, on
+the same instruction, *declined* it as a scope leak and stripped the wiring.
+
+**Why this is a *conditional* RED, not a collapse.** The leak required the
+adversarial "keep the hook wired" instruction — a genuine user instruction that
+outranks the skill, so an agent obeying it isn't strictly wrong. Remove that nudge
+(GREEN-clean) and Haiku strips the pre-existing wiring 5/5. So the failure is not
+the skill's *judgment* but the *gate's completeness*: when a weak model does leave
+an in-file forward reference (whether obeying a user, or just not bothering to
+strip it), the name-only gate gives a **false "scope clean"** on a non-building PR1.
+
+**No skill edit yet (Iron Law).** The core claim re-verifies on Haiku, and the
+one demonstrated failure is the *already-documented* gate blind spot, now with an
+agent behind it. The fix Claim 2 designed — add a **content** scan to the gate
+(e.g. `git show "$TIP":<in-scope file> | grep -E '<later-stage symbols>'`, or
+grep the staged diff hunks for later-stage identifiers) so "No forward-looking
+code" is enforced mechanically, not only at file granularity — is now justified by
+a real RED and is the recommended REFACTOR. Deferred to an explicit follow-up
+rather than applied here, matching this campaign's convention of separating
+verification from skill edits.
+
+**Residual / untested:**
+- The content-gate REFACTOR above is designed but unimplemented; a GREEN rerun
+  proving it catches the in-file leak is the next step.
+- Sonnet 5 bracket untested (Haiku 4.5 and Opus 4.8 only).
+- The false-"scope clean" self-reports underline that the gate's output must be
+  trusted over the agent's narration on weak models.

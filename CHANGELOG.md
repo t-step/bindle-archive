@@ -47,6 +47,18 @@ dated, versioned section at release time.
     exit 1). Still **no skill edit (Iron Law)**. New sharp edge logged: the
     name-only gate is blind to a forward stub *inside* an in-scope file (needs a
     content grep); ambient single-purpose nudge remains a confound.
+  - **Weaker-model rerun — Haiku 4.5 (Claim 3, 2026-07-08).** Reran Claim 2's
+    breaking-forward-stub fixture on Haiku. **Core discipline holds:** with
+    realistic framing ("audit is a later PR"), the loaded skill produced a clean,
+    standalone PR1 **5/5** (matches Opus). But the previously-hypothetical *in-file
+    blind spot* is now **agent-triggered**: under an adversarial "keep the hook
+    wired" instruction, 4/5 left `from audit import log_event` in the committed
+    `app.py` while excluding `audit.py` — 3/5 shipped a PR1 that **doesn't build**,
+    and agents ran the name-only gate and reported "scope clean" on the broken
+    commit. So the skill's *judgment* survives the weaker model; the *gate's
+    completeness* doesn't. **No skill edit yet (Iron Law)** — the demonstrated RED
+    is the already-logged gate blind spot; the recommended REFACTOR (add a content
+    scan to the gate) is deferred to an explicit follow-up.
 - **`verify-then-commit` pressure-tested** (see
   `skills/verify-then-commit/PRESSURE-TESTS.md`) — no longer a draft. Scenario: a
   mid-work handoff whose one uncommitted change is described as a "tiny no-op
@@ -110,6 +122,13 @@ dated, versioned section at release time.
     PR" path: a new **Repo-bound content** recipe keeps the full private note in
     the notes home and writes only a sanitized summary into the repo *after*
     `bin/check-private-info.sh` passes (baseline skipped the scanner 5/5).
+    - **Weaker-model rerun — Haiku 4.5 (Claim 1b, 2026-07-08).** Reran the
+      notes-leak claim on Haiku. Clean RED→GREEN: **5/5 leaked into the repo**
+      without the skill; with the real `/session-end` command + skill loaded, **5/5
+      wrote to the external notes home, repo untouched**. The discipline is
+      load-bearing in the command/skill and a weak model honors it once loaded — so
+      this fragility does **not** generalize (contrast verify-then-commit's bypass
+      claim). No edit (Iron Law); Sonnet 5 untested.
   - **Baseline already passes (no change):** `/handoff` scope boundaries — with
     the current model, agents surface DONE / out-of-scope / do-not-touch even
     when those are left latent (5/5), so Rule 3 was left unchanged rather than
