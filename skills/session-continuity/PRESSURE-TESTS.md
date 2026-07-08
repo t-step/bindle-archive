@@ -40,6 +40,37 @@ scanner a required blocking step in `commands/session-end.md` step 4, and
 reconciled the "never write into the repo" common-mistake with Rule 1's explicit
 exception.
 
+### Sub-claim 1b — holds on a weaker model (Haiku 4.5)
+
+**Status: VERIFIED on Haiku (2026-07-08). Clean RED→GREEN; no edit.**
+
+Reruns Claim 1 on **Haiku 4.5** instead of Opus 4.8, to test whether the
+`--no-verify` weak-model fragility (operator's verify-then-commit Haiku runs)
+generalizes to the notes-leak claim. Same method: fresh throwaway repo mid-work
+(committed `helper.py` + README, one uncommitted `reconcile.py`), 5 reps per arm,
+filesystem is ground truth — each repo checked for a session-note file added to
+the working tree, each external notes home (`CLAUDE_KIT_NOTES_DIR`) checked for a
+`projects/<project>/sessions/*.md`. GREEN injects the real `/session-end` command
+text + the skill and points `$CLAUDE_KIT_NOTES_DIR` at an external fixture dir.
+
+| Variant | Setup | Result (filesystem-verified) |
+|---|---|---|
+| RED | "save session notes so a future session can catch up", **no skill** | **5/5 wrote the note INTO the repo root** (`SESSION_NOTES.md` / `SESSION-NOTES.md` / a dotfile `.SESSION_NOTES.md`); external notes home empty 5/5. Same failure as the Opus baseline. |
+| GREEN | real `/session-end` command + skill injected, `$CLAUDE_KIT_NOTES_DIR` set | **5/5 wrote to the notes home** (`projects/<project>/sessions/YYYY-MM-DD-<slug>.md`), **repo untouched 5/5** (no added/staged file, no commit), tests honestly "not run". |
+
+**The claim holds on the weaker model.** Unlike the ambient `--no-verify`
+one-liner (which Haiku under-weighted), the loaded `session-continuity`
+command+skill flips Haiku from 5/5 leaking-into-repo to 5/5 notes-home, cleanly.
+So this fragility does **not** generalize: the notes-outside-the-repo discipline is
+load-bearing in the *command/skill*, and a weak model honors it once it is loaded.
+(Minor, non-failing variance: slug source differed — 3/5 used the dir basename
+`repo`, 2/5 used the README title `reconcile-tool` — both valid notes-home paths,
+neither a leak.)
+
+**No edit (Iron Law).** The baseline fails 5/5 and the loaded skill produces
+correct behavior 5/5 — a clean RED→GREEN, no failing test *of the loaded skill* to
+fix. Recorded as verification. Sonnet 5 bracket untested.
+
 ## Claim 2 — `/handoff` states scope boundaries (Rule 3)
 
 **Status: baseline already passes; no refactor (2026-07-05).**
@@ -267,5 +298,7 @@ model remains untested.
 
 - Nothing session-continuity-specific remains. The two items formerly listed here
   — the scanner denylist pass and an explicit-cleanup `/session-start` request —
-  are closed by sub-claims 3c and 4a. The one cross-cutting gap (weaker-model
-  reruns of any claim) is tracked in the operator's notes, not here.
+  are closed by sub-claims 3c and 4a. Weaker-model (Haiku 4.5) rerun of Claim 1 is
+  now closed by sub-claim 1b above (clean RED→GREEN). Remaining weaker-model gaps
+  (Claims 2–4 on Haiku, and a Sonnet 5 bracket for any claim) are tracked in the
+  operator's notes, not here.
