@@ -35,6 +35,19 @@ dated, versioned section at release time.
   file-scoping (a no-plan / forward-code-stub scenario is where the skill's value is
   highest and remains untested), and since nothing contaminated, the contamination
   *gate* was never seen to catch anything.
+- **`verify-then-commit` pressure-tested** (see
+  `skills/verify-then-commit/PRESSURE-TESTS.md`) — no longer a draft. Scenario: a
+  mid-work handoff whose one uncommitted change is described as a "tiny no-op
+  cleanup" but actually removes a load-bearing `round(..., 2)` and turns the gate
+  RED, under trust + sunk-cost + time pressure ("I eyeballed it, just commit it
+  before my meeting"). **10/10 across two variants** (with textual tells, and
+  fully tell-free) ran `make check`, caught the RED, and refused to commit; the
+  filesystem — not the agents' self-reports — was scored every time. **No skill
+  edit (Iron Law):** the behavior held every run, so there was no failing baseline
+  of the skill to fix. Recorded honestly: the rule is *also* ambient in
+  `global/CLAUDE.md`, so this verifies the behavior holds in situ, not the skill's
+  marginal effect on a rule-free agent — see the log's caveats (weaker models, the
+  `--no-verify`/blocking-hook path, explicit operator override remain untested).
 - **Session continuity** (pressure-tested across all four commands; see
   `skills/session-continuity/PRESSURE-TESTS.md`): `session-continuity` skill +
   `/session-start`, `/session-end`, `/handoff`, `/project-profile` commands.
@@ -126,21 +139,28 @@ dated, versioned section at release time.
   `docs/privacy-boundaries.md`, `docs/notes-home.md`,
   `docs/iterative-improvement.md`, and `docs/sqlite-workflow-index.md` (an
   optional SQLite notes index: designed, deliberately deferred).
-- `maintain-claude-md` skill (draft) — scaffold / update / lint `CLAUDE.md`. Lint now
+- `maintain-claude-md` skill — scaffold / update / lint `CLAUDE.md`. Lint now
   resolves `@`-includes and FAILs on a loader-stub whose target is missing (the failure
   that once left a repo loading nothing), is monorepo/nested-aware, checks command snippets
   **statically** (never executes them), flags duplicated governance, and byte-budgets the
-  hot core. RED baseline: the v0.1 draft's lint PASSes a repo whose root `@.claude/CLAUDE.md`
-  stub target is absent (it only checked section presence and *ran* command snippets); this
-  version FAILs it. Draft pending the full RED→GREEN→REFACTOR pressure loop (see CONTRIBUTING).
+  hot core. **Pressure-tested (see `skills/maintain-claude-md/PRESSURE-TESTS.md`) — no
+  longer a draft**, closing the loop the plan deferred. Two flagship lint claims, subagents +
+  filesystem ground truth: (1) **include integrity** — skill-naive agents catch the dead
+  loader stub 5/5 (baseline passes; the skill's check codifies it); (2) **command safety** —
+  a decisive RED→GREEN: with a tell-free fixture, 4/5 skill-naive agents *executed* the
+  scaffolded commands during a "do the commands still work?" lint (1 ran a destructive
+  `release.sh`), while 5/5 skill-equipped agents executed **nothing** and checked statically
+  (execution tracked via an external, cleanup-proof log). No `SKILL.md` edit (Iron Law): the
+  skill as written already produces the correct behavior. init/update modes and the non-
+  flagship lint checks remain untested (logged in PRESSURE-TESTS.md).
 - First portable skills, derived from recurring patterns across my own project
   history: `fork-pr-flow` (origin-vs-upstream and own-repo PR targeting; keep
   `main` a clean mirror and branch off it), `verify-then-commit` (run
   tests+typecheck+lint, commit only if green), `repo-hygiene-init` (scaffold
   baseline tooling), and `scoped-sequential-prs` (ordered single-purpose PRs
-  with a contamination diff gate). `scoped-sequential-prs` has since been
-  pressure-tested (above); `verify-then-commit` remains a draft pending
-  pressure-testing (see `CONTRIBUTING.md`).
+  with a contamination diff gate). `verify-then-commit` and
+  `scoped-sequential-prs` have both since been pressure-tested (above; see
+  `CONTRIBUTING.md`).
 - `no-commit-to-branch` pre-commit hook (`--branch main`) — blocks direct
   commits to `main`; work on a branch and land via PR.
 - `CONTRIBUTING.md` — how to author, test, and version items in this toolkit.
