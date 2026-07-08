@@ -118,12 +118,42 @@ existing lines and silently fixed the typo: the verbatim-preservation rule lives
 only in **Mode: update**, so a *merging* init agent isn't explicitly bound to keep
 typos — 4/5 did so by judgment, not by rule. (3) Model-dependent (Opus 4.8).
 
-## Not pressure-tested (still deferred)
+## Claim 4 — update is append-only and preserves existing content verbatim
 
-- **update mode.** The "append-only, preserve verbatim" safety property (append a
-  lesson/spec without rewriting or reordering existing sections, preserving typos
-  and the `<!-- SPECKIT START/END -->` markers byte-for-byte) is not yet
-  RED-tested here; it remains the next candidate follow-up.
+**Status: VERIFIED (RED→GREEN); no skill edit (2026-07-07).**
+
+The skill's update rule: "never rewrite existing sections; preserve content
+verbatim (including typos/formatting)" — a lesson/spec is *appended*, newest-first,
+never edited in place. Fixture: an `orderflow` repo whose `CLAUDE.md` has a
+maintained-by marker, a hand-formatted doc-router table, a `<!-- SPECKIT
+START/END -->` block, two existing dated lessons, and **two deliberate typos**
+(`databse` inside the June lesson, `recieve` in a hard rule). Filesystem is ground
+truth: `git diff` per copy shows any removed/rewritten existing line; the typos are
+canaries for a silent "tidy." Two RED variants separate the easy case from the one
+that actually bites, plus a GREEN. 5 reps each.
+
+| Variant | Setup | Result (git diff = ground truth) |
+|---|---|---|
+| RED-A — "add a lesson" | skill-naive; hand a new, unrelated debugging lesson to record | **5/5 clean append.** Zero existing lines touched, both typos kept, SPECKIT byte-identical, the new lesson dated and placed newest-first. Appending a *new* lesson is naturally additive, so the preserve-verbatim property is never stressed — **baseline passes**. |
+| RED-B — supersede an existing lesson | skill-naive; the recorded June root cause is now "wrong — update the record so a future session isn't misled" | **5/5 rewrote the existing 2026-06-18 entry in place** — every agent replaced the original root-cause/fix lines (destroying the `databse` typo), and 2/5 also deleted the "too many clients already" symptom line. The record's original wording was overwritten, not preserved. **Decisive RED.** |
+| GREEN — with skill (RED-B task) | agents apply the real `SKILL.md`, same supersede request + fixture | **5/5 appended a new dated correction entry** (newest-first) that explicitly flags the old entry as wrong, and left the 2026-06-18 entry **byte-for-byte intact** — 0 removed lines, `databse` and `recieve` both kept, SPECKIT byte-identical. Each cited the skill's "append-only / preserve verbatim" rule as the reason not to edit in place. |
+
+**The flip is decisive and filesystem-verified:** on the supersede task,
+skill-naive agents destroyed the existing record 5/5 (overwriting history to
+"correct" it); skill-equipped agents preserved it verbatim 5/5 and recorded the
+correction as a new superseding entry. **No skill edit (Iron Law):** the RED is a
+failure of the skill-naive baseline that the skill's update mode **as written**
+already fixes. The easy "add a lesson" case (RED-A) passes even without the skill,
+which is why the supersede variant is the one that demonstrates the rule's value.
+
+**Honest caveats.** (1) The SPECKIT block was preserved by *everyone* in every
+variant because no task asked to touch it — its byte-for-byte preservation is
+corroborated but never actively tempted; a spec-rewrite scenario would test it
+directly. (2) The append-only win rests on the model recognizing "correct the
+record" as *supersede-don't-rewrite*; a weaker model may not. (3) Model-dependent
+(Opus 4.8).
+
+## Not pressure-tested (still deferred)
 - **Lint checks other than the two flagships.** Defer-don't-duplicate,
   rule-rationale, byte-budget, SPECKIT accuracy, lessons-dated, stale-history, and
   self-marker are exercised incidentally (GREEN agents ran the whole table) but not
