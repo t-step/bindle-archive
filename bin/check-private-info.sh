@@ -89,7 +89,7 @@ scan_file() {
     local term
     while IFS= read -r term; do
       case "$term" in '' | \#*) continue ;; esac
-      hits="$(grep -InF "$term" "$f" 2>/dev/null | grep -v 'private-ok' || true)"
+      hits="$(grep -InFi "$term" "$f" 2>/dev/null | grep -v 'private-ok' || true)"
       if [ -n "$hits" ]; then
         while IFS= read -r line; do
           finding "$f:$line [denylist]"
@@ -119,10 +119,13 @@ self_test() {
   printf 'vault: ~/Library/Mobile Documents/iCloud~md~obsidian/Documents/v\n' >"$t/vault.md"
   printf 'Human: please fix this\nAssistant: sure\n' >"$t/transcript.md"
   printf 'my secret term: xyzzy-internal\n' >"$t/denylist.md"
+  # denylist matching is case-insensitive: term 'Dana' must catch dana/DANA
+  printf 'lower dana, upper DANA, mixed dAnA\n' >"$t/casefold.md"
   # these must PASS
   printf 'normal doc, mentions ~/.claude and docs/foo.md\n' >"$t/clean.md"
   printf 'example: /Users/jane/x is bad  <- private-ok\n' >"$t/vouched.md"
   printf 'xyzzy-internal\n' >"$t/deny.txt"
+  printf 'Dana\n' >"$t/deny-name.txt"
 
   # DENYLIST=/dev/null keeps your real denylist out of the fixtures' verdicts.
   for f in relay homepath vault transcript; do
@@ -151,6 +154,12 @@ self_test() {
   else
     pass=$((pass + 1))
   fi
+  if [ "$(DENYLIST="$t/deny-name.txt" scan_verdict "$t/casefold.md")" = 1 ]; then
+    pass=$((pass + 1))
+  else
+    printf '  ✗ self-test: casefold.md NOT flagged (denylist not case-insensitive)\n'
+    failed=1
+  fi
   for f in clean vouched; do
     if [ "$(DENYLIST=/dev/null scan_verdict "$t/$f.md")" = 0 ]; then
       pass=$((pass + 1))
@@ -167,7 +176,7 @@ self_test() {
     pass=$((pass + 1))
   fi
   rm -rf "$t"
-  printf '  self-test: %d/10 fixtures behaved\n' "$pass"
+  printf '  self-test: %d/11 fixtures behaved\n' "$pass"
   return "$failed"
 }
 
