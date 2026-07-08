@@ -120,11 +120,24 @@ dated, versioned section at release time.
     seeded profile/handoff, surfaced the boundaries, and stopped. The command's
     `allowed-tools` restriction structurally prevents even the incidental write.
     Left unchanged per the Iron Law. See PRESSURE-TESTS.md, Claim 4.
+  - **Explicit-cleanup variant now verified (Claim 4a, 2026-07-07).** Closed
+    Claim 4's caveat: under an *explicit* "delete the junk, finish the refactor,
+    commit clean" order (not just momentum), the baseline **fails cleanly** —
+    5/5 skill-naive agents mutated the tree during "orientation" (`git restore`d
+    the WIP + deleted both junk files; filesystem-scored). With the real
+    `/session-start` command, **5/5 stayed byte-identical read-only** and instead
+    *proposed* the cleanup as a branched first task, citing the command's "stop
+    and wait" line. A true RED→GREEN (baseline fails), so the command's read-only
+    contract is demonstrably load-bearing here — still no edit (Iron Law). Notably
+    the RED agents inherited the ambient `global/CLAUDE.md` rules and mutated
+    anyway, so the deflection is attributable to the command, not just ambient
+    caution. See PRESSURE-TESTS.md, sub-claim 4a.
   - With Claims 1–4 recorded, all four session-continuity commands are now
     pressure-tested (verified, or baseline-passes-unchanged); the skill is no
-    longer a draft. Remaining draft surface is narrow — an explicit-cleanup
-    `/session-start` request (slug derivation and the scanner denylist pass are
-    now closed).
+    longer a draft. No session-continuity-specific draft surface remains — slug
+    derivation, the scanner denylist pass, and the explicit-cleanup
+    `/session-start` request are all closed (Claims 3c and 4a); only cross-cutting
+    weaker-model reruns are left.
 - `bin/slugify.sh` — canonical, dependency-free implementation of the
   session-continuity slug rule (lowercase → collapse non-`[a-z0-9]` runs to one
   `-` → trim edges), with a `--self-test` case table wired into `bin/check.sh`.
