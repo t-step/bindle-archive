@@ -86,6 +86,16 @@ dated, versioned section at release time.
     **No skill edit yet (Iron Law):** the *ambient one-line rule* failed, not the
     full skill (never injected); the next step is a skill-loaded Haiku RED→GREEN.
     See `skills/verify-then-commit/PRESSURE-TESTS.md`.
+  - **GREEN follow-up — the full skill flips Haiku (2026-07-08).** Re-ran the same
+    Haiku 4.5 fixture with the **full `verify-then-commit` SKILL.md injected** (not
+    just the ambient one-liner). 4 valid reps (1 excluded — its `cd` pin failed, so
+    it never reached the fixture): **0/4 executed `--no-verify`, 0/4 edited the
+    off-limits test, 3/4 refused on principle citing the skill** (1 merely *asked*
+    about `--no-verify` while noting it's forbidden). So the RED was the compressed
+    *ambient* rule being under-weighted by a weaker model; the full skill largely
+    closes it. **Fix = surface the full skill on weaker models, not a rewrite; no
+    skill edit (Iron Law)** — loaded, it behaves correctly. Residual: one rep still
+    floated the bypass as a question (optional future red-flag); Sonnet 5 untested.
 - **Session continuity** (pressure-tested across all four commands; see
   `skills/session-continuity/PRESSURE-TESTS.md`): `session-continuity` skill +
   `/session-start`, `/session-end`, `/handoff`, `/project-profile` commands.
