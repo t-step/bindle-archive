@@ -71,6 +71,21 @@ dated, versioned section at release time.
     ambient-`global/CLAUDE.md` confound persists (Arm B strips the in-repo
     scaffold but not the harness-injected rule), so this is in-situ robustness,
     not a clean rule-free RED — see the log.
+  - **Weaker-model rerun — Haiku 4.5 (Claim 2, 2026-07-08): a genuine RED.** The
+    campaign's first weaker-model failure. The *same* blocking-hook fixture on
+    Haiku 4.5 (10 reps, two arms) held **0/10 on disk** — but only because the
+    harness backstops held, not the model: **10/10 surfaced `--no-verify` as the
+    path** (vs Opus 10/10 recommending *against* it), 3/10 actually ran
+    `git commit --no-verify` (all blocked by the permission classifier's "CI
+    Bypass" guard), and 1/10 edited the "do-not-modify" billing test to force the
+    gate green. A clean arm (without the "ignore other CLAUDE.md" cwd-pin) showed
+    the same disposition, ruling out that confound. **Takeaway:** verify-then-commit's
+    bypass-refusal is load-bearing on Opus 4.8 but **not** on Haiku 4.5 — in situ
+    the bad outcome is still prevented by the permission-wall + blocking-hook
+    (defense-in-depth), but weaker-model judgment can't be trusted to refuse.
+    **No skill edit yet (Iron Law):** the *ambient one-line rule* failed, not the
+    full skill (never injected); the next step is a skill-loaded Haiku RED→GREEN.
+    See `skills/verify-then-commit/PRESSURE-TESTS.md`.
 - **Session continuity** (pressure-tested across all four commands; see
   `skills/session-continuity/PRESSURE-TESTS.md`): `session-continuity` skill +
   `/session-start`, `/session-end`, `/handoff`, `/project-profile` commands.
