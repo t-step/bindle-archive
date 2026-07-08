@@ -1,47 +1,49 @@
 # Ownership boundaries
 
-What claude-kit owns, what it may touch, and what it must never touch. This is
+What Bindle owns, what it may touch, and what it must never touch. This is
 the contract behind the installer's "good citizen guarantee" and the session
 workflow's "don't mutate project repos" default. If a change to the kit would
 violate a line here, the change is wrong.
 
-## What claude-kit owns
+## What Bindle owns
 
-- **This repo** — its skills, agents, commands, `global/CLAUDE.md`, docs, and
-  `bin/` scripts.
-- **Symlinks in `~/.claude/` whose target resolves inside this repo.** That is
-  the entire ownership test (`install.sh` prefix-matches `readlink` output
-  against the repo root). A link the kit created is owned; everything else is
-  foreign.
-- **`~/.claude-kit/`** — the kit's own user-level data directory (project
-  profiles, session notes, handoffs). Created on demand by the session
-  workflow; never inside a project repo.
+- **This repo** — its Claude assets, provider guidance files, docs, and `bin/`
+  scripts.
+- **Symlinks in installed provider surfaces whose target resolves inside this
+  repo.** That is the entire ownership test (`install.sh` prefix-matches
+  `readlink` output against the repo root). A link the kit created is owned;
+  everything else is foreign.
+- **`~/.bindle/`** — the preferred user-level data directory (project profiles,
+  session notes, handoffs). Deprecated `~/.claude-kit/` remains an alias; data is
+  not moved automatically.
 
 ## What it may read
 
 - Any project repo it's invoked in — status, branches, history, docs, config —
   in order to summarize state and find validation gates.
-- Project-level `.claude/` and `CLAUDE.md` (read to *respect* them, never to
-  edit them).
-- Existing notes/profiles under `~/.claude-kit/` (or `CLAUDE_KIT_NOTES_DIR`).
+- Provider project guidance such as `.claude/`, `CLAUDE.md`, and `AGENTS.md`
+  (read to *respect* them, never to edit them unless explicitly asked).
+- Existing notes/profiles under `~/.bindle/`, `BINDLE_NOTES_DIR`, or deprecated
+  `~/.claude-kit/` / `CLAUDE_KIT_NOTES_DIR`.
 
 ## What it may write
 
 - Its own repo (when you're developing the kit itself).
-- Owned symlinks in `~/.claude/` (create, retarget, prune-if-broken).
-- Files under `~/.claude-kit/` (or the configured notes dir).
+- Owned symlinks in installed provider surfaces (create, retarget,
+  prune-if-broken).
+- Files under `~/.bindle/` or the configured notes dir.
 - A project repo **only when explicitly asked** — e.g. an explicit
   `/project-profile` export into the repo, or ordinary requested code changes.
   Session bookkeeping never lands in a project repo by default.
 
 ## What it must never touch
 
-- Foreign files or symlinks in `~/.claude/` — anything a plugin, another tool
-  (e.g. a DomI-style pin/sync setup), or you-by-hand put there. The installer
-  reports `CONFLICT` and moves on; it never renames, edits, backs up, or
-  deletes foreign content.
-- Project repos' `.claude/` and `CLAUDE.md` — project config is authoritative;
-  the kit adapts to it, not the reverse.
+- Foreign files or symlinks in any installed provider surface — anything a
+  plugin, another tool, or you-by-hand put there. The installer reports
+  `CONFLICT` and moves on; it never renames, edits, backs up, or deletes foreign
+  content.
+- Project repos' provider config — project config is authoritative; Bindle
+  adapts to it, not the reverse.
 - Secrets, credential stores, keychains, `.env` files.
 - Remotes: the kit never pushes, publishes, or deploys anything.
 
@@ -52,6 +54,10 @@ Claude Code's precedence already does the right thing: project `.claude/` and
 around that — it fills in *everywhere else* and loses every conflict on
 purpose. A project that ships its own skill or command with the same name wins
 inside that project.
+
+Codex Phase 1 support is direct `AGENTS.md` guidance. Bindle installs
+`global/AGENTS.md` only to an explicit `--codex-home` target and does not assume
+Claude skills, agents, or commands have Codex equivalents.
 
 ## Interaction with plugins, MCP, and DomI-style setups
 
@@ -74,8 +80,8 @@ files. `bin/test-install.sh` asserts this on every commit.
 
 ## Recovery when conflicts happen
 
-A `CONFLICT` line from `install.sh` means a name in this repo is already taken
-in `~/.claude/` by something the kit doesn't own. Nothing was modified. Your
+A `CONFLICT` line from `install.sh` means a destination is already taken by
+something the kit doesn't own. Nothing was modified. Your
 options, in order of preference:
 
 1. **Rename the kit's item** (`skills/<new-name>/`, re-run `install.sh`) so
@@ -86,9 +92,9 @@ options, in order of preference:
    yourself, and re-run `install.sh`. The installer will not do this move for
    you, by design.
 
-If you deleted the repo (or moved it) and `~/.claude/` is full of broken links:
+If you deleted the repo (or moved it) and an installed surface is full of broken links:
 re-clone/restore the repo at the same path and run `bin/install.sh`, or run
 `bin/install.sh --prune` from the new location — it only sweeps links that
 point into *that* checkout, so links into the old path must be removed by hand
-(`find ~/.claude -type l ! -exec test -e {} \; -print` lists broken links to
-review).
+(`find ~/.claude -type l ! -exec test -e {} \; -print` lists broken Claude
+links to review).

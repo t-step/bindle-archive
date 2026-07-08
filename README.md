@@ -1,212 +1,153 @@
-# claude-kit
+# Bindle
 
-My personal, portable Claude Code toolkit. One local repo holding the agentic
-abilities I develop — **skills, subagents, slash commands, and global
-instructions** — installed into the user-level `~/.claude/` config so they work
-in **every** project, regardless of what that project has (or hasn't) set up.
+Bindle is my personal, portable agentic-workflow kit. It started as
+`claude-kit`, a Claude Code toolkit, and now keeps that Claude workflow intact
+while adding a small interoperability foundation for Codex.
 
-## The idea
+Bindle is not a fake universal abstraction. Claude Code and Codex have
+different installed surfaces, so Bindle documents what maps cleanly and keeps
+provider-specific assets provider-specific.
 
-Claude Code reads config at two levels: **project** (`<repo>/.claude/`) and
-**user** (`~/.claude/`). The user level applies everywhere. This repo is the
-version-controlled source of truth for *my* user-level layer; `bin/install.sh`
-symlinks each piece into `~/.claude/` so editing a file here is live everywhere
-instantly. Think "dotfiles, for Claude Code."
+## Provider support
+
+Claude Code support is the mature path today:
 
 ```
-claude-kit/
-  skills/<name>/SKILL.md   ->  ~/.claude/skills/<name>      reusable techniques/knowledge
-  agents/<name>.md         ->  ~/.claude/agents/<name>.md   specialized subagents
-  commands/<name>.md       ->  ~/.claude/commands/<name>.md slash commands (/name)
-  global/CLAUDE.md         ->  ~/.claude/CLAUDE.md          global personal instructions (every project)
-  CLAUDE.md                     (not installed)             this repo's own project memory
-  bin/install.sh                                            symlink installer
+skills/<name>/SKILL.md   ->  ~/.claude/skills/<name>      Claude skills
+agents/<name>.md         ->  ~/.claude/agents/<name>.md   Claude subagents
+commands/<name>.md       ->  ~/.claude/commands/<name>.md Claude slash commands
+global/CLAUDE.md         ->  ~/.claude/CLAUDE.md          Claude global instructions
+CLAUDE.md                     (not installed)             Bindle project guidance for Claude
 ```
 
-Folders/files starting with `_` (templates) or `.`, and `bin/`, are ignored by
-the installer.
+Codex support is intentionally narrower:
 
-The **global** personal instructions live in `global/CLAUDE.md` (symlinked to
-`~/.claude/CLAUDE.md`, so they apply in every project). The repo-root `CLAUDE.md`
-is claude-kit's *own* project memory — read only when working in this repo, never
-installed — so nothing about developing the toolkit leaks into other projects.
+```
+global/AGENTS.md         ->  <explicit-codex-home>/AGENTS.md
+AGENTS.md                     (not installed)             Bindle project guidance for Codex
+```
+
+On this machine, lowercase `~/.codex` is the local Codex configuration
+convention, so examples use that as an explicit target. Bindle does not claim an
+undocumented Codex global install standard.
+
+Claude skills are not automatically Codex skills. Claude slash commands are not
+automatically Codex commands. Claude agents are not automatically Codex agents.
+The migration contract is in [docs/provider-interop.md](docs/provider-interop.md).
 
 ## Install
 
+Claude remains the default for backward compatibility:
+
 ```bash
-bin/install.sh            # symlink everything into ~/.claude/
-bin/install.sh --prune    # also remove links for items deleted from this repo
+bin/install.sh
+bin/install.sh --provider claude
+bin/install.sh --provider claude --prune
 ```
 
-Re-run anytime — it's idempotent. Restart Claude Code (or start a new session)
-to pick up newly linked items.
+Install Codex global guidance only into an explicit target directory:
 
-## Developing claude-kit
+```bash
+bin/install.sh --provider codex --codex-home ~/.codex
+bin/install.sh --provider all --codex-home ~/.codex
+```
 
-Working *on* this repo (adding a skill, agent, or command)? Read
-[`CONTRIBUTING.md`](CONTRIBUTING.md) first — it covers the branch/commit
-discipline and, importantly, the test-driven loop skills go through before
-they're considered done (a skill is "done" when a fresh agent behaves
-differently because of it, not when the prose reads well).
+For tests or alternate Claude targets, `--home DIR` still means the Claude home:
 
-## Add something
+```bash
+bin/install.sh --home /tmp/claude-home
+```
 
-Scaffold from the template with the name pre-filled, edit, then link:
+Re-run anytime. The installer is idempotent and conflict-safe.
+
+## Ownership boundaries
+
+Bindle is a good citizen: it only creates, updates, or removes symlinks that
+point back into this repo. Anything else in an installed surface is foreign and
+left untouched.
+
+- **No clobbering:** a real file or foreign symlink at a destination is reported
+  as `CONFLICT`.
+- **Safe prune:** `--prune` removes only broken symlinks pointing into this repo.
+- **Provider-specific install:** Claude surfaces go under the Claude home;
+  Codex Phase 1 installs only `global/AGENTS.md` to the explicit Codex target.
+
+The full contract is in [docs/ownership-boundaries.md](docs/ownership-boundaries.md).
+
+## Add Claude-native assets
+
+Claude skills, agents, and slash commands keep their Claude-native format,
+frontmatter, trigger conventions, and install layout.
 
 ```bash
 bin/new.sh skill   my-skill      # -> skills/my-skill/SKILL.md
 bin/new.sh agent   my-agent      # -> agents/my-agent.md
-bin/new.sh command my-command    # -> commands/my-command.md  (becomes /my-command)
+bin/new.sh command my-command    # -> commands/my-command.md
 
-$EDITOR skills/my-skill/SKILL.md  # fill it in
-bin/install.sh                    # link the new item(s)
+$EDITOR skills/my-skill/SKILL.md
+bin/install.sh --provider claude
 ```
 
-Each `_template` file documents the required frontmatter and the substitutions
-available. A skill's `name:` must match its folder and an agent's must match its
-filename — `bin/check.sh` enforces this.
+Each `_template` file documents the required Claude frontmatter. A skill's
+`name:` must match its folder and an agent's must match its filename;
+`bin/check.sh` enforces this as a Claude-provider regression check.
 
-## Make targets
+## Session continuity
 
-`make help` lists the shortcuts: `check`, `test`, `install`, `hooks`,
-`new ARGS="skill x"`, and `release BUMP=minor`. They just wrap the `bin/`
-scripts, which remain the source of truth.
-
-## Works alongside any project
-
-The installer is a **good citizen**: it only ever creates, updates, or removes
-symlinks that point back into *this* repo. Anything else in `~/.claude/` — a
-plugin, or a project-introduced system like a [DomI](https://github.com/domattioli/DomI)
-pin/sync setup — is left completely untouched.
-
-- **No clobbering:** if another source already owns a name, the installer reports
-  a `CONFLICT` and leaves theirs in place. Rename yours to coexist.
-- **Safe prune:** `--prune` only removes broken links pointing into this repo.
-- **Precedence:** project-level config wins over user-level on conflict, so a
-  project that ships its own setup overrides this toolkit where they overlap —
-  your toolkit fills in everywhere else.
-
-The full contract — what the kit owns, may read/write, and must never touch,
-plus conflict recovery — is in [docs/ownership-boundaries.md](docs/ownership-boundaries.md).
-
-## Session continuity & the improvement loop
-
-The kit carries context *across* sessions (Claude Code, Fable, Codex) with
-four slash commands and one notes directory — plain Markdown, no database, no
-daemon:
+The kit carries context across sessions with Claude slash commands and portable
+plain-Markdown notes:
 
 - `/session-start` — orient: repo state, project profile, last session's
   notes/handoff, validation gates. Read-only.
 - `/session-end` — write a durable session note: commits, checks actually run,
   decisions, risks, deferred work, candidate workflow improvements.
-- `/handoff` — one self-contained, scope-bounded prompt a future session can
-  start from cold.
-- `/project-profile` — durable project facts (gates, commands, safety notes);
-  writes into the project repo only on an explicit "export", sanitized.
+- `/handoff` — one self-contained prompt a future session can start from cold.
+- `/project-profile` — durable project facts; repo export only on explicit
+  request, sanitized.
 
-Notes live **outside every project repo**, under `~/.claude-kit/projects/` by
-default; set `CLAUDE_KIT_NOTES_DIR` to move them — pointing it at an Obsidian
-vault is the entire Obsidian integration
-([docs/notes-home.md](docs/notes-home.md)).
+Notes prefer `BINDLE_NOTES_DIR`, then the deprecated `CLAUDE_KIT_NOTES_DIR`, then
+`~/.bindle`. Existing `~/.claude-kit` data is not moved automatically; keep using
+the alias or migrate by hand when you choose. See
+[docs/notes-home.md](docs/notes-home.md).
 
-Repeated experience feeds back into the kit through `/workflow-review` (find
-recurring friction and proven patterns across recent notes) and
-`/promote-insight` (route one insight to its home — skill, project rule,
-profile, check, privacy rule — with explicit confirmation before anything is
-written). See [docs/iterative-improvement.md](docs/iterative-improvement.md).
-An optional SQLite index over the notes is designed but deliberately not
-implemented ([docs/sqlite-workflow-index.md](docs/sqlite-workflow-index.md));
-`grep` is the query language until that stops being enough.
-
-## Sharing with collaborators
-
-Share reusable skills/commands through Git at the right level — a shared
-workflow repo consumed by personal kits, or `.claude/` in the project repo —
-never by copying `~/.claude/` directories around. Personal preferences stay
-personal; private notes are never promoted automatically. The model and repo
-shapes are in [docs/sharing-skills.md](docs/sharing-skills.md).
-
-## Repo hygiene
-
-Lightweight, dependency-free checks keep the toolkit clean without touching the
-wording Claude actually reads.
+## Checks and tests
 
 ```bash
-brew install pre-commit   # or: pipx install pre-commit
-bin/install-hooks.sh      # enable the pre-commit + post-merge git hooks
-pre-commit run --all-files  # run every check on demand
+make check
+make test
+bin/test-install.sh
 ```
 
-Checks run through the [pre-commit](https://pre-commit.com/) framework
-(`.pre-commit-config.yaml`):
+`make check` wraps `bin/check.sh`. It still validates Claude-specific
+conventions for `skills/*/SKILL.md`, `agents/*.md`, and `commands/*.md`.
+Codex files are direct instruction files and are not required to pass Claude
+skill, agent, or slash-command frontmatter checks.
 
-- **Standard hooks** — trailing whitespace (markdown hard breaks preserved),
-  end-of-file newline, YAML validity, large-file / merge-conflict / private-key
-  guards, and shebang/executable consistency.
-- **Managed `shellcheck` + `shfmt`** — fetched by pre-commit, so they're enforced
-  even if you haven't installed them system-wide.
-- **`bin/check.sh --content-only`** (local hook) — the claude-kit-specific checks:
-  every skill/agent has `name` + `description` frontmatter (commands need
-  `description`, and `name` must match the folder/filename), repo-relative
-  markdown links resolve, and `VERSION` is valid. It only *reports* — it never
-  reformats instruction text. Run without `--content-only` (or `make check`) for
-  the full standalone aggregate.
-- **`bin/test-install.sh`** (local hook) — installs a fixture repo into a temp
-  `--home` and asserts links are created, re-runs are idempotent, foreign
-  files/links are left untouched, and `--prune` removes only broken links.
-- **`bin/check-private-info.sh`** (local hook) — keeps *personal* info out of
-  commits: private-relay emails, `/Users/…` paths, vault paths, pasted chat
-  transcripts, force-added private files, and your own denylist
-  (`~/.claude-kit/private-denylist.txt`, never committed). Offline, plain
-  grep, fails closed; `--self-test` proves the patterns against fixtures.
-  Mark a deliberate false positive by putting `private-ok` on that line. For
-  history-wide secret sweeps there's a [Gitleaks](https://github.com/gitleaks/gitleaks)
-  config (`.gitleaks.toml`) extending the default rules with the same
-  personal patterns: `gitleaks detect --source . --redact`. The full privacy
-  model is in [docs/privacy-boundaries.md](docs/privacy-boundaries.md).
-- **`post-merge` stage** — re-runs `install.sh` after `git pull`, so new items
-  added on another machine get linked automatically.
+`make test` runs installer tests for Claude install, explicit Codex install,
+`--provider all`, conflict safety, and prune safety.
 
-Bypass hooks for one commit with `git commit --no-verify`. **CI**
-(`.github/workflows/ci.yml`) runs `pre-commit run --all-files` on every push and
-PR. Dependabot keeps the workflow actions current, and a weekly
-`pre-commit autoupdate` workflow opens a PR bumping the hook versions (run it
-on demand from the Actions tab, or locally with `pre-commit autoupdate`).
+## Developing Bindle
 
-No markdown formatter/linter is used on purpose: tools like Prettier/markdownlint
-reflow prose and rewrite headings, which would churn the carefully-phrased skill
-and agent text. We keep `.editorconfig` for whitespace/newline norms and stop there.
+Read [CONTRIBUTING.md](CONTRIBUTING.md) before adding or changing assets. This
+repo uses branch-and-PR discipline, small reviewable changes, and verification
+before completion. Do not push unless explicitly asked.
 
-## Versioning & releases
+## Make targets
 
-The toolkit is versioned as a whole with [Semantic Versioning](https://semver.org/);
-the current version lives in `VERSION` and every release is an annotated git tag.
+`make help` lists the shortcuts: `check`, `test`, `install`, `hooks`,
+`new ARGS="skill x"`, and `release BUMP=minor`. The scripts in `bin/` remain the
+source of truth.
 
-- **major** — breaking change to how the toolkit installs/structures itself
-- **minor** — a new skill, agent, command, or capability
-- **patch** — a fix or tweak to something that already exists
+## Sharing
 
-Jot changes under `## [Unreleased]` in `CHANGELOG.md` as you go. To cut a release:
+Share reusable workflows through Git at the right level: a shared workflow repo,
+a provider-native project surface such as `.claude/` for Claude Code, or direct
+provider instructions where appropriate. Do not copy whole user config
+directories around. Personal preferences stay personal; private notes are never
+promoted automatically. See [docs/sharing-skills.md](docs/sharing-skills.md).
 
-```bash
-bin/release.sh minor      # or: major | patch
-git push && git push --tags
-```
+## Versioning
 
-`bin/release.sh` refuses to run on a dirty tree or failing checks, then bumps
-`VERSION`, rolls the `Unreleased` notes into a dated section, commits, and tags
-`vX.Y.Z`. It never pushes — you review first. Pushing the `v*` tag triggers
-`.github/workflows/release.yml`, which publishes a GitHub Release from that
-version's changelog section. `install.sh` prints the installed version too.
-
-## Building on other sources (no vendoring)
-
-Don't copy other people's skills in here — consume them at their level and
-*reference* them:
-
-- **Plugins** (e.g. `superpowers`, or `domattioli/DomI` as a marketplace) are
-  installed via `claude plugin ...` and update themselves. Build on them by
-  naming them from your own skills:
-  `**REQUIRED BACKGROUND:** superpowers:test-driven-development`
-  (a soft runtime pointer — nothing to install).
-- This repo stays a clean *additive* layer on top of whatever base is present.
+Bindle is versioned as a whole with Semantic Versioning. The current version
+lives in `VERSION`, and `bin/release.sh` cuts an annotated local tag. It never
+pushes.

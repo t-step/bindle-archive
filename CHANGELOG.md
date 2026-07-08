@@ -1,6 +1,6 @@
 # Changelog
 
-All notable changes to claude-kit are recorded here. The format follows
+All notable changes to Bindle are recorded here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project uses
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html):
 
@@ -15,6 +15,10 @@ dated, versioned section at release time.
 ## [Unreleased]
 
 ### Added
+- Provider interoperability contract in `docs/provider-interop.md` for the
+  rename from `claude-kit` to Bindle and the Phase 1 Claude/Codex boundary.
+- Codex global guidance file `global/AGENTS.md`, installable only to an
+  explicit `--codex-home` target.
 - `license-compliance-auditor` skill + `/license-audit` command — portable repo
   license-compliance audit (declared license vs. dependencies, vendored code,
   submodules, fonts, bundled assets, datasets, copied snippets), Python
@@ -214,8 +218,16 @@ dated, versioned section at release time.
 - Weekly `pre-commit autoupdate` workflow that opens a PR bumping hook versions.
 
 ### Changed
+- Project branding updated from `claude-kit` to Bindle for current user-facing
+  docs and script output. Historical notes remain historical.
+- `bin/install.sh` is provider-aware: Claude remains the default install path,
+  `--provider codex --codex-home <dir>` installs only `global/AGENTS.md`, and
+  `--provider all --codex-home <dir>` installs both supported provider surfaces.
+- Notes and privacy docs now prefer `BINDLE_*` / `~/.bindle`, while preserving
+  deprecated `CLAUDE_KIT_*` / `~/.claude-kit` aliases without automatic
+  migration.
 - **Global instructions moved to `global/CLAUDE.md`** (installed to
-  `~/.claude/CLAUDE.md`), freeing the repo-root `CLAUDE.md` to be claude-kit's own
+  `~/.claude/CLAUDE.md`), freeing the repo-root `CLAUDE.md` to be Bindle's own
   project memory — auto-loaded only when working in this repo and never installed,
   so toolkit-development guidance can't leak into other projects. `install.sh` and
   its tests updated; re-running `install.sh` relinks the global file automatically.

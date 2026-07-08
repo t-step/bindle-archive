@@ -20,7 +20,7 @@ Current repo state:
 Steps:
 
 1. Read the `session-continuity` skill; resolve the notes home
-   (`$CLAUDE_KIT_NOTES_DIR` or `~/.claude-kit`) and
+   (`$BINDLE_NOTES_DIR`, deprecated `$CLAUDE_KIT_NOTES_DIR`, or `~/.bindle`) and
    `projects/<project>/sessions/`; `mkdir -p` as needed.
 2. Reconstruct the session honestly from the conversation and git state — what
    was actually done, not what was intended. If tests weren't run, the note

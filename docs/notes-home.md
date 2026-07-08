@@ -1,58 +1,65 @@
-# The notes home (and pointing it at Obsidian)
+# The notes home
 
-Where the session workflow writes durable Markdown, and how to relocate it.
+Where Bindle session workflows write durable Markdown, and how to relocate it.
 The full conventions live in the `session-continuity` skill; this is the
 user-facing summary.
 
 ## Default layout
 
+New Bindle names prefer:
+
 ```
-~/.claude-kit/
-  private-denylist.txt                # optional; read by bin/check-private-info.sh
+~/.bindle/
+  private-denylist.txt
   projects/<project>/
-    profile.md                        # durable project facts (/project-profile)
-    sessions/YYYY-MM-DD-<slug>.md     # session notes (/session-end)
-    handoffs/YYYY-MM-DD-<slug>.md     # future-session prompts (/handoff)
+    profile.md
+    sessions/YYYY-MM-DD-<slug>.md
+    handoffs/YYYY-MM-DD-<slug>.md
 ```
 
-- Everything is plain Markdown with safe kebab-case filenames — no database,
-  no daemon, no app required. `grep`/`ls` are the query language.
-- The directory is created on demand; there is nothing to initialize.
-- It lives **outside every project repo** on purpose: session notes are
-  private by default and must never be one `git add -A` away from publication
-  (see [privacy-boundaries.md](privacy-boundaries.md)).
-- It is not this repo, either — claude-kit versions *capabilities*; the notes
-  home holds *your data*. Back it up however you back up personal files.
+Everything is plain Markdown with safe kebab-case filenames. There is no
+database, daemon, app, or initialization step.
 
-## Relocating it: `CLAUDE_KIT_NOTES_DIR`
+The notes home lives outside every project repo on purpose: session notes are
+private by default and must never be one `git add -A` away from publication.
+It is not this repo, either. Bindle versions capabilities; the notes home holds
+your data.
 
-Set one environment variable to move the whole tree:
+## Relocating it
+
+Use `BINDLE_NOTES_DIR` to move the whole tree:
 
 ```bash
-# in ~/.zshrc (or equivalent)
-export CLAUDE_KIT_NOTES_DIR="$HOME/Notes/claude-kit"
+export BINDLE_NOTES_DIR="$HOME/Notes/bindle"
 ```
 
-Every session command resolves the base as `$CLAUDE_KIT_NOTES_DIR`, falling
-back to `~/.claude-kit`. Nothing else changes.
+Deprecated compatibility aliases remain supported:
 
-## Obsidian (optional, zero integration)
+- `CLAUDE_KIT_NOTES_DIR`;
+- `~/.claude-kit`.
 
-Obsidian reads folders of plain Markdown, which is exactly what this is. To
-see profiles, session notes, and handoffs in a vault, point the variable into
-it:
+Resolution order for workflows should be:
+
+1. `BINDLE_NOTES_DIR`;
+2. `CLAUDE_KIT_NOTES_DIR`;
+3. `~/.bindle`;
+4. existing `~/.claude-kit` data when a workflow intentionally keeps using the
+   old location.
+
+Bindle does not silently migrate or move user data. To migrate, copy the files
+yourself, update `BINDLE_NOTES_DIR` if needed, and keep the old directory until
+you are comfortable deleting it.
+
+## Obsidian
+
+Obsidian reads folders of plain Markdown, which is exactly what this is. To see
+profiles, session notes, and handoffs in a vault, point the variable into it:
 
 ```bash
-export CLAUDE_KIT_NOTES_DIR="$HOME/Vaults/main/claude-kit"
+export BINDLE_NOTES_DIR="$HOME/Vaults/main/bindle"
 ```
 
-That's the entire integration. Notes appear in the vault, searchable and
-linkable like anything else there. Deliberately **not** provided: sync,
-automated backlinks, templates needing community plugins, or any dependency on
-Obsidian being installed — the files must stay useful as bare Markdown for a
-session running `grep` over them.
-
-One caveat: if your vault syncs to a cloud service, your session notes go with
-it. That's usually what you want (they're your notes), but it's a wider blast
-radius than `~/.claude-kit` — worth a moment's thought before pointing the
-variable at a synced vault.
+That is the entire integration. Notes appear in the vault, searchable and
+linkable like anything else there. If your vault syncs to a cloud service, your
+session notes go with it; consider that wider blast radius before choosing the
+location.

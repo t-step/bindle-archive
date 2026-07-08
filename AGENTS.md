@@ -1,10 +1,10 @@
 <!--
 Project memory for Bindle ITSELF — auto-loaded only when working in this
 repo. This file is NOT installed anywhere: the every-project personal
-instructions live in `global/CLAUDE.md`, which `bin/install.sh` symlinks to
-~/.claude/CLAUDE.md. Keep Bindle development guidance here; keep
-every-project preferences in `global/CLAUDE.md`. Nothing here leaks to other
-projects.
+instructions live in `global/AGENTS.md`, which `bin/install.sh --provider codex
+--codex-home <dir>` symlinks to `<dir>/AGENTS.md`. Keep Bindle development
+guidance here; keep every-project preferences in `global/AGENTS.md`. Nothing
+here leaks to other projects.
 -->
 
 # Working on Bindle
@@ -21,7 +21,8 @@ skills go through) before adding or changing items.
   don't describe a draft as finished.
 - **Claude assets remain Claude-native in Phase 1.** Do not rewrite
   `skills/*/SKILL.md`, `agents/*.md`, `commands/*.md`, their frontmatter,
-  triggers, or install layout to make them provider-neutral.
-- **Editing `global/CLAUDE.md` changes behavior in every project.** Keep each rule
-  there universally safe or gated on an observable repo signal — see that file's
-  header.
+  triggers, or install layout to make them provider-neutral. Treat
+  `bin/check.sh` frontmatter checks as Claude-provider regression tests.
+- **Editing `global/AGENTS.md` changes behavior wherever you explicitly install
+  it.** Keep each rule universally safe or gated on an observable repo signal —
+  see that file's header.

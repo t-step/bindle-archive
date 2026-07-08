@@ -30,9 +30,9 @@ serves it* (see [sharing-skills.md](sharing-skills.md) for the sharing side):
 
 | Classification | Home | Example |
 |---|---|---|
-| personal preference | your `global/CLAUDE.md` | "lead with the answer" |
+| personal preference | your provider global files | "lead with the answer" |
 | reusable skill / command | this repo (`skills/`, `commands/`) | a debugging procedure that worked 3 times |
-| project-specific rule | that project's `CLAUDE.md` / `.claude/` | "never regenerate the fixtures by hand" |
+| project-specific rule | that project's `CLAUDE.md`, `AGENTS.md`, or `.claude/` | "never regenerate the fixtures by hand" |
 | project profile update | notes home `profile.md` | a new validation gate |
 | decision log entry | the project's session notes / docs | "we chose X over Y because…" |
 | validation gate / check | project CI, or this repo's `bin/check*.sh` | a failure mode a script can catch |
@@ -55,7 +55,7 @@ Two distinctions the loop must preserve:
   a committed file without the user explicitly confirming that specific
   promotion, having seen the sanitized text that would land.
 - **No editing project repos as a side effect.** A "this belongs in the
-  project's CLAUDE.md" verdict produces a *recommendation* (or a diff to
+  project's provider guidance" verdict produces a *recommendation* (or a diff to
   review), applied only when the user says so in that repo.
 - **Sanitize at the boundary.** Anything crossing notes-home → repo gets the
   [privacy-boundaries.md](privacy-boundaries.md) treatment and a

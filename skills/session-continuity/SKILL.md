@@ -20,7 +20,7 @@ one `git add -A` away from being published.
 ## The notes home
 
 ```
-~/.claude-kit/                        # or $CLAUDE_KIT_NOTES_DIR if set
+~/.bindle/                            # or $BINDLE_NOTES_DIR if set
   private-denylist.txt                # personal terms for check-private-info
   projects/<project>/
     profile.md                        # durable facts: gates, commands, safety notes
@@ -35,10 +35,11 @@ one `git add -A` away from being published.
   `--self-test`); pipe a name through it rather than hand-deriving edge cases.
 - `<slug>` = 2–5 kebab-case words naming the session's goal, same rule. Never
   put `/`, spaces, or personal names in filenames.
-- Honor `CLAUDE_KIT_NOTES_DIR` when set: it replaces `~/.claude-kit` as the
-  base. Pointing it at an Obsidian vault directory makes every note appear in
-  the vault — plain Markdown is all Obsidian needs. Nothing here may *require*
-  Obsidian (no plugin syntax, no sync assumptions).
+- Honor `BINDLE_NOTES_DIR` when set: it replaces `~/.bindle` as the base.
+  Deprecated `CLAUDE_KIT_NOTES_DIR` and `~/.claude-kit` aliases remain
+  supported. Pointing the notes dir at an Obsidian vault directory makes every
+  note appear in the vault — plain Markdown is all Obsidian needs. Nothing here
+  may *require* Obsidian (no plugin syntax, no sync assumptions).
 - Create directories on demand (`mkdir -p`). Plain Markdown only.
 
 ## Rules
@@ -65,17 +66,17 @@ produces two separate artifacts:
    losing it to a repo-only write breaks cross-session continuity.
 2. **Sanitized summary → the repo, only after the scanner passes.** Then, and
    only then, produce a *separate* teammate-facing summary and:
-   - sanitize per claude-kit's `docs/privacy-boundaries.md` — repo-relative
+   - sanitize per Bindle's `docs/privacy-boundaries.md` — repo-relative
      paths only, no personal names/emails/denylist terms, no pasted transcript,
      no private "next-prompt for future-me" meta;
-   - **run the scanner and block on it.** If the claude-kit repo is reachable,
+   - **run the scanner and block on it.** If the Bindle repo is reachable,
      run `bin/check-private-info.sh <the summary file>`; if it flags anything,
      do **not** leave the file in the repo — fix and re-run until it passes. A
      manual `grep` is not a substitute for running the scanner.
    - write it to the path the user named (or propose one and confirm); leave it
      **unstaged and uncommitted** — staging is the user's call.
 
-If the claude-kit repo isn't reachable to run the scanner, say so and let the
+If the Bindle repo isn't reachable to run the scanner, say so and let the
 user decide, rather than writing an unscanned summary into the repo.
 3. **Handoffs state scope boundaries.** A handoff that says only what to do
    next invites the next session to redo or bulldoze finished work. Always
@@ -95,7 +96,7 @@ tests-checks: what ran, pass/fail
 decisions: what was chosen and why (one line each)
 risks: what could bite later
 deferred: what was consciously not done
-candidate workflow improvements: (see claude-kit's `docs/iterative-improvement.md`)
+candidate workflow improvements: (see Bindle's `docs/iterative-improvement.md`)
 next: the single best next prompt
 ```
 

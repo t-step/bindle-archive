@@ -5,7 +5,7 @@ CLAUDE.md and explicit user instructions take precedence. To avoid leaking into
 projects where a rule shouldn't apply: keep each rule either (a) universally safe,
 or (b) gated on an observable repo signal (e.g. "if the repo has X"). Anything that
 should apply to only some projects belongs in that project's CLAUDE.md, not here.
-(claude-kit's own dev guidance lives in the repo-root CLAUDE.md, which is not installed.)
+(Bindle's own dev guidance lives in the repo-root CLAUDE.md, which is not installed.)
 -->
 
 # Personal preferences
