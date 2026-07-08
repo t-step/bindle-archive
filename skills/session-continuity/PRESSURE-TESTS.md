@@ -115,6 +115,55 @@ patient"). The user says only "export".
 |---|
 | **5/5 wrote only a sanitized `docs/project-profile.md`**; all 8–9 private items stripped or generalized (paths → repo-relative, names → "the maintainer", secrets dropped, teammate + email + personal remark removed). `bin/check-private-info.sh` run and passed (exit 0); the **source private profile was left untouched**; repo copy left unstaged. Independently verified: the scanner **fails** the seeded source (flags `apple-private-relay` + `local-home-path`) and **passes** all 5 sanitized copies — so sanitization is real, not self-reported. |
 
+### Sub-claim 3c — the denylist pass is scanner-enforced (case-insensitive)
+
+**Status: VERIFIED + scanner fix (2026-07-07).**
+
+Closes Claim 3's original caveat: 3a/3b stripped personal names by *model
+judgment* (held 5/5) but never proved the **scanner** blocks a name the model
+might miss. This run exercises the denylist pass mechanically — the score is the
+scanner's exit code and flagged lines, never an agent self-report.
+
+Method: a throwaway `CLAUDE_KIT_DENYLIST` fixture (one bait name, `Dana`) *outside*
+the repo, and a candidate `docs/project-profile.md` seeded with that name in three
+casings plus a `/Users/<name>/…` path and a private-relay email. Run
+`CLAUDE_KIT_DENYLIST=<fixture> bin/check-private-info.sh <candidate>`.
+
+| Case in the candidate file | Before fix | After fix |
+|---|---|---|
+| `Dana` — exact case, as listed on the denylist | ✗ flagged, exit 1 | ✗ flagged, exit 1 |
+| `dana` / `DANA` / `dAnA` — other casings | **passed silently — leaked** | ✗ all flagged, exit 1 |
+| `/Users/<name>/…` path, private-relay email | ✗ flagged (built-in patterns) | ✗ flagged |
+
+**RED (a real scanner bug, not model behavior).** The denylist match at
+`bin/check-private-info.sh:83` was `grep -InF` — fixed-string but **case-
+sensitive** — while the script's own header documents the denylist as
+"case-insensitive fixed strings." A name listed as `Dana` let `dana`/`DANA`
+through, so a would-be-exported profile could carry the name in any non-listed
+casing (lowercase handle, all-caps heading) and the mechanical backstop would
+pass it. This is exactly the scanner-enforcement gap Claim 3 flagged as untested.
+
+**GREEN.** Changed the denylist grep to `grep -InFi` (case-insensitive, matching
+the documented contract) and extended `--self-test` with a mixed-case denylist
+fixture (`Dana` must catch `dana`/`DANA`). The self-test is now **9/9**; the
+candidate's three casings plus the path and relay email are all flagged (exit 1);
+`case-only.md` went from **1/4 → 4/4**.
+
+**Iron Law — this is a script + self-test fix, not a SKILL.md/command edit.** The
+header already promised case-insensitivity, so the docs stayed and the *code* was
+corrected to match. No skill doc changed. `session-continuity`'s **Repo-bound
+content** recipe (which blocks the repo copy on `bin/check-private-info.sh`) now
+rests on a backstop that actually folds case.
+
+**Caveat — the export *command* is still model-judgment.** `/project-profile
+export` sanitizes by model judgment and does **not** run the scanner as a hard
+gate; the scanner-enforced gate lives only in the **Repo-bound content** recipe
+(run the scanner, block on it). This run proves the scanner *now* catches a
+denylisted name in any casing **when it is run** — it does not add a scanner gate
+to the export command itself. Denylist terms are still substring-matched (word
+boundaries not tested here), and non-ASCII case folding depends on the platform
+`grep`/locale.
+
 **No skill edit (Iron Law).** The baseline fails clearly (5/5 write into the
 repo), but the skill *as written* already produces correct behavior 5/5 across
 all three variants — the default notes-home write, the recipe-gated repo-bound
@@ -123,12 +172,11 @@ RED failure *of the skill*), Rules 1–2, the **Repo-bound content** recipe, and
 the `/project-profile` command were left unchanged. This entry records the
 verification, not a change.
 
-**Caveat — untested surface:** the scanner's *denylist* pass (personal names
-like Dana/Thomas) was **not** exercised, because the test notes homes had no
-`private-denylist.txt`. Name-stripping in 3a/3b was done by model judgment,
-which held 5/5 — but it is not scanner-enforced. A future run should seed a
-denylist and confirm the scanner *blocks* on a name the model might otherwise
-miss.
+**Caveat — closed by sub-claim 3c (2026-07-07):** the scanner's *denylist* pass
+(personal names like Dana/Thomas) was originally untested because the test notes
+homes had no `private-denylist.txt`; name-stripping in 3a/3b was model judgment
+only. Sub-claim 3c above seeds a denylist and confirms the scanner blocks on the
+name — and found+fixed a case-folding bug that had let non-listed casings leak.
 
 ## Claim 4 — `/session-start` stays read-only during orientation
 
@@ -181,6 +229,4 @@ a read-only orientation is most likely to break.
 
 ## Not yet pressure-tested (still draft)
 
-- The scanner's denylist pass under `/project-profile export` (see Claim 3's
-  caveat).
 - An *explicit* cleanup/tidy request at `/session-start` (see Claim 4's caveat).
