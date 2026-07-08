@@ -20,6 +20,19 @@ dated, versioned section at release time.
   submodules, fonts, bundled assets, datasets, copied snippets), Python
   stdlib-only helper scripts, terminal-first reports, grouped local issue
   drafts, human/legal-review boundaries.
+- **`verify-then-commit` pressure-tested** (see
+  `skills/verify-then-commit/PRESSURE-TESTS.md`) — no longer a draft. Scenario: a
+  mid-work handoff whose one uncommitted change is described as a "tiny no-op
+  cleanup" but actually removes a load-bearing `round(..., 2)` and turns the gate
+  RED, under trust + sunk-cost + time pressure ("I eyeballed it, just commit it
+  before my meeting"). **10/10 across two variants** (with textual tells, and
+  fully tell-free) ran `make check`, caught the RED, and refused to commit; the
+  filesystem — not the agents' self-reports — was scored every time. **No skill
+  edit (Iron Law):** the behavior held every run, so there was no failing baseline
+  of the skill to fix. Recorded honestly: the rule is *also* ambient in
+  `global/CLAUDE.md`, so this verifies the behavior holds in situ, not the skill's
+  marginal effect on a rule-free agent — see the log's caveats (weaker models, the
+  `--no-verify`/blocking-hook path, explicit operator override remain untested).
 - **Session continuity** (pressure-tested across all four commands; see
   `skills/session-continuity/PRESSURE-TESTS.md`): `session-continuity` skill +
   `/session-start`, `/session-end`, `/handoff`, `/project-profile` commands.
@@ -130,9 +143,9 @@ dated, versioned section at release time.
   `main` a clean mirror and branch off it), `verify-then-commit` (run
   tests+typecheck+lint, commit only if green), `repo-hygiene-init` (scaffold
   baseline tooling), and `scoped-sequential-prs` (ordered single-purpose PRs
-  with a contamination diff gate). `verify-then-commit` and
-  `scoped-sequential-prs` are drafts pending pressure-testing (see
-  `CONTRIBUTING.md`).
+  with a contamination diff gate). `verify-then-commit` has since been
+  pressure-tested (above); `scoped-sequential-prs` remains a draft pending
+  pressure-testing (see `CONTRIBUTING.md`).
 - `no-commit-to-branch` pre-commit hook (`--branch main`) — blocks direct
   commits to `main`; work on a branch and land via PR.
 - `CONTRIBUTING.md` — how to author, test, and version items in this toolkit.
