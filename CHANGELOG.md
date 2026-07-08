@@ -158,8 +158,14 @@ dated, versioned section at release time.
   destroyed or *reversed* maintainer knowledge **3/5** (one wiped the file and inverted
   a "normalize CRLF" warning into "CRLF is fine"), while skill-equipped agents lost
   **nothing 5/5**, preserved the typo 4/5, and invented nothing (TODO markers for the
-  missing test dir). No `SKILL.md` edit. update mode and the non-flagship lint checks
-  remain untested (logged in PRESSURE-TESTS.md).
+  missing test dir). No `SKILL.md` edit. A fourth claim, **update is append-only and
+  preserves existing content verbatim**, is now verified too (RED→GREEN): appending a
+  *new* lesson is naturally additive (baseline passes 5/5), but when a new finding
+  *supersedes* a recorded lesson, skill-naive agents rewrote the existing entry in place
+  **5/5** (destroying a deliberate typo; 2/5 also dropped a symptom line), while
+  skill-equipped agents appended a dated correction and left the original entry
+  byte-for-byte intact **5/5** (SPECKIT block preserved throughout). No `SKILL.md` edit.
+  The non-flagship lint checks remain the untested surface (logged in PRESSURE-TESTS.md).
 - First portable skills, derived from recurring patterns across my own project
   history: `fork-pr-flow` (origin-vs-upstream and own-repo PR targeting; keep
   `main` a clean mirror and branch off it), `verify-then-commit` (run
