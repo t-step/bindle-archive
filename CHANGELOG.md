@@ -151,8 +151,15 @@ dated, versioned section at release time.
   scaffolded commands during a "do the commands still work?" lint (1 ran a destructive
   `release.sh`), while 5/5 skill-equipped agents executed **nothing** and checked statically
   (execution tracked via an external, cleanup-proof log). No `SKILL.md` edit (Iron Law): the
-  skill as written already produces the correct behavior. init/update modes and the non-
-  flagship lint checks remain untested (logged in PRESSURE-TESTS.md).
+  skill as written already produces the correct behavior. A third flagship claim,
+  **init never overwrites an existing CLAUDE.md**, is now also verified (RED→GREEN,
+  filesystem ground truth): against a repo whose hand-written `CLAUDE.md` held a
+  load-bearing rule, an operational warning, and a deliberate typo, skill-naive agents
+  destroyed or *reversed* maintainer knowledge **3/5** (one wiped the file and inverted
+  a "normalize CRLF" warning into "CRLF is fine"), while skill-equipped agents lost
+  **nothing 5/5**, preserved the typo 4/5, and invented nothing (TODO markers for the
+  missing test dir). No `SKILL.md` edit. update mode and the non-flagship lint checks
+  remain untested (logged in PRESSURE-TESTS.md).
 - First portable skills, derived from recurring patterns across my own project
   history: `fork-pr-flow` (origin-vs-upstream and own-repo PR targeting; keep
   `main` a clean mirror and branch off it), `verify-then-commit` (run
