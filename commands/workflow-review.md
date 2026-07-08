@@ -4,7 +4,7 @@ argument-hint: [project, or "all"]
 allowed-tools: Bash(ls:*), Bash(date:*)
 ---
 
-<!-- The loop and routing table: claude-kit's docs/iterative-improvement.md.
+<!-- The loop and routing table: Bindle's docs/iterative-improvement.md.
      Notes-home conventions: the session-continuity skill. -->
 
 Review accumulated session experience and surface what should change in the
@@ -27,7 +27,8 @@ Steps:
    - recurring failure modes (same bug class, same broken assumption);
    - prompts/approaches that worked well — and ones that produced bad results;
    - project-specific rules living in notes that belong in that project's
-     CLAUDE.md or `.claude/` (recommendation only — never edit that repo);
+     `CLAUDE.md`, `AGENTS.md`, or `.claude/` (recommendation only — never edit
+     that repo);
    - reusable procedures stable enough to become shared skills;
    - personal preferences that belong in personal global config, not skills;
    - private notes that must NOT be promoted anywhere;
@@ -37,7 +38,7 @@ Steps:
    notes already wrote — they are pre-vetted signals.
 3. Report findings as a ranked list, each with: the evidence (which
    notes/sessions, how many times), the proposed classification per
-   claude-kit's `docs/iterative-improvement.md` routing table, and the
+   Bindle's `docs/iterative-improvement.md` routing table, and the
    concrete next action.
 4. End with: "To act on one: `/promote-insight <finding>`" — and remind that
    anything leaving the notes home gets sanitized and user-confirmed first.

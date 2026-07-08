@@ -1,12 +1,12 @@
-# Sharing skills with collaborators
+# Sharing workflows with collaborators
 
 How reusable parts of a personal kit reach other people — and what stays
 personal. The short version: **share through Git at the right level; never copy
-`~/.claude/` directories around.**
+provider config directories around.**
 
 ## The anti-pattern
 
-Copying a whole `~/.claude/` (or this repo wholesale) to a teammate ships your
+Copying a whole `~/.claude/`, explicit Codex target, or this repo wholesale ships your
 personal preferences, your private notes pointers, and your global instructions
 into their environment, with no update path and no provenance. Don't. The same
 applies in reverse: don't import someone's directory dump into yours.
@@ -15,10 +15,12 @@ applies in reverse: don't import someone's directory dump into yours.
 
 | Kind of thing | Lives in | Reaches others via |
 |---|---|---|
-| Stable, project-agnostic procedure | a skill/command/agent in a Git repo | clone + install, or a plugin |
+| Stable, project-agnostic Claude procedure | a skill/command/agent in a Git repo | clone + install, or a plugin |
+| Stable provider-agnostic instruction | docs or provider guidance in a Git repo | project instructions, review, or explicit install |
 | Project-specific Claude behavior | that project's `CLAUDE.md` / `.claude/skills/` / `.claude/commands/` | the project repo itself |
-| Personal preferences (tone, git habits, editor) | your `global/CLAUDE.md` | never — personal by definition |
-| Evolving insights, session notes, half-formed ideas | Markdown notes under `~/.claude-kit/` (or your notes dir) | promoted to one of the above once stable — see [iterative-improvement.md](iterative-improvement.md) |
+| Project-specific Codex behavior | that project's `AGENTS.md` | the project repo itself |
+| Personal preferences (tone, git habits, editor) | your provider global files | never — personal by definition |
+| Evolving insights, session notes, half-formed ideas | Markdown notes under `~/.bindle/` (or your notes dir) | promoted to one of the above once stable — see [iterative-improvement.md](iterative-improvement.md) |
 | Secrets, tokens, private context | nowhere in Git | never |
 
 Two rules of thumb:
@@ -46,9 +48,10 @@ A **personal kit** (like this repo) — your selection of assets plus personal
 global config:
 
 ```
-personal-claude-kit/
+personal-bindle/
   skills/  commands/  agents/     # yours + selected shared assets
-  global/CLAUDE.md                # personal; not for sharing
+  global/CLAUDE.md                # Claude personal; not for sharing
+  global/AGENTS.md                # Codex personal; not for sharing
   bin/install.sh
 ```
 
@@ -57,6 +60,7 @@ A **project repo** — project-scoped Claude behavior, versioned with the code:
 ```
 project-repo/
   CLAUDE.md
+  AGENTS.md
   .claude/
     skills/
     commands/
@@ -79,6 +83,10 @@ into your kit:
 3. **Cherry-pick with provenance** — if you must copy an asset in (to modify
    it), note its origin in the file and treat it as a fork you now maintain.
    This is the last resort, not the default.
+
+For Codex, Phase 1 has no Bindle-defined skill/command/agent install format.
+Share direct `AGENTS.md` guidance or docs until a real Codex-compatible format
+is intentionally designed.
 
 ## Publishing from your personal kit
 

@@ -20,8 +20,8 @@ Current repo state:
 Steps:
 
 1. Read the `session-continuity` skill for the notes-home conventions.
-2. Locate durable context: with the notes base `$CLAUDE_KIT_NOTES_DIR` (or
-   `~/.claude-kit` if unset), look under `projects/<project>/` for
+2. Locate durable context: with the notes base `$BINDLE_NOTES_DIR`, deprecated
+   `$CLAUDE_KIT_NOTES_DIR`, or `~/.bindle`, look under `projects/<project>/` for
    `profile.md`, the most recent file in `sessions/`, and the most recent in
    `handoffs/`. Read what exists; say plainly if nothing does (and suggest
    `/project-profile` once — don't nag).

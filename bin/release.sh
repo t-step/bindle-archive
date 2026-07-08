@@ -78,7 +78,7 @@ awk -v ver="$new" -v day="$today" '
 # --- commit + tag ----------------------------------------------------------
 git add VERSION CHANGELOG.md
 git commit -q -m "Release v${new}"
-git tag -a "v${new}" -m "claude-kit v${new}"
+git tag -a "v${new}" -m "Bindle v${new}"
 
 echo
 echo "Released v${new} (commit + annotated tag created locally)."

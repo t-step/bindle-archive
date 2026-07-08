@@ -1,4 +1,4 @@
-# Contributing to claude-kit
+# Contributing to Bindle
 
 This is my personal toolkit, but it follows a discipline so that a fresh session
 (or future me) can pick it up cold. If you're an agent working *on this repo*,
@@ -6,10 +6,11 @@ read this file and the [README](README.md) before adding or changing anything.
 
 ## The shape of the repo
 
-See the [README](README.md) for what claude-kit is and how `bin/install.sh`
-symlinks it into `~/.claude/`. In short: each `skills/<name>/SKILL.md`,
-`agents/<name>.md`, and `commands/<name>.md` becomes a user-level capability
-available in every project. Editing a file here is live everywhere immediately.
+See the [README](README.md) for what Bindle is and how `bin/install.sh`
+installs provider-specific surfaces. Claude Code remains the mature path: each
+`skills/<name>/SKILL.md`, `agents/<name>.md`, and `commands/<name>.md` becomes a
+Claude user-level capability under `~/.claude/`. Codex Phase 1 support is direct
+`AGENTS.md` guidance installed only to an explicit `--codex-home` target.
 
 ## Branch & commit discipline
 
@@ -48,7 +49,7 @@ Mechanics:
   copies. See the README's "Building on other sources".
 
 Agents and commands: same branch discipline; `agents/_template.md` and
-`commands/_template.md` document their frontmatter.
+`commands/_template.md` document their Claude-native frontmatter.
 
 ## Draft vs. tested
 

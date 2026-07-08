@@ -40,7 +40,7 @@ Steps:
    state wastes the next session's first hour.
 4. Save to `handoffs/YYYY-MM-DD-<slug>.md` in the notes home — never into this
    repo. If the user wants it committed somewhere (a PR description, a doc),
-   sanitize first per claude-kit's `docs/privacy-boundaries.md`: repo-relative paths only,
+   sanitize first per Bindle's `docs/privacy-boundaries.md`: repo-relative paths only,
    no personal names/emails, no pasted transcript, and say that you did so.
 
 Reply with the saved path, then the full handoff in one copy-pasteable block.

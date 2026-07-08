@@ -17,8 +17,8 @@ Steps:
    `projects/<project>/profile.md`. If a profile exists, update it in place
    (preserve wording that's still true); otherwise create it.
 2. Gather facts from the repo (read-only): remotes, default branch, stack,
-   test/build/lint entry points, CI config, pre-commit hooks, CONTRIBUTING /
-   CLAUDE.md rules. Ask the user only for what the repo can't tell you
+   test/build/lint entry points, CI config, pre-commit hooks, CONTRIBUTING,
+   `CLAUDE.md`, or `AGENTS.md` rules. Ask the user only for what the repo can't tell you
    (safety notes, recurring instructions).
 3. Write/refresh these sections:
    - **project** — name, repo path, one-line purpose, project type/stack;
@@ -31,13 +31,13 @@ Steps:
    - **context locations** — where sessions/handoffs for this project live,
      plus any external context (issue tracker, design docs) by name.
    - No secrets, no tokens, no personal-life details — profiles travel.
-4. Keep it under ~60 lines. Facts the project's own README/CLAUDE.md already
+4. Keep it under ~60 lines. Facts the project's own README/provider guidance already
    states get a pointer, not a copy.
 
 **Export (only when the user explicitly says "export"):** write a sanitized
 copy into the repo as `docs/project-profile.md` with a header noting it is a
 sanitized, shareable snapshot (generated from a private profile; personal
-paths/notes removed). Sanitize per claude-kit's `docs/privacy-boundaries.md` — repo-relative
+paths/notes removed). Sanitize per Bindle's `docs/privacy-boundaries.md` — repo-relative
 paths, no personal names/denylist terms — and tell the user to review the diff
 before committing. Never export as a side effect of anything else.
 

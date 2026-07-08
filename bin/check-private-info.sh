@@ -15,8 +15,9 @@
 #   bin/check-private-info.sh --self-test  # prove the patterns catch fixtures
 #
 # Personal denylist: one term per line (case-insensitive fixed strings; '#'
-# comments) in ~/.claude-kit/private-denylist.txt, or point CLAUDE_KIT_DENYLIST
-# at another file. The denylist itself is personal — never commit it.
+# comments) in ~/.bindle/private-denylist.txt, or point BINDLE_DENYLIST at
+# another file. Deprecated CLAUDE_KIT_DENYLIST and ~/.claude-kit aliases remain
+# supported. The denylist itself is personal — never commit it.
 #
 # False positives: append 'private-ok' to the specific line to vouch for it,
 # or add a path to SKIP_FILES below for files that must discuss these
@@ -27,7 +28,15 @@ set -uo pipefail # not -e: aggregate every finding, then fail once
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$REPO_ROOT" || exit 1
 
-DENYLIST="${CLAUDE_KIT_DENYLIST:-$HOME/.claude-kit/private-denylist.txt}"
+if [ -n "${BINDLE_DENYLIST:-}" ]; then
+  DENYLIST="$BINDLE_DENYLIST"
+elif [ -n "${CLAUDE_KIT_DENYLIST:-}" ]; then
+  DENYLIST="$CLAUDE_KIT_DENYLIST"
+elif [ -f "$HOME/.bindle/private-denylist.txt" ]; then
+  DENYLIST="$HOME/.bindle/private-denylist.txt"
+else
+  DENYLIST="$HOME/.claude-kit/private-denylist.txt"
+fi
 
 # Files allowed to contain the patterns below, because documenting/encoding
 # them is their job. Keep this list short and literal.
@@ -133,6 +142,18 @@ self_test() {
     printf '  ✗ self-test: denylist.md NOT flagged\n'
     failed=1
   fi
+  if BINDLE_DENYLIST="$t/deny.txt" "$0" "$t/denylist.md" >/dev/null 2>&1; then
+    printf '  ✗ self-test: BINDLE_DENYLIST alias NOT honored\n'
+    failed=1
+  else
+    pass=$((pass + 1))
+  fi
+  if CLAUDE_KIT_DENYLIST="$t/deny.txt" "$0" "$t/denylist.md" >/dev/null 2>&1; then
+    printf '  ✗ self-test: CLAUDE_KIT_DENYLIST alias NOT honored\n'
+    failed=1
+  else
+    pass=$((pass + 1))
+  fi
   if [ "$(DENYLIST="$t/deny-name.txt" scan_verdict "$t/casefold.md")" = 1 ]; then
     pass=$((pass + 1))
   else
@@ -155,7 +176,7 @@ self_test() {
     pass=$((pass + 1))
   fi
   rm -rf "$t"
-  printf '  self-test: %d/9 fixtures behaved\n' "$pass"
+  printf '  self-test: %d/11 fixtures behaved\n' "$pass"
   return "$failed"
 }
 

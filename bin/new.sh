@@ -60,4 +60,4 @@ case "$kind" in
 esac
 
 echo "Created $dest"
-echo "Next: edit it, then run bin/install.sh to link it into ~/.claude/"
+echo "Next: edit it, then run bin/install.sh --provider claude to link it into ~/.claude/"

@@ -1,15 +1,15 @@
 #!/usr/bin/env bash
 #
-# check.sh — repo hygiene checks for claude-kit. Runs locally (directly or via
+# check.sh — repo hygiene checks for Bindle. Runs locally (directly or via
 # the pre-commit hook) and in CI. Exits nonzero if any check fails.
 #
 # Checks (shellcheck/shfmt are skipped with a notice if not installed locally;
 # CI installs and enforces them):
 #   1.  shellcheck   — lint the shell scripts
 #   1b. shfmt        — consistent shell formatting
-#   2.  frontmatter  — every skill/agent has name+description (command needs
-#                      description); a skill's name matches its folder and an
-#                      agent's matches its filename
+#   2.  Claude frontmatter — every Claude skill/agent has name+description
+#                      (command needs description); a skill's name matches its
+#                      folder and an agent's matches its filename
 #   3.  formatting   — no trailing whitespace, every tracked text file ends in
 #                      a newline
 #   4.  links        — repo-relative markdown links resolve
@@ -19,7 +19,7 @@
 #
 # Usage:
 #   bin/check.sh                  # full aggregate (make check / CI)
-#   bin/check.sh --content-only   # only the claude-kit-specific checks
+#   bin/check.sh --content-only   # only the Bindle content checks
 #                                 # (2,4,5) — the pre-commit framework owns
 #                                 # shellcheck/shfmt/formatting at commit time
 #
@@ -36,7 +36,7 @@ problem() {
 ok() { printf '  ✓ %s\n' "$1"; }
 
 # --content-only skips shellcheck/shfmt/formatting — the pre-commit framework
-# owns those at commit time. The checks unique to claude-kit always run, so this
+# owns those at commit time. The checks unique to Bindle always run, so this
 # script stays the full standalone aggregate (make check / CI) with no args.
 content_only=false
 [ "${1:-}" = "--content-only" ] && content_only=true
@@ -67,8 +67,8 @@ if ! $content_only; then
   fi
 fi
 
-# --- 2. frontmatter --------------------------------------------------------
-echo "frontmatter:"
+# --- 2. Claude frontmatter -------------------------------------------------
+echo "Claude frontmatter:"
 # check_fm FILE KEY... — require a leading --- block containing each KEY.
 check_fm() {
   local file="$1"

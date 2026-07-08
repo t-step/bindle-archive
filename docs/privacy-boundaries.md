@@ -20,6 +20,7 @@ Never commit, to this repo or any project repo:
   embed all of the above plus half-formed private context;
 - medical, salary, recruiter, HR, or other personal-life details;
 - personal denylist terms — names/projects/identifiers you've listed in
+  `~/.bindle/private-denylist.txt` or the deprecated
   `~/.claude-kit/private-denylist.txt` (one per line; read by the scanner,
   never committed).
 
@@ -31,10 +32,11 @@ you* doesn't belong in a shareable repo even though it unlocks nothing.
 Session notes are where private context concentrates: what you were really
 trying to do, what failed, pasted errors with local paths, half-decisions. If
 those live inside a project repo, one `git add -A` publishes them. So the
-session workflow (see the `session-continuity` skill) defaults all durable
-notes to `~/.claude-kit/projects/<project>/` — a user-level directory that no
-project's Git can ever see. Pointing `CLAUDE_KIT_NOTES_DIR` at an Obsidian
-vault keeps the same property: the vault is not a project repo.
+session workflow (see the `session-continuity` skill) prefers durable notes
+under `~/.bindle/projects/<project>/` — a user-level directory that no project's
+Git can ever see. `BINDLE_NOTES_DIR` can point elsewhere. Deprecated
+`CLAUDE_KIT_NOTES_DIR` / `~/.claude-kit` aliases remain supported and are not
+silently migrated.
 
 The `.gitignore` here additionally ignores the conventional local/private
 patterns (`.claude-private/`, `*.private.md`, `session-notes/`, `.env`, …) so

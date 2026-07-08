@@ -24,7 +24,7 @@ that's the follow-up prompt at the bottom.
 
 ## What it would be
 
-A single file, `~/.claude-kit/index.db`, maintained by one small script
+A single file, `~/.bindle/index.db`, maintained by one small script
 (`bin/notes-index.sh`) that scans the notes home and (re)builds:
 
 - **projects** — slug, repo path, last-seen date (project registry);
@@ -35,7 +35,7 @@ A single file, `~/.claude-kit/index.db`, maintained by one small script
 - **validation_status** — latest green/red per project over time.
 
 Everything derived, nothing authoritative: **Markdown stays the source of
-truth; the DB is a disposable cache.** `rm ~/.claude-kit/index.db` must lose
+truth; the DB is a disposable cache.** `rm ~/.bindle/index.db` must lose
 nothing but query speed.
 
 ## Constraints (binding on any future implementation)
@@ -58,9 +58,9 @@ nothing but query speed.
 
 ## Follow-up prompt (when the time comes)
 
-> In claude-kit, implement `bin/notes-index.sh` per
+> In Bindle, implement `bin/notes-index.sh` per
 > `docs/sqlite-workflow-index.md`: rebuild-from-scratch indexing of the notes
-> home into `~/.claude-kit/index.db` using only the `sqlite3` CLI, schema v1
+> home into `~/.bindle/index.db` using only the `sqlite3` CLI, schema v1
 > as designed, graceful no-op without sqlite3, `--export md|json`, plus a
 > fixture-based test script wired into pre-commit. Update the design note's
 > status and the README. Do not add write paths anywhere else.
