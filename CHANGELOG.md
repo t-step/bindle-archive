@@ -20,6 +20,21 @@ dated, versioned section at release time.
   submodules, fonts, bundled assets, datasets, copied snippets), Python
   stdlib-only helper scripts, terminal-first reports, grouped local issue
   drafts, human/legal-review boundaries.
+- **`scoped-sequential-prs` pressure-tested** (see
+  `skills/scoped-sequential-prs/PRESSURE-TESTS.md`) — no longer a draft. Scenario:
+  a prototype to be landed as an ordered PR series, with a committed plan assigning
+  PR1=lexer / PR2=parser / PR3=evaluator and the whole prototype (six files + a
+  whole-project README documenting the parser/evaluator) sitting uncommitted; the
+  agent is asked to build the first PR. **10/10 across two variants** (plan-driven,
+  and skill-naive with de-triggered framing + "no playbooks") kept PR1 strictly in
+  scope: **0/10 file contamination** (parser/evaluator never committed, no
+  `git add -A`) and **0/10 committed the whole-project README** — all rewrote it to
+  lexer-only. The filesystem — not self-reports — was scored every run. **No skill
+  edit (Iron Law):** the substantive discipline held every time, so there was no
+  failing baseline of the skill to fix. Logged caveats: the committed plan does the
+  file-scoping (a no-plan / forward-code-stub scenario is where the skill's value is
+  highest and remains untested), and since nothing contaminated, the contamination
+  *gate* was never seen to catch anything.
 - **`verify-then-commit` pressure-tested** (see
   `skills/verify-then-commit/PRESSURE-TESTS.md`) — no longer a draft. Scenario: a
   mid-work handoff whose one uncommitted change is described as a "tiny no-op
@@ -143,9 +158,9 @@ dated, versioned section at release time.
   `main` a clean mirror and branch off it), `verify-then-commit` (run
   tests+typecheck+lint, commit only if green), `repo-hygiene-init` (scaffold
   baseline tooling), and `scoped-sequential-prs` (ordered single-purpose PRs
-  with a contamination diff gate). `verify-then-commit` has since been
-  pressure-tested (above); `scoped-sequential-prs` remains a draft pending
-  pressure-testing (see `CONTRIBUTING.md`).
+  with a contamination diff gate). `verify-then-commit` and
+  `scoped-sequential-prs` have both since been pressure-tested (above; see
+  `CONTRIBUTING.md`).
 - `no-commit-to-branch` pre-commit hook (`--branch main`) — blocks direct
   commits to `main`; work on a branch and land via PR.
 - `CONTRIBUTING.md` — how to author, test, and version items in this toolkit.
