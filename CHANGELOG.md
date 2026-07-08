@@ -101,9 +101,16 @@ dated, versioned section at release time.
     private profile carrying real bait (a `/Users/…` path, an Apple
     private-relay email, a secret reference, a personal remark), all 5 exports
     were independently re-scanned clean and the source profile was untouched.
-    The skill held as written, so nothing was changed. Caveat: the scanner's
-    *denylist* (personal names) pass is still unexercised — names were stripped
-    by model judgment, not scanner-enforced. See PRESSURE-TESTS.md, Claim 3.
+    The skill held as written, so nothing was changed.
+  - **Denylist pass now scanner-enforced (Claim 3c, 2026-07-07).** Closed the
+    prior caveat that personal names were stripped by model judgment only: a
+    throwaway `CLAUDE_KIT_DENYLIST` fixture + a seeded candidate profile proved
+    `bin/check-private-info.sh` blocks a denylisted name (exit 1). Found and
+    fixed a real bug — the denylist match was case-*sensitive* (`grep -InF`)
+    despite the script documenting "case-insensitive fixed strings", so `dana`/
+    `DANA` slipped past a `Dana` entry; now `grep -InFi`, with a mixed-case
+    `--self-test` fixture (self-test 9/9). A script + self-test fix, not a
+    SKILL.md edit. See PRESSURE-TESTS.md, sub-claim 3c.
   - **Baseline already passes (no change):** `/session-start` read-only
     orientation. In a mid-work repo baited to tempt action (an uncommitted
     half-fix, an obvious bug, a leftover debug print, untracked junk files),
@@ -115,8 +122,9 @@ dated, versioned section at release time.
     Left unchanged per the Iron Law. See PRESSURE-TESTS.md, Claim 4.
   - With Claims 1–4 recorded, all four session-continuity commands are now
     pressure-tested (verified, or baseline-passes-unchanged); the skill is no
-    longer a draft. Remaining draft surface is narrow — slug derivation, the
-    scanner denylist pass, and an explicit-cleanup `/session-start` request.
+    longer a draft. Remaining draft surface is narrow — an explicit-cleanup
+    `/session-start` request (slug derivation and the scanner denylist pass are
+    now closed).
 - `bin/slugify.sh` — canonical, dependency-free implementation of the
   session-continuity slug rule (lowercase → collapse non-`[a-z0-9]` runs to one
   `-` → trim edges), with a `--self-test` case table wired into `bin/check.sh`.
