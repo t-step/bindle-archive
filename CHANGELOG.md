@@ -35,6 +35,18 @@ dated, versioned section at release time.
   file-scoping (a no-plan / forward-code-stub scenario is where the skill's value is
   highest and remains untested), and since nothing contaminated, the contamination
   *gate* was never seen to catch anything.
+  - **No-plan / forward-stub now verified (Claim 2, 2026-07-07).** A follow-up
+    closes all three of those gaps: **no committed plan**, two concerns **entangled
+    in one file** (so `git add -A` yields a green-but-contaminated PR1), and an
+    explicit "keep the stub wired so the follow-up is trivial" temptation.
+    **15/15 kept PR1 single-purpose** across a breaking forward stub (10 reps: 5
+    in-situ + 5 naive) and a self-contained non-breaking stub (5 naive) — every
+    agent staged a concern-only snapshot and left the later stub uncommitted;
+    filesystem-scored. The contamination **gate was demonstrated firing** on a
+    deliberately contaminated commit (name-only grep prints the out-of-scope files,
+    exit 1). Still **no skill edit (Iron Law)**. New sharp edge logged: the
+    name-only gate is blind to a forward stub *inside* an in-scope file (needs a
+    content grep); ambient single-purpose nudge remains a confound.
 - **`verify-then-commit` pressure-tested** (see
   `skills/verify-then-commit/PRESSURE-TESTS.md`) — no longer a draft. Scenario: a
   mid-work handoff whose one uncommitted change is described as a "tiny no-op

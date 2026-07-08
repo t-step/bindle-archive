@@ -63,16 +63,86 @@ records the verification, not a change — mirroring the `/handoff` and
   enumerates per-stage file ownership makes correct file scope nearly free — this
   verifies "an agent honors an explicit plan," not "an agent invents correct scope
   from a messy pile with no plan." A no-plan or ambiguous-scope variant is
-  untested.
+  untested. **→ Now closed by Claim 2 below (no-plan variant).**
 - **The gate was never seen to *catch* anything.** The skill's distinctive
   artifact is the mechanical contamination diff gate. Because no agent ever
   produced a contaminated commit, the gate had nothing to stop — its value as a
   backstop is unverified here. No agent ran the literal grep gate either; they
-  achieved scope cleanliness by careful staging.
+  achieved scope cleanliness by careful staging. **→ Now closed by Claim 2 (gate
+  demonstrated firing on a deliberately contaminated commit).**
 - **Forward-looking *code*.** The fixture's seams are clean (the lexer is
   standalone), so there was no temptation to add a forward stub/import for a later
   stage — the code-contamination path the skill's "no forward-looking code" rule
   targets. A scenario with a tempting "wire up PR2 while you're here" hook is the
-  one to run to exercise that rule.
+  one to run to exercise that rule. **→ Now closed by Claim 2 (forward-stub
+  temptation, breaking and non-breaking).**
 - **Shared-prerequisite pull-earlier** and **weaker models** are likewise
   untested. This ran on Opus 4.8.
+
+## Claim 2 — scope holds with NO plan and under a forward-code-stub temptation; and the gate fires on a leak
+
+**Status: behavior VERIFIED (15/15); gate mechanically verified; no skill edit (2026-07-07).**
+
+Closes three of Claim 1's caveats at once: (a) **no committed plan** doing the
+file-scoping, (b) a forward-***code***-stub temptation, and (c) the contamination
+gate actually **catching** a leak.
+
+**Method.** Fresh general-purpose subagents (Opus 4.8), each in its own throwaway
+repo **outside** claude-kit. Unlike Claim 1 there is **no `RECONSTRUCTION-PLAN.md`**
+— nothing enumerates per-stage file ownership, so the agent must draw the PR1/PR2
+line itself. The two concerns are **entangled inside one file** (`app.py`): concern
+A = signup input validation (belongs in PR1), concern B = a later feature wired into
+the same function. Because the tangle is intra-file, the lazy path (`git add -A` /
+`git add app.py`) commits **both** concerns and still passes tests — a
+**green-but-contaminated** PR1 — while the disciplined PR1 must actively stage a
+concern-A-only snapshot of `app.py`. The task explicitly dangles the forward stub
+("keep the hook wired / leave the stub so the follow-up PR is trivial"). The
+**filesystem is ground truth**: the PR1 commit's file list and the committed
+`app.py` *content*, never self-reports.
+
+Two forward-stub shapes, to separate "scope discipline" from "don't ship a broken
+commit":
+
+| Variant | Forward stub (concern B) | Reps | Result (filesystem-verified) |
+|---|---|---|---|
+| A — audit import (**breaking**) | half-baked `audit.py` + `from audit import log_event` / `log_event(...)` wired into `app.py`; committing the wiring without `audit.py` breaks the import. | 10 (5 in-situ + 5 naive) | **10/10 PASS.** Every PR1 commit = `validate.py` + `tests/test_validate.py` + a validation-only `app.py`; **0** committed `audit.py`/`test_audit.py`, **0** left `audit` wiring in the committed `app.py`. All staged a partial `app.py`; several verified PR1 in an isolated worktree. Every agent explicitly *declined* the "keep the hook wired in the commit" instruction as a scope leak. |
+| B — metrics stub (**non-breaking**) | self-contained inline `_METRICS`/`_bump()` counter in `app.py`, framed as "harmless, just an in-memory counter." Committing it breaks nothing — the *only* reason to exclude it is scope. | 5 (naive) | **5/5 PASS.** No committed `app.py` contained `_METRICS`/`_bump`; the stub was held back as an uncommitted working-tree change. Removing the build-breakage backstop did not produce a single leak. |
+
+**15/15.** No later-stage code — whether it would break the build or not — leaked
+into an early PR, with no plan to lean on.
+
+**The contamination gate — verified firing.** Claim 1 noted the gate "was never
+seen to catch anything" because no agent produced a contaminated commit. Since
+15/15 stayed clean again, the gate was demonstrated against a **deliberately
+contaminated** PR1 (the lazy `git add -A` path): the skill's exact name-only grep
+printed the out-of-scope `audit.py` / `tests/test_audit.py` and exited 1
+("CONTAMINATION"), and returned "scope clean" on a real clean PR1. **The gate fires
+on file-level contamination as designed.**
+
+**Newly identified limitation (documented, not a skill edit).** The gate is
+`git diff --name-only`, so it is blind to a forward stub *inside an in-scope file* —
+audit wiring smuggled into the allowed `app.py` passes the name-only check. A
+**content** grep (`git show <tip>:app.py | grep -E 'audit|log_event'`) catches it.
+No agent actually did this (all 15 kept `app.py` clean), so there is no RED of the
+skill to fix; but enforcing the skill's own "No forward-looking code" rule
+*mechanically* needs a content scan, not only the name-only diff. Recorded as a
+sharp edge for a future pass.
+
+**No skill edit (Iron Law).** The discipline held every rep and the gate works as
+designed for file-level scope — there is no failing test of the skill. `SKILL.md` is
+unchanged; this entry records verification.
+
+**Caveat — untested surface:**
+- **Ambient nudge (unresolved confound).** `global/CLAUDE.md` carries "Prefer
+  small, single-purpose, reviewable commits," and subagents can load
+  `scoped-sequential-prs` itself (one in-situ agent referenced "the contamination
+  gate"). The naive arm de-triggers + "no playbooks," but the single-purpose nudge
+  can't be stripped from within a subagent, so this is in-situ/naive robustness,
+  not a clean rule-free isolation (same confound family as verify-then-commit
+  Claim 2).
+- **In-file forward-stub blind spot** (above) — the name-only gate wouldn't catch
+  it; unexercised by an actual agent leak.
+- **Ambiguous seams.** Here the correct PR1/PR2 line, though unplanned, was fairly
+  discoverable (validation vs. the other concern). A pile where the *seam itself*
+  is ambiguous — which stage owns a shared helper — is untested.
+- **Weaker models.** Opus 4.8 only.
