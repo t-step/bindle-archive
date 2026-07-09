@@ -1,0 +1,10 @@
+name: Chore
+description: Maintenance, tooling, or housekeeping
+labels: ["type: chore", "status: triage"]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What
+    validations:
+      required: true
