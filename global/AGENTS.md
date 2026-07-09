@@ -36,10 +36,14 @@ is not installed.
 
 ## Provider notes
 
-- Claude Code-only surfaces such as `skills/`, `agents/`, slash commands, and
-  `CLAUDE.md` may be useful context, but they are not automatically Codex
-  primitives.
-- Prefer direct repo instructions in `AGENTS.md` for Codex behavior.
+- If a repo has `AGENTS.md`, treat it as authoritative Codex-facing project
+  guidance.
+- If both `AGENTS.md` and `CLAUDE.md` exist, `AGENTS.md` is authoritative for
+  Codex; `CLAUDE.md` may add useful context but must not override it.
+- If a repo has no `AGENTS.md` but does have `CLAUDE.md`, read `CLAUDE.md` as
+  fallback project context.
+- In all cases, treat Claude-only references as non-portable unless the
+  current environment explicitly supports them: hooks, skills, agents, and slash commands.
 
 ## Communication
 
