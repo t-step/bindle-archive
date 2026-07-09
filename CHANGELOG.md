@@ -23,6 +23,16 @@ dated, versioned section at release time.
 - `docs/using-bindle-with-codex.md` — how Codex uses Bindle honestly:
   installed guidance, usable docs/scripts, non-portable Claude primitives,
   guidance precedence, and writing handoffs a future Claude session consumes.
+- `docs/hands-on-keyboard.md` — the provider-neutral contract for a
+  navigator/driver collaboration mode: roles, the default interaction loop,
+  escalation modes (explain only / command coaching / patch proposal /
+  delegated edit), decision checkpoints, and how to follow it manually from
+  Codex or another assistant.
+- `skills/hands-on-keyboard/SKILL.md` (**draft**, not yet pressure-tested) —
+  the Claude-native automation of that contract: orient before proposing,
+  prefer commands the user runs, ask before editing unless explicitly
+  delegated, small patches, decision checkpoints, and a short user action
+  queue.
 
 ### Changed
 - `docs/provider-interop.md` reframed from the Phase 1 migration contract
@@ -35,6 +45,8 @@ dated, versioned section at release time.
   fallback context when there is no `AGENTS.md`, and Claude-only references
   are treated as non-portable unless the environment explicitly supports
   them: hooks, skills, agents, and slash commands.
+- README links to the new `docs/hands-on-keyboard.md` contract and the
+  `hands-on-keyboard` skill.
 
 ## [0.2.0] - 2026-07-08
 
