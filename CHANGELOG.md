@@ -38,6 +38,9 @@ dated, versioned section at release time.
   this scenario/model, 5/5 at baseline too — no skill edit needed). Other
   dimensions (weaker models, an isolated command-sharing claim, the
   delegated-edit path) remain untested and are tracked in that log.
+- `docs/issue-tracking.md` — GitHub Issues adopted as the work-tracking
+  surface: label taxonomy (type/status/priority + `question`), release-scoped
+  milestones, and how issues coexist with the branch/PR/CHANGELOG discipline.
 
 ### Changed
 - `docs/provider-interop.md` reframed from the Phase 1 migration contract
