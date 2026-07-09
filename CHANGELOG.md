@@ -14,6 +14,15 @@ dated, versioned section at release time.
 
 ## [Unreleased]
 
+### Changed
+- Codex global guidance (`global/AGENTS.md`) now spells out project-context
+  fallback: `AGENTS.md` is authoritative when present, `CLAUDE.md` is read as
+  fallback context when there is no `AGENTS.md`, and Claude-only references
+  are treated as non-portable unless the environment explicitly supports
+  them: hooks, skills, agents, and slash commands.
+
+## [0.2.0] - 2026-07-08
+
 ### Added
 - Provider interoperability contract in `docs/provider-interop.md` for the
   rename from `claude-kit` to Bindle and the Phase 1 Claude/Codex boundary.
