@@ -1,4 +1,4 @@
-# Gitleaks config for claude-kit: the default secret rules, extended with
+# Gitleaks config for Bindle: the default secret rules, extended with
 # personal-info rules mirroring bin/check-private-info.sh (which is the
 # always-on, dependency-free layer; Gitleaks adds history-wide sweeps).
 #
@@ -8,7 +8,7 @@
 #
 # See docs/privacy-boundaries.md for the model.
 
-title = "claude-kit"
+title = "Bindle"
 
 [extend]
 useDefault = true

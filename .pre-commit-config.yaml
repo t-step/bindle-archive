@@ -1,4 +1,4 @@
-# Pre-commit checks for claude-kit. Enable locally with `bin/install-hooks.sh`
+# Pre-commit checks for Bindle. Enable locally with `bin/install-hooks.sh`
 # (installs the pre-commit + post-merge stages); CI runs `pre-commit run
 # --all-files`. shellcheck and shfmt are managed here, so they're enforced even
 # if you don't have them installed system-wide.
@@ -36,27 +36,27 @@ repos:
       - id: shfmt
         args: [-i, "2", -ci, -d]
 
-  # claude-kit-specific checks and tests.
+  # Bindle-specific checks and tests.
   - repo: local
     hooks:
-      - id: claude-kit-private-info
+      - id: bindle-private-info
         name: private-info scan (personal data stays out of commits)
         entry: bin/check-private-info.sh
         language: script
         types: [text]
-      - id: claude-kit-content
-        name: claude-kit content (frontmatter/name/links/version)
+      - id: bindle-content
+        name: Bindle content (frontmatter/name/links/version)
         entry: bin/check.sh --content-only
         language: script
         pass_filenames: false
         always_run: true
-      - id: claude-kit-install-test
+      - id: bindle-install-test
         name: install.sh link/conflict/prune tests
         entry: bin/test-install.sh
         language: script
         pass_filenames: false
         always_run: true
-      - id: claude-kit-link
+      - id: bindle-link
         name: link new items into ~/.claude (post-merge)
         entry: bin/install.sh
         language: script
