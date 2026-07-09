@@ -28,11 +28,16 @@ dated, versioned section at release time.
   escalation modes (explain only / command coaching / patch proposal /
   delegated edit), decision checkpoints, and how to follow it manually from
   Codex or another assistant.
-- `skills/hands-on-keyboard/SKILL.md` (**draft**, not yet pressure-tested) —
-  the Claude-native automation of that contract: orient before proposing,
-  prefer commands the user runs, ask before editing unless explicitly
-  delegated, small patches, decision checkpoints, and a short user action
-  queue.
+- `skills/hands-on-keyboard/SKILL.md` — the Claude-native automation of that
+  contract: orient before proposing, prefer commands the user runs, ask
+  before editing unless explicitly delegated, small patches, decision
+  checkpoints, and a short user action queue. Pressure-tested per
+  CONTRIBUTING's RED→GREEN→REFACTOR loop — see
+  `skills/hands-on-keyboard/PRESSURE-TESTS.md`: the core "don't silently
+  edit under pressure" claim holds 5/5 with the skill installed (and, on
+  this scenario/model, 5/5 at baseline too — no skill edit needed). Other
+  dimensions (weaker models, an isolated command-sharing claim, the
+  delegated-edit path) remain untested and are tracked in that log.
 
 ### Changed
 - `docs/provider-interop.md` reframed from the Phase 1 migration contract
