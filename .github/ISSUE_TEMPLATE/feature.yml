@@ -1,0 +1,18 @@
+name: Feature
+description: A new capability (renders as a task on the dashboard)
+labels: ["type: feat", "status: triage"]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What
+      description: The capability and why it belongs in bindle.
+    validations:
+      required: true
+  - type: textarea
+    id: done-when
+    attributes:
+      label: Done when
+      description: Observable completion criteria (pressure-tested, documented, in CHANGELOG).
+    validations:
+      required: true
