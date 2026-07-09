@@ -14,6 +14,8 @@ dated, versioned section at release time.
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-07-08
+
 ### Added
 - Provider interoperability contract in `docs/provider-interop.md` for the
   rename from `claude-kit` to Bindle and the Phase 1 Claude/Codex boundary.
