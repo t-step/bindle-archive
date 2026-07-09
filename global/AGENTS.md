@@ -44,6 +44,10 @@ is not installed.
   fallback project context.
 - In all cases, treat Claude-only references as non-portable unless the
   current environment explicitly supports them: hooks, skills, agents, and slash commands.
+- When asked to write a session note or handoff and the Bindle repo is
+  available, follow its portable conventions — `docs/session-notes-format.md`
+  and `docs/using-bindle-with-codex.md` in that repo — instead of inventing a
+  format or writing notes into the project repo.
 
 ## Communication
 

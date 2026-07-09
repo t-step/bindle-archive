@@ -14,7 +14,22 @@ dated, versioned section at release time.
 
 ## [Unreleased]
 
+### Added
+- `docs/session-notes-format.md` — the provider-neutral session-continuity
+  contract (notes home, naming, artifact shapes, privacy rules) extracted
+  from the `session-continuity` skill and commands, with explicit contract
+  levels (stable contract / current Claude automation / compatibility /
+  recommendation).
+- `docs/using-bindle-with-codex.md` — how Codex uses Bindle honestly:
+  installed guidance, usable docs/scripts, non-portable Claude primitives,
+  guidance precedence, and writing handoffs a future Claude session consumes.
+
 ### Changed
+- `docs/provider-interop.md` reframed from the Phase 1 migration contract
+  into the standing provider interoperability contract, with a per-provider
+  capability matrix and permanent non-equivalence rules.
+- README, `docs/notes-home.md`, and `global/AGENTS.md` link to the new
+  portable-contract docs.
 - Codex global guidance (`global/AGENTS.md`) now spells out project-context
   fallback: `AGENTS.md` is authoritative when present, `CLAUDE.md` is read as
   fallback context when there is no `AGENTS.md`, and Claude-only references

@@ -1,8 +1,9 @@
 # The notes home
 
 Where Bindle session workflows write durable Markdown, and how to relocate it.
-The full conventions live in the `session-continuity` skill; this is the
-user-facing summary.
+This is the user-facing summary; the provider-neutral contract (file shapes,
+naming, privacy rules) is [session-notes-format.md](session-notes-format.md),
+which the `session-continuity` skill automates for Claude Code.
 
 ## Default layout
 

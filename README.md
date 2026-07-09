@@ -33,7 +33,9 @@ undocumented Codex global install standard.
 
 Claude skills are not automatically Codex skills. Claude slash commands are not
 automatically Codex commands. Claude agents are not automatically Codex agents.
-The migration contract is in [docs/provider-interop.md](docs/provider-interop.md).
+The standing contract (with a per-provider capability matrix) is in
+[docs/provider-interop.md](docs/provider-interop.md); the Codex-side guide is
+[docs/using-bindle-with-codex.md](docs/using-bindle-with-codex.md).
 
 ## Install
 
@@ -108,7 +110,9 @@ plain-Markdown notes:
 Notes prefer `BINDLE_NOTES_DIR`, then the deprecated `CLAUDE_KIT_NOTES_DIR`, then
 `~/.bindle`. Existing `~/.claude-kit` data is not moved automatically; keep using
 the alias or migrate by hand when you choose. See
-[docs/notes-home.md](docs/notes-home.md).
+[docs/notes-home.md](docs/notes-home.md). The provider-neutral contract behind
+these commands — usable from Codex too — is
+[docs/session-notes-format.md](docs/session-notes-format.md).
 
 ## Checks and tests
 
