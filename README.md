@@ -114,6 +114,15 @@ the alias or migrate by hand when you choose. See
 these commands — usable from Codex too — is
 [docs/session-notes-format.md](docs/session-notes-format.md).
 
+## Hands-on-keyboard mode
+
+A collaboration mode that keeps the user driving — hands on the code,
+terminal, diffs, and tests — with Claude acting as navigator rather than an
+autonomous implementer. The `hands-on-keyboard` skill applies it in Claude
+Code; the provider-neutral contract (roles, escalation modes, how to follow
+it manually from Codex or another assistant) is
+[docs/hands-on-keyboard.md](docs/hands-on-keyboard.md).
+
 ## Checks and tests
 
 ```bash
