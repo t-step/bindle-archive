@@ -133,15 +133,20 @@ it manually from Codex or another assistant) is
 make check
 make test
 bin/test-install.sh
+bin/test-check.sh
 ```
 
 `make check` wraps `bin/check.sh`. It still validates Claude-specific
 conventions for `skills/*/SKILL.md`, `agents/*.md`, and `commands/*.md`.
 Codex files are direct instruction files and are not required to pass Claude
-skill, agent, or slash-command frontmatter checks.
+skill, agent, or slash-command frontmatter checks. `check.sh` discovers what
+to lint/self-test from repo structure (`git ls-files '*.sh'`, and any tracked
+`skills/*/scripts/selftest.py`) rather than a hardcoded list — see
+`SH_EXCLUDE` in `bin/check.sh` for the (deliberately narrow) exclusion point.
 
 `make test` runs installer tests for Claude install, explicit Codex install,
-`--provider all`, conflict safety, and prune safety.
+`--provider all`, conflict safety, and prune safety, plus `check.sh`'s own
+script/self-test discovery tests.
 
 ## Developing Bindle
 

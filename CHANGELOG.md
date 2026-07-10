@@ -15,6 +15,21 @@ dated, versioned section at release time.
 ## [Unreleased]
 
 ### Fixed
+- `bin/check.sh` discovers shellcheck/shfmt targets and skill self-tests from
+  repo structure instead of hardcoded paths (issue #26). Shell scripts:
+  `git ls-files '*.sh'` (any tracked script, wherever it lives) minus a new,
+  documented `SH_EXCLUDE` array for narrow, explicit exclusions. Skill
+  self-tests: any tracked `skills/*/scripts/selftest.py` runs automatically —
+  adding a new scripted skill needs no `check.sh` edit. Both discovery loops
+  are NUL-unsafe-but-newline-safe (`while IFS= read -r`, matching the rest of
+  the codebase, not `mapfile -d ''`, which needs bash ≥4 and macOS ships 3.2)
+  and handle spaces/unusual characters in paths correctly. The checker now
+  prints which scripts/self-tests it ran. New `bin/test-check.sh` (wired into
+  `make test` and pre-commit) covers all of this against throwaway fixture
+  repos, including a real regression caught along the way: a discovery-loop
+  comment that itself started with `# shellcheck` was parsed by shellcheck as
+  a malformed directive once check.sh started linting itself via discovery
+  rather than a fixed `bin/*.sh` glob.
 - `fork-pr-flow` skill: added an explicit guardrail against self-merging a PR
   you authored into `upstream` (or your own `main`). "Get it merged" under
   deadline pressure means putting it in front of the maintainers, not

@@ -56,6 +56,12 @@ repos:
         language: script
         pass_filenames: false
         always_run: true
+      - id: bindle-check-test
+        name: check.sh script/self-test discovery tests
+        entry: bin/test-check.sh
+        language: script
+        pass_filenames: false
+        always_run: true
       - id: bindle-link
         name: link new items into ~/.claude (post-merge)
         entry: bin/install.sh
