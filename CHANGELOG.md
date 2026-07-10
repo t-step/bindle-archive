@@ -30,6 +30,20 @@ dated, versioned section at release time.
   comment that itself started with `# shellcheck` was parsed by shellcheck as
   a malformed directive once check.sh started linting itself via discovery
   rather than a fixed `bin/*.sh` glob.
+- `bin/check.sh`'s frontmatter validation now parses the leading `---` block
+  exactly once and reuses that parsed result for every check — required keys
+  and the `name:` lookup (issue #27). Previously `name:` was looked up by
+  scanning the *entire file*, so when frontmatter's own `name:` key was
+  missing, a `name:`-shaped line anywhere in the body (a code example, a
+  quoted config snippet) could be picked up and fabricate a misleading
+  "name must match its folder" problem instead of just reporting the real
+  one (missing key). Also new: unterminated frontmatter (no closing `---`)
+  and duplicate top-level keys now fail with a clear, specific message
+  instead of silently reading past the intended block or picking an
+  arbitrary duplicate. New `bin/test-check-frontmatter.sh` (wired into
+  `make test` and pre-commit) covers the body-leak regression, unterminated
+  frontmatter, duplicate keys, and a regression floor proving existing
+  valid/invalid skills, agents, and commands behave exactly as before.
 - `fork-pr-flow` skill: added an explicit guardrail against self-merging a PR
   you authored into `upstream` (or your own `main`). "Get it merged" under
   deadline pressure means putting it in front of the maintainers, not
