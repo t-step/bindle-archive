@@ -15,6 +15,14 @@ dated, versioned section at release time.
 ## [Unreleased]
 
 ### Added
+- `/session-end` label reconciliation step: identifies issues the session
+  touched, proposes `gh issue edit`/`gh issue close` commands to bring their
+  `status:` label in line with reality, and runs them only after explicit
+  user approval. `/session-start` correspondingly surfaces open
+  `status: in-progress` issues so a stale label is caught at the start of
+  the next session too. Operationalizes `docs/issue-tracking.md`'s "keep
+  `status:` labels current" convention as part of the session workflow
+  instead of relying on habit.
 - `docs/session-notes-format.md` — the provider-neutral session-continuity
   contract (notes home, naming, artifact shapes, privacy rules) extracted
   from the `session-continuity` skill and commands, with explicit contract

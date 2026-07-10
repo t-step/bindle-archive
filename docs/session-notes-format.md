@@ -101,9 +101,14 @@ keep the field names recognizable; precision beats prose.
 
 **Current Claude automation:** `/session-end` additionally records an
 explicit **validation status** (green / red / not verified) and reconstructs
-the session from git state rather than trusting the conversation's claims.
-Imitating that honesty is strongly recommended; the extra field is not
-required of other writers.
+the session from git state rather than trusting the conversation's claims. In
+repos that track work as GitHub Issues (see
+[issue-tracking.md](issue-tracking.md)), it also proposes `status:`-label
+reconciliation for issues the session touched — user-approved before any `gh`
+command runs — and folds the outcome into **decisions**. `/session-start`
+correspondingly surfaces open `status: in-progress` issues so a stale label
+is caught at the start of the next session too. Imitating that honesty is
+strongly recommended; the extra field is not required of other writers.
 
 ### Handoff
 
