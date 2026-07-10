@@ -29,17 +29,34 @@ When NOT to use:
 
 ## The contamination gate
 
-Fail the PR if any changed file falls outside the stage's declared scope:
+The gate has **two steps**; the PR passes only if both do. Step 1 catches
+out-of-scope *files*; step 2 catches forward references smuggled *inside*
+in-scope files (an import or call into a later stage passes step 1 — and can
+ship a PR that doesn't even build).
 
 ```bash
-# Files changed between the stage's base and its tip
+# Step 1 — file scope: every changed file must be one the stage owns
 git diff --name-only "$BASE".."$TIP" \
   | grep -Ev '^(packages/parser/|tests/parser/)' \
   && echo "CONTAMINATION: out-of-scope files above" && exit 1 \
-  || echo "scope clean"
+  || echo "file scope clean"
+
+# Step 2 — content scan: no added line may reference later-stage code
+git diff -U0 "$BASE".."$TIP" \
+  | grep '^+' | grep -v '^+++' \
+  | grep -nE 'evaluator|evaluate' \
+  && echo "CONTAMINATION: forward references above" && exit 1 \
+  || echo "content clean"
 ```
 
-Adjust the `grep -Ev` allow-pattern per stage. Anything printed = a file the stage doesn't own → move it to the PR that owns it. Also scan prose: no PR should *mention* features introduced by a later PR.
+Adjust both patterns per stage: the `grep -Ev` allow-pattern is the files this
+stage owns; the step-2 pattern is the module names and key identifiers owned by
+*later* stages (take them from the plan). Anything step 1 prints = a file the
+stage doesn't own → move it to the PR that owns it. Anything step 2 prints = a
+forward reference → strip it from this PR (it belongs in the stage that
+introduces it). The gate's output is the verdict — do not report "scope clean"
+unless both steps passed. Also scan prose: no PR should *mention* features
+introduced by a later PR.
 
 ## Scope isolation rules
 

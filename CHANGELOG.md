@@ -14,6 +14,23 @@ dated, versioned section at release time.
 
 ## [Unreleased]
 
+### Fixed
+- `scoped-sequential-prs` contamination gate: closed the in-file
+  forward-reference blind spot (issue #12). The gate is now **two steps** — the
+  original name-only file diff plus a **content scan** of the diff's added lines
+  for later-stage symbols — with an explicit "the gate's output is the verdict"
+  rule. Iron Law satisfied: the failing test was Claim 3's agent-triggered RED
+  (Haiku agents shipped a non-building PR1 and reported "scope clean" off the
+  name-only gate). Verified mechanically on the rebuilt Claim-2/3 fixture (old
+  gate says "scope clean" on a commit that fails `import app`; step 2 prints the
+  two wiring lines and exits 1; a genuinely clean PR1 passes both steps and
+  builds) and with a 5-rep Haiku 4.5 rerun of the adversarial keep-wired arm:
+  **0/5 false "scope clean" on a non-building commit** (Claim 3: 3/5 shipped
+  broken believing it clean). New residual logged: the gate cannot defend a
+  self-widened scope *declaration* — 1/5 committed the later-stage stub and
+  chose a step-2 pattern that excluded it. See
+  `skills/scoped-sequential-prs/PRESSURE-TESTS.md` Claim 4.
+
 ### Added
 - `/session-end` label reconciliation step: identifies issues the session
   touched, proposes `gh issue edit`/`gh issue close` commands to bring their
