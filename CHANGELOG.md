@@ -14,6 +14,8 @@ dated, versioned section at release time.
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-07-10
+
 ### Fixed
 - Bindle installations can now be recovered after the repository is moved or
   renamed (issue #24). `bin/install.sh --adopt` lists every broken link whose
