@@ -69,7 +69,8 @@ state of every managed destination (current / missing / stale / broken /
 conflicting / possibly an earlier checkout), the notes-home resolution, and
 local tool availability, with a suggested next action for every finding. It
 never writes anything — repairs stay explicit (`bin/install.sh`,
-`bin/install.sh --prune`, or the recovery options in
+`bin/install.sh --prune`, `bin/install.sh --adopt` after a repo move, or the
+recovery options in
 [docs/ownership-boundaries.md](docs/ownership-boundaries.md)).
 
 ## Ownership boundaries
@@ -85,6 +86,9 @@ left untouched.
   `--allow-conflicts` for interactive use when you just want the warnings.
   See the exit codes in `bin/install.sh`'s usage header.
 - **Safe prune:** `--prune` removes only broken symlinks pointing into this repo.
+- **Explicit adoption:** after the repo is moved or renamed, `--adopt` relinks
+  broken links left by an earlier checkout — preview and confirmation first,
+  broken exact-match links only, never automatic.
 - **Provider-specific install:** Claude surfaces go under the Claude home;
   Codex Phase 1 installs only `global/AGENTS.md` to the explicit Codex target.
 

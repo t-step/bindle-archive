@@ -97,9 +97,22 @@ preference:
    yourself, and re-run `install.sh`. The installer will not do this move for
    you, by design.
 
-If you deleted the repo (or moved it) and an installed surface is full of broken links:
-re-clone/restore the repo at the same path and run `bin/install.sh`, or run
-`bin/install.sh --prune` from the new location — it only sweeps links that
-point into *that* checkout, so links into the old path must be removed by hand
-(`find ~/.claude -type l ! -exec test -e {} \; -print` lists broken Claude
-links to review).
+## Recovery when the repo was moved or renamed
+
+If the repo moved (or was re-cloned elsewhere), installed links still point at
+the old path: broken, and — because the ownership test is a prefix match
+against *this* checkout — classified as foreign by the new location.
+`bin/doctor.sh` reports these as `earlier-checkout`. To recover:
+
+1. **Preferred:** run `bin/install.sh --adopt` from the new checkout. It lists
+   every *broken* link whose target ends with an expected Bindle item path
+   (e.g. `…/skills/fork-pr-flow`), shows the old prefix, and relinks only
+   after you confirm. It never touches live links, real files, or broken
+   links that don't match an expected item exactly — verify the old prefix
+   shown really is your previous Bindle checkout before answering yes.
+   Declining leaves everything untouched (reported as conflicts).
+2. Or re-clone/restore the repo at the *old* path and run `bin/install.sh`.
+3. Or remove the stale links by hand
+   (`find ~/.claude -type l ! -exec test -e {} \; -print` lists broken Claude
+   links to review) and reinstall. `bin/install.sh --prune` won't help here —
+   it only sweeps links that point into *this* checkout.
