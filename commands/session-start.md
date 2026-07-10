@@ -1,7 +1,7 @@
 ---
 description: Orient a new session — repo state, project profile, prior notes, validation gates
 argument-hint: [objective]
-allowed-tools: Bash(git status:*), Bash(git branch:*), Bash(git log:*), Bash(date:*)
+allowed-tools: Bash(git status:*), Bash(git branch:*), Bash(git log:*), Bash(date:*), Bash(gh issue list:*)
 ---
 
 <!-- Conventions (notes home layout, slug rules, privacy):
@@ -16,6 +16,7 @@ Current repo state:
 - branch: !`git branch --show-current`
 - status: !`git status --short --branch`
 - recent commits: !`git log --oneline -10`
+- in-progress issues: !`gh issue list --label "status: in-progress" --json number,title -q '.[] | "#\(.number) \(.title)"' 2>/dev/null`
 
 Steps:
 
@@ -31,6 +32,11 @@ Steps:
 4. Summarize in ≤15 lines: where the repo stands, what the last session
    finished/deferred (per notes), the gates that must pass before committing,
    and any safety notes from the profile (branch discipline, "never touch X").
+   If the repo state above lists any in-progress issues, ask whether each is
+   still accurate — a stale `status:` label is a lie the dashboard shows
+   live, and catching it here means it doesn't sit for another session. (No
+   listing appears if the repo has no such issues, or `gh` isn't installed or
+   authenticated — skip silently in that case.)
 5. Objective: if the user provided one ("$ARGUMENTS"), restate it as the
    session goal and note anything in the profile/handoff that conflicts with
    it. If none was provided and the latest handoff names a clear next step,
