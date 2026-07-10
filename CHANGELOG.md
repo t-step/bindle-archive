@@ -15,6 +15,14 @@ dated, versioned section at release time.
 ## [Unreleased]
 
 ### Fixed
+- `bin/install.sh` now exits `1` when one or more conflicts prevent
+  installation of a requested item, instead of exiting `0` and only warning
+  (issue #23). Conflicting paths are still left completely untouched. Added
+  `--allow-conflicts` to keep the old exit-`0`-with-warnings behavior for
+  interactive workflows. Exit codes (`0`/`1`/`2`) are documented in the
+  script's usage header, README, and `docs/ownership-boundaries.md`. Covered
+  by four new `bin/test-install.sh` cases (default conflict exit status,
+  `--allow-conflicts` suppressing it, and a clean install's exit status).
 - `scoped-sequential-prs` contamination gate: closed the in-file
   forward-reference blind spot (issue #12). The gate is now **two steps** — the
   original name-only file diff plus a **content scan** of the diff's added lines

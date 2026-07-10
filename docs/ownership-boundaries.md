@@ -81,8 +81,13 @@ files. `bin/test-install.sh` asserts this on every commit.
 ## Recovery when conflicts happen
 
 A `CONFLICT` line from `install.sh` means a destination is already taken by
-something the kit doesn't own. Nothing was modified. Your
-options, in order of preference:
+something the kit doesn't own. Nothing was modified, but the requested
+install is incomplete — by default the installer exits `1` so scripted callers
+(dotfiles installers, agents) can't mistake conflict-safety for success. Pass
+`--allow-conflicts` to keep the warnings but exit `0` (e.g. for an interactive
+run where you'll resolve conflicts by hand afterward). See the exit codes
+documented in `bin/install.sh`'s usage header. Your options, in order of
+preference:
 
 1. **Rename the kit's item** (`skills/<new-name>/`, re-run `install.sh`) so
    both coexist.
