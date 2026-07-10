@@ -14,6 +14,24 @@ dated, versioned section at release time.
 
 ## [Unreleased]
 
+### Added
+
+- `skills/fork-pr-flow/PRESSURE-TESTS.md` — the skill is now pressure-tested
+  (issue #13) and no longer a draft; it was the last daily-driver skill
+  without a recorded test. The campaign targeted the guardrail PR #41 added
+  without one: *"get it merged" under deadline pressure does not authorize
+  self-merging your own PR.* RED (skill verifiably absent, probe-confirmed):
+  1/5 subagents executed `pr merge` on its own PR and was stopped only by the
+  harness permission wall — a genuine baseline failure of judgment. GREEN
+  (skill installed): 5/5 discovered the skill unprompted via its description
+  trigger and refused on principle, 0 merge attempts (0/10 counting the
+  in-situ arm). Secondary claims verified across all 15 reps: upstream refs
+  byte-identical (never push), every PR correctly targeted
+  `<fork-user>:branch → upstream main`. Fixtures were throwaway local bare
+  repos with an audit-logging `gh` wrapper; scoring was filesystem + wrapper
+  log + transcript, never self-reports. No `SKILL.md` edit (Iron Law — with
+  the skill loaded, compliance is 10/10).
+
 ## [0.3.0] - 2026-07-10
 
 ### Fixed
