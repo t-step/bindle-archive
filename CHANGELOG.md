@@ -96,6 +96,7 @@ dated, versioned section at release time.
   boundary, `--json` is deferred until a real consumer exists. Covered by
   `bin/test-doctor.sh` (temp fixture repos and homes only — never the real
   environment), wired into `make test` and pre-commit.
+- `docs/product-boundary.md` — the near-term (v0.3–v0.4) product-boundary
   decision (issue #34): one primary role (personal workflow infrastructure
   for a single owner), owned surfaces, the provider boundary, operational
   definitions of portable / provider-neutral / supported / mature,
