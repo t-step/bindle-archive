@@ -62,6 +62,16 @@ bin/install.sh --home /tmp/claude-home
 
 Re-run anytime. The installer is idempotent and conflict-safe.
 
+## Troubleshooting
+
+`bin/doctor.sh` (or `make doctor`) is the read-only diagnostic: it reports the
+state of every managed destination (current / missing / stale / broken /
+conflicting / possibly an earlier checkout), the notes-home resolution, and
+local tool availability, with a suggested next action for every finding. It
+never writes anything — repairs stay explicit (`bin/install.sh`,
+`bin/install.sh --prune`, or the recovery options in
+[docs/ownership-boundaries.md](docs/ownership-boundaries.md)).
+
 ## Ownership boundaries
 
 Bindle is a good citizen: it only creates, updates, or removes symlinks that
