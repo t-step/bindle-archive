@@ -85,6 +85,17 @@ dated, versioned section at release time.
   `skills/scoped-sequential-prs/PRESSURE-TESTS.md` Claim 4.
 
 ### Added
+- `bin/doctor.sh` + `make doctor` — read-only installation and configuration
+  diagnostics (issue #28): classifies every managed destination as current /
+  missing / stale / broken / conflicting / possibly-an-earlier-checkout
+  (the conservative detection half of issue #24 — reporting only, no
+  adoption), reports notes-home resolution (including the deprecated
+  `CLAUDE_KIT_NOTES_DIR` chain) and local tool availability, and pairs every
+  finding with a suggested command or doc pointer. Performs zero writes;
+  exits `1` when findings exist so scripts can gate on it. Per the product
+  boundary, `--json` is deferred until a real consumer exists. Covered by
+  `bin/test-doctor.sh` (temp fixture repos and homes only — never the real
+  environment), wired into `make test` and pre-commit.
 - `docs/product-boundary.md` — the near-term (v0.3–v0.4) product-boundary
   decision (issue #34): one primary role (personal workflow infrastructure
   for a single owner), owned surfaces, the provider boundary, operational
