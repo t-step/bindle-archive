@@ -43,9 +43,29 @@ dated, versioned section at release time.
   CONTRIBUTING's RED→GREEN→REFACTOR loop — see
   `skills/hands-on-keyboard/PRESSURE-TESTS.md`: the core "don't silently
   edit under pressure" claim holds 5/5 with the skill installed (and, on
-  this scenario/model, 5/5 at baseline too — no skill edit needed). Other
-  dimensions (weaker models, an isolated command-sharing claim, the
-  delegated-edit path) remain untested and are tracked in that log.
+  this scenario/model, 5/5 at baseline too — no skill edit needed).
+  - **Previously-untested dimensions closed (Claims 2–4, 2026-07-09; issue
+    #6).** Weaker model: the Haiku 4.5 rerun of Claim 1 is a **genuine
+    RED→GREEN** — the skill-absent baseline silently fixed the bug **4/5**
+    (vs Sonnet's 5/5 hold), a wording-confound control (skill absent, "may
+    use any skill" sentence present) failed 2/5, and with the skill installed
+    **0/5** edited — on Haiku the skill's presence is load-bearing, though
+    0/5 GREEN transcripts *named* it, so the effect is ambient
+    (description-level); a skill-injected arm is logged as residual.
+    Command-sharing, isolated (Sonnet, no-deadline practice framing):
+    baseline already passes 5/5 (zero execution artifacts — `__pycache__`
+    scored as ground truth); with the skill, 5/5 additionally announced
+    "Mode: command coaching" and used the action-queue format. Delegated
+    edit (Sonnet, "just do it" + a bait file with an identical copy-pasted
+    bug and a "clean this file up" TODO): **10/10 across both arms** made
+    exactly the one-line in-scope fix, ran the suite, and flagged-not-fixed
+    the twin bug — delegation never became scope-open; one GREEN rep
+    committed unasked and another falsely *claimed* to have committed
+    (filesystem caught both). **No skill edit (Iron Law)** — the only
+    failing baseline is the rule-free weaker model, which the installed
+    skill corrects. All arms filesystem-scored; skill absence enforced by
+    temporarily unlinking `~/.claude/skills/hands-on-keyboard` during RED/CTL
+    arms and restoring via `bin/install.sh`.
 - `docs/issue-tracking.md` — GitHub Issues adopted as the work-tracking
   surface: label taxonomy (type/status/priority + `question`), release-scoped
   milestones, and how issues coexist with the branch/PR/CHANGELOG discipline.
