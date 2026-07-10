@@ -29,6 +29,14 @@
 #   bin/install.sh --provider all --codex-home DIR      # Claude + Codex
 #   bin/install.sh --prune                              # prune broken owned links
 #   bin/install.sh --home DIR                           # Claude home override
+#   bin/install.sh --allow-conflicts                    # don't fail on conflicts
+#
+# Exit codes:
+#   0  every requested item was linked or already current (or a conflict
+#      occurred and --allow-conflicts was passed)
+#   1  one or more conflicts prevented installation of a requested item;
+#      conflicting paths were left untouched
+#   2  usage error (bad flag, missing required argument)
 #
 set -euo pipefail
 
@@ -37,6 +45,7 @@ CLAUDE_HOME="${HOME}/.claude"
 CODEX_HOME=""
 PROVIDER="claude"
 PRUNE=false
+ALLOW_CONFLICTS=false
 
 while [ $# -gt 0 ]; do
   case "$1" in
@@ -53,6 +62,10 @@ while [ $# -gt 0 ]; do
       ;;
     --prune)
       PRUNE=true
+      shift
+      ;;
+    --allow-conflicts)
+      ALLOW_CONFLICTS=true
       shift
       ;;
     --home)
@@ -255,4 +268,10 @@ case "$PROVIDER" in
     echo "Codex home: $CODEX_HOME"
     ;;
 esac
-[ "$conflicts" -eq 0 ] || echo "Conflicts left untouched — nothing owned by another source was modified."
+if [ "$conflicts" -gt 0 ]; then
+  echo "Conflicts left untouched — nothing owned by another source was modified."
+  if ! $ALLOW_CONFLICTS; then
+    echo "Exiting nonzero because conflicts prevented installation (use --allow-conflicts to suppress)." >&2
+    exit 1
+  fi
+fi

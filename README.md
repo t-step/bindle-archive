@@ -70,6 +70,10 @@ left untouched.
 
 - **No clobbering:** a real file or foreign symlink at a destination is reported
   as `CONFLICT`.
+- **Nonzero on conflict:** by default, any conflict makes the installer exit
+  `1` — installation was incomplete even though nothing was overwritten. Pass
+  `--allow-conflicts` for interactive use when you just want the warnings.
+  See the exit codes in `bin/install.sh`'s usage header.
 - **Safe prune:** `--prune` removes only broken symlinks pointing into this repo.
 - **Provider-specific install:** Claude surfaces go under the Claude home;
   Codex Phase 1 installs only `global/AGENTS.md` to the explicit Codex target.

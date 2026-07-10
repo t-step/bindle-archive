@@ -54,7 +54,9 @@ REPO="$TMP/repo"
 HOME_DIR="$TMP/home"
 build_repo "$REPO"
 "$REPO/bin/install.sh" --home "$HOME_DIR" >/dev/null
+status=$?
 
+check "clean install exits zero" test "$status" -eq 0
 check "skill linked" links_to "$REPO/skills/demo" "$HOME_DIR/skills/demo"
 check "agent linked" links_to "$REPO/agents/demo.md" "$HOME_DIR/agents/demo.md"
 check "command linked" links_to "$REPO/commands/demo.md" "$HOME_DIR/commands/demo.md"
@@ -79,6 +81,17 @@ check "reports conflicts" contains "CONFLICT" "$out"
 check "foreign file untouched" is_real_file "$HOME_DIR/commands/demo.md"
 check "foreign file content kept" file_is "do not touch" "$HOME_DIR/commands/demo.md"
 check "foreign symlink untouched" links_to "/etc/hostname" "$HOME_DIR/agents/demo.md"
+
+"$REPO/bin/install.sh" --home "$HOME_DIR" >/dev/null 2>&1
+status=$?
+check "conflict causes nonzero exit" test "$status" -ne 0
+
+echo "conflict safety with --allow-conflicts:"
+out="$("$REPO/bin/install.sh" --home "$HOME_DIR" --allow-conflicts 2>&1)"
+status=$?
+check "allow-conflicts still reports conflicts" contains "CONFLICT" "$out"
+check "allow-conflicts exits zero" test "$status" -eq 0
+check "allow-conflicts leaves foreign file untouched" is_real_file "$HOME_DIR/commands/demo.md"
 
 # ===========================================================================
 echo "codex install with explicit target:"
@@ -116,8 +129,10 @@ build_repo "$REPO"
 mkdir -p "$CODEX_HOME"
 printf 'do not touch\n' >"$CODEX_HOME/AGENTS.md"
 out="$("$REPO/bin/install.sh" --provider codex --codex-home "$CODEX_HOME" 2>&1)"
+status=$?
 
 check "codex reports conflicts" contains "CONFLICT" "$out"
+check "codex conflict causes nonzero exit" test "$status" -ne 0
 check "codex foreign file untouched" is_real_file "$CODEX_HOME/AGENTS.md"
 check "codex foreign file content kept" file_is "do not touch" "$CODEX_HOME/AGENTS.md"
 
