@@ -5,6 +5,10 @@ live, and the guardrails that keep it out of Git. The stance is simple:
 **committed files are publishable; everything personal lives outside project
 repos by default.**
 
+This doc covers tracked-*file* content. The runtime side — what executable
+or automatic assets may read, write, or send while running — is
+[runtime-security-privacy.md](runtime-security-privacy.md).
+
 ## What counts as private / personal data here
 
 Never commit, to this repo or any project repo:
