@@ -1,16 +1,27 @@
 name: CI
 
-# Runs on PRs only: everything reaches main through a PR, so the PR run is the
-# gate. Enforce it in branch protection ("Require status checks" + "Require
-# branches to be up to date before merging") so main stays green without a
-# redundant post-merge run.
+# The PR run is the primary gate — enforced in branch protection ("Require
+# status checks" + "Require branches to be up to date before merging"). But
+# branch protection is a repo *setting*, not something this repo can assert
+# about itself, so PR-only CI is not a complete guarantee on its own: an
+# admin/direct push to main would get no CI run, a branch-protection
+# misconfiguration would be invisible from here, and tool drift (Python,
+# shellcheck, shfmt, pre-commit) would only surface on the next PR. The push
+# and schedule triggers below close those gaps independently of any
+# branch-protection setting.
 on:
   pull_request:
+  push:
+    branches: [main]
+  schedule:
+    - cron: "0 7 * * 1" # Mondays 07:00 UTC — catches environmental drift even with no recent pushes.
 
-# A new push to a PR cancels the older in-flight run for that PR.
+# A new push to a PR cancels the older in-flight run for that PR. main-push and
+# scheduled runs don't cancel each other or any PR run: they're keyed by event
+# name as well as ref, and only PR runs opt into cancel-in-progress.
 concurrency:
-  group: ci-${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  group: ci-${{ github.workflow }}-${{ github.event_name }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   pre-commit:
@@ -21,8 +32,9 @@ jobs:
         with:
           python-version: "3.x"
       - run: pip install pre-commit
-        # Safety net: no-commit-to-branch is a local guard; skip in CI so a
-        # manual run against main (should never happen) can't fail the job.
+        # no-commit-to-branch is a local guard against committing on main in a
+        # dev checkout; it has nothing to check against a push/schedule/PR
+        # event and would only ever fail spuriously here, so skip it in CI.
       - run: pre-commit run --all-files --show-diff-on-failure
         env:
           SKIP: no-commit-to-branch
