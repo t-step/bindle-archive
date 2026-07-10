@@ -1,6 +1,6 @@
 ---
 name: fork-pr-flow
-description: Use when opening, targeting, or describing a pull request and deciding where changes land — whether the repo is a fork (origin vs upstream, avoiding "upstream into upstream") or one you own where changes should reach your own main via PR rather than a direct commit; also when unsure whether to push at all.
+description: Use when opening, targeting, or describing a pull request and deciding where changes land — whether the repo is a fork (origin vs upstream, avoiding "upstream into upstream") or one you own where changes should reach your own main via PR rather than a direct commit; also when unsure whether to push at all, or when tempted to merge a PR you just opened because you have access and were told to "get it merged".
 ---
 
 # fork-pr-flow
@@ -10,6 +10,8 @@ description: Use when opening, targeting, or describing a pull request and decid
 When you work on a **fork**, `origin` is your copy and `upstream` is the source you contribute back to. A PR must go **from your fork's branch → upstream's base branch**. The two most common failures are (1) opening a PR whose head and base are *both* upstream (nothing to merge, or the wrong direction), and (2) pushing to a remote the operator wanted to push themselves.
 
 **Default to the least surprising action: commit locally and stop. Never push to `origin`, `upstream`, or a deploy target unless explicitly asked.**
+
+**The job ends at the open PR. Never merge a PR you authored into upstream** — `gh pr merge`, `gh pr merge --auto`, and a merge commit pushed to `upstream` are all the same self-approval. "Get it merged" under deadline pressure means *put it in front of the maintainers today*; the merge click is theirs, or the operator's via an instruction that names the merge ("merge PR 47"). `--auto` still counts: scheduling the merge is making the call.
 
 ## When to Use
 
@@ -84,5 +86,6 @@ Draft-first is fine: `--draft` and refine the body in the GitHub UI.
 
 - **PR base is upstream's default via the fork's own branch of the same name** → GitHub shows "upstream:main ← upstream:main". Fix `--head` to `<your-user>:branch`.
 - **Pushing to `upstream`** — you usually lack rights, and it's never wanted. Push to `origin` only, and only when a PR is actually requested.
+- **Self-merging your own PR into upstream** because you "have the commit bit" or a deadline is looming — commit access is not review. Open the PR, report it, stop. Only an operator instruction that names the merge authorizes it.
 - **Auto-pushing to deploy targets** (HuggingFace, Vercel, PyPI) as a side effect — the operator handles these. Stop and ask.
 - **File-by-file PR body** — leads with mechanics instead of value. Lead with why.

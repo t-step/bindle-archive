@@ -15,6 +15,12 @@ dated, versioned section at release time.
 ## [Unreleased]
 
 ### Fixed
+- `fork-pr-flow` skill: added an explicit guardrail against self-merging a PR
+  you authored into `upstream` (or your own `main`). "Get it merged" under
+  deadline pressure means putting it in front of the maintainers, not
+  clicking merge yourself — `gh pr merge`, `--auto`, and a manual merge
+  commit are all the same self-approval. Only an operator instruction that
+  names the merge (e.g. "merge PR 47") authorizes it.
 - `bin/install.sh` now exits `1` when one or more conflicts prevent
   installation of a requested item, instead of exiting `0` and only warning
   (issue #23). Conflicting paths are still left completely untouched. Added
