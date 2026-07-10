@@ -85,6 +85,14 @@ dated, versioned section at release time.
   `skills/scoped-sequential-prs/PRESSURE-TESTS.md` Claim 4.
 
 ### Added
+- `docs/product-boundary.md` — the near-term (v0.3–v0.4) product-boundary
+  decision (issue #34): one primary role (personal workflow infrastructure
+  for a single owner), owned surfaces, the provider boundary, operational
+  definitions of portable / provider-neutral / supported / mature,
+  seven explicit non-goals, admission criteria for new workflows,
+  provider surfaces, automation, schemas, and eval infrastructure, the
+  near-term sequence, revisit triggers, and a dated triage of every open
+  issue against the boundary. README links to it from "Developing Bindle".
 - `/session-end` label reconciliation step: identifies issues the session
   touched, proposes `gh issue edit`/`gh issue close` commands to bring their
   `status:` label in line with reality, and runs them only after explicit

@@ -154,6 +154,11 @@ Read [CONTRIBUTING.md](CONTRIBUTING.md) before adding or changing assets. This
 repo uses branch-and-PR discipline, small reviewable changes, and verification
 before completion. Do not push unless explicitly asked.
 
+What Bindle is for, what it owns, and which tempting directions are
+deliberately out of scope for the next releases is decided in
+[docs/product-boundary.md](docs/product-boundary.md) — check proposed work
+against it before starting.
+
 ## Make targets
 
 `make help` lists the shortcuts: `check`, `test`, `install`, `hooks`,
