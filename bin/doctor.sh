@@ -14,8 +14,9 @@
 #   broken            owned symlink whose target no longer exists
 #   earlier-checkout  symlink outside this repo whose target is missing but
 #                     whose path looks like an earlier Bindle checkout
-#                     (detection only, never a claim of ownership — see
-#                     docs/ownership-boundaries.md)
+#                     (detection only, never a claim of ownership — run
+#                     bin/install.sh --adopt to preview + confirm relinking,
+#                     or see docs/ownership-boundaries.md)
 #   conflict          anything else foreign: a real file/dir, or a symlink
 #                     owned by something else
 #
@@ -99,7 +100,7 @@ classify() {
               old_prefix="${cur%"$suffix"}"
               STATE="earlier-checkout"
               DETAIL="symlink to $cur (target missing) — possibly an earlier Bindle checkout at $old_prefix"
-              ACTION='see docs/ownership-boundaries.md ("Recovery when conflicts happen")'
+              ACTION='run: bin/install.sh --adopt (preview + confirm), or see docs/ownership-boundaries.md'
               ;;
             *)
               STATE="conflict"

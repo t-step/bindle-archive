@@ -15,6 +15,18 @@ dated, versioned section at release time.
 ## [Unreleased]
 
 ### Fixed
+- Bindle installations can now be recovered after the repository is moved or
+  renamed (issue #24). `bin/install.sh --adopt` lists every broken link whose
+  target ends with an expected Bindle item path (the same conservative rule
+  `bin/doctor.sh` uses for `earlier-checkout` detection), shows the old
+  checkout prefix, and relinks only after explicit confirmation. It never
+  touches live links, real files, or broken links that don't match an
+  expected item exactly; declining leaves everything untouched and reported
+  as conflicts. Ownership stays symlinks-only — no manifest or marker files
+  (per the mechanism decision on issue #24). Doctor's `earlier-checkout`
+  findings now point at `--adopt`. Covered by new `bin/test-install.sh`
+  moved-repo cases (adopt, decline, non-candidate guards, regression floor);
+  recovery documented in `docs/ownership-boundaries.md` and the README.
 - `bin/check.sh` discovers shellcheck/shfmt targets and skill self-tests from
   repo structure instead of hardcoded paths (issue #26). Shell scripts:
   `git ls-files '*.sh'` (any tracked script, wherever it lives) minus a new,
