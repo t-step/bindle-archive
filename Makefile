@@ -4,7 +4,7 @@
 
 help:
 	@echo "make check              run hygiene checks (bin/check.sh)"
-	@echo "make test               run install.sh tests (bin/test-install.sh)"
+	@echo "make test               run install.sh + check.sh tests"
 	@echo "make install            install default Claude surfaces (bin/install.sh)"
 	@echo "make hooks              enable git hooks (bin/install-hooks.sh)"
 	@echo "make new ARGS=\"skill x\"  scaffold a new item (bin/new.sh)"
@@ -15,6 +15,7 @@ check:
 
 test:
 	bin/test-install.sh
+	bin/test-check.sh
 
 install:
 	bin/install.sh

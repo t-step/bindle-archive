@@ -5,8 +5,10 @@
 #
 # Checks (shellcheck/shfmt are skipped with a notice if not installed locally;
 # CI installs and enforces them):
-#   1.  shellcheck   — lint the shell scripts
-#   1b. shfmt        — consistent shell formatting
+#   1.  shellcheck   — lint every tracked *.sh, wherever it lives (discovered
+#                      via `git ls-files`, minus the documented SH_EXCLUDE
+#                      list below — not hardcoded to bin/)
+#   1b. shfmt        — consistent shell formatting, same discovered file set
 #   2.  Claude frontmatter — every Claude skill/agent has name+description
 #                      (command needs description); a skill's name matches its
 #                      folder and an agent's matches its filename
@@ -14,7 +16,8 @@
 #                      a newline
 #   4.  links        — repo-relative markdown links resolve
 #   5.  version      — VERSION is semver and CHANGELOG has an Unreleased section
-#   6.  skill scripts— python selftests for skills that ship scripts
+#   6.  skill scripts— python selftests, discovered by convention: any tracked
+#                      skills/<name>/scripts/selftest.py runs automatically
 #   7.  private info — bin/check-private-info.sh self-test + full tracked scan
 #
 # Usage:
@@ -27,6 +30,11 @@ set -uo pipefail # intentionally NOT -e: run every check, then aggregate
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$REPO_ROOT" || exit 1
+
+# Tracked *.sh paths (as `git ls-files` prints them) deliberately left out of
+# the lint/format discovery below. Keep this narrow, and comment every entry
+# with why it's here — an undocumented exclusion is a bug waiting to hide.
+SH_EXCLUDE=()
 
 fail=0
 problem() {
@@ -42,10 +50,29 @@ content_only=false
 [ "${1:-}" = "--content-only" ] && content_only=true
 
 if ! $content_only; then
+  # Discover every tracked *.sh, wherever it lives, minus SH_EXCLUDE. A plain
+  # `while read` loop (not mapfile) keeps this bash-3.2-compatible (macOS
+  # default /bin/bash), and `IFS= read -r` handles spaces/unusual chars in a
+  # path safely as long as the path itself has no literal newline.
+  sh_files=()
+  while IFS= read -r f; do
+    excluded=false
+    if [ "${#SH_EXCLUDE[@]}" -gt 0 ]; then
+      for x in "${SH_EXCLUDE[@]}"; do
+        [ "$f" = "$x" ] && excluded=true && break
+      done
+    fi
+    $excluded || sh_files+=("$f")
+  done < <(git ls-files '*.sh')
+
   # --- 1. shellcheck -------------------------------------------------------
   echo "shellcheck:"
-  if command -v shellcheck >/dev/null 2>&1; then
-    if shellcheck bin/*.sh; then
+  if [ "${#sh_files[@]}" -eq 0 ]; then
+    echo "  - no tracked shell scripts found"
+  elif command -v shellcheck >/dev/null 2>&1; then
+    printf '  scanning %d script(s):\n' "${#sh_files[@]}"
+    printf '    %s\n' "${sh_files[@]}"
+    if shellcheck "${sh_files[@]}"; then
       ok "shell scripts clean"
     else
       problem "shellcheck reported issues"
@@ -56,11 +83,13 @@ if ! $content_only; then
 
   # --- 1b. shfmt (formatting) ----------------------------------------------
   echo "shfmt:"
-  if command -v shfmt >/dev/null 2>&1; then
-    if shfmt -i 2 -ci -d bin/*.sh >/dev/null 2>&1; then
+  if [ "${#sh_files[@]}" -eq 0 ]; then
+    echo "  - no tracked shell scripts found"
+  elif command -v shfmt >/dev/null 2>&1; then
+    if shfmt -i 2 -ci -d "${sh_files[@]}" >/dev/null 2>&1; then
       ok "shell formatting consistent"
     else
-      problem "shell formatting differs (fix: shfmt -i 2 -ci -w bin/*.sh)"
+      problem "shell formatting differs (fix: shfmt -i 2 -ci -w over the scripts listed above)"
     fi
   else
     echo "  - shfmt not installed; skipping (CI enforces this)"
@@ -188,18 +217,28 @@ if [ -f CHANGELOG.md ] && ! grep -q '^## \[Unreleased\]' CHANGELOG.md; then
 fi
 
 # --- 6. skill scripts (python selftests) -----------------------------------
+# Convention, not configuration: any tracked skills/<name>/scripts/selftest.py
+# runs automatically — adding a new scripted skill needs no edit here.
 echo "skill-scripts:"
-lca_selftest="skills/license-compliance-auditor/scripts/selftest.py"
-if [ -f "$lca_selftest" ]; then
-  if command -v python3 >/dev/null 2>&1; then
-    if python3 "$lca_selftest" >/dev/null 2>&1; then
-      ok "license-compliance-auditor selftests pass"
+selftests=()
+while IFS= read -r f; do
+  selftests+=("$f")
+done < <(git ls-files 'skills/*/scripts/selftest.py')
+
+if [ "${#selftests[@]}" -eq 0 ]; then
+  echo "  - no skill selftests found"
+elif command -v python3 >/dev/null 2>&1; then
+  for st in "${selftests[@]}"; do
+    skill="$(basename "$(dirname "$(dirname "$st")")")"
+    echo "  running: $st"
+    if python3 "$st" >/dev/null 2>&1; then
+      ok "$skill selftests pass"
     else
-      problem "license-compliance-auditor selftests failed (run: python3 $lca_selftest)"
+      problem "$skill selftests failed (run: python3 $st)"
     fi
-  else
-    echo "  - python3 not installed; skipping script selftests"
-  fi
+  done
+else
+  echo "  - python3 not installed; skipping script selftests"
 fi
 if [ -f bin/slugify.sh ]; then
   if bin/slugify.sh --self-test >/dev/null 2>&1; then

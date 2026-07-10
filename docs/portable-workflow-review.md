@@ -88,8 +88,9 @@ intended (CONTRIBUTING's RED→GREEN→REFACTOR loop is manual discipline).
 
 - pre-commit framework: standard hooks (whitespace, EOF, YAML, large files,
   merge conflicts, private keys, shebang/exec), managed shellcheck + shfmt,
-  `no-commit-to-branch` for `main`, local hooks for `check.sh --content-only`
-  and `test-install.sh`, and a post-merge hook that re-runs `install.sh`.
+  `no-commit-to-branch` for `main`, local hooks for `check.sh --content-only`,
+  `test-install.sh`, and `test-check.sh`, and a post-merge hook that re-runs
+  `install.sh`.
 - CI runs the same suite on PRs, on pushes to `main`, and on a weekly
   schedule; Dependabot + a weekly `pre-commit autoupdate` workflow keep
   hook/action versions current.
