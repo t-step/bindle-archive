@@ -16,6 +16,7 @@ check:
 test:
 	bin/test-install.sh
 	bin/test-check.sh
+	bin/test-check-frontmatter.sh
 
 install:
 	bin/install.sh

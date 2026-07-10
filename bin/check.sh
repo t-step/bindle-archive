@@ -98,55 +98,103 @@ fi
 
 # --- 2. Claude frontmatter -------------------------------------------------
 echo "Claude frontmatter:"
-# check_fm FILE KEY... — require a leading --- block containing each KEY.
+# extract_fm FILE — parse the leading '---'-delimited block ONCE into the
+# global fm_block, so every later check (required keys, name lookup) reads
+# that same parsed block instead of re-scanning the whole file — a body line
+# that happens to start with e.g. "name:" (an example, a quoted config
+# snippet) can never leak into validation. Returns/sets:
+#   0  ok:            fm_block holds the block's lines (delimiters excluded)
+#   1  no frontmatter: first line isn't '---'
+#   2  unterminated:  no closing '---' before EOF
+#   3  duplicate key: fm_dup_keys holds the offending key name(s)
+# Duplicate top-level keys are rejected outright (documented rule) rather than
+# silently taking the first or last — an ambiguous file should fail clearly,
+# not guess.
+extract_fm() {
+  local file="$1"
+  fm_block=""
+  fm_dup_keys=""
+  if [ "$(head -1 "$file")" != "---" ]; then
+    return 1
+  fi
+  local close_line
+  close_line="$(awk 'NR>1 && /^---[[:space:]]*$/ {print NR; exit}' "$file")"
+  if [ -z "$close_line" ]; then
+    return 2
+  fi
+  fm_block="$(sed -n "2,$((close_line - 1))p" "$file")"
+  fm_dup_keys="$(grep -oE '^[A-Za-z0-9_-]+:' <<<"$fm_block" | sort | uniq -d | tr '\n' ' ')"
+  fm_dup_keys="${fm_dup_keys% }"
+  if [ -n "$fm_dup_keys" ]; then
+    return 3
+  fi
+  return 0
+}
+
+# check_fm FILE KEY... — extract_fm FILE, then require each KEY present in the
+# parsed block. Skips further checks for that file on parse failure (caller
+# checks $? / uses fm_block/fm_name_from_block itself when it needs the name).
 check_fm() {
   local file="$1"
   shift
-  if [ "$(head -1 "$file")" != "---" ]; then
-    problem "$file: missing frontmatter block"
-    return
-  fi
-  local fm key
-  fm="$(awk 'NR==1 {next} /^---[[:space:]]*$/ {exit} {print}' "$file")"
+  extract_fm "$file"
+  case $? in
+    1)
+      problem "$file: missing frontmatter block"
+      return 1
+      ;;
+    2)
+      problem "$file: frontmatter block never closed with a trailing '---'"
+      return 1
+      ;;
+    3)
+      problem "$file: frontmatter has duplicate key(s): $fm_dup_keys"
+      return 1
+      ;;
+  esac
+  local key
   for key in "$@"; do
-    if ! grep -qE "^${key}:" <<<"$fm"; then
+    if ! grep -qE "^${key}:" <<<"$fm_block"; then
       problem "$file: frontmatter missing '${key}:'"
     fi
   done
+  return 0
 }
 
-# fm_name FILE — print the frontmatter 'name:' value (empty if none).
-fm_name() { sed -n -E 's/^name:[[:space:]]*//p' "$1" | head -1; }
+# fm_name_from_block — print the already-parsed fm_block's 'name:' value
+# (empty if absent). Never re-reads the file, so body content is never in
+# scope.
+fm_name_from_block() { sed -n -E 's/^name:[[:space:]]*//p' <<<"$fm_block" | head -1; }
 
 fm_checked=0
 for dir in skills/*/; do
   name="$(basename "$dir")"
   case "$name" in _* | .*) continue ;; esac
   [ -f "${dir}SKILL.md" ] || continue
-  check_fm "${dir}SKILL.md" name description
-  got="$(fm_name "${dir}SKILL.md")"
+  fm_checked=$((fm_checked + 1))
+  check_fm "${dir}SKILL.md" name description || continue
+  got="$(fm_name_from_block)"
   if [ -n "$got" ] && [ "$got" != "$name" ]; then
     problem "${dir}SKILL.md: name '$got' must match its folder '$name'"
   fi
-  fm_checked=$((fm_checked + 1))
 done
 for f in agents/*.md; do
   [ -e "$f" ] || continue
   base="$(basename "$f")"
   case "$base" in _* | .*) continue ;; esac
-  check_fm "$f" name description
-  got="$(fm_name "$f")"
+  fm_checked=$((fm_checked + 1))
+  check_fm "$f" name description || continue
+  got="$(fm_name_from_block)"
   expected="${base%.md}"
   if [ -n "$got" ] && [ "$got" != "$expected" ]; then
     problem "$f: name '$got' must match its filename '$expected'"
   fi
-  fm_checked=$((fm_checked + 1))
 done
 for f in commands/*.md; do
   [ -e "$f" ] || continue
   case "$(basename "$f")" in _* | .*) continue ;; esac
-  check_fm "$f" description
   fm_checked=$((fm_checked + 1))
+  check_fm "$f" description || continue
 done
 [ "$fail" -eq 0 ] && ok "${fm_checked} item(s) have valid frontmatter"
 
