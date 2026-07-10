@@ -21,6 +21,16 @@ dated, versioned section at release time.
   clicking merge yourself — `gh pr merge`, `--auto`, and a manual merge
   commit are all the same self-approval. Only an operator instruction that
   names the merge (e.g. "merge PR 47") authorizes it.
+- CI (`.github/workflows/ci.yml`) no longer runs on pull requests only
+  (issue #25). It now also runs on pushes to `main` and on a weekly schedule
+  (Mondays 07:00 UTC), so an admin/direct push to `main`, a branch-protection
+  misconfiguration, or environmental tool drift (Python, shellcheck, shfmt,
+  pre-commit) surfaces from the repo itself instead of depending entirely on
+  branch-protection settings and the next PR. Concurrency grouping now keys
+  on event name as well as ref, and only PR runs cancel in-progress runs, so
+  a scheduled or main-push run can't be starved by an unrelated PR (or vice
+  versa). Docs (`docs/portable-workflow-review.md`) updated to match — no
+  longer claims the PR run is a complete gate on its own.
 - `bin/install.sh` now exits `1` when one or more conflicts prevent
   installation of a requested item, instead of exiting `0` and only warning
   (issue #23). Conflicting paths are still left completely untouched. Added

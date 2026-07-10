@@ -74,7 +74,11 @@ Verified behavior of `install.sh` (`link_item` / `prune_dir`):
 
 `bin/check.sh` covers frontmatter validity, name matching, link integrity,
 formatting, and version sanity. CI (`.github/workflows/ci.yml`) runs
-`pre-commit run --all-files` on PRs (the PR gate is the only path to `main`).
+`pre-commit run --all-files` on PRs, on pushes to `main`, and on a weekly
+schedule (Mondays 07:00 UTC) — the PR run is the primary gate, and the other
+two triggers cover a direct/admin push to `main`, a branch-protection
+misconfiguration, and tool drift (Python, shellcheck, shfmt, pre-commit)
+between PRs, none of which a PR-only trigger would catch.
 
 **Not covered today:** no tests for privacy/PII in committed content beyond
 `detect-private-key`; no coverage that new command/skill *content* behaves as
@@ -86,8 +90,9 @@ intended (CONTRIBUTING's RED→GREEN→REFACTOR loop is manual discipline).
   merge conflicts, private keys, shebang/exec), managed shellcheck + shfmt,
   `no-commit-to-branch` for `main`, local hooks for `check.sh --content-only`
   and `test-install.sh`, and a post-merge hook that re-runs `install.sh`.
-- CI runs the same suite on PRs; Dependabot + a weekly `pre-commit autoupdate`
-  workflow keep hook/action versions current.
+- CI runs the same suite on PRs, on pushes to `main`, and on a weekly
+  schedule; Dependabot + a weekly `pre-commit autoupdate` workflow keep
+  hook/action versions current.
 - Deliberately **no** markdown formatter (would churn carefully-phrased
   instruction prose).
 - Branch discipline: `main` is protected by the `no-commit-to-branch` hook;
