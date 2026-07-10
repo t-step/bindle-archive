@@ -104,6 +104,17 @@ dated, versioned section at release time.
   provider surfaces, automation, schemas, and eval infrastructure, the
   near-term sequence, revisit triggers, and a dated triage of every open
   issue against the boundary. README links to it from "Developing Bindle".
+- `docs/runtime-security-privacy.md` — the security and privacy contract
+  for executable and automatic assets (issue #30): six capability classes
+  (read-only diagnostics through external-system mutation) with default
+  approval rules, a required "capability card" (trigger, inputs, outputs,
+  storage, retention, failure behavior, disable path, confirmation) that
+  gates any automatically-executing asset, a classified inventory of
+  today's executable assets (automatic assets: none), the concrete rules
+  session hooks (issue #21) must satisfy — opt-in install, pointers never
+  payloads, transcripts off-limits, no network by default, fail-open,
+  surgical settings writes — and the audit/disable guarantees. Cross-linked
+  from `docs/privacy-boundaries.md`, which covers the tracked-file side.
 - `/session-end` label reconciliation step: identifies issues the session
   touched, proposes `gh issue edit`/`gh issue close` commands to bring their
   `status:` label in line with reality, and runs them only after explicit
