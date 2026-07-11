@@ -21,7 +21,7 @@ When NOT to use:
 
 ## Workflow
 
-1. **Plan the stages.** Write an ordered list: each PR's name, scope (which files/concerns it owns), and an acceptance checklist. This is the source of truth.
+1. **Plan the stages.** Write an ordered list: each PR's name, scope (which files/concerns it owns), and an acceptance checklist. This is the source of truth. No written plan? State the current stage's one-line purpose explicitly before building (e.g. "PR1: signup input validation") — step 3 of the contamination gate checks the declared scope against this line.
 2. **One worktree per PR** so stages don't collide. See superpowers:using-git-worktrees.
 3. **Build the PR** touching only files in its declared scope.
 4. **Run the contamination check** (below) before opening the PR.
@@ -29,10 +29,11 @@ When NOT to use:
 
 ## The contamination gate
 
-The gate has **two steps**; the PR passes only if both do. Step 1 catches
-out-of-scope *files*; step 2 catches forward references smuggled *inside*
-in-scope files (an import or call into a later stage passes step 1 — and can
-ship a PR that doesn't even build).
+The gate has **three steps**; the PR passes only if all three do. Step 1
+catches out-of-scope *files*; step 2 catches forward references smuggled
+*inside* in-scope files (an import or call into a later stage passes step 1
+— and can ship a PR that doesn't even build); step 3 catches a scope that
+was quietly widened to make steps 1 and 2 pass.
 
 ```bash
 # Step 1 — file scope: every changed file must be one the stage owns
@@ -47,16 +48,36 @@ git diff -U0 "$BASE".."$TIP" \
   | grep -nE 'evaluator|evaluate' \
   && echo "CONTAMINATION: forward references above" && exit 1 \
   || echo "content clean"
+
+# Step 3 — scope-declaration integrity: does the declared scope match the
+# stage's own purpose? (Judgment check, not mechanical.)
+#
+# For every file step 1's pattern allows, and every symbol step 2's pattern
+# excludes: does it trace to the stage's one-line purpose (or the plan, if
+# one exists)? If yes, done.
+#
+# If no — a later-stage file/symbol was pulled in for a reason other than
+# "this is what the stage is" — that's a SCOPE OVERRIDE, not a clean PR.
+# State it explicitly, in the PR description and the gate report:
+#   Scope override: <file/symbol> — <why, e.g. an explicit user instruction>
+#
+# A scope override isn't automatically wrong. It must never be silently
+# absorbed into the step 1/2 patterns and reported as plain "clean." Do not
+# report "scope clean" unless step 3 found no override needed, or every
+# override found is stated above.
 ```
 
-Adjust both patterns per stage: the `grep -Ev` allow-pattern is the files this
+Adjust all three checks per stage: the `grep -Ev` allow-pattern is the files this
 stage owns; the step-2 pattern is the module names and key identifiers owned by
-*later* stages (take them from the plan). Anything step 1 prints = a file the
+*later* stages (take them from the plan); step 3 has no pattern — it's a check
+against the stage's own stated purpose. Anything step 1 prints = a file the
 stage doesn't own → move it to the PR that owns it. Anything step 2 prints = a
 forward reference → strip it from this PR (it belongs in the stage that
-introduces it). The gate's output is the verdict — do not report "scope clean"
-unless both steps passed. Also scan prose: no PR should *mention* features
-introduced by a later PR.
+introduces it). Anything step 3 finds = an undeclared scope widening → state it
+as a `Scope override:` line, don't quietly redefine the allow-pattern to hide
+it. The gate's output is the verdict — do not report "scope clean" unless all
+three steps passed (or every step-3 finding is declared). Also scan prose: no
+PR should *mention* features introduced by a later PR.
 
 ## Scope isolation rules
 
@@ -68,6 +89,7 @@ introduced by a later PR.
 ## Common Mistakes
 
 - **Skipping the diff gate** because the change "feels" scoped — run it; it catches stray files every time.
+- **Quietly widening the allow-pattern to fit what you already built, then reporting clean** — that's a scope override; state it in the PR description and gate report, don't launder it through a self-chosen pattern.
 - **Checking out shared `main` in the primary clone** for a stage — use a throwaway worktree; keep the shared checkout clean.
 - **Prose contamination** — code is scoped but a README/comment references a future stage. Grep prose too.
 - **Rebasing the whole chain after each merge** — instead, base each stage on the merged tip of the previous one.
