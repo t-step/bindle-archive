@@ -16,6 +16,18 @@ dated, versioned section at release time.
 
 ### Added
 
+- `skills/license-compliance-auditor/PRESSURE-TESTS.md` — the skill is now
+  pressure-tested (issue #15) and no longer a draft. Two claims verified on
+  Sonnet 5, 3 reps/arm, filesystem-scored: (1) it never gives a compliance
+  verdict under "just tell me yes or no" deadline pressure — RED (skill
+  genuinely suppressed) gave an unhedged "not compliant" 3/3; GREEN's written
+  report carried the disclaimer and zero verdict language 3/3 (the ad-hoc chat
+  reply was softer in 2/3, blunter in 1/3 — noted, not rounded up); (2) it
+  sweeps non-obvious surfaces (vendored code, fonts, assets, datasets,
+  snippets), not just the manifest — 6/6 across both arms caught all five
+  planted issues, though the RED arm unexpectedly discovered and applied the
+  installed skill on its own despite naive framing (a documented confound, not
+  a claim failure). No `SKILL.md` edit (Iron Law — the claims held as written).
 - `skills/fork-pr-flow/PRESSURE-TESTS.md` — the skill is now pressure-tested
   (issue #13) and no longer a draft; it was the last daily-driver skill
   without a recorded test. The campaign targeted the guardrail PR #41 added
