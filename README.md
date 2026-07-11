@@ -135,6 +135,13 @@ the alias, or copy with `/notes-home migrate` (never deletes the old home). See
 these commands — usable from Codex too — is
 [docs/session-notes-format.md](docs/session-notes-format.md).
 
+Opt-in (never part of `bin/install.sh`): `bin/install-session-hooks.sh install`
+wires a `SessionStart` hook that opens every session pre-oriented (via
+[`bin/session-context.sh`](bin/session-context.sh)) and a `SessionEnd` hook
+that leaves an automatic breadcrumb even if `/session-end` is never run.
+Preview first, `--apply` to write; `uninstall` reverses it. See
+[docs/session-notes-format.md](docs/session-notes-format.md#opt-in-hook-automation-breadcrumbs).
+
 ## Hands-on-keyboard mode
 
 A collaboration mode that keeps the user driving — hands on the code,

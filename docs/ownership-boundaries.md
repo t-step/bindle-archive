@@ -35,6 +35,18 @@ violate a line here, the change is wrong.
 - A project repo **only when explicitly asked** — e.g. an explicit
   `/project-profile` export into the repo, or ordinary requested code changes.
   Session bookkeeping never lands in a project repo by default.
+- `~/.claude/settings.json`, but only via an explicit, standalone opt-in
+  command — never `bin/install.sh`, never silently. Every such command
+  follows the same discipline: validate the file is parseable JSON first,
+  back it up before writing, touch only the specific key(s)/hook entries it
+  owns (every other key is preserved byte-for-byte), preview the exact diff,
+  and require `--apply` (or an interactive `y`) before writing anything.
+  Today: `bin/notes-home.sh set|reset` (the `env.BINDLE_NOTES_DIR` key) and
+  `bin/install-session-hooks.sh install|uninstall` (the `hooks.SessionStart`
+  / `hooks.SessionEnd` entries whose `command` points at
+  `global/hooks/session-start-context.py` /
+  `global/hooks/session-end-breadcrumb.py` — every other hook entry, e.g. the
+  `nested-notes-guard` `PreToolUse` hook, is left untouched).
 
 ## What it must never touch
 
