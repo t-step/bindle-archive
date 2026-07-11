@@ -16,6 +16,21 @@ dated, versioned section at release time.
 
 ### Added
 
+- `skills/maintain-claude-md/PRESSURE-TESTS.md` extended (issue #17): pressure-
+  tested the two non-flagship lint checks with real failure cost that the
+  original log left untested — lexical include resolution (a resolvable
+  `@`-include silently pointing at a stale-but-existing file after a rename)
+  and duplicated-governance detection (CLAUDE.md paraphrasing a constitution's
+  SemVer policy in prose that avoids the literal keywords). Both held 6/6
+  across skill-naive and skill-equipped arms on Sonnet 5 — the two
+  self-acknowledged design limitations ("lexical, not semantic" /
+  "keyword-based") didn't manifest on this fixture/bracket, though each
+  claim's caveat names a harder variant that would stress them more directly.
+  One real gap found and recorded (not fixed): the lint table has no named
+  status for "include resolves, but to the wrong file," so agents split
+  1 FAIL / 2 WARN inventing their own label. The byte-budget check was
+  explicitly de-scoped per the issue (self-described heuristic, low failure
+  cost) rather than tested. No `SKILL.md` edit (Iron Law).
 - `skills/license-compliance-auditor/PRESSURE-TESTS.md` — the skill is now
   pressure-tested (issue #15) and no longer a draft. Two claims verified on
   Sonnet 5, 3 reps/arm, filesystem-scored: (1) it never gives a compliance
