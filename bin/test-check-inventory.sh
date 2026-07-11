@@ -128,6 +128,28 @@ out="$(python3 "$VALIDATOR" --root "$REPO" 2>&1)"
 status=$?
 check "bin/test-*.sh is auto-excluded (still passes)" test "$status" -eq 0
 
+echo "path existence + cross-checks:"
+REPO="$TMP/dead-path"
+mkfixture "$REPO"
+sed -i.bak 's#"path": "commands/foo.md"#"path": "commands/gone.md"#' "$REPO/capabilities.json"
+rm -f "$REPO/capabilities.json.bak"
+out="$(python3 "$VALIDATOR" --root "$REPO" 2>&1)"
+check "a dead path is reported" contains "path 'commands/gone.md' does not exist" "$out"
+
+REPO="$TMP/desc-drift"
+mkfixture "$REPO"
+sed -i.bak 's/"description": "Demo skill."/"description": "Wrong."/' "$REPO/capabilities.json"
+rm -f "$REPO/capabilities.json.bak"
+out="$(python3 "$VALIDATOR" --root "$REPO" 2>&1)"
+check "description drift vs frontmatter is caught" contains "description does not match skill frontmatter" "$out"
+
+REPO="$TMP/tested-no-pt"
+mkfixture "$REPO"
+rm -f "$REPO/skills/demo/PRESSURE-TESTS.md"
+(cd "$REPO" && git add -A && git -c user.email=t@e.com -c user.name=t commit -q -m rmpt)
+out="$(python3 "$VALIDATOR" --root "$REPO" 2>&1)"
+check "tested skill without PRESSURE-TESTS.md is caught" contains "maturity 'tested' but no PRESSURE-TESTS.md" "$out"
+
 echo
 echo "tests: ${pass} passed, ${fail} failed"
 [ "$fail" -eq 0 ]

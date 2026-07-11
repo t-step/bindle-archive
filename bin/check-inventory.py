@@ -165,6 +165,64 @@ def check_completeness_fuzzy(caps, ledger, root):
     return errors
 
 
+def check_paths(caps, root):
+    errors = []
+    for cap in caps:
+        p = cap.get("path")
+        if p and not os.path.exists(os.path.join(root, p)):
+            errors.append("%s: path '%s' does not exist" % (cap.get("name"), p))
+        for rel in cap.get("related_docs", []) or []:
+            if not os.path.exists(os.path.join(root, rel)):
+                errors.append("%s: related_docs '%s' does not exist"
+                              % (cap.get("name"), rel))
+    return errors
+
+
+def _read_fm_value(path, key):
+    """Read a single-line `key: value` from a leading --- frontmatter block."""
+    with open(path, encoding="utf-8") as fh:
+        lines = fh.read().splitlines()
+    if not lines or lines[0].strip() != "---":
+        return None
+    for line in lines[1:]:
+        if line.strip() == "---":
+            break
+        m = re.match(r"^%s:\s*(.*)$" % re.escape(key), line)
+        if m:
+            return m.group(1).strip()
+    return None
+
+
+def _frontmatter_description(root, cap):
+    t, p = cap.get("type"), cap.get("path")
+    if t == "skill":
+        f = os.path.join(root, p, "SKILL.md")
+    elif t in ("command", "agent"):
+        f = os.path.join(root, p)
+    else:
+        return None
+    if not os.path.isfile(f):
+        return None
+    return _read_fm_value(f, "description")
+
+
+def check_crosschecks(caps, root):
+    errors = []
+    for cap in caps:
+        t = cap.get("type")
+        if t in ("skill", "command", "agent"):
+            fm = _frontmatter_description(root, cap)
+            if fm is not None and fm != cap.get("description"):
+                errors.append("%s: description does not match %s frontmatter"
+                              % (cap.get("name"), t))
+        if t == "skill" and cap.get("maturity") == "tested":
+            pt = os.path.join(root, cap.get("path", ""), "PRESSURE-TESTS.md")
+            if not os.path.isfile(pt):
+                errors.append("%s: maturity 'tested' but no PRESSURE-TESTS.md"
+                              % cap.get("name"))
+    return errors
+
+
 def main(argv=None):
     parser = argparse.ArgumentParser()
     parser.add_argument("--root", default=None)
@@ -180,6 +238,8 @@ def main(argv=None):
     errors += check_schema(caps, version)
     errors += check_completeness_clean(caps, root)
     errors += check_completeness_fuzzy(caps, ledger, root)
+    errors += check_paths(caps, root)
+    errors += check_crosschecks(caps, root)
     # NOTE: later tasks append more checks here.
     if errors:
         for e in errors:
