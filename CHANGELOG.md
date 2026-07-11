@@ -16,6 +16,24 @@ dated, versioned section at release time.
 
 ### Added
 
+- `skills/repo-hygiene-init/PRESSURE-TESTS.md` — the skill is now pressure-
+  tested (issue #14) and no longer an untested draft. One claim tested on
+  Sonnet 5, 3 reps/arm, filesystem-scored: it detects and matches an existing
+  stack instead of imposing its own defaults. Fixture: a Python repo with
+  black+isort+flake8 already fully configured; failure mode under test was
+  substituting a different default (most plausibly ruff). Held 6/6 — zero
+  reps in either arm introduced a conflicting tool, and every
+  pre-commit/Makefile/CI addition wired up the existing black+isort+flake8
+  stack at its existing settings. One RED rep self-invoked the skill despite
+  suppression (confirmed via transcript); the other two RED reps were
+  genuinely skill-naive and *also* matched the stack correctly, so this run
+  doesn't establish the skill as load-bearing for this specific claim — a
+  harder fixture (partial/inconsistent existing config) is flagged as a
+  stronger candidate for a future rerun. Incidental, unscored observation:
+  invoking the skill did visibly change commit sequencing (7–9 small commits
+  vs. one blob in the two clean-baseline RED reps), matching the skill's own
+  "Sequencing" guidance — a candidate flagship claim next time. No
+  `SKILL.md` edit (Iron Law).
 - `skills/maintain-claude-md/PRESSURE-TESTS.md` extended (issue #17): pressure-
   tested the two non-flagship lint checks with real failure cost that the
   original log left untested — lexical include resolution (a resolvable
