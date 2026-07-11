@@ -95,6 +95,14 @@ dated, versioned section at release time.
   (49 checks, temp homes only — never the real `~/.claude` or `~/.bindle`),
   wired into `make test` and pre-commit; documented in `docs/notes-home.md`,
   the README, and the runtime contract's capability inventory (C1).
+- `skills/scoped-sequential-prs/SKILL.md` — the contamination gate gains a
+  third step, scope-declaration integrity, plus a step-3 file-header check
+  that forecloses reasoning a later-stage-marked file "actually matches this
+  stage's purpose after all" (closes issue #53). Pressure-tested on Sonnet 5
+  + Haiku 4.5 (PRESSURE-TESTS.md Claim 6): a round-1 Haiku 4.5 gap (1/3 FAIL,
+  a bare "scope integrity PASS" with no override language on a committed
+  later-stage file) drove a targeted wording fix, verified clean on rerun
+  (3/3); final passing set 6/6, 0 silent "clean" verdicts.
 
 ## [0.3.0] - 2026-07-10
 
