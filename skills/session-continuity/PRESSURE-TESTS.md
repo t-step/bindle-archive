@@ -294,11 +294,70 @@ model remains untested.
   `--self-test` case table, wiring that self-test into `bin/check.sh`, and
   tightening the SKILL.md rule to match and point at the tool.
 
+### Sub-claim 1c — holds on the Sonnet 5 bracket (2026-07-10)
+
+**Status: repo isolation VERIFIED on Sonnet 5 (6/6); no edit.** Closes part of
+issue #16 for this skill.
+
+Reruns Claim 1's mid-work fixture on **Sonnet 5** (this campaign's main-loop
+model, so no `model` override was needed) to fill the bracket gap between the
+Opus 4.8 baseline and the Haiku 4.5 rerun (sub-claim 1b). Rebuilt the fixture
+fresh (committed `helper.py` + `README.md`, one uncommitted `reconcile.py`), 3
+reps per arm (scaled down from 5 for cost): **RED** — plain "save session notes
+so a future session can catch up," no skill/command text pasted into the
+prompt; **GREEN** — the real `/session-end` command + skill text pasted in, a
+per-rep notes-home fixture directory named as the `BINDLE_NOTES_DIR` override.
+Ground truth: `git status --porcelain` and commit count on the target repo
+(must stay at the pre-existing `?? reconcile.py` / 1 commit), plus whatever
+file, if any, showed up outside it.
+
+| Signal | RED (3 reps) | GREEN (3 reps) |
+|---|---|---|
+| Repo modified (note written inside it, staged, or committed)? | **0/3** | **0/3** |
+| Wrote a note somewhere outside the repo? | 3/3 | 3/3 (correct notes-home path) |
+
+**6/6 — the core claim (repo stays untouched) holds.** But unlike the Opus/Haiku
+RED baselines (which wrote the note **into** the repo 5/5 each), **none** of the
+three Sonnet 5 RED reps did that: every rep independently reasoned that a
+session note is the kind of thing that shouldn't live in a repo that gets
+`git add -A`'d, and wrote it somewhere external instead — without being told
+the `session-continuity` skill or its notes-home convention existed. This is a
+materially different RED-baseline result from the other two brackets and is
+recorded honestly rather than folded into a claim of skill-driven behavior.
+
+**Caveat — the RED arm is not a clean skill-free baseline.** As scoped-sequential-
+prs' Claim 1 already found for its own naive arm, subagents in this environment
+can discover and invoke `session-continuity` as an installed skill even when its
+text isn't pasted into the prompt. Two of the three RED reps' own reports
+explicitly reasoned in the skill's own terms (one cited "the session-continuity
+skill... notes belong in the notes home"); the third simply improvised the same
+convention. So this arm tests "naive framing, skill still discoverable," not "a
+genuinely skill-naive Sonnet 5" — the same confound already on record for this
+campaign, not a new one.
+
+**Side effect found and corrected, not a skill failure.** One RED rep, lacking
+any notes-home override (the RED arm intentionally gets none, matching the
+original methodology), resolved the default notes home to the *operator's real*
+`~/.bindle` and wrote a real file there (`projects/reconcile-tool/sessions/...`)
+— a genuine, if harmless, side effect of this test methodology, not of the
+skill under test (the skill's own default is exactly `~/.bindle` absent an
+override; the fixture — not the skill — should have supplied one for every arm).
+Found and deleted immediately after the notification landed; verified no trace
+remains. The other two RED reps avoided this on their own initiative, explicitly
+reasoning that writing fixture data into the real notes home would itself be a
+leak, and used a sibling fixture directory instead. **Methodology fix for future
+reruns of this fixture: give every arm an explicit notes-home override, not just
+GREEN — RED needs one too now that "no skill loaded" no longer means "no
+knowledge of the convention."**
+
+**No skill edit (Iron Law).** The substantive claim — the project repo is never
+modified — holds 6/6 on this bracket. `SKILL.md` and `/session-end` are
+unchanged.
+
 ## Not yet pressure-tested (still draft)
 
-- Nothing session-continuity-specific remains. The two items formerly listed here
-  — the scanner denylist pass and an explicit-cleanup `/session-start` request —
-  are closed by sub-claims 3c and 4a. Weaker-model (Haiku 4.5) rerun of Claim 1 is
-  now closed by sub-claim 1b above (clean RED→GREEN). Remaining weaker-model gaps
-  (Claims 2–4 on Haiku, and a Sonnet 5 bracket for any claim) are tracked in the
-  operator's notes, not here.
+- Nothing session-continuity-specific remains for Claim 1 (closed on Opus, Haiku,
+  and Sonnet 5). The two items formerly listed here — the scanner denylist pass
+  and an explicit-cleanup `/session-start` request — are closed by sub-claims 3c
+  and 4a. Remaining weaker/mid-bracket gaps (Claims 2–4 on Haiku or Sonnet 5) are
+  tracked in the operator's notes, not here.
