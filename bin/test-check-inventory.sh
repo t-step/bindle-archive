@@ -110,6 +110,24 @@ rm -f "$REPO/capabilities.json.bak"
 out="$(python3 "$VALIDATOR" --root "$REPO" 2>&1)"
 check "inventory skill absent from disk fails" contains "skill 'ghost' is in the inventory but not found on disk" "$out"
 
+echo "fuzzy-type classified ledger:"
+REPO="$TMP/unclassified-script"
+mkfixture "$REPO"
+mkdir -p "$REPO/bin"
+printf '#!/usr/bin/env bash\necho hi\n' >"$REPO/bin/thing.sh"
+(cd "$REPO" && git add -A && git -c user.email=t@e.com -c user.name=t commit -q -m thing)
+out="$(python3 "$VALIDATOR" --root "$REPO" 2>&1)"
+check "unclassified bin script fails" contains "bin/thing.sh: unclassified" "$out"
+
+REPO="$TMP/auto-excluded"
+mkfixture "$REPO"
+mkdir -p "$REPO/bin"
+printf '#!/usr/bin/env bash\necho hi\n' >"$REPO/bin/test-thing.sh"
+(cd "$REPO" && git add -A && git -c user.email=t@e.com -c user.name=t commit -q -m testthing)
+out="$(python3 "$VALIDATOR" --root "$REPO" 2>&1)"
+status=$?
+check "bin/test-*.sh is auto-excluded (still passes)" test "$status" -eq 0
+
 echo
 echo "tests: ${pass} passed, ${fail} failed"
 [ "$fail" -eq 0 ]

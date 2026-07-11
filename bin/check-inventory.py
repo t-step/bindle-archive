@@ -8,6 +8,7 @@ import argparse
 import json
 import os
 import re
+import subprocess
 import sys
 
 TYPES = {"skill", "command", "agent", "global-guidance", "script", "contract"}
@@ -129,6 +130,41 @@ def check_completeness_clean(caps, root):
     return errors
 
 
+AUTO_EXCLUDE = [
+    re.compile(r"^bin/test-.*\.sh$"),   # the test harness, never a capability
+    re.compile(r"^docs/design/"),       # design specs
+    re.compile(r"^docs/plans/"),        # implementation plans
+]
+
+
+def _tracked_under(root, subdir):
+    """Tracked files under subdir (via git), so untracked scratch never trips
+    the check. Returns [] if git is unavailable."""
+    try:
+        out = subprocess.run(["git", "-C", root, "ls-files", subdir],
+                             capture_output=True, text=True, check=True)
+        return [line for line in out.stdout.splitlines() if line]
+    except (OSError, subprocess.CalledProcessError):
+        return []
+
+
+def check_completeness_fuzzy(caps, ledger, root):
+    errors = []
+    inv_paths = {c.get("path") for c in caps
+                 if c.get("type") in ("script", "contract")}
+    led_paths = {e.get("path") for e in ledger}
+    candidates = [p for p in _tracked_under(root, "bin") if p.endswith(".sh")]
+    candidates += [p for p in _tracked_under(root, "docs") if p.endswith(".md")]
+    for path in sorted(set(candidates)):
+        if any(rx.search(path) for rx in AUTO_EXCLUDE):
+            continue
+        if path in inv_paths or path in led_paths:
+            continue
+        errors.append("%s: unclassified — add it to the inventory (type "
+                      "script/contract) or to not_a_capability with a reason" % path)
+    return errors
+
+
 def main(argv=None):
     parser = argparse.ArgumentParser()
     parser.add_argument("--root", default=None)
@@ -143,6 +179,7 @@ def main(argv=None):
     errors = []
     errors += check_schema(caps, version)
     errors += check_completeness_clean(caps, root)
+    errors += check_completeness_fuzzy(caps, ledger, root)
     # NOTE: later tasks append more checks here.
     if errors:
         for e in errors:
