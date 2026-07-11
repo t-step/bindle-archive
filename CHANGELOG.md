@@ -14,6 +14,18 @@ dated, versioned section at release time.
 
 ## [Unreleased]
 
+### Fixed
+
+- `docs/provider-interop.md`, `docs/using-bindle-with-codex.md` — re-baselined
+  Bindle's factual model of current Codex-native surfaces against official
+  Codex/OpenAI documentation (issue #56, prerequisite for #57 and #61). Codex
+  now has native primitives for Agent Skills, subagents, hooks, and plugins
+  that did not exist when the provider capability matrix was first written;
+  none of it is directly compatible with Bindle's Claude-format assets
+  (different file formats and discovery paths), and no new provider
+  integration was implemented — documentation only. Verification date and
+  source links recorded per surface.
+
 ### Added
 
 - `global/hooks/nested-notes-guard.py` — PreToolUse hook (matcher `Bash`)

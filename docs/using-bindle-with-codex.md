@@ -33,18 +33,31 @@ installed for Codex.
 
 ## What Codex must not assume
 
-These are Claude Code primitives. They exist in this repo, but Codex has no
-runtime for them — do not try to invoke them, and do not claim to have run
-them:
+These are Claude-native assets, in Claude-native format, installed to
+Claude-native paths. They exist in this repo, but Codex has no runtime for
+*these specific files* — do not try to invoke them, and do not claim to have
+run them:
 
-- Claude skills (`skills/*/SKILL.md`);
+- Claude skills (`skills/*/SKILL.md`, installed to `~/.claude/skills/`);
 - Claude slash commands (`commands/*.md`, e.g. `/session-end`);
 - Claude subagents (`agents/*.md`);
-- Claude hooks.
+- Claude hooks (`global/hooks/*.py`, wired via `~/.claude/settings.json`).
 
 Their *content* is still readable Markdown — reading
 `skills/session-continuity/SKILL.md` to learn the conventions is fine;
 "running" it is not a thing Codex can do.
+
+Note the distinction (re-baselined 2026-07-11, see
+[provider-interop.md's Codex capability re-baseline](provider-interop.md#codex-capability-re-baseline-2026-07-11)):
+current Codex *does* have its own native primitives for Agent Skills,
+subagents, and hooks — just in different formats and discovered from
+different paths (`.agents/skills`, `~/.codex/agents/*.toml`,
+`~/.codex/hooks.json`) than Bindle's Claude-format assets above. "Codex has
+no runtime for these files" is not the same claim as "Codex has no such
+concept" — it doesn't. Bindle does not install to any of those Codex-native
+paths today; there is no automatic conversion from Bindle's Claude assets,
+and building one is a deliberate future decision (tracked in #57), not
+something to assume or invent mid-session.
 
 ## Project guidance precedence
 
