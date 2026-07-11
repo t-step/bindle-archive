@@ -14,8 +14,11 @@ for tool names, and the actual `.pre-commit-config.yaml` / `Makefile` /
 
 ## Claim — detects and matches an existing stack instead of imposing its own defaults
 
-**Status: HOLDS 6/6, but the RED arm did not establish a failing baseline —
-see "What this run does and doesn't establish" below.**
+**Status: HOLDS, but NOT established as load-bearing on Sonnet 5. The original
+run (below) had a contaminated RED arm; the #65 harder-fixture rerun (further
+below) built the stronger "detect vs. impose" fixture #14 lacked and still could
+not falsify the skill-naive baseline (4/4 clean-baseline reps matched). See the
+"#65 rerun" section at the bottom.**
 
 Fixture: a throwaway Python package (`mypkg`) with **black + isort + flake8
 already fully configured** (`[tool.black]`/`[tool.isort]` in `pyproject.toml`,
@@ -104,3 +107,94 @@ changed behavior, and a candidate flagship claim for a future rerun.
   than block on a question) — untested whether either arm would have
   correctly paused for a real operator instead of guessing.
 - **Weaker/other-model brackets** are untested; this ran on Sonnet 5 only.
+
+## #65 rerun — harder "half-migrated" fixture (the detect-vs-impose stressor #14 lacked)
+
+**Status: the harder fixture STILL does not establish the claim as load-bearing
+on Sonnet 5.** The skill-naive baseline held 4/4; the sole ruff-imposition
+across all 7 reps this campaign occurred *with* the skill loaded, not without.
+Closes the #65 verification gap by answering its question rather than by
+proving the skill load-bearing. Model: Sonnet 5, 7 reps total. Ground truth is
+the filesystem (`git grep -i ruff` excluding `.gitignore`/Makefile-clean
+`.ruff_cache` cache paths, `[tool.*]` survival, config file presence) plus each
+subagent's own JSONL transcript grepped for a real `Skill` tool-use — never the
+chat self-report alone.
+
+**Why a new fixture.** #14's fixture was one fully-configured, unambiguous
+stack, and its two clean-baseline reps matched it anyway, so it never
+discriminated skill vs. no-skill. This rerun built the harder case #14's caveats
+called for: a **half-migrated** repo — `flake8` (`setup.cfg`) and `isort`
+(`.isort.cfg`) both configured at a non-default `line-length = 100`, but **no
+formatter, no pre-commit, no Makefile, no CI, and no ruff config**. That
+maximizes the "impose" temptation: an agent asked for "repo hygiene" is pulled
+toward the modern all-in-one (**ruff**, which folds in lint + format + import
+sort) and can orphan the existing flake8+isort. Correct "detect and match"
+behavior is to keep flake8+isort, add the compatible missing piece (black, which
+`isort`'s `profile = black` and flake8's `E203/W503` ignores already imply), and
+wire all three up.
+
+**Two arms.** A **skill-naive** arm (4 reps) was hard-forbidden from invoking the
+`Skill` tool ("you are the control arm… do not call any skill"); a **soft-framed**
+arm (3 reps, the "no need for special skills" wording #14 used) was run first.
+
+| Signal | Soft-framed arm (3 reps) | Skill-naive arm (4 reps) |
+|---|---|---|
+| Actually invoked the `repo-hygiene-init` `Skill` tool (transcript-verified)? | **3/3** | **0/4** |
+| Matched: kept flake8 + isort, added black, no ruff substitution? | **2/3** | **4/4** |
+| Imposed ruff in place of the existing flake8+isort? | **1/3** (`red-3`) | **0/4** |
+| Existing `[flake8]` / `.isort.cfg` preserved? | 2/3 | 4/4 |
+| Repo mutated beyond its fixture directory? | 0/3 | 0/4 |
+
+**Finding 1 — the naive baseline still doesn't fail.** All 4 hard-suppressed,
+transcript-verified skill-naive reps detected and matched the existing stack;
+none reached for ruff. They articulated the exact reasoning the skill teaches,
+unprompted — e.g. *"Ruff would be my default on a truly greenfield repo, but
+'inspect first' here meant respecting the existing choice,"* and *"disrupting an
+existing, working, deliberately-coordinated config wasn't warranted."* Per the
+writing-skills control rule (*if the control doesn't exhibit the failure, there
+is nothing to fix*), this is the honest result: on Sonnet 5, "detect and match"
+is baseline competence, not skill-conferred — even under a fixture built
+specifically to break it. This **confirms and strengthens** #14's own caveat
+rather than overturning it.
+
+**Finding 2 — contamination is now a reliability signal, not noise.** Under the
+soft "no need for special skills" framing, **3/3** reps self-invoked
+`repo-hygiene-init` anyway (all three confirmed by a real `Skill` tool-use in
+the transcript, not just the self-report). #14 saw this at 1/3. Only an explicit
+"do not invoke the Skill tool" prohibition produced clean baselines. Practical
+read: the skill's trigger is strong enough that on this task it is effectively
+always-on — which makes the with-skill behavior the operationally relevant one.
+
+**Finding 3 (candidate gap, NOT acted on) — the skill did not prevent the one
+substitution.** The sole ruff-imposition, `red-3`, happened *with* the skill
+loaded, rationalized as *"consolidated flake8 + isort into ruff… kept the
+existing line-length=100 / black-compatible convention so the switch is
+behavior-preserving, not a style change."* The skill's "Common Mistakes" names
+*"adding tools the stack doesn't use (eslint in a pure-Python repo)"* but not
+this move — *replacing* a working linter/formatter with a preferred all-in-one
+and reframing it as consolidation. That's a plausible loophole. It is **not**
+patched here: it is n=1, in the contaminated arm, and the Iron Law forbids a
+skill edit without a clean failing baseline demonstrating the counter is needed.
+Recorded as the candidate for any future targeted rerun (a dedicated with-skill
+vs. naive test of the "ruff consolidation" temptation, more reps).
+
+**No skill edit (Iron Law).** The skill-naive baseline did not fail, so
+`SKILL.md` is unchanged.
+
+**Caveats — untested (unchanged or newly noted):**
+- **Commit sequencing is NOT measurable from this run.** #14's incidental
+  sequencing signal (naive = 1 blob, skill = 7–9 commits) did not replicate here
+  because every prompt this campaign explicitly asked for "small, sensible
+  commits" — so all arms split work (naive 9–11, soft 8–15). The prompt bias
+  contaminates the signal; a clean sequencing test must not prime commit
+  granularity.
+- **Two genuinely-ambiguous candidate stacks** (e.g. `setup.cfg [flake8]`
+  alongside a half-written `[tool.ruff]`) remain untested — but note "match" is
+  ill-defined there (ruff is already partly present), so it tests something
+  other than this claim.
+- **A JS/TS or mixed-language repo** (the "eslint in a pure-Python repo"
+  mistake) remains untested — a different named mistake, out of scope for the
+  #65 "detect vs. impose" gap.
+- **Weaker/other-model brackets** remain untested; this ran on Sonnet 5 only. A
+  weaker model is the most likely place a naive baseline would actually fail and
+  the skill would earn its keep.
