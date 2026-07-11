@@ -28,6 +28,21 @@ dated, versioned section at release time.
 
 ### Added
 
+- `docs/delegated-implementation-packets.md` (issue #63): the reusable contract
+  for turning an approved issue into a bounded, subagent-ready implementation
+  packet. Defines the ten required sections (read-first, preflight, bounded
+  objective, expected artifacts, do-not-change, verification, external mutation
+  authority, stop conditions, noticed-not-done, closeout evidence), a copyable
+  Markdown template, a worked example reconstructed from issue #71, and the
+  plan-only vs. authorized-implementation split. Two governing rules:
+  repository/remote state outranks agent narration, and a packet grants no
+  mutation authority it does not explicitly state (repository mutation C2 and
+  external-system mutation C5 named independently, never implied together). It
+  references rather than restates the neighboring contracts — composition/
+  precedence (#31), delegation profiles (#32), the full issue work loop (#60),
+  and the runtime security & privacy classes. `CONTRIBUTING.md` and
+  `docs/issue-tracking.md` link it. Documentation only; no skill, command,
+  agent, installer, doctor, hook, or runtime change.
 - `docs/skill-portability-audit.md` (issue #61): evidence-backed
   classification of all 8 authored skills (plus `_template`) for
   cross-provider portability, with per-skill dispositions (5 shared
