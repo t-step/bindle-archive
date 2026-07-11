@@ -34,6 +34,19 @@ Use `BINDLE_NOTES_DIR` to move the whole tree:
 export BINDLE_NOTES_DIR="$HOME/Notes/bindle"
 ```
 
+A shell `export` only lasts for that shell, and an export inside a Claude Code
+session doesn't survive to the next one. The durable mechanism for Claude Code
+is the `env` block of `~/.claude/settings.json`; `/notes-home set <path>`
+(backed by `bin/notes-home.sh`) writes it safely: it validates the target,
+warns if the path is inside a git repo (the exact leak the notes home exists
+to prevent), shows the JSON diff, and writes only after explicit confirmation
+— backing the file up first and touching only the one key, since provider
+settings are foreign territory per
+[ownership-boundaries.md](ownership-boundaries.md) and
+[runtime-security-privacy.md](runtime-security-privacy.md). The change takes
+effect at the next session start. `bin/notes-home.sh status` shows the current
+resolution; `reset` removes the key the same careful way.
+
 Deprecated compatibility aliases remain supported:
 
 - `CLAUDE_KIT_NOTES_DIR`;
@@ -47,9 +60,12 @@ Resolution order for workflows should be:
 4. existing `~/.claude-kit` data when a workflow intentionally keeps using the
    old location.
 
-Bindle does not silently migrate or move user data. To migrate, copy the files
-yourself, update `BINDLE_NOTES_DIR` if needed, and keep the old directory until
-you are comfortable deleting it.
+Bindle does not silently migrate or move user data. `/notes-home migrate
+<path>` copies `projects/` and the denylist to a new home after a previewed,
+confirmed plan — it skips anything that already exists at the destination and
+never deletes the old directory; removing that remains your call, later. Or
+copy the files yourself. Either way, keep the old directory until you are
+comfortable deleting it.
 
 ## Obsidian
 
@@ -57,7 +73,7 @@ Obsidian reads folders of plain Markdown, which is exactly what this is. To see
 profiles, session notes, and handoffs in a vault, point the variable into it:
 
 ```bash
-export BINDLE_NOTES_DIR="$HOME/Vaults/main/bindle"
+/notes-home set ~/Vaults/main/bindle     # durable, previewed, confirmed
 ```
 
 That is the entire integration. Notes appear in the vault, searchable and

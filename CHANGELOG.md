@@ -31,6 +31,25 @@ dated, versioned section at release time.
   repos with an audit-logging `gh` wrapper; scoring was filesystem + wrapper
   log + transcript, never self-reports. No `SKILL.md` edit (Iron Law — with
   the skill loaded, compliance is 10/10).
+- `/notes-home` command + `bin/notes-home.sh` (issue #22): show, set, migrate,
+  or reset where Bindle's session workflows keep their notes — the flagship
+  use is pointing `BINDLE_NOTES_DIR` at a folder inside an Obsidian vault.
+  `status` reports the resolution chain (`BINDLE_NOTES_DIR` → deprecated
+  `CLAUDE_KIT_NOTES_DIR` → `~/.bindle`), whether the value is persisted in
+  `~/.claude/settings.json`, and per-project note counts. `set <path>`
+  persists the variable via the settings `env` block — the mechanism that
+  actually survives to the next session, unlike a shell `export` — and
+  establishes the kit's careful settings-write pattern (ownership-boundaries
+  + runtime contract rule 7): validate the JSON first, warn when the target
+  is inside a git repo, preview the exact diff, write only on explicit
+  confirmation (TTY yes or `--apply`), back the file up, and touch only the
+  one key. `migrate <path>` copies `projects/` and the denylist after a
+  previewed plan, skips anything already at the destination, and never
+  deletes the old home; `reset` removes the key the same careful way. Takes
+  effect next session and says so. Covered by new `bin/test-notes-home.sh`
+  (49 checks, temp homes only — never the real `~/.claude` or `~/.bindle`),
+  wired into `make test` and pre-commit; documented in `docs/notes-home.md`,
+  the README, and the runtime contract's capability inventory (C1).
 
 ## [0.3.0] - 2026-07-10
 

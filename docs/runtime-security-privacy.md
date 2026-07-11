@@ -73,7 +73,8 @@ Executable-on-request assets, classified:
 | `bin/test-install.sh`, `bin/test-check.sh`, `bin/test-check-frontmatter.sh`, `bin/test-doctor.sh` | C1 | temp fixtures only; never the real environment |
 | `bin/install.sh` | C1 | owned symlinks only, per ownership-boundaries |
 | `bin/new.sh`, `bin/release.sh` | C2 | repo-local writes, human-invoked; release never pushes |
-| `/session-*`, `/handoff`, `/project-profile`, `/workflow-review`, `/promote-insight` commands | C1/C3 | human-invoked; write to the notes home; note *contents* stay out of repos per privacy-boundaries |
+| `bin/notes-home.sh` | C1 | `status` is read-only; `set`/`migrate`/`reset` preview by default and write only on explicit confirmation (`--apply`/TTY yes). Its `~/.claude/settings.json` writes follow rule 7 below verbatim — validate, back up, touch only `env.BINDLE_NOTES_DIR`, show the diff — even though it is not a hook |
+| `/session-*`, `/handoff`, `/project-profile`, `/workflow-review`, `/promote-insight`, `/notes-home` commands | C1/C3 | human-invoked; write to the notes home; note *contents* stay out of repos per privacy-boundaries |
 
 Skills and commands are instructions interpreted by the provider, not
 programs Bindle executes — but when they direct the agent to run one of

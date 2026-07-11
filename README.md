@@ -124,10 +124,13 @@ plain-Markdown notes:
 - `/handoff` — one self-contained prompt a future session can start from cold.
 - `/project-profile` — durable project facts; repo export only on explicit
   request, sanitized.
+- `/notes-home` — show where the notes live, or durably relocate them (e.g.
+  into an Obsidian vault) via `bin/notes-home.sh`: preview first, explicit
+  confirmation before the one surgical `~/.claude/settings.json` write.
 
 Notes prefer `BINDLE_NOTES_DIR`, then the deprecated `CLAUDE_KIT_NOTES_DIR`, then
 `~/.bindle`. Existing `~/.claude-kit` data is not moved automatically; keep using
-the alias or migrate by hand when you choose. See
+the alias, or copy with `/notes-home migrate` (never deletes the old home). See
 [docs/notes-home.md](docs/notes-home.md). The provider-neutral contract behind
 these commands — usable from Codex too — is
 [docs/session-notes-format.md](docs/session-notes-format.md).
