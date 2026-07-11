@@ -77,11 +77,11 @@ provider settings touched; fixtures in the session scratchpad only):
   checks by the `_*` skip in `bin/install.sh` and `bin/check.sh` —
   classified **not applicable**).
 - **Recommended dispositions:** 5 shared unchanged (Codex side untested at
-  the behavior level), 1 shared after cleanup (`session-continuity`),
-  1 provider-specific pending a wording decision (`hands-on-keyboard` could
-  move to shared-after-cleanup), 1 provider-specific (Claude-native subject:
-  `maintain-claude-md`). See the honest split per skill — several
-  "shared unchanged" rows still carry Codex-side unknowns.
+  the behavior level), 3 provider-specific (`session-continuity` and
+  `hands-on-keyboard` — Codex consumes the portable doc contracts, not the
+  skills, per the [#71 wording decision](#decision-on-provider-specific-wording-71);
+  `maintain-claude-md` — Claude-native subject). See the honest split per
+  skill — several "shared unchanged" rows still carry Codex-side unknowns.
 - **Highest-confidence shared candidates:** `verify-then-commit`,
   `fork-pr-flow` — zero provider-specific prose, no scripts, strongest
   behavioral evidence on Claude, and covered by this audit's live Codex
@@ -103,6 +103,45 @@ provider settings touched; fixtures in the session scratchpad only):
   tolerates extra top-level files in a skill directory
   (`PRESSURE-TESTS.md`, `tests/`) is unknown.
 
+## Decision on provider-specific wording (#71)
+
+Resolves issue #71 (parent #55; settles the wave-2 question in #57) for the two
+skills the matrix flagged as blocked on provider-specific prose. The audit
+named three options: (1) neutralize the wording in place; (2) keep the
+two-layer design (portable doc + Claude adapter skill) and give Codex only the
+doc; (3) a per-provider variant. Option 3 is out per
+[product-boundary.md](product-boundary.md) — asset conversion is a stated
+non-goal.
+
+**Decision: option 2 for both skills.** Codex consumes the already-shipped
+portable contracts — [session-notes-format.md](session-notes-format.md) and
+[hands-on-keyboard.md](hands-on-keyboard.md) — and these two SKILL.md files
+stay Claude-native and unchanged. Neither is shipped to Codex as a skill.
+
+Rationale:
+
+- Option 1 requires first amending the standing Phase 1 rule ("Claude assets
+  remain Claude-native — do not rewrite `skills/*/SKILL.md` … to make them
+  provider-neutral"). That is a deliberate product change, out of scope for a
+  cleanup issue; #71 explicitly forbids the drive-by edit.
+- The two-layer design already exists and works: each skill's portable
+  contract is a shipped doc, and
+  [using-bindle-with-codex.md](using-bindle-with-codex.md) already tells a
+  Codex session how to follow it manually. No Codex-side capability is lost by
+  withholding the skill.
+- **U7 resolved (`session-continuity`):** the only thing sharing the skill
+  would add over the doc is implicit triggering — low value against the cost
+  of neutralizing four Claude-command references and collapsing the two-layer
+  design. Not worth it today.
+- `hands-on-keyboard` self-describes as "the Claude-native automation of the
+  provider-neutral contract"; re-wording it would erase a deliberate design
+  statement, not fix stale prose.
+
+Reversibility: if the owner later retires or amends the Phase 1 rule, option 1
+becomes available and both rows can move to shared-after-cleanup. Nothing here
+forecloses that — it records that today's compliant, lower-risk choice is
+option 2.
+
 ## Skill matrix
 
 Legend: **F** format compatibility, **C** Claude support, **X** Codex
@@ -117,8 +156,8 @@ is untested for every skill.
 | `scoped-sequential-prs` | Split big work into ordered, scope-isolated PRs with a 3-step contamination gate | Bindle | yes (tested, Claude; documented, Codex) | installed + pressure-tested (6 claims, Sonnet+Haiku, gate REFACTORed twice) | untested | implicit trigger; step 2 says "See superpowers:using-git-worktrees" | git, worktrees; soft deps: `superpowers:using-git-worktrees`, pairs-with pointers to `fork-pr-flow`/`verify-then-commit` | Claude: tested · Codex: unknown | **shared unchanged** | none required; degraded (not broken) without superpowers — document in #57 |
 | `repo-hygiene-init` | Bootstrap baseline repo hygiene (pre-commit, lint, Makefile, CI, license, versioning) | Bindle | yes (tested, Claude; documented, Codex) | installed + tested (HOLDS 6/6; RED arm did not establish a failing baseline) | untested | implicit trigger; none provider-specific | suggests common tools (pre-commit, ruff, prettier) but detects before adding | Claude: tested (weaker RED) · Codex: unknown | **shared unchanged** | fix dangling `version-single-source` pattern reference (defined nowhere in the repo) |
 | `license-compliance-auditor` | Evidence-backed license-risk audit; scripts + references; never legal conclusions | Bindle | yes (tested, Claude; documented, Codex) | installed + unit-tested scripts + pressure-tested (3 claims, Sonnet) | untested; scripts run stdlib-only through a symlink (tested locally, outside any Codex session) | implicit trigger; Claude also has a `/license-audit` command *wrapper* (command→skill; the skill does not need the command) | Python 3 stdlib only; optional gated `gh`; all references resolve inside the skill dir (tested through symlink) | Claude: tested · Codex: unknown (script layer provider-neutral: tested) | **shared unchanged** | none required; largest support-file surface — best test case for #57's symlink requirement |
-| `session-continuity` | Notes home, session notes, handoffs, profiles — the privacy-safe cross-session memory | Bindle (portable contract already exists separately: [session-notes-format.md](session-notes-format.md)) | yes (tested, Claude; documented, Codex) | installed + pressure-tested (4+ claims incl. Haiku/Sonnet reruns) | untested | prose asserts "The `/session-start`, `/session-end`, `/handoff`, and `/project-profile` commands all follow these conventions" — Claude slash commands with **no Codex equivalent** (Codex custom prompts are deprecated) | Bindle repo checkout for `bin/slugify.sh` + `bin/check-private-info.sh` (conditional, degrades with a stated fallback); notes home dir | Claude: tested · Codex: unknown | **shared after cleanup** | isolate/neutralize the 4 slash-command references; decide overlap story vs. the already-portable [session-notes-format.md](session-notes-format.md) |
-| `hands-on-keyboard` | Navigator-not-driver collaboration mode; escalation ladder | Bindle (portable contract already exists separately: [hands-on-keyboard.md](hands-on-keyboard.md)) | yes (tested, Claude; documented, Codex) | installed + pressure-tested | untested | implicit trigger; prose addresses "Claude" 6× including the description — deliberate: the file self-describes as "the Claude-native automation of the provider-neutral contract" | `../../docs/hands-on-keyboard.md` (escapes the skill dir; resolves through a symlink install — tested; breaks on copy install) | Claude: tested · Codex: unknown | **provider-specific today; shared after cleanup if re-worded** | replacing "Claude" with neutral wording is a deliberate product decision that conflicts with the standing Phase 1 rule — needs an explicit decision in #57's wave, not a drive-by edit |
+| `session-continuity` | Notes home, session notes, handoffs, profiles — the privacy-safe cross-session memory | Bindle (portable contract already exists separately: [session-notes-format.md](session-notes-format.md)) | yes (tested, Claude; documented, Codex) | installed + pressure-tested (4+ claims incl. Haiku/Sonnet reruns) | untested | prose asserts "The `/session-start`, `/session-end`, `/handoff`, and `/project-profile` commands all follow these conventions" — Claude slash commands with **no Codex equivalent** (Codex custom prompts are deprecated) | Bindle repo checkout for `bin/slugify.sh` + `bin/check-private-info.sh` (conditional, degrades with a stated fallback); notes home dir | Claude: tested · Codex: unknown | **provider-specific** (Codex uses the doc, [#71](#decision-on-provider-specific-wording-71)) | **resolved #71 → option 2:** no wording change; Codex follows [session-notes-format.md](session-notes-format.md), skill stays Claude-native |
+| `hands-on-keyboard` | Navigator-not-driver collaboration mode; escalation ladder | Bindle (portable contract already exists separately: [hands-on-keyboard.md](hands-on-keyboard.md)) | yes (tested, Claude; documented, Codex) | installed + pressure-tested | untested | implicit trigger; prose addresses "Claude" 6× including the description — deliberate: the file self-describes as "the Claude-native automation of the provider-neutral contract" | `../../docs/hands-on-keyboard.md` (escapes the skill dir; resolves through a symlink install — tested; breaks on copy install) | Claude: tested · Codex: unknown | **provider-specific** (deliberate two-layer design, [#71](#decision-on-provider-specific-wording-71)) | **resolved #71 → option 2:** no wording change; Codex follows [hands-on-keyboard.md](hands-on-keyboard.md), skill stays the Claude adapter |
 | `maintain-claude-md` | Init/update/lint a repo's CLAUDE.md | Bindle | yes (tested, Claude; documented, Codex) | installed + pressure-tested (6 claims) | untested; **not recommended** | invocable as `/maintain-claude-md` (Claude skill-as-command surface); description references that invocation | none beyond file tools + `command -v` | Claude: tested · Codex: unknown | **provider-specific (Claude-only)** | none — the managed artifact (CLAUDE.md, `@`-includes, `.claude/settings.json`, loader stubs) *is* Claude Code provider surface; a Codex install would be misleading, not merely stale wording |
 | `skills/_template/` | Authoring scaffold for new skills | Bindle | placeholder frontmatter (name ≠ dir by design) | never installed (`_*` skip, tested by inspection of `bin/install.sh`) | never installed | n/a | n/a | tested (skip logic read) | **not applicable / unsupported** | none — repo tooling, not an installable skill |
 
@@ -248,9 +287,13 @@ Grouped by root cause; none performed in this audit PR.
    `/project-profile` as the implementing commands);
    `maintain-claude-md` (`/maintain-claude-md` in description and body —
    moot unless its Claude-only disposition is ever revisited). One issue.
+   **`session-continuity` resolved by [#71](#decision-on-provider-specific-wording-71)
+   → option 2: left as-is, Claude-native by decision; Codex uses the doc.**
 2. **Provider-addressed wording** — `hands-on-keyboard` ("Claude" ×6,
    including the description). Same issue as (1) or its own, but it must
    cite the Phase-1 rule and make the two-layer design decision explicit.
+   **Resolved by [#71](#decision-on-provider-specific-wording-71) → option 2:
+   left as-is; the two-layer design is confirmed intentional.**
 3. **References escaping the skill directory** — `hands-on-keyboard`
    (`../../docs/…`), `session-continuity` (`bin/slugify.sh`,
    `bin/check-private-info.sh`). Symlink installs preserve these (tested);
@@ -276,7 +319,7 @@ each:
 | U4 | Codex tolerance of extra top-level files in a skill dir (`PRESSURE-TESTS.md`, `tests/`, `__pycache__` artifacts) | trivial probe during #57: install `license-compliance-auditor` into a fixture and check discovery doesn't break |
 | U5 | Whether Codex's optional `agents/openai.yaml` metadata is needed for acceptable UX (vs. bare SKILL.md) | #57 real-session observation; if needed, it's per-skill additive metadata, not a rewrite |
 | U6 | `superpowers:` pointers on a Codex session without the superpowers plugin — named-principle degradation assumed | inferred today; one wave-2 observation would settle it |
-| U7 | Whether sharing `session-continuity` as a Codex skill adds value over the existing doc contract ([session-notes-format.md](session-notes-format.md)) | a design decision plus one real-session comparison; belongs to the cleanup issue |
+| U7 | Whether sharing `session-continuity` as a Codex skill adds value over the existing doc contract ([session-notes-format.md](session-notes-format.md)) | **Resolved ([#71](#decision-on-provider-specific-wording-71)):** design decision made — option 2; the doc's only shortfall vs. the skill is implicit triggering, judged not worth neutralizing the prose today. Revisit only if the Phase 1 rule is ever amended. |
 | U8 | Codex's bundled `skill-installer` skill describes installing into `$CODEX_HOME/skills` — a path absent from the officially documented discovery list (`.agents/skills` family, `/etc/codex/skills`, bundled), which was re-verified 2026-07-11 | do not target `$CODEX_HOME/skills` in #57 without first confirming it against official docs or a live discovery test; the documented user-scope path is `$HOME/.agents/skills` |
 
 ## Relationship to #29

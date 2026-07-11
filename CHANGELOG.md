@@ -14,6 +14,21 @@ dated, versioned section at release time.
 
 ## [Unreleased]
 
+### Changed
+
+- `docs/skill-portability-audit.md` (issue #71): recorded the provider-wording
+  decision for the two skills the audit flagged as blocked on Claude-specific
+  prose. **Decision — option 2 for both `session-continuity` and
+  `hands-on-keyboard`:** keep the two-layer design (portable doc + Claude
+  adapter skill), leave both SKILL.md files Claude-native and unchanged, and
+  have Codex consume the already-shipped contracts
+  (`docs/session-notes-format.md`, `docs/hands-on-keyboard.md`) rather than the
+  skills. Option 1 (neutralize in place) would require first amending the
+  standing Phase 1 rule and is deferred; option 3 (per-provider variant) is out
+  per the product boundary. Matrix rows moved shared-after-cleanup →
+  provider-specific, uncertainty-register U7 resolved, and cleanup-backlog
+  items 1–2 closed. No skill, installer, or runtime change; documentation only.
+
 ### Fixed
 
 - `docs/provider-interop.md`, `docs/using-bindle-with-codex.md` — re-baselined
