@@ -153,13 +153,137 @@ directly. (2) The append-only win rests on the model recognizing "correct the
 record" as *supersede-don't-rewrite*; a weaker model may not. (3) Model-dependent
 (Opus 4.8).
 
+## Scoping decision for the non-flagship checks (issue #17)
+
+Per the issue, checks were triaged by real failure cost rather than tested
+uniformly:
+
+- **Lexical include resolution** (a resolvable include pointing at the *wrong*
+  file passes) — **tested below (Claim 5).** Highest cost: a session silently
+  loads incorrect operational context (wrong stack, wrong deploy process,
+  contradictory hard rules) while believing the include machinery is healthy.
+- **Duplicated-governance detection** (keyword-based, novel phrasings slip
+  past) — **tested below (Claim 6).** Real, recurring cost specific to this
+  project's own culture (`global/CLAUDE.md`'s header explicitly warns about
+  governance duplication drifting), and a plausible everyday failure mode
+  (paraphrasing a constitution instead of linking it).
+- **Byte budget** — **explicitly de-scoped, not tested.** The skill already
+  self-describes this as "a heuristic, not a hard cap" (Common Mistakes /
+  design notes) — missing a bloat warning costs verbosity, not incorrect or
+  misleading guidance the way the two above do. Not worth a pressure-test
+  fixture; revisit only if a real incident ties bloat to a session actually
+  missing something load-bearing.
+- **SPECKIT accuracy, lessons-dated, stale-history, self-marker** — left as
+  incidentally-exercised only (per the original log), same reasoning: each is
+  a low-cost WARN with no plausible silent-harm story like Claims 5–6 have.
+
+## Claim 5 — lint catches (or a naive reader catches) a resolvable include pointing at the wrong file
+
+**Status: VERIFIED — the self-acknowledged "lexical only" limitation did not
+bite in practice (6/6 both arms); one real ambiguity found in the skill's own
+severity labeling (2026-07-10).**
+
+Fixture: `beacon-api`, a repo rewritten from Python/Flask to Node/Express.
+`.claude/core.md` is the **stale, pre-rewrite** doc (Python, `pip`, a legacy
+deploy script with a Friday-deploy freeze rule); `.claude/core-v2.md` is the
+**current** doc (Node, `npm`, the actual current deploy rule) — but
+`CLAUDE.md`'s `@`-include and both doc-router rows still point at `core.md`.
+The include is **resolvable** (the file exists) — exactly the "lexical, not
+semantic" gap the skill's own design notes admit: nothing forces a check that
+the resolved content is still the *right* content. `README.md` corroborates
+the mismatch explicitly. **RED** — "is the CLAUDE.md setup healthy, will a new
+session load the right context?", no skill, no lint table requested. **GREEN**
+— given the skill's lint-mode table verbatim, asked to produce the prescribed
+`check|status|detail` report. 3 reps each.
+
+| Signal | RED (3 reps) | GREEN (3 reps) |
+|---|---|---|
+| Caught the stale/wrong-target mismatch? | **3/3** | **3/3** |
+| Cited the corroborating evidence (README + sibling `core-v2.md` + contradictory hard rules)? | 3/3 | 3/3 |
+| Labeled it a mechanical FAIL / WARN / neither (RED had no such vocabulary) | n/a (prose only) | **1/3 FAIL, 2/3 WARN** — the table has no status for "resolves, but to the wrong file," so agents freelance between the two |
+
+**6/6 — the documented limitation did not manifest here.** Both skill-naive
+and skill-equipped agents caught the mismatch every time, by cross-referencing
+the included file's own header ("pre-rewrite") against its sibling
+(`core-v2.md`, "current, post-rewrite") and the README's explicit callout —
+general reading comprehension compensated for the mechanical check's blind
+spot in all 6 reps. This is reassuring but **narrower than "the limitation is
+false"**: this fixture handed the model generous tells (a versioned sibling
+filename, an explicit README pointer) — see caveat below.
+
+**One real, mechanically-observed gap: the lint table has no status for this
+case.** The table's only FAIL condition for Include integrity is a *missing*
+target; a *resolvable-but-wrong* target isn't named at all, so GREEN agents
+split 1 FAIL / 2 WARN inventing their own severity. This is a minor
+documentation gap worth closing (name the case and its status explicitly)
+rather than a behavioral failure — recorded as a residual, not acted on here
+per the Iron Law (no RED *of the skill's judgment* occurred; the split is
+about a table gap, not a wrong answer).
+
+**No skill edit (Iron Law).** The substantive behavior — catching the
+mismatch — held 6/6. `SKILL.md` is unchanged; the FAIL/WARN table gap is
+recorded as a candidate follow-up, not fixed here.
+
+**Caveat — narrower fixture than the general limitation.** This fixture's
+tells were generous: a self-describing "pre-rewrite"/"post-rewrite" pair of
+filenames and an explicit README pointer. The limitation the skill's design
+notes actually name — a resolvable include silently pointing at the wrong
+file with **no such corroborating tell** (e.g., a same-named file relocated
+by mistake, with no sibling doc and no README mention) — is still untested and
+is where a real failure is more plausible. Weaker/other-model brackets are
+also untested; this ran on Sonnet 5 only.
+
+## Claim 6 — lint catches (or a naive reader catches) governance duplicated in paraphrased prose that avoids the obvious keywords
+
+**Status: VERIFIED — the self-acknowledged "keyword-based" limitation did not
+bite in practice (6/6 both arms) (2026-07-10).**
+
+Fixture: `ledger-svc`, whose `CONSTITUTION.md` states SemVer plainly ("MAJOR:
+breaking changes... MINOR: backward-compatible feature additions... PATCH:
+backward-compatible bug fixes"). `CLAUDE.md`'s own `## Versioning` section
+restates the identical policy in prose that avoids every literal keyword
+("SemVer", "MAJOR", "MINOR", "PATCH", "Semantic Versioning") — e.g. "the last
+number moves for small corrections that don't add or remove any capability
+either way" instead of "PATCH: bug fixes." **RED** — "flag anything that looks
+off," no skill. **GREEN** — given the skill's lint-mode table verbatim,
+applied as the Defer-don't-duplicate check. 3 reps each.
+
+| Signal | RED (3 reps) | GREEN (3 reps) |
+|---|---|---|
+| Caught the paraphrased duplication? | **3/3** | **3/3** (all labeled ⚠️ WARN, matching the table) |
+| Named it as a drift risk, not just a style nit? | 3/3 — e.g. "independently-worded copies of the same governance rule... a future edit to one won't automatically update the other" | 3/3 |
+| Also independently caught the dangling `docs/architecture.md` reference (not what this fixture targeted)? | 3/3 | 3/3 |
+
+**6/6 — the documented limitation did not manifest here either.** Every rep
+recognized the paraphrase as semantically identical governance, not a
+different policy, without any literal keyword overlap to key off. This
+suggests the "keyword-based" characterization in the skill's design notes may
+overstate the real risk on this model bracket: the check is executed by the
+model's own reading comprehension, not a literal grep, so a competent
+paraphrase-detector is closer to the actual behavior than "keyword matching"
+implies. Both arms also converged on a second, un-planted finding (the dead
+`docs/architecture.md` link) in all 6 reps — incidental corroboration that a
+general "look for problems" pass and the structured lint table cover
+overlapping ground.
+
+**No skill edit (Iron Law).** The claim holds 6/6; `SKILL.md`'s
+Defer-don't-duplicate check is unchanged.
+
+**Caveat.** This paraphrase was still fairly transparent (same three-tier
+structure, same order, obviously about version bumps). A paraphrase that
+restates governance more obliquely (e.g., folded into unrelated prose, or
+describing only the *consequence* of the policy rather than the policy
+itself) is untested and is where "keyword-based" detection is more likely to
+actually fail. Weaker/other-model brackets are untested; Sonnet 5 only.
+
 ## Not pressure-tested (still deferred)
-- **Lint checks other than the two flagships.** Defer-don't-duplicate,
-  rule-rationale, byte-budget, SPECKIT accuracy, lessons-dated, stale-history, and
-  self-marker are exercised incidentally (GREEN agents ran the whole table) but not
-  independently RED-tested.
-- **Self-acknowledged skill limitations** (from the DomI design notes) remain true
-  and untested: include resolution is **lexical** (a resolvable include pointing at
-  the *wrong* file passes), duplication detection is **keyword-based** (novel
-  phrasings slip past), and the byte budget is a **heuristic**, not a hard cap.
-- **Weaker models.** All runs were Opus 4.8.
+- **Byte budget.** Explicitly de-scoped above (issue #17) — heuristic, not a
+  hard cap, low real failure cost.
+- **SPECKIT accuracy, lessons-dated, stale-history, self-marker.** Exercised
+  incidentally (GREEN agents ran the whole table across Claims 1–6) but not
+  independently RED-tested — same reasoning as the byte budget.
+- **Weaker models.** All runs (Claims 1–6) were on a single bracket each
+  (Opus 4.8 for Claims 1–4, Sonnet 5 for Claims 5–6) — no claim has been
+  cross-checked across brackets yet.
+- **A less-generous include-mismatch fixture** (Claim 5) and **a more oblique
+  governance paraphrase** (Claim 6) — see each claim's caveat.
