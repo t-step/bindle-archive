@@ -74,6 +74,12 @@ repos:
         language: script
         pass_filenames: false
         always_run: true
+      - id: bindle-notes-home-test
+        name: notes-home.sh configuration tests
+        entry: bin/test-notes-home.sh
+        language: script
+        pass_filenames: false
+        always_run: true
       - id: bindle-link
         name: link new items into ~/.claude (post-merge)
         entry: bin/install.sh

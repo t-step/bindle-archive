@@ -19,6 +19,7 @@ test:
 	bin/test-check.sh
 	bin/test-check-frontmatter.sh
 	bin/test-doctor.sh
+	bin/test-notes-home.sh
 
 install:
 	bin/install.sh
