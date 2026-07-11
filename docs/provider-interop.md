@@ -59,7 +59,7 @@ portable to it.
 | Project guidance | native (`CLAUDE.md`) | native (`AGENTS.md`; `CLAUDE.md` read as fallback context — a Bindle/Codex-session convention, not an OpenAI-documented Codex behavior) |
 | Global preferences | installed (`global/CLAUDE.md` → `~/.claude/CLAUDE.md`) | installed guidance (`global/AGENTS.md` → explicit `--codex-home` target) |
 | Installer support | default provider (`bin/install.sh`) | explicit target only (`--provider codex --codex-home DIR`) |
-| Skills | native (`skills/<name>/SKILL.md` → `~/.claude/skills/<name>`) | **native primitive exists** (Codex Agent Skills: `SKILL.md` with `name`/`description` frontmatter, discovered under `.agents/skills` — repo- and user-scoped, not `~/.codex`). Bindle does not install to that path today; no adapter exists yet (tracked in #57). Same underlying "open agent skills standard" family as Claude's format, but not proven byte-compatible — untested. |
+| Skills | native (`skills/<name>/SKILL.md` → `~/.claude/skills/<name>`) | **native primitive exists** (Codex Agent Skills: `SKILL.md` with `name`/`description` frontmatter, discovered under `.agents/skills` — repo- and user-scoped, not `~/.codex`). Bindle does not install to that path today; no adapter exists yet (tracked in #57). Same underlying "open agent skills standard" family as Claude's format, but not proven byte-compatible. Per-skill portability classification and first-wave recommendation: [skill-portability-audit.md](skill-portability-audit.md) (#61). |
 | Slash commands | native (`commands/`) | **no direct equivalent.** Codex's closest analog, Markdown "custom prompts" under `~/.codex/prompts/`, is officially deprecated by OpenAI in favor of skills — do not build a Bindle adapter onto a deprecated surface. |
 | Subagents | native surface (`agents/`) — not currently shipped except `_template.md` | **native primitive exists**, but in an incompatible format: standalone TOML files (`name`/`description`/`developer_instructions`/`model`/…) at `~/.codex/agents/` (personal) or `.codex/agents/` (project) — not Bindle's Markdown+frontmatter `agents/<name>.md` shape. Converting would need a real per-file adapter, not a copy; out of scope per the product-boundary non-goal on automatic asset conversion. Untested. |
 | Hooks | native — Bindle ships one today: `global/hooks/nested-notes-guard.py` (PreToolUse, wired manually in `~/.claude/settings.json`; `bin/install.sh` does not manage hook wiring yet) | **native primitive exists**: `hooks.json` / `[hooks]` in `config.toml`, discovered at `~/.codex/hooks.json`, `~/.codex/config.toml`, `<repo>/.codex/hooks.json`, `<repo>/.codex/config.toml`, plus plugin-bundled hooks. Different config shape and trust model (`/hooks`) than Claude's `settings.json` matcher hooks; Bindle has no Codex-hooks adapter today. Untested. |
@@ -96,7 +96,12 @@ Per-surface, the five distinctions issue #56 requires:
    (admin), or bundled system skills — never `~/.claude/skills` or a bare
    `skills/` repo dir. An install target would need to place (copy or
    symlink) compatible skills under one of those paths.
-5. Tested: no — documented/inferred from official docs only.
+5. Tested: partially — the issue #61 audit
+   ([skill-portability-audit.md](skill-portability-audit.md)) ran a
+   read-only Codex discovery probe on 2026-07-11: two Bindle skills
+   symlinked into a fixture's repo-scope `.agents/skills` were discovered
+   by a real Codex session (official docs also confirm symlinked skill
+   folders are followed). Invocation/behavior remains untested.
    Source: [learn.chatgpt.com/docs/build-skills](https://learn.chatgpt.com/docs/build-skills)
    (redirected from `developers.openai.com/codex/skills`), verified 2026-07-11.
 
