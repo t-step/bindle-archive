@@ -20,6 +20,10 @@ test:
 	bin/test-check-frontmatter.sh
 	bin/test-doctor.sh
 	bin/test-notes-home.sh
+	bin/test-nested-notes-guard.sh
+	bin/test-session-context.sh
+	bin/test-session-hooks.sh
+	bin/test-install-session-hooks.sh
 
 install:
 	bin/install.sh

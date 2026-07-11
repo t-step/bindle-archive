@@ -178,6 +178,33 @@ and `/project-profile` slash commands apply them. These assets are
 Claude-native and stay that way — their frontmatter, triggers, and install
 layout are not part of this contract.
 
+### Opt-in hook automation (breadcrumbs)
+
+**Current Claude automation**, and explicitly opt-in (never part of the
+default `bin/install.sh` — see
+[ownership-boundaries.md](ownership-boundaries.md)):
+`bin/install-session-hooks.sh install` wires a `SessionStart` hook
+(`global/hooks/session-start-context.py`) that runs
+[`bin/session-context.sh`](../bin/session-context.sh) and injects its compact
+output — notes-home resolution, latest session-note/handoff *paths* (never
+contents), open `status: in-progress` issues, a one-line git summary — so a
+fresh session opens oriented without depending on the human running
+`/session-start` first. `/session-start` remains the deep version; this is a
+cheap pointer, budget-capped to a few hundred tokens.
+
+The paired `SessionEnd` hook (`global/hooks/session-end-breadcrumb.py`)
+appends one line to `projects/<project>/breadcrumbs.log` — timestamp, repo,
+branch, commits made this session — even when a session never runs
+`/session-end`. This is **not** a session note: it lives outside
+`sessions/*.md` on purpose, so a future `/session-start` never mistakes a
+thin automatic trace for a real, model-authored note. Pure script, no model
+involvement, and it never blocks session start or end on failure (missing
+notes home, no git repo, etc. all degrade silently).
+
+**Explicit decision:** no `Stop`-hook "you haven't written a session note"
+nag. It would fight the user more than it helps; the breadcrumb is the
+honest floor, `/session-end` remains something you choose to run.
+
 ## How Codex uses this
 
 Codex has no skills or slash commands; it participates manually:

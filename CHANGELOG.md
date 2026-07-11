@@ -28,6 +28,24 @@ dated, versioned section at release time.
 
 ### Added
 
+- Hook-automated session continuity (issue #21): `bin/session-context.sh`
+  emits a budget-capped (few-hundred-token) orientation blob — notes-home
+  resolution, latest session-note/handoff *paths* (never contents), open
+  `status: in-progress` issues, a one-line git summary — designed to run on
+  every session start. `global/hooks/session-start-context.py` (SessionStart,
+  matcher `startup|resume`) injects it via `hookSpecificOutput.additionalContext`;
+  `global/hooks/session-end-breadcrumb.py` (SessionEnd) appends an automatic
+  breadcrumb (timestamp, repo, branch, commits made this session) to
+  `<notes-home>/projects/<project>/breadcrumbs.log`, kept separate from
+  `sessions/*.md` so a thin auto-trace is never mistaken for a real note.
+  Both degrade silently (no git repo, no notes home, no `gh`) and never
+  block a session. `bin/install-session-hooks.sh` is the opt-in installer
+  (`status`/`install`/`uninstall`, preview-first, `--apply` to write) —
+  never part of the default `bin/install.sh`, per
+  `docs/ownership-boundaries.md`. Explicitly decided against a `Stop`-hook
+  nag (fights the user more than it helps). Self-tests:
+  `bin/test-session-context.sh`, `bin/test-session-hooks.sh`,
+  `bin/test-install-session-hooks.sh`.
 - `global/hooks/nested-notes-guard.py` — PreToolUse hook (matcher `Bash`)
   enforcing the new global rule that maintainer-facing GitHub prose in
   domattioli-owned repos is rendered with the nested-notes skill (inline
