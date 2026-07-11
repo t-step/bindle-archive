@@ -52,19 +52,28 @@ git diff -U0 "$BASE".."$TIP" \
 # Step 3 — scope-declaration integrity: does the declared scope match the
 # stage's own purpose? (Judgment check, not mechanical.)
 #
-# For every file step 1's pattern allows, and every symbol step 2's pattern
-# excludes: does it trace to the stage's one-line purpose (or the plan, if
-# one exists)? If yes, done.
+# First, a concrete check: does any file step 1's pattern allows carry its
+# own marker — a header, comment, docstring, or plan entry — naming a
+# *different* stage (e.g. "PR2:", "TODO(later stage)", "not yet built out")?
+# A file that marks itself as later-stage work is a SCOPE OVERRIDE the
+# moment it's included, full stop — do not reason your way to "it still
+# matches this stage's purpose." Declare it (below) instead.
+#
+# Then, for every remaining file step 1's pattern allows, and every symbol
+# step 2's pattern excludes: does it trace to the stage's one-line purpose
+# (or the plan, if one exists)? If yes, done.
 #
 # If no — a later-stage file/symbol was pulled in for a reason other than
-# "this is what the stage is" — that's a SCOPE OVERRIDE, not a clean PR.
-# State it explicitly, in the PR description and the gate report:
+# "this is what the stage is" — that's also a SCOPE OVERRIDE, not a clean PR.
+# State every override found explicitly, in the PR description and the gate
+# report:
 #   Scope override: <file/symbol> — <why, e.g. an explicit user instruction>
 #
 # A scope override isn't automatically wrong. It must never be silently
-# absorbed into the step 1/2 patterns and reported as plain "clean." Do not
-# report "scope clean" unless step 3 found no override needed, or every
-# override found is stated above.
+# absorbed into the step 1/2 patterns and reported as plain "clean" —
+# including by re-justifying a marked-later-stage file as "part of this
+# stage's purpose after all." Do not report "scope clean" unless step 3
+# found no override needed, or every override found is stated above.
 ```
 
 Adjust all three checks per stage: the `grep -Ev` allow-pattern is the files this
@@ -90,6 +99,7 @@ PR should *mention* features introduced by a later PR.
 
 - **Skipping the diff gate** because the change "feels" scoped — run it; it catches stray files every time.
 - **Quietly widening the allow-pattern to fit what you already built, then reporting clean** — that's a scope override; state it in the PR description and gate report, don't launder it through a self-chosen pattern.
+- **Reasoning a later-stage-marked file "actually matches this stage's purpose after all"** — a file's own header/comment naming a different stage (e.g. "PR2: ...") is a scope override the moment it's included, no matter how the purpose-tracing argument goes. Declare it; don't argue it away.
 - **Checking out shared `main` in the primary clone** for a stage — use a throwaway worktree; keep the shared checkout clean.
 - **Prose contamination** — code is scoped but a README/comment references a future stage. Grep prose too.
 - **Rebasing the whole chain after each merge** — instead, base each stage on the merged tip of the previous one.
