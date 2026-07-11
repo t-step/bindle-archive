@@ -32,6 +32,9 @@ Done is expressed by **closing** the issue, not by a label.
 - One issue per PR-able unit of work, matching the existing
   branch-and-PR discipline (`feature/<x>` branches, no direct commits to
   `main`).
+- Before an issue moves to `status: ready` for delegation, it should carry a
+  [delegated implementation packet](delegated-implementation-packets.md) —
+  bounded objective, do-not-change scope, verification, and mutation authority.
 - Milestones are release-scoped (`v0.3.0`, `v0.4.0`, …). Assign an issue to
   a milestone when it is committed to that release.
 - Keep `status:` labels current when starting/blocking work — the dashboard

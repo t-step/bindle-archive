@@ -22,6 +22,14 @@ Claude user-level capability under `~/.claude/`. Codex Phase 1 support is direct
 - **Verify before committing:** `make check` must pass. Never bypass hooks.
 - Small, single-purpose commits over one large blob.
 
+## Delegating implementation work
+
+Handing an approved issue to a subagent (or a future session) uses the
+[delegated implementation packet contract](docs/delegated-implementation-packets.md):
+a bounded objective, explicit "do not change" scope, exact verification, and a
+per-action mutation allow-list, so authority is granted rather than inferred.
+Copy its template into the issue or handoff instead of re-typing guardrails.
+
 ## Authoring a skill (this is TDD, not just writing docs)
 
 A skill is not "done" when the prose reads well — it's done when a fresh agent
