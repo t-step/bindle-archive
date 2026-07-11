@@ -16,6 +16,21 @@ dated, versioned section at release time.
 
 ### Changed
 
+- `skills/repo-hygiene-init/PRESSURE-TESTS.md` extended (issue #65): built the
+  harder "detect vs. impose" fixture #14's caveats called for — a half-migrated
+  Python repo with `flake8` + `isort` configured at `line-length = 100` but no
+  formatter and no automation, maximizing the pull toward swapping the stack for
+  ruff. The skill-naive baseline **still did not fail**: 4/4 hard-suppressed,
+  transcript-verified reps detected and matched the existing stack (kept
+  flake8+isort, added black, no ruff), so the "detects and matches an existing
+  stack" claim is confirmed NOT load-bearing on Sonnet 5 even under the harder
+  fixture. Two side findings recorded, not acted on: contamination is now a
+  reliability signal (3/3 reps self-invoked the skill under soft "no special
+  skills" framing — only a hard Skill-tool prohibition yielded clean baselines),
+  and the sole ruff-imposition across all 7 reps occurred *with* the skill
+  loaded (`red-3`), rationalized as "behavior-preserving consolidation" — a
+  candidate loophole the skill's "Common Mistakes" doesn't name, logged for a
+  future targeted rerun. No `SKILL.md` edit (Iron Law: the baseline didn't fail).
 - `docs/skill-portability-audit.md` (issue #71): recorded the provider-wording
   decision for the two skills the audit flagged as blocked on Claude-specific
   prose. **Decision — option 2 for both `session-continuity` and
