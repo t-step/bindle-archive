@@ -94,6 +94,22 @@ printf 'not json\n' >"$REPO/capabilities.json"
 out="$(python3 "$VALIDATOR" --root "$REPO" 2>&1)"
 check "invalid JSON is reported cleanly" contains "invalid JSON" "$out"
 
+echo "clean-type bijection:"
+REPO="$TMP/missing-skill"
+mkfixture "$REPO"
+mkdir -p "$REPO/skills/extra"
+printf -- '---\nname: extra\ndescription: Extra.\n---\n# extra\n' >"$REPO/skills/extra/SKILL.md"
+(cd "$REPO" && git add -A && git -c user.email=t@e.com -c user.name=t commit -q -m extra)
+out="$(python3 "$VALIDATOR" --root "$REPO" 2>&1)"
+check "on-disk skill absent from inventory fails" contains "skill 'extra' exists on disk but is missing from the inventory" "$out"
+
+REPO="$TMP/phantom-skill"
+mkfixture "$REPO"
+sed -i.bak 's/"name": "demo", "type": "skill"/"name": "ghost", "type": "skill"/' "$REPO/capabilities.json"
+rm -f "$REPO/capabilities.json.bak"
+out="$(python3 "$VALIDATOR" --root "$REPO" 2>&1)"
+check "inventory skill absent from disk fails" contains "skill 'ghost' is in the inventory but not found on disk" "$out"
+
 echo
 echo "tests: ${pass} passed, ${fail} failed"
 [ "$fail" -eq 0 ]

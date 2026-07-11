@@ -85,6 +85,50 @@ def check_schema(caps, version):
     return errors
 
 
+def _bijection(type_name, inventory_names, fs_names):
+    errors = []
+    for missing in sorted(fs_names - inventory_names):
+        errors.append("%s '%s' exists on disk but is missing from the inventory"
+                      % (type_name, missing))
+    for extra in sorted(inventory_names - fs_names):
+        errors.append("%s '%s' is in the inventory but not found on disk"
+                      % (type_name, extra))
+    return errors
+
+
+def check_completeness_clean(caps, root):
+    errors = []
+
+    def names_of(t):
+        return {c.get("name") for c in caps if c.get("type") == t}
+
+    fs_skills = set()
+    skills_dir = os.path.join(root, "skills")
+    if os.path.isdir(skills_dir):
+        for entry in os.listdir(skills_dir):
+            if entry.startswith(("_", ".")):
+                continue
+            if os.path.isfile(os.path.join(skills_dir, entry, "SKILL.md")):
+                fs_skills.add(entry)
+    errors += _bijection("skill", names_of("skill"), fs_skills)
+
+    for t, d in (("command", "commands"), ("agent", "agents")):
+        fs = set()
+        dd = os.path.join(root, d)
+        if os.path.isdir(dd):
+            for entry in os.listdir(dd):
+                if entry.startswith(("_", ".")) or not entry.endswith(".md"):
+                    continue
+                fs.add(entry[:-3])
+        errors += _bijection(t, names_of(t), fs)
+
+    gg = {"claude": "global/CLAUDE.md", "agents": "global/AGENTS.md"}
+    fs_gg = {label for label, rel in gg.items()
+             if os.path.isfile(os.path.join(root, rel))}
+    errors += _bijection("global-guidance", names_of("global-guidance"), fs_gg)
+    return errors
+
+
 def main(argv=None):
     parser = argparse.ArgumentParser()
     parser.add_argument("--root", default=None)
@@ -98,6 +142,7 @@ def main(argv=None):
         return 1
     errors = []
     errors += check_schema(caps, version)
+    errors += check_completeness_clean(caps, root)
     # NOTE: later tasks append more checks here.
     if errors:
         for e in errors:
