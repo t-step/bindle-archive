@@ -28,6 +28,23 @@ dated, versioned section at release time.
 
 ### Added
 
+- `docs/skill-portability-audit.md` (issue #61): evidence-backed
+  classification of all 8 authored skills (plus `_template`) for
+  cross-provider portability, with per-skill dispositions (5 shared
+  unchanged, 1 shared after cleanup, 2 provider-specific; `_template`
+  not applicable), a
+  first-wave recommendation for #57 (`verify-then-commit` +
+  `fork-pr-flow`), a cleanup backlog, and an uncertainty register. Every
+  claim carries a tested/documented/inferred/unknown label. Includes this
+  audit's non-destructive verification: whole-directory-symlink support-file
+  resolution (tested), stdlib-only script execution through a symlink
+  (tested), and a read-only `codex exec` discovery probe — two Bindle
+  skills symlinked into a fixture's repo-scope `.agents/skills` were
+  discovered by a real Codex session (invocation/behavior deliberately
+  untested; that is #57's acceptance criterion). `docs/provider-interop.md`
+  Agent Skills rows updated to link the audit and record the new partial
+  test status. No installer, doctor, hook, or skill-content changes.
+
 - Hook-automated session continuity (issue #21): `bin/session-context.sh`
   emits a budget-capped (few-hundred-token) orientation blob — notes-home
   resolution, latest session-note/handoff *paths* (never contents), open
