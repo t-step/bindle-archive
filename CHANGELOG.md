@@ -16,6 +16,14 @@ dated, versioned section at release time.
 
 ### Added
 
+- `global/hooks/nested-notes-guard.py` — PreToolUse hook (matcher `Bash`)
+  enforcing the new global rule that maintainer-facing GitHub prose in
+  domattioli-owned repos is rendered with the nested-notes skill (inline
+  mode). Denies noncompliant `gh` prose writes before they post; carve-outs:
+  short single-fact bodies, `<!-- nested-notes-exempt -->`, unreadable body
+  files. Self-test: `bin/test-nested-notes-guard.sh` (15 cases). Wired
+  manually in `~/.claude/settings.json` (install.sh does not manage hooks yet).
+- `global/CLAUDE.md` — the nested-notes rule itself, under Communication.
 - `skills/repo-hygiene-init/PRESSURE-TESTS.md` — the skill is now pressure-
   tested (issue #14) and no longer an untested draft. One claim tested on
   Sonnet 5, 3 reps/arm, filesystem-scored: it detects and matches an existing

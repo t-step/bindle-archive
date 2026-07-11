@@ -26,3 +26,4 @@ should apply to only some projects belongs in that project's CLAUDE.md, not here
 ## Communication
 
 - Be concise. Lead with the answer or the value, not a file-by-file narrative.
+- **Maintainer-facing GitHub prose in `domattioli`-owned repos** (issue bodies and comments, PR bodies and comments, review threads) must be rendered with the `nested-notes` skill in `inline` mode. Carve-outs per that skill: code, commit messages, bot-template fixed fields, and footers stay verbatim.
