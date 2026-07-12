@@ -303,7 +303,7 @@
       },
       "maturity": "tested",
       "mutation": [],
-      "version_introduced": "0.3.0"
+      "version_introduced": "0.4.0"
     },
     {
       "name": "slugify",
@@ -383,7 +383,7 @@
       },
       "maturity": "documented",
       "mutation": [],
-      "version_introduced": "0.3.0"
+      "version_introduced": "0.4.0"
     },
     {
       "name": "privacy-boundaries",
@@ -416,6 +416,10 @@
     {
       "path": "bin/check.sh",
       "reason": "the top-level checker itself (runs the whole validation suite); machinery, not a capability an agent invokes for its own sake."
+    },
+    {
+      "path": "bin/check-inventory.py",
+      "reason": "the capability-inventory validator itself; machinery invoked by bin/check.sh, not a capability an agent invokes for its own sake."
     },
     {
       "path": "bin/install.sh",

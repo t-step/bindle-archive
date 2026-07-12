@@ -93,6 +93,26 @@ status=$?
 check "invalid maturity exits nonzero" test "$status" -ne 0
 check "names the bad maturity value" contains "invalid maturity 'bogus'" "$out"
 
+echo "version_introduced ceiling (#77 — next unreleased release):"
+for vi in 0.3.1 0.4.0 1.0.0; do
+  REPO="$TMP/vi-ok-$vi"
+  mkfixture "$REPO"
+  sed -i.bak "s/\"version_introduced\": \"0.1.0\"/\"version_introduced\": \"$vi\"/" "$REPO/capabilities.json"
+  rm -f "$REPO/capabilities.json.bak"
+  out="$(python3 "$VALIDATOR" --root "$REPO" 2>&1)"
+  status=$?
+  check "version_introduced $vi (one bump ahead of VERSION 0.3.0) passes" test "$status" -eq 0
+done
+
+REPO="$TMP/vi-too-far"
+mkfixture "$REPO"
+sed -i.bak 's/"version_introduced": "0.1.0"/"version_introduced": "0.5.0"/' "$REPO/capabilities.json"
+rm -f "$REPO/capabilities.json.bak"
+out="$(python3 "$VALIDATOR" --root "$REPO" 2>&1)"
+status=$?
+check "version_introduced two minors ahead still fails" test "$status" -ne 0
+check "names the ceiling as the next unreleased release" contains "is ahead of the next unreleased release from VERSION 0.3.0" "$out"
+
 REPO="$TMP/bad-json"
 mkfixture "$REPO"
 printf 'not json\n' >"$REPO/capabilities.json"
@@ -123,6 +143,14 @@ printf '#!/usr/bin/env bash\necho hi\n' >"$REPO/bin/thing.sh"
 (cd "$REPO" && git add -A && git -c user.email=t@e.com -c user.name=t commit -q -m thing)
 out="$(python3 "$VALIDATOR" --root "$REPO" 2>&1)"
 check "unclassified bin script fails" contains "bin/thing.sh: unclassified" "$out"
+
+REPO="$TMP/unclassified-py-script"
+mkfixture "$REPO"
+mkdir -p "$REPO/bin"
+printf '#!/usr/bin/env python3\nprint("hi")\n' >"$REPO/bin/thing.py"
+(cd "$REPO" && git add -A && git -c user.email=t@e.com -c user.name=t commit -q -m thingpy)
+out="$(python3 "$VALIDATOR" --root "$REPO" 2>&1)"
+check "unclassified bin/*.py script fails (#77)" contains "bin/thing.py: unclassified" "$out"
 
 REPO="$TMP/auto-excluded"
 mkfixture "$REPO"
@@ -210,6 +238,7 @@ import json
 p = "'"$REPO"'/capabilities.json"
 d = json.load(open(p, encoding="utf-8"))
 d["not_a_capability"].append({"path": "bin/new.sh", "reason": "scaffolding tool, not a shipped capability"})
+d["not_a_capability"].append({"path": "bin/check-inventory.py", "reason": "validator itself, not a shipped capability"})
 json.dump(d, open(p, "w", encoding="utf-8"), indent=2)
 '
 mkdir -p "$REPO/skills/_template"
