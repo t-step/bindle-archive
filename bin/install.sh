@@ -55,6 +55,9 @@
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+# shellcheck source=bin/lib/manifest.sh
+# shellcheck disable=SC1091 # only resolvable with -x or a full-repo shellcheck pass (make check does the latter); pre-commit lints changed files only
+source "$REPO_ROOT/bin/lib/manifest.sh"
 CLAUDE_HOME="${HOME}/.claude"
 CODEX_HOME=""
 PROVIDER="claude"
@@ -194,52 +197,23 @@ prune_path() {
 }
 
 # each_expected_item CALLBACK — invoke CALLBACK "$src" "$dest" for every
-# expected (src, dest) pair install_claude/install_codex would link for the
-# selected $PROVIDER, in the same enumeration order. Read-only enumeration:
-# no output, no mkdir. Used by the --adopt pre-pass below.
-#
-# NOTE: this intentionally duplicates the item lists inside install_claude
-# and install_codex rather than having them call through this helper. Those
-# functions interleave per-category headers, mkdir -p, and --prune sweeps
-# with their linking loops, and today's output must stay byte-identical when
-# --adopt isn't passed; routing them through a shared enumerator risked
-# subtly reordering or dropping that output. A small amount of duplicated
-# enumeration in this read-only pre-pass is lower risk than restructuring
-# the linking functions.
+# expected (src, dest) pair install_surfaces would link for the selected
+# $PROVIDER, in manifest order. Read-only: no output, no mkdir. Used by
+# --adopt.
+_EACH_CB=""
+# shellcheck disable=SC2329 # invoked indirectly via each_manifest_item
+_each_expected_cb() {
+  local provider="$1" dest_rel="$5" src="$4" home
+  case "$provider" in claude) home="$CLAUDE_HOME" ;; codex) home="$CODEX_HOME" ;; esac
+  case "$PROVIDER" in
+    claude) [ "$provider" = claude ] || return 0 ;;
+    codex) [ "$provider" = codex ] || return 0 ;;
+  esac
+  "$_EACH_CB" "$src" "$home/$dest_rel"
+}
 each_expected_item() {
-  local cb="$1" dir f name
-  case "$PROVIDER" in
-    claude | all)
-      for dir in "$REPO_ROOT"/skills/*/; do
-        name="$(basename "$dir")"
-        case "$name" in _* | .*) continue ;; esac
-        [ -f "${dir}SKILL.md" ] || continue
-        "$cb" "${REPO_ROOT}/skills/${name}" "${CLAUDE_HOME}/skills/${name}"
-      done
-      for f in "$REPO_ROOT"/agents/*.md; do
-        [ -e "$f" ] || continue
-        name="$(basename "$f")"
-        case "$name" in _* | .*) continue ;; esac
-        "$cb" "$f" "${CLAUDE_HOME}/agents/${name}"
-      done
-      for f in "$REPO_ROOT"/commands/*.md; do
-        [ -e "$f" ] || continue
-        name="$(basename "$f")"
-        case "$name" in _* | .*) continue ;; esac
-        "$cb" "$f" "${CLAUDE_HOME}/commands/${name}"
-      done
-      if [ -f "$REPO_ROOT/global/CLAUDE.md" ]; then
-        "$cb" "$REPO_ROOT/global/CLAUDE.md" "$CLAUDE_HOME/CLAUDE.md"
-      fi
-      ;;
-  esac
-  case "$PROVIDER" in
-    codex | all)
-      if [ -f "$REPO_ROOT/global/AGENTS.md" ]; then
-        "$cb" "$REPO_ROOT/global/AGENTS.md" "$CODEX_HOME/AGENTS.md"
-      fi
-      ;;
-  esac
+  _EACH_CB="$1"
+  each_manifest_item "$REPO_ROOT" _each_expected_cb
 }
 
 # ADOPT_CANDIDATES accumulates tab-separated "dest<TAB>cur<TAB>src" lines, one
@@ -310,84 +284,65 @@ if $ADOPT; then
   run_adopt_prepass
 fi
 
-install_claude() {
-  local dir f name
+_provider_label() { case "$1" in claude) printf Claude ;; codex) printf Codex ;; esac }
+_category_label() {
+  case "$1" in
+    skill) printf skills ;;
+    agent) printf agents ;;
+    command) printf commands ;;
+    global-guidance) printf 'global instructions' ;;
+  esac
+}
 
-  # --- skills (each is a directory containing SKILL.md) ---
-  echo "Claude skills:"
-  mkdir -p "$CLAUDE_HOME/skills"
-  for dir in "$REPO_ROOT"/skills/*/; do
-    name="$(basename "$dir")"
-    case "$name" in _* | .*) continue ;; esac
-    [ -f "${dir}SKILL.md" ] || continue
-    link_item "${REPO_ROOT}/skills/${name}" "${CLAUDE_HOME}/skills/${name}"
-  done
-  if $PRUNE; then
-    prune_dir "$CLAUDE_HOME/skills"
-  fi
+# Streaming installer state: headers/mkdir emitted on category change; prune
+# runs once per category in _finalize_group.
+_CUR_KEY="" _CUR_PRUNE_DIR="" _CUR_PRUNE_PATH=""
 
-  # --- subagents (single .md files) ---
-  echo "Claude agents:"
-  mkdir -p "$CLAUDE_HOME/agents"
-  for f in "$REPO_ROOT"/agents/*.md; do
-    [ -e "$f" ] || continue
-    name="$(basename "$f")"
-    case "$name" in _* | .*) continue ;; esac
-    link_item "$f" "${CLAUDE_HOME}/agents/${name}"
-  done
+_finalize_group() {
+  [ -n "$_CUR_KEY" ] || return 0
   if $PRUNE; then
-    prune_dir "$CLAUDE_HOME/agents"
-  fi
-
-  # --- slash commands (single .md files) ---
-  echo "Claude commands:"
-  mkdir -p "$CLAUDE_HOME/commands"
-  for f in "$REPO_ROOT"/commands/*.md; do
-    [ -e "$f" ] || continue
-    name="$(basename "$f")"
-    case "$name" in _* | .*) continue ;; esac
-    link_item "$f" "${CLAUDE_HOME}/commands/${name}"
-  done
-  if $PRUNE; then
-    prune_dir "$CLAUDE_HOME/commands"
-  fi
-
-  # --- global CLAUDE.md (personal instructions for every project) ---
-  # Source is global/CLAUDE.md; the repo-root CLAUDE.md is this repo's own
-  # project memory and is deliberately never installed.
-  if [ -f "$REPO_ROOT/global/CLAUDE.md" ]; then
-    echo "Claude global instructions:"
-    link_item "$REPO_ROOT/global/CLAUDE.md" "$CLAUDE_HOME/CLAUDE.md"
-  fi
-  if $PRUNE; then
-    prune_path "$CLAUDE_HOME/CLAUDE.md"
+    if [ -n "$_CUR_PRUNE_DIR" ]; then
+      prune_dir "$_CUR_PRUNE_DIR"
+    elif [ -n "$_CUR_PRUNE_PATH" ]; then
+      prune_path "$_CUR_PRUNE_PATH"
+    fi
   fi
 }
 
-install_codex() {
-  # Codex support is intentionally limited to direct AGENTS.md instructions at
-  # an explicit target directory supplied by the user.
-  if [ -f "$REPO_ROOT/global/AGENTS.md" ]; then
-    echo "Codex global instructions:"
-    link_item "$REPO_ROOT/global/AGENTS.md" "$CODEX_HOME/AGENTS.md"
+# shellcheck disable=SC2329 # invoked indirectly via each_manifest_item
+_install_cb() {
+  local provider="$1" category="$2" name="$3" src="$4" dest_rel="$5" home sub
+  case "$provider" in claude) home="$CLAUDE_HOME" ;; codex) home="$CODEX_HOME" ;; esac
+  case "$PROVIDER" in
+    claude) [ "$provider" = claude ] || return 0 ;;
+    codex) [ "$provider" = codex ] || return 0 ;;
+  esac
+  local key="$provider/$category"
+  if [ "$key" != "$_CUR_KEY" ]; then
+    _finalize_group
+    _CUR_KEY="$key"
+    printf '%s %s:\n' "$(_provider_label "$provider")" "$(_category_label "$category")"
+    case "$dest_rel" in
+      */*)
+        sub="${dest_rel%/*}"
+        mkdir -p "$home/$sub"
+        _CUR_PRUNE_DIR="$home/$sub" _CUR_PRUNE_PATH=""
+        ;;
+      *)
+        _CUR_PRUNE_DIR="" _CUR_PRUNE_PATH="$home/$dest_rel"
+        ;;
+    esac
   fi
-  if $PRUNE; then
-    prune_path "$CODEX_HOME/AGENTS.md"
-  fi
+  link_item "$src" "$home/$dest_rel"
 }
 
-case "$PROVIDER" in
-  claude)
-    install_claude
-    ;;
-  codex)
-    install_codex
-    ;;
-  all)
-    install_claude
-    install_codex
-    ;;
-esac
+install_surfaces() {
+  _CUR_KEY="" _CUR_PRUNE_DIR="" _CUR_PRUNE_PATH=""
+  each_manifest_item "$REPO_ROOT" _install_cb
+  _finalize_group
+}
+
+install_surfaces
 
 echo
 echo "Done: ${linked} linked, ${current} already current, ${conflicts} conflicts, ${pruned} pruned."
