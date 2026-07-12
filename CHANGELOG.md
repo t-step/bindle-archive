@@ -14,6 +14,14 @@ dated, versioned section at release time.
 
 ## [Unreleased]
 
+### Added
+
+- **Single-sourced install destinations (#79).** `capabilities.json` is now the
+  only hand-edited source of the type→install-destination mapping. A generated,
+  committed `install-manifest.tsv` (drift-checked by `make check`) is consumed by
+  `install.sh` and `doctor.sh` via `bin/lib/manifest.sh`, removing the mapping's
+  3× duplication without adding a runtime python/jq dependency.
+
 ### Changed
 
 - `skills/repo-hygiene-init/PRESSURE-TESTS.md` extended (issue #65): built the

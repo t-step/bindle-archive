@@ -19,11 +19,11 @@ The full design rationale lives in
 - It does not generate the README / `docs/provider-interop.md` blocks from
   itself — those are still hand-maintained and only checked against the
   inventory in one place (see "Bound table" below).
-- `bin/install.sh` / `bin/doctor.sh` do not read it — the type→install-destination
-  mapping is still duplicated in those scripts.
 
-Both are named follow-ups in the design doc, deferred until the inventory has
-proven itself trustworthy.
+This is a named follow-up in the design doc, deferred until the inventory has
+proven itself trustworthy. (The type→install-destination mapping — the other
+named follow-up — is no longer duplicated: `install.sh` and `doctor.sh` now
+read it from the generated `install-manifest.tsv`, see below.)
 
 ## Schema
 
@@ -41,7 +41,7 @@ below). One record per capability:
 | `maturity` | yes | authored | enum: `draft·documented·tested`; a `skill` marked `tested` must have a `PRESSURE-TESTS.md` |
 | `mutation` | yes | authored | array, subset of `{disk, network, external}`; `[]` = read-only |
 | `version_introduced` | yes | authored | valid semver, `<=` repo `VERSION` |
-| `install_destination` | no | authored | optional `~/.claude/...`-style annotation; **not currently validated by CI** (a follow-up may enforce it) |
+| `install_destination` | no | authored | optional per-row override of the derived destination. Destinations are otherwise derived from `type` into the generated `install-manifest.tsv`, which `make check` drift-checks and `install.sh`/`doctor.sh` consume (see #79). |
 | `dependencies` | no | authored | array of other capability `name`s or external tool names |
 | `related_docs` | no | authored | array of repo-relative doc paths (must exist) |
 
@@ -63,6 +63,16 @@ Derived fields (`name`, `type`, `description`) are hand-authored but
 cross-checked against the filesystem/frontmatter, never treated as an
 independent source of truth — if a description drifts, fix the inventory
 row, not the other way around, unless the frontmatter is actually wrong.
+
+### `install-manifest.tsv` (generated)
+
+`bin/check-inventory.py --emit-manifest` projects the installable capabilities
+(`skill`/`agent`/`command`/`global-guidance`) into a committed tab-separated
+manifest — `provider  category  name  src_rel  dest_rel`. `install.sh` and
+`doctor.sh` read it via `bin/lib/manifest.sh`, so the type→destination mapping
+lives only in the generator. `make check` regenerates it in memory and fails on
+drift; run `make manifest` (or `bin/new.sh`, which regenerates automatically) to
+refresh it. Never hand-edit it.
 
 ## The completeness model
 
@@ -154,9 +164,10 @@ Named explicitly as out of scope for v1, not forgotten:
 1. Generate the README mapping blocks and `provider-interop.md` install-layout
    table from the inventory, replacing the current hand-maintained
    duplication with derivation.
-2. Single-source the type→install-destination mapping: have `install.sh` and
-   `doctor.sh` read the inventory instead of hardcoding it, removing the
-   documented 4x duplication.
-3. Extend the bound-table check to validate `provider-interop.md`'s
+2. Extend the bound-table check to validate `provider-interop.md`'s
    capability matrix rows the same way it validates the skill-portability
    audit table.
+
+Single-sourcing the type→install-destination mapping (previously listed here)
+is done — see [`install-manifest.tsv`](#install-manifest-tsv-generated) above
+(#79).

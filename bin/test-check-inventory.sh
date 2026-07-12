@@ -199,6 +199,7 @@ REPO="$TMP/newsh"
 mkfixture "$REPO"
 mkdir -p "$REPO/bin"
 cp "$REPO_ROOT/bin/new.sh" "$REPO/bin/new.sh"
+cp "$REPO_ROOT/bin/check-inventory.py" "$REPO/bin/check-inventory.py"
 python3 -c '
 import json
 p = "'"$REPO"'/capabilities.json"
@@ -217,6 +218,7 @@ out="$(python3 "$VALIDATOR" --root "$REPO" 2>&1)"
 status=$?
 check "repo still validates after new.sh skill" test "$status" -eq 0
 check "stub row present for the new skill" contains '"name": "widget"' "$(cat "$REPO/capabilities.json")"
+check "new.sh regenerated the manifest with the new skill" contains "$(printf 'claude\tskill\twidget\tskills/widget\tskills/widget')" "$(cat "$REPO/install-manifest.tsv")"
 
 echo "malformed capability entries:"
 REPO="$TMP/bad-entry"
