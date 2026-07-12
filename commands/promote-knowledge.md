@@ -37,9 +37,16 @@ Steps:
    (novelty with the cited check target, consequence, durability,
    evidence, uncertainty, routing) and the volume guard (≤5 proposals,
    ranked per the contract; bootstrap exempt up to the map's size budget).
-   Classify everything into the contract's report shape: candidates /
-   rejected (with the rule) / deferred (with what's missing) /
-   relitigation flags.
+   When the `knowledge-scout` agent is installed, delegate this step to
+   it — pass the contract-doc path, the map's current entries, the
+   explicit evidence file list, and any issue/PR extracts inline; require
+   back one fenced YAML block in the contract's candidate schema. If the
+   agent is missing or its reply doesn't parse as that schema, fall back
+   to doing this step inline and note the fallback in the report; a
+   schema-violating rung-6 candidate is demoted to deferred and flagged.
+   Either way, classify everything into the contract's report shape:
+   candidates / rejected (with the rule) / deferred (with what's missing)
+   / relitigation flags.
 7. Present the promotion report. Each proposal, numbered 1–N: the complete
    entry text as it would appear in the map (fenced) plus its anchor — the
    target section and, for update/supersede actions, the existing claim

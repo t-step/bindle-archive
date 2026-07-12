@@ -21,6 +21,9 @@ dated, versioned section at release time.
 - `/promote-knowledge` command (draft, pending pressure tests): runs the
   knowledge-promotion contract end-to-end for one project (issue #81,
   wave 1).
+- `agents/knowledge-scout.md` (draft, pending pressure tests): read-only
+  candidate digester used by `/promote-knowledge` when installed (issue
+  #81, wave 1).
 
 ### Changed
 

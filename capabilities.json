@@ -254,6 +254,19 @@
       "version_introduced": "0.3.0"
     },
     {
+      "name": "knowledge-scout",
+      "type": "agent",
+      "path": "agents/knowledge-scout.md",
+      "description": "Use when /promote-knowledge needs the evidence set digested \u2014 reads the given notes-home files (and inline issue/PR extracts) and returns rung-classified promotion candidates per docs/knowledge-promotion.md. Read-only; never writes files; never promotes.",
+      "provider": {
+        "claude": "installed",
+        "codex": "unsupported"
+      },
+      "maturity": "draft",
+      "mutation": [],
+      "version_introduced": "0.3.0"
+    },
+    {
       "name": "claude",
       "type": "global-guidance",
       "path": "global/CLAUDE.md",

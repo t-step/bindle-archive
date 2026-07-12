@@ -77,7 +77,7 @@ packet 1's compliance note; paste verbatim):
   "type": "agent",
   "name": "knowledge-scout",
   "path": "agents/knowledge-scout.md",
-  "description": "Read-only evidence digester for /promote-knowledge: classifies promotion candidates against the knowledge-promotion contract and returns them as structured YAML; never writes or promotes.",
+  "description": "<must equal the agent frontmatter's description exactly — the validator enforces the match, as it does for commands>",
   "maturity": "draft",
   "mutation": [],
   "provider": {"claude": "installed", "codex": "unsupported"},
