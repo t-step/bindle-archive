@@ -247,7 +247,7 @@
         "claude": "installed",
         "codex": "manual"
       },
-      "maturity": "draft",
+      "maturity": "tested",
       "mutation": [
         "disk"
       ],
@@ -262,7 +262,7 @@
         "claude": "installed",
         "codex": "unsupported"
       },
-      "maturity": "draft",
+      "maturity": "tested",
       "mutation": [],
       "version_introduced": "0.3.0"
     },
@@ -460,6 +460,10 @@
     {
       "path": "docs/iterative-improvement-pressure-tests.md",
       "reason": "pressure-test evidence log for the iterative-improvement commands; an audit artifact, not a capability."
+    },
+    {
+      "path": "docs/knowledge-promotion-pressure-tests.md",
+      "reason": "pressure-test method and recorded results for the knowledge-promotion workflow; QA record, not a capability."
     },
     {
       "path": "docs/notes-home.md",
