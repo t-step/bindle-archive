@@ -6,6 +6,11 @@
 #
 set -uo pipefail
 
+# Under a git hook (pre-commit/post-merge), git exports GIT_DIR and friends to
+# subprocesses; in a worktree GIT_DIR is absolute, so the fixture-repo git
+# calls below would hit the real repository. Scrub the hook environment.
+unset GIT_DIR GIT_WORK_TREE GIT_INDEX_FILE GIT_OBJECT_DIRECTORY GIT_COMMON_DIR
+
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 VALIDATOR="$REPO_ROOT/bin/check-inventory.py"
 
