@@ -27,6 +27,35 @@ _GG_PROVIDER = {"claude": "claude", "agents": "codex"}
 MANIFEST_BANNER = ("# GENERATED from capabilities.json — do not edit; "
                    "run 'make manifest'")
 
+# Single source for README's "Provider support" blocks and
+# provider-interop.md's Claude install-layout table (#78): one row per
+# INSTALL_TYPES entry. `table_src` overrides `src` only where the two docs
+# genuinely use different illustrative paths (README shows the skill's
+# marker file; the table shows the bare directory). Trailers are the
+# "(not installed)" project-guidance line each block ends with — not derived
+# from any capabilities.json row, but part of the same generated fence so the
+# markers can wrap a complete, renderable code block.
+DOC_ROWS_CLAUDE = [
+    {"type": "skill", "src": "skills/<name>/SKILL.md",
+     "table_src": "skills/<name>/", "dest": "~/.claude/skills/<name>",
+     "label": "Claude skills"},
+    {"type": "agent", "src": "agents/<name>.md",
+     "dest": "~/.claude/agents/<name>.md", "label": "Claude subagents"},
+    {"type": "command", "src": "commands/<name>.md",
+     "dest": "~/.claude/commands/<name>.md", "label": "Claude slash commands"},
+    {"type": "global-guidance", "src": "global/CLAUDE.md",
+     "dest": "~/.claude/CLAUDE.md", "label": "Claude global instructions"},
+]
+DOC_TRAILER_CLAUDE = {"src": "CLAUDE.md", "dest": "(not installed)",
+                      "label": "Bindle project guidance for Claude"}
+DOC_ROWS_CODEX = [
+    {"type": "global-guidance", "src": "global/AGENTS.md",
+     "dest": "<explicit-codex-home>/AGENTS.md", "label": None},
+]
+DOC_TRAILER_CODEX = {"src": "AGENTS.md", "dest": "(not installed)",
+                     "label": "Bindle project guidance for Codex"}
+DOC_MARKER_FMT = "<!-- GENERATED:%s:BEGIN -->", "<!-- GENERATED:%s:END -->"
+
 
 def _install_row(cap):
     """(provider, category, name, src_rel, dest_rel) for an installable
@@ -77,6 +106,102 @@ def check_manifest(caps, root):
     if have != want:
         return ["install-manifest.tsv: stale — run 'make manifest'"]
     return []
+
+
+def _render_doc_block(rows, trailer):
+    """A fenced ```-block: one aligned line per row, then the static trailer."""
+    all_lines = rows + [trailer]
+    w_src = max(len(r["src"]) for r in all_lines)
+    w_dest = max(len(r["dest"]) for r in all_lines)
+    lines = []
+    for r in all_lines:
+        arrow = "->" if r is not trailer else "  "
+        line = "%-*s   %s  %-*s %s" % (w_src, r["src"], arrow, w_dest, r["dest"],
+                                       r["label"] or "")
+        lines.append(line.rstrip())
+    return "```\n" + "\n".join(lines) + "\n```"
+
+
+def render_readme_claude_block():
+    return _render_doc_block(DOC_ROWS_CLAUDE, DOC_TRAILER_CLAUDE)
+
+
+def render_readme_codex_block():
+    return _render_doc_block(DOC_ROWS_CODEX, DOC_TRAILER_CODEX)
+
+
+def render_provider_interop_table():
+    lines = ["| Repo path | Claude install target |", "|---|---|"]
+    for r in DOC_ROWS_CLAUDE:
+        lines.append("| `%s` | `%s` |" % (r.get("table_src", r["src"]), r["dest"]))
+    return "\n".join(lines)
+
+
+DOC_TARGETS = [
+    ("README.md", "readme-claude", render_readme_claude_block),
+    ("README.md", "readme-codex", render_readme_codex_block),
+    ("docs/provider-interop.md", "provider-interop-install-table",
+     render_provider_interop_table),
+]
+
+
+def _replace_marked_region(text, marker_name, body):
+    begin = "<!-- GENERATED:%s:BEGIN -->" % marker_name
+    end = "<!-- GENERATED:%s:END -->" % marker_name
+    if begin not in text or end not in text:
+        raise ValueError("markers %s / %s not found" % (begin, end))
+    pre, rest = text.split(begin, 1)
+    _, post = rest.split(end, 1)
+    return pre + begin + "\n" + body + "\n" + end + post
+
+
+def check_doc_row_types():
+    """DOC_ROWS_CLAUDE must cover exactly INSTALL_TYPES — a new install type
+    needs a template row here before the docs can regenerate for it."""
+    have = {r["type"] for r in DOC_ROWS_CLAUDE}
+    want = set(INSTALL_TYPES)
+    if have != want:
+        return ["DOC_ROWS_CLAUDE types %s do not match INSTALL_TYPES %s — add "
+                "a template row for the new type" % (sorted(have), sorted(want))]
+    return []
+
+
+def emit_docs(root):
+    by_file = {}
+    for rel, marker, render in DOC_TARGETS:
+        by_file.setdefault(rel, []).append((marker, render()))
+    for rel, marks in by_file.items():
+        path = os.path.join(root, rel)
+        with open(path, encoding="utf-8") as fh:
+            text = fh.read()
+        for marker, body in marks:
+            text = _replace_marked_region(text, marker, body)
+        with open(path, "w", encoding="utf-8") as fh:
+            fh.write(text)
+
+
+def check_docs(root):
+    errors = check_doc_row_types()
+    by_file = {}
+    for rel, marker, render in DOC_TARGETS:
+        by_file.setdefault(rel, []).append((marker, render()))
+    for rel, marks in by_file.items():
+        path = os.path.join(root, rel)
+        if not os.path.isfile(path):
+            errors.append("%s: missing" % rel)
+            continue
+        with open(path, encoding="utf-8") as fh:
+            text = fh.read()
+        want = text
+        try:
+            for marker, body in marks:
+                want = _replace_marked_region(want, marker, body)
+        except ValueError as exc:
+            errors.append("%s: %s" % (rel, exc))
+            continue
+        if want != text:
+            errors.append("%s: generated doc tables stale — run 'make docs'" % rel)
+    return errors
 
 
 def load_inventory(root):
@@ -334,6 +459,12 @@ def main(argv=None):
     parser.add_argument("--check-manifest", action="store_true",
                         help="also verify install-manifest.tsv matches the "
                              "inventory (drift guard)")
+    parser.add_argument("--emit-docs", action="store_true",
+                        help="regenerate the marked blocks in README.md and "
+                             "docs/provider-interop.md")
+    parser.add_argument("--check-docs", action="store_true",
+                        help="also verify README.md/provider-interop.md "
+                             "generated blocks match (drift guard)")
     args = parser.parse_args(argv)
     root = args.root or os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     try:
@@ -354,6 +485,10 @@ def main(argv=None):
             with open(dest, "w", encoding="utf-8") as fh:
                 fh.write(text)
         return 0
+    if args.emit_docs:
+        emit_docs(root)
+        print("wrote README.md + docs/provider-interop.md generated blocks")
+        return 0
     errors = []
     errors += check_schema(caps, version)
     errors += check_completeness_clean(dict_caps, root)
@@ -363,6 +498,8 @@ def main(argv=None):
     errors += check_bound_table(dict_caps, root)
     if args.check_manifest:
         errors += check_manifest(dict_caps, root)
+    if args.check_docs:
+        errors += check_docs(root)
     # NOTE: later tasks append more checks here.
     if errors:
         for e in errors:

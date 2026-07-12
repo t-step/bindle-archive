@@ -200,12 +200,14 @@ Bindle supports the existing Claude Code surfaces:
 
 The current Claude install layout remains supported:
 
+<!-- GENERATED:provider-interop-install-table:BEGIN -->
 | Repo path | Claude install target |
 |---|---|
 | `skills/<name>/` | `~/.claude/skills/<name>` |
 | `agents/<name>.md` | `~/.claude/agents/<name>.md` |
 | `commands/<name>.md` | `~/.claude/commands/<name>.md` |
 | `global/CLAUDE.md` | `~/.claude/CLAUDE.md` |
+<!-- GENERATED:provider-interop-install-table:END -->
 
 ### Codex
 

@@ -12,20 +12,24 @@ provider-specific assets provider-specific.
 
 Claude Code support is the mature path today:
 
+<!-- GENERATED:readme-claude:BEGIN -->
 ```
 skills/<name>/SKILL.md   ->  ~/.claude/skills/<name>      Claude skills
 agents/<name>.md         ->  ~/.claude/agents/<name>.md   Claude subagents
 commands/<name>.md       ->  ~/.claude/commands/<name>.md Claude slash commands
 global/CLAUDE.md         ->  ~/.claude/CLAUDE.md          Claude global instructions
-CLAUDE.md                     (not installed)             Bindle project guidance for Claude
+CLAUDE.md                    (not installed)              Bindle project guidance for Claude
 ```
+<!-- GENERATED:readme-claude:END -->
 
 Codex support is intentionally narrower:
 
+<!-- GENERATED:readme-codex:BEGIN -->
 ```
-global/AGENTS.md         ->  <explicit-codex-home>/AGENTS.md
-AGENTS.md                     (not installed)             Bindle project guidance for Codex
+global/AGENTS.md   ->  <explicit-codex-home>/AGENTS.md
+AGENTS.md              (not installed)                 Bindle project guidance for Codex
 ```
+<!-- GENERATED:readme-codex:END -->
 
 On this machine, lowercase `~/.codex` is the local Codex configuration
 convention, so examples use that as an explicit target. Bindle does not claim an

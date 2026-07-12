@@ -29,6 +29,14 @@ dated, versioned section at release time.
   committed `install-manifest.tsv` (drift-checked by `make check`) is consumed by
   `install.sh` and `doctor.sh` via `bin/lib/manifest.sh`, removing the mapping's
   3× duplication without adding a runtime python/jq dependency.
+- **Generated README + provider-interop capability tables (#78).** README's
+  "Provider support" blocks and `docs/provider-interop.md`'s Claude
+  install-layout table are now rendered from a single row table in
+  `bin/check-inventory.py` between `<!-- GENERATED:*:BEGIN/END -->` markers.
+  `bin/check-inventory.py --emit-docs` (`make docs`) regenerates them;
+  `--check-docs`, wired into `make check`, fails the build on drift. The
+  narrative provider capability matrix is untouched — not derivable from the
+  inventory schema without duplicating its prose.
 
 ### Changed
 
