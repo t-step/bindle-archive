@@ -405,6 +405,10 @@
       "reason": "wires the SessionStart/session-end Python hooks into ~/.claude/settings.json; install/hook machinery, not a capability."
     },
     {
+      "path": "bin/lib/manifest.sh",
+      "reason": "shared bash reader for the generated install manifest; machinery consumed by install.sh/doctor.sh, not a capability an agent invokes."
+    },
+    {
       "path": "docs/issue-tracking.md",
       "reason": "internal work-tracking convention for this repo's own issues/branches/PRs/CHANGELOG relationship; process reference, not a capability an agent invokes."
     },

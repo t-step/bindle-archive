@@ -19,6 +19,65 @@ REQUIRED = ["name", "type", "path", "description", "provider", "maturity",
             "mutation", "version_introduced"]
 SEMVER = re.compile(r"^\d+\.\d+\.\d+$")
 
+INSTALL_TYPES = ("skill", "agent", "command", "global-guidance")
+_PROVIDER_RANK = {"claude": 0, "codex": 1}
+_CATEGORY_RANK = {"skill": 0, "agent": 1, "command": 2, "global-guidance": 3}
+# global-guidance name -> provider (mirrors the gg map in check_completeness_clean)
+_GG_PROVIDER = {"claude": "claude", "agents": "codex"}
+MANIFEST_BANNER = ("# GENERATED from capabilities.json — do not edit; "
+                   "run 'make manifest'")
+
+
+def _install_row(cap):
+    """(provider, category, name, src_rel, dest_rel) for an installable
+    capability, or None if its type is not installed or it is a _template."""
+    t = cap.get("type")
+    if t not in INSTALL_TYPES:
+        return None
+    name = cap.get("name")
+    src_rel = cap.get("path")
+    if not isinstance(name, str) or not isinstance(src_rel, str):
+        return None
+    if name.startswith(("_", ".")):
+        return None
+    if t == "global-guidance":
+        provider = _GG_PROVIDER.get(name)
+        if provider is None:
+            return None
+        dest_rel = os.path.basename(src_rel)
+    else:
+        provider = "claude"
+        dest_rel = src_rel
+    override = cap.get("install_destination")
+    if override:
+        dest_rel = override  # honored verbatim; latent (no row sets it today)
+    return (provider, t, name, src_rel, dest_rel)
+
+
+def build_manifest(caps):
+    rows = [r for r in (_install_row(c) for c in caps) if r]
+    rows.sort(key=lambda r: (_PROVIDER_RANK.get(r[0], 99),
+                             _CATEGORY_RANK.get(r[1], 99), r[2]))
+    return rows
+
+
+def render_manifest(caps):
+    lines = [MANIFEST_BANNER]
+    lines += ["\t".join(row) for row in build_manifest(caps)]
+    return "\n".join(lines) + "\n"
+
+
+def check_manifest(caps, root):
+    path = os.path.join(root, "install-manifest.tsv")
+    want = render_manifest(caps)
+    if not os.path.isfile(path):
+        return ["install-manifest.tsv: missing — run 'make manifest'"]
+    with open(path, encoding="utf-8") as fh:
+        have = fh.read()
+    if have != want:
+        return ["install-manifest.tsv: stale — run 'make manifest'"]
+    return []
+
 
 def load_inventory(root):
     path = os.path.join(root, "capabilities.json")
@@ -268,6 +327,13 @@ def check_bound_table(caps, root):
 def main(argv=None):
     parser = argparse.ArgumentParser()
     parser.add_argument("--root", default=None)
+    parser.add_argument("--emit-manifest", nargs="?", const="", default=None,
+                        metavar="PATH",
+                        help="write the install manifest (default "
+                             "install-manifest.tsv under --root; '-' = stdout)")
+    parser.add_argument("--check-manifest", action="store_true",
+                        help="also verify install-manifest.tsv matches the "
+                             "inventory (drift guard)")
     args = parser.parse_args(argv)
     root = args.root or os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     try:
@@ -276,16 +342,27 @@ def main(argv=None):
     except (ValueError, OSError) as exc:
         print(str(exc))
         return 1
-    errors = []
-    errors += check_schema(caps, version)
-    # Non-dict rows are already reported by check_schema above; drop them here
+    # Non-dict rows are already reported by check_schema below; drop them here
     # so the remaining checks (which assume dict rows) don't also crash on them.
     dict_caps = [c for c in caps if isinstance(c, dict)]
+    if args.emit_manifest is not None:
+        text = render_manifest(dict_caps)
+        if args.emit_manifest == "-":
+            sys.stdout.write(text)
+        else:
+            dest = args.emit_manifest or os.path.join(root, "install-manifest.tsv")
+            with open(dest, "w", encoding="utf-8") as fh:
+                fh.write(text)
+        return 0
+    errors = []
+    errors += check_schema(caps, version)
     errors += check_completeness_clean(dict_caps, root)
     errors += check_completeness_fuzzy(dict_caps, ledger, root)
     errors += check_paths(dict_caps, root)
     errors += check_crosschecks(dict_caps, root)
     errors += check_bound_table(dict_caps, root)
+    if args.check_manifest:
+        errors += check_manifest(dict_caps, root)
     # NOTE: later tasks append more checks here.
     if errors:
         for e in errors:
