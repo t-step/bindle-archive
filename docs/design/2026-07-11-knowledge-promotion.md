@@ -126,7 +126,7 @@ updated: YYYY-MM-DD · evidence through: sessions/YYYY-MM-DD-<slug>.md
 why: <1–2 lines>
 so: <the future choice this influences / what to stop reconsidering>
 revisit-when: <the evidence that would reopen this>
-evidence: ../sessions/YYYY-MM-DD-<slug>.md, #NNN, `abc1234`
+evidence: sessions/YYYY-MM-DD-<slug>.md, #NNN, `abc1234`
 
 ## Learnings
 <!-- Durable; survives the current implementation. Optional tags:
@@ -317,7 +317,7 @@ a valid, expected outcome.
 
 - Notes-home artifacts: relative Markdown links whose target is the
   session/handoff file (link text "note" or the slug, target
-  `../sessions/<date>-<slug>.md`) — they render in Obsidian, editors, and
+  `sessions/<date>-<slug>.md`) — they render in Obsidian, editors, and
   GitHub alike, and stay greppable. Bare relative paths are acceptable
   where a link would be noise. (Examples in this design doc show bare
   paths only because the repo's link checker rightly refuses targets
@@ -360,7 +360,7 @@ so: registry features must never collapse the two axes; stop reconsidering
   whether rights-blocked assets belong in the registry — they do, as records.
 revisit-when: upstream's claims-ledger work (#276) merges a representation
   that collapses or replaces the disposition axis.
-evidence: ../sessions/2026-07-11-registry-disposition-mirror-eligibility.md,
+evidence: sessions/2026-07-11-registry-disposition-mirror-eligibility.md,
   domattioli/Valence#162, domattioli/Valence#305
 ```
 
@@ -372,7 +372,7 @@ why: `rights_ok_domains` defaults to empty ⇒ nothing publishes without an
   explicit rights verdict; the seam is safe by default, not by discipline.
 so: when two contexts meet (rights × publishing), compute the effective
   permission at the seam and default it to "no".
-evidence: ../sessions/2026-07-11-registry-disposition-mirror-eligibility.md, `097bae7`
+evidence: sessions/2026-07-11-registry-disposition-mirror-eligibility.md, `097bae7`
 ```
 
 **Rejected (routing guard):** the Actions-billing-outage signature
@@ -407,7 +407,7 @@ evidence: docs/product-boundary.md, #29, #79, docs/sqlite-workflow-index.md
 - Why do pressure-test RED arms go invalid (harness skill-index lag after
   unlink) — and what does that generalize to about testing agentic systems
   whose capability surface is cached outside the filesystem? `inquiry?`
-  (open) — evidence: ../sessions/2026-07-10-pressure-test-repo-hygiene-init.md
+  (open) — evidence: sessions/2026-07-10-pressure-test-repo-hygiene-init.md
 ```
 
 **Cross-project (wave 2 preview):** Valence's fail-closed seam + Bindle's

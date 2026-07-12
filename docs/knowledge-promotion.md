@@ -171,18 +171,20 @@ a removal. Deletion is promotion too.
 - An **aborted** run — interrupted before confirmation completes — writes
   nothing at all, cursor included.
 - **Bootstrap** (no `map.md` yet): process the project's full history
-  through the same propose → confirm gate. If the owner confirms nothing,
-  still create the map skeleton (the template above) with the cursor set —
-  the map's existence records that history was processed.
+  through the same propose → confirm gate, then create the map once — the
+  template with the confirmed entries (if any) in place and the cursor
+  set. Even a confirm-none bootstrap creates the skeleton: the map's
+  existence records that history was processed. Exception: a project with
+  **zero** evidence files has no history to record — write nothing.
 - Idempotence follows: re-running with no new evidence proposes nothing
   and changes nothing.
 
 ## Evidence pointers
 
 - Notes-home artifacts: relative Markdown links from the map (target
-  `../sessions/<date>-<slug>.md` or `../handoffs/…`), or bare relative
-  paths where a link would be noise. Both render in editors and Obsidian
-  and stay greppable.
+  `sessions/<date>-<slug>.md` or `handoffs/…` — the map lives beside those
+  directories), or bare relative paths where a link would be noise. Both
+  render in editors and Obsidian and stay greppable.
 - Issues and PRs: bare `#NNN` where the project's tracker is unambiguous;
   `owner/repo#NNN` otherwise.
 - Commits: short hashes in backticks.
