@@ -262,6 +262,36 @@ json.dump(d, open(p, "w", encoding="utf-8"), indent=2)
 out="$(python3 "$VALIDATOR" --root "$REPO" --emit-manifest - 2>&1)"
 check "explicit install_destination override is emitted verbatim" contains "$(printf 'claude\tskill\tdemo\tskills/demo\tskills/renamed-demo')" "$out"
 
+echo "manifest drift guard:"
+REPO="$TMP/manifest-ok"
+mkfixture "$REPO"
+python3 "$VALIDATOR" --root "$REPO" --emit-manifest >/dev/null
+out="$(python3 "$VALIDATOR" --root "$REPO" --check-manifest 2>&1)"
+status=$?
+check "matching manifest passes --check-manifest" test "$status" -eq 0
+
+REPO="$TMP/manifest-missing"
+mkfixture "$REPO"
+out="$(python3 "$VALIDATOR" --root "$REPO" --check-manifest 2>&1)"
+status=$?
+check "missing manifest fails" test "$status" -ne 0
+check "missing manifest names the fix" contains "install-manifest.tsv: missing" "$out"
+
+REPO="$TMP/manifest-stale"
+mkfixture "$REPO"
+python3 "$VALIDATOR" --root "$REPO" --emit-manifest >/dev/null
+printf 'claude\tskill\tbogus\tskills/bogus\tskills/bogus\n' >>"$REPO/install-manifest.tsv"
+out="$(python3 "$VALIDATOR" --root "$REPO" --check-manifest 2>&1)"
+status=$?
+check "stale manifest fails" test "$status" -ne 0
+check "stale manifest names the fix" contains "install-manifest.tsv: stale" "$out"
+
+REPO="$TMP/manifest-off"
+mkfixture "$REPO"
+out="$(python3 "$VALIDATOR" --root "$REPO" 2>&1)"
+status=$?
+check "without --check-manifest, missing manifest is ignored" test "$status" -eq 0
+
 echo
 echo "tests: ${pass} passed, ${fail} failed"
 [ "$fail" -eq 0 ]

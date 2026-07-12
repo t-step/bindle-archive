@@ -67,6 +67,18 @@ def render_manifest(caps):
     return "\n".join(lines) + "\n"
 
 
+def check_manifest(caps, root):
+    path = os.path.join(root, "install-manifest.tsv")
+    want = render_manifest(caps)
+    if not os.path.isfile(path):
+        return ["install-manifest.tsv: missing — run 'make manifest'"]
+    with open(path, encoding="utf-8") as fh:
+        have = fh.read()
+    if have != want:
+        return ["install-manifest.tsv: stale — run 'make manifest'"]
+    return []
+
+
 def load_inventory(root):
     path = os.path.join(root, "capabilities.json")
     if not os.path.isfile(path):
@@ -319,6 +331,9 @@ def main(argv=None):
                         metavar="PATH",
                         help="write the install manifest (default "
                              "install-manifest.tsv under --root; '-' = stdout)")
+    parser.add_argument("--check-manifest", action="store_true",
+                        help="also verify install-manifest.tsv matches the "
+                             "inventory (drift guard)")
     args = parser.parse_args(argv)
     root = args.root or os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     try:
@@ -346,6 +361,8 @@ def main(argv=None):
     errors += check_paths(dict_caps, root)
     errors += check_crosschecks(dict_caps, root)
     errors += check_bound_table(dict_caps, root)
+    if args.check_manifest:
+        errors += check_manifest(dict_caps, root)
     # NOTE: later tasks append more checks here.
     if errors:
         for e in errors:
