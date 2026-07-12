@@ -89,7 +89,7 @@ no inventory knowledge needed):
   "type": "command",
   "name": "promote-knowledge",
   "path": "commands/promote-knowledge.md",
-  "description": "Promote accumulated project evidence into the living project map (docs/knowledge-promotion.md contract): propose at most five exact diffs, confirm, write, advance the cursor.",
+  "description": "Promote project evidence into the living project map — propose, confirm, write",
   "maturity": "draft",
   "mutation": ["disk"],
   "provider": {"claude": "installed", "codex": "manual"},
@@ -101,6 +101,9 @@ no inventory knowledge needed):
 that the command writes files (the notes-home map). The row is
 registration only — the actual write-scope rules (map.md only, confirmed
 content only) live in `docs/knowledge-promotion.md` and this command.
+The validator also requires the row's `description` to equal the command
+frontmatter's `description` exactly — hence the short text above
+(discovered during implementation; both kept in sync here).
 
 Also update the packet-1 contract row's `provider.claude` from `"manual"`
 to `"installed"` (keeps that row honest now that automation exists; not

@@ -239,6 +239,21 @@
       "version_introduced": "0.2.0"
     },
     {
+      "name": "promote-knowledge",
+      "type": "command",
+      "path": "commands/promote-knowledge.md",
+      "description": "Promote project evidence into the living project map \u2014 propose, confirm, write",
+      "provider": {
+        "claude": "installed",
+        "codex": "manual"
+      },
+      "maturity": "draft",
+      "mutation": [
+        "disk"
+      ],
+      "version_introduced": "0.3.0"
+    },
+    {
       "name": "claude",
       "type": "global-guidance",
       "path": "global/CLAUDE.md",
@@ -376,7 +391,7 @@
       "path": "docs/knowledge-promotion.md",
       "description": "The provider-neutral knowledge-promotion contract (promotion ladder, project-map format, cursor and evidence semantics, promotion report) from the #81 design; /promote-knowledge automates it for Claude Code, and Codex or a human follows the manual procedure directly.",
       "provider": {
-        "claude": "manual",
+        "claude": "installed",
         "codex": "manual"
       },
       "maturity": "documented",
