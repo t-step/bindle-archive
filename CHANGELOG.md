@@ -24,6 +24,11 @@ dated, versioned section at release time.
 - `agents/knowledge-scout.md` (draft, pending pressure tests): read-only
   candidate digester used by `/promote-knowledge` when installed (issue
   #81, wave 1).
+- **Single-sourced install destinations (#79).** `capabilities.json` is now the
+  only hand-edited source of the type→install-destination mapping. A generated,
+  committed `install-manifest.tsv` (drift-checked by `make check`) is consumed by
+  `install.sh` and `doctor.sh` via `bin/lib/manifest.sh`, removing the mapping's
+  3× duplication without adding a runtime python/jq dependency.
 
 ### Changed
 

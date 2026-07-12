@@ -1,0 +1,21 @@
+# GENERATED from capabilities.json — do not edit; run 'make manifest'
+claude	skill	fork-pr-flow	skills/fork-pr-flow	skills/fork-pr-flow
+claude	skill	hands-on-keyboard	skills/hands-on-keyboard	skills/hands-on-keyboard
+claude	skill	license-compliance-auditor	skills/license-compliance-auditor	skills/license-compliance-auditor
+claude	skill	maintain-claude-md	skills/maintain-claude-md	skills/maintain-claude-md
+claude	skill	repo-hygiene-init	skills/repo-hygiene-init	skills/repo-hygiene-init
+claude	skill	scoped-sequential-prs	skills/scoped-sequential-prs	skills/scoped-sequential-prs
+claude	skill	session-continuity	skills/session-continuity	skills/session-continuity
+claude	skill	verify-then-commit	skills/verify-then-commit	skills/verify-then-commit
+claude	agent	knowledge-scout	agents/knowledge-scout.md	agents/knowledge-scout.md
+claude	command	handoff	commands/handoff.md	commands/handoff.md
+claude	command	license-audit	commands/license-audit.md	commands/license-audit.md
+claude	command	notes-home	commands/notes-home.md	commands/notes-home.md
+claude	command	project-profile	commands/project-profile.md	commands/project-profile.md
+claude	command	promote-insight	commands/promote-insight.md	commands/promote-insight.md
+claude	command	promote-knowledge	commands/promote-knowledge.md	commands/promote-knowledge.md
+claude	command	session-end	commands/session-end.md	commands/session-end.md
+claude	command	session-start	commands/session-start.md	commands/session-start.md
+claude	command	workflow-review	commands/workflow-review.md	commands/workflow-review.md
+claude	global-guidance	claude	global/CLAUDE.md	CLAUDE.md
+codex	global-guidance	agents	global/AGENTS.md	AGENTS.md

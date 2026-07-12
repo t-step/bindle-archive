@@ -47,6 +47,16 @@ build_repo() {
   printf -- '---\ndescription: d\n---\nbody\n' >"$r/commands/demo.md"
   printf -- '# CLAUDE\n' >"$r/global/CLAUDE.md"
   printf -- '# AGENTS\n' >"$r/global/AGENTS.md"
+  mkdir -p "$r/bin/lib"
+  cp "$REPO_ROOT/bin/lib/manifest.sh" "$r/bin/lib/manifest.sh"
+  cat >"$r/install-manifest.tsv" <<'TSV'
+# GENERATED from capabilities.json — do not edit; run 'make manifest'
+claude	skill	demo	skills/demo	skills/demo
+claude	agent	demo	agents/demo.md	agents/demo.md
+claude	command	demo	commands/demo.md	commands/demo.md
+claude	global-guidance	claude	global/CLAUDE.md	CLAUDE.md
+codex	global-guidance	agents	global/AGENTS.md	AGENTS.md
+TSV
 }
 
 # ===========================================================================
@@ -285,6 +295,25 @@ check "no --adopt: reports CONFLICT" contains "CONFLICT" "$out"
 check "no --adopt: no adoption preview" not_contains "Adoption candidates" "$out"
 check "no --adopt: link left untouched" links_to "$OLD_SKILL_TARGET_4" "$HOME_DIR4/skills/demo"
 check "no --adopt: exits nonzero" test "$status" -ne 0
+
+# ===========================================================================
+echo "empty category still gets header + prune sweep (regression #79):"
+REPO="$TMP/emptycat"
+HOME_DIR="$TMP/emptyhome"
+build_repo "$REPO"
+# Make the 'agent' category empty: drop its manifest row and source, so no
+# agent items exist but the category is still managed.
+grep -v "$(printf '\tagent\t')" "$REPO/install-manifest.tsv" >"$REPO/install-manifest.tsv.new"
+mv "$REPO/install-manifest.tsv.new" "$REPO/install-manifest.tsv"
+rm -f "$REPO/agents/demo.md"
+# Pre-seed an orphaned Bindle-owned symlink under the agents home (target gone),
+# simulating an agent that was removed from Bindle.
+mkdir -p "$HOME_DIR/agents"
+ln -s "$REPO/agents/gone.md" "$HOME_DIR/agents/gone.md"
+out="$("$REPO/bin/install.sh" --home "$HOME_DIR" --prune 2>&1)"
+check "empty agent category still prints its header" contains "Claude agents:" "$out"
+check "prune sweeps the empty category's orphan" not_exists "$HOME_DIR/agents/gone.md"
+check "empty-category prune is reported" contains "pruned" "$out"
 
 # --- result ----------------------------------------------------------------
 echo

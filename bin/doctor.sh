@@ -39,6 +39,9 @@
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+# shellcheck source=bin/lib/manifest.sh
+# shellcheck disable=SC1091 # only resolvable with -x or a full-repo shellcheck pass (make check does the latter); pre-commit lints changed files only
+source "$REPO_ROOT/bin/lib/manifest.sh"
 CLAUDE_HOME="${HOME}/.claude"
 CODEX_HOME=""
 HAVE_CODEX=false
@@ -63,10 +66,13 @@ while [ $# -gt 0 ]; do
 done
 
 current_count=0 missing_count=0 stale_count=0 broken_count=0 conflict_count=0 earlier_count=0
+CODEX_ITEMS=0
 expected_dests=""
 
 # classify SRC DEST — sets STATE, DETAIL, ACTION for the (src, dest) pair.
 # Read-only: only ever stats/readlinks SRC and DEST, never writes either.
+# shellcheck disable=SC2329 # reachable only via check_item, itself invoked
+# indirectly through the manifest callbacks below (see each_manifest_item)
 classify() {
   local src="$1" dest="$2"
   STATE="" DETAIL="" ACTION=""
@@ -125,6 +131,7 @@ classify() {
 # check_item NAME SRC DEST — classify and print one line (plus an action line
 # for findings), tally counters, and remember DEST so the directory sweep
 # below doesn't double-report it.
+# shellcheck disable=SC2329 # invoked indirectly via the manifest callbacks below
 check_item() {
   local name="$1" src="$2" dest="$3"
   expected_dests="${expected_dests}
@@ -181,36 +188,30 @@ sweep_dir() {
   done
 }
 
+# _doctor_item PROVIDER CATEGORY NAME SRC DEST_REL — manifest callback that
+# diagnoses one item for the given home. Label = the repo-relative source path,
+# matching the labels doctor.sh printed before (skills/<n>, agents/<n>.md, ...).
+# Skips rows whose source no longer exists in this checkout — same as the old
+# filesystem-glob loops, which never enumerated a deleted item; that leaves any
+# now-orphaned dest symlink for sweep_dir to report as broken instead.
+# shellcheck disable=SC2329 # invoked indirectly, by name, via each_manifest_item
+_doctor_claude_cb() {
+  [ "$1" = claude ] || return 0
+  [ -e "$4" ] || return 0
+  check_item "${4#"$REPO_ROOT"/}" "$4" "$CLAUDE_HOME/$5"
+}
+# shellcheck disable=SC2329 # invoked indirectly, by name, via each_manifest_item
+_doctor_codex_cb() {
+  [ "$1" = codex ] || return 0
+  [ -e "$4" ] || return 0
+  CODEX_ITEMS=$((CODEX_ITEMS + 1))
+  check_item "${4#"$REPO_ROOT"/}" "$4" "$CODEX_HOME/$5"
+}
+
 claude_section() {
   echo
   echo "claude home ($CLAUDE_HOME):"
-  local dir f name src dest
-
-  for dir in "$REPO_ROOT"/skills/*/; do
-    name="$(basename "$dir")"
-    case "$name" in _* | .*) continue ;; esac
-    [ -f "${dir}SKILL.md" ] || continue
-    check_item "skills/${name}" "${REPO_ROOT}/skills/${name}" "${CLAUDE_HOME}/skills/${name}"
-  done
-
-  for f in "$REPO_ROOT"/agents/*.md; do
-    [ -e "$f" ] || continue
-    name="$(basename "$f")"
-    case "$name" in _* | .*) continue ;; esac
-    check_item "agents/${name}" "$f" "${CLAUDE_HOME}/agents/${name}"
-  done
-
-  for f in "$REPO_ROOT"/commands/*.md; do
-    [ -e "$f" ] || continue
-    name="$(basename "$f")"
-    case "$name" in _* | .*) continue ;; esac
-    check_item "commands/${name}" "$f" "${CLAUDE_HOME}/commands/${name}"
-  done
-
-  if [ -f "$REPO_ROOT/global/CLAUDE.md" ]; then
-    check_item "global/CLAUDE.md" "$REPO_ROOT/global/CLAUDE.md" "$CLAUDE_HOME/CLAUDE.md"
-  fi
-
+  each_manifest_item "$REPO_ROOT" _doctor_claude_cb
   sweep_dir "$CLAUDE_HOME/skills" "skills"
   sweep_dir "$CLAUDE_HOME/agents" "agents"
   sweep_dir "$CLAUDE_HOME/commands" "commands"
@@ -219,11 +220,9 @@ claude_section() {
 codex_section() {
   echo
   echo "codex home ($CODEX_HOME):"
-  if [ -f "$REPO_ROOT/global/AGENTS.md" ]; then
-    check_item "global/AGENTS.md" "$REPO_ROOT/global/AGENTS.md" "$CODEX_HOME/AGENTS.md"
-  else
-    echo "  - no global/AGENTS.md in this repo"
-  fi
+  CODEX_ITEMS=0
+  each_manifest_item "$REPO_ROOT" _doctor_codex_cb
+  [ "$CODEX_ITEMS" -gt 0 ] || echo "  - no global/AGENTS.md in this repo"
 }
 
 notes_section() {

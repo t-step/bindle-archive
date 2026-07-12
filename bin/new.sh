@@ -63,6 +63,11 @@ with open(inv, "w", encoding="utf-8") as fh:
     fh.write("\n")
 PY
   echo "Added a draft capabilities.json row for $cname (fill in provider/maturity/mutation)."
+  if [ -f capabilities.json ] && command -v python3 >/dev/null 2>&1 && [ -f bin/check-inventory.py ]; then
+    python3 bin/check-inventory.py --emit-manifest >/dev/null 2>&1 &&
+      echo "Regenerated install-manifest.tsv." ||
+      echo "Note: could not regenerate install-manifest.tsv; run 'make manifest'." >&2
+  fi
 }
 
 kind="${1:-}"

@@ -199,6 +199,7 @@ REPO="$TMP/newsh"
 mkfixture "$REPO"
 mkdir -p "$REPO/bin"
 cp "$REPO_ROOT/bin/new.sh" "$REPO/bin/new.sh"
+cp "$REPO_ROOT/bin/check-inventory.py" "$REPO/bin/check-inventory.py"
 python3 -c '
 import json
 p = "'"$REPO"'/capabilities.json"
@@ -217,6 +218,7 @@ out="$(python3 "$VALIDATOR" --root "$REPO" 2>&1)"
 status=$?
 check "repo still validates after new.sh skill" test "$status" -eq 0
 check "stub row present for the new skill" contains '"name": "widget"' "$(cat "$REPO/capabilities.json")"
+check "new.sh regenerated the manifest with the new skill" contains "$(printf 'claude\tskill\twidget\tskills/widget\tskills/widget')" "$(cat "$REPO/install-manifest.tsv")"
 
 echo "malformed capability entries:"
 REPO="$TMP/bad-entry"
@@ -234,6 +236,63 @@ status=$?
 check "non-dict capability entry exits nonzero" test "$status" -ne 0
 check "non-dict capability entry gets a clean diagnostic" contains "not an object" "$out"
 check "non-dict capability entry does not produce a traceback" not_contains "Traceback" "$out"
+
+echo "manifest generation:"
+REPO="$TMP/emit"
+mkfixture "$REPO"
+out="$(python3 "$VALIDATOR" --root "$REPO" --emit-manifest - 2>&1)"
+check "banner is first line" contains "# GENERATED from capabilities.json" "$out"
+check "skill row emitted" contains "$(printf 'claude\tskill\tdemo\tskills/demo\tskills/demo')" "$out"
+check "command row emitted" contains "$(printf 'claude\tcommand\tfoo\tcommands/foo.md\tcommands/foo.md')" "$out"
+check "claude global row: dest is basename" contains "$(printf 'claude\tglobal-guidance\tclaude\tglobal/CLAUDE.md\tCLAUDE.md')" "$out"
+check "codex global row: provider is codex" contains "$(printf 'codex\tglobal-guidance\tagents\tglobal/AGENTS.md\tAGENTS.md')" "$out"
+check "no script/contract rows" not_contains "docs/skill-portability-audit.md" "$out"
+# deterministic ordering: claude skill < claude command < claude global < codex global
+check "codex row is last" test "$(printf '%s\n' "$out" | tail -1)" = "$(printf 'codex\tglobal-guidance\tagents\tglobal/AGENTS.md\tAGENTS.md')"
+
+REPO="$TMP/emit-override"
+mkfixture "$REPO"
+python3 -c '
+import json
+p = "'"$REPO"'/capabilities.json"
+d = json.load(open(p, encoding="utf-8"))
+for c in d["capabilities"]:
+    if c["name"] == "demo":
+        c["install_destination"] = "skills/renamed-demo"
+json.dump(d, open(p, "w", encoding="utf-8"), indent=2)
+'
+out="$(python3 "$VALIDATOR" --root "$REPO" --emit-manifest - 2>&1)"
+check "explicit install_destination override is emitted verbatim" contains "$(printf 'claude\tskill\tdemo\tskills/demo\tskills/renamed-demo')" "$out"
+
+echo "manifest drift guard:"
+REPO="$TMP/manifest-ok"
+mkfixture "$REPO"
+python3 "$VALIDATOR" --root "$REPO" --emit-manifest >/dev/null
+out="$(python3 "$VALIDATOR" --root "$REPO" --check-manifest 2>&1)"
+status=$?
+check "matching manifest passes --check-manifest" test "$status" -eq 0
+
+REPO="$TMP/manifest-missing"
+mkfixture "$REPO"
+out="$(python3 "$VALIDATOR" --root "$REPO" --check-manifest 2>&1)"
+status=$?
+check "missing manifest fails" test "$status" -ne 0
+check "missing manifest names the fix" contains "install-manifest.tsv: missing" "$out"
+
+REPO="$TMP/manifest-stale"
+mkfixture "$REPO"
+python3 "$VALIDATOR" --root "$REPO" --emit-manifest >/dev/null
+printf 'claude\tskill\tbogus\tskills/bogus\tskills/bogus\n' >>"$REPO/install-manifest.tsv"
+out="$(python3 "$VALIDATOR" --root "$REPO" --check-manifest 2>&1)"
+status=$?
+check "stale manifest fails" test "$status" -ne 0
+check "stale manifest names the fix" contains "install-manifest.tsv: stale" "$out"
+
+REPO="$TMP/manifest-off"
+mkfixture "$REPO"
+out="$(python3 "$VALIDATOR" --root "$REPO" 2>&1)"
+status=$?
+check "without --check-manifest, missing manifest is ignored" test "$status" -eq 0
 
 echo
 echo "tests: ${pass} passed, ${fail} failed"
