@@ -1,0 +1,460 @@
+{
+  "capabilities": [
+    {
+      "name": "fork-pr-flow",
+      "type": "skill",
+      "path": "skills/fork-pr-flow",
+      "description": "Use when opening, targeting, or describing a pull request and deciding where changes land \u2014 whether the repo is a fork (origin vs upstream, avoiding \"upstream into upstream\") or one you own where changes should reach your own main via PR rather than a direct commit; also when unsure whether to push at all, or when tempted to merge a PR you just opened because you have access and were told to \"get it merged\".",
+      "provider": {
+        "claude": "installed",
+        "codex": "manual"
+      },
+      "maturity": "tested",
+      "mutation": [
+        "disk",
+        "network",
+        "external"
+      ],
+      "version_introduced": "0.2.0"
+    },
+    {
+      "name": "hands-on-keyboard",
+      "type": "skill",
+      "path": "skills/hands-on-keyboard",
+      "description": "Use when the user wants to stay hands-on while working with Claude instead of fully delegating \u2014 pairing/navigator sessions, learning or practicing a workflow, or signals like \"walk me through this,\" \"don't just write it for me,\" \"explain before you touch anything,\" or \"I want to type this myself.\" Also use when Claude notices it is about to make a string of unreviewed edits and the stakes or learning value of pausing are non-trivial.",
+      "provider": {
+        "claude": "installed",
+        "codex": "manual"
+      },
+      "maturity": "tested",
+      "mutation": [],
+      "version_introduced": "0.3.0"
+    },
+    {
+      "name": "license-compliance-auditor",
+      "type": "skill",
+      "path": "skills/license-compliance-auditor",
+      "description": "Use when auditing a repository for license compliance \u2014 reconciling the declared license against dependencies, vendored code, submodules, fonts, bundled assets, datasets, and copied snippets; classifying risk and obligation gaps; never giving legal conclusions.",
+      "provider": {
+        "claude": "installed",
+        "codex": "manual"
+      },
+      "maturity": "tested",
+      "mutation": [
+        "disk"
+      ],
+      "version_introduced": "0.2.0"
+    },
+    {
+      "name": "maintain-claude-md",
+      "type": "skill",
+      "path": "skills/maintain-claude-md",
+      "description": "Use when a repo needs its CLAUDE.md created, updated, or checked \u2014 scaffolding a new CLAUDE.md from repo introspection, appending a dated lesson or new active-spec note after a session, or linting an existing one for broken @-includes, dead loader-stubs, stale references, unexplained hard rules, duplicated governance, or unsafe command snippets. Also when asked to run /maintain-claude-md in any mode.",
+      "provider": {
+        "claude": "installed",
+        "codex": "unsupported"
+      },
+      "maturity": "tested",
+      "mutation": [
+        "disk"
+      ],
+      "version_introduced": "0.2.0"
+    },
+    {
+      "name": "repo-hygiene-init",
+      "type": "skill",
+      "path": "skills/repo-hygiene-init",
+      "description": "Use when setting up a new or bare repo, or when asked to add \"repo hygiene\", tooling, automation, pre-commit, editorconfig, linting/formatting, a Makefile, a LICENSE, a README, or to pick a versioning scheme \u2014 bootstrapping the baseline quality scaffolding a project should have.",
+      "provider": {
+        "claude": "installed",
+        "codex": "manual"
+      },
+      "maturity": "tested",
+      "mutation": [
+        "disk"
+      ],
+      "version_introduced": "0.2.0"
+    },
+    {
+      "name": "scoped-sequential-prs",
+      "type": "skill",
+      "path": "skills/scoped-sequential-prs",
+      "description": "Use when splitting a large or messy change into an ordered series of clean, single-purpose PRs \u2014 reconstructing history into staged PRs, keeping each PR strictly in scope, or preventing later-phase code and prose from leaking into an earlier PR.",
+      "provider": {
+        "claude": "installed",
+        "codex": "manual"
+      },
+      "maturity": "tested",
+      "mutation": [
+        "disk",
+        "network",
+        "external"
+      ],
+      "version_introduced": "0.2.0"
+    },
+    {
+      "name": "session-continuity",
+      "type": "skill",
+      "path": "skills/session-continuity",
+      "description": "Use when starting or ending a working session, writing a handoff prompt for a future session, or deciding where session notes and project profiles should live \u2014 including when a session is about to end with undocumented decisions, or notes are about to be written inside a project repo.",
+      "provider": {
+        "claude": "installed",
+        "codex": "manual"
+      },
+      "maturity": "tested",
+      "mutation": [
+        "disk"
+      ],
+      "version_introduced": "0.2.0"
+    },
+    {
+      "name": "verify-then-commit",
+      "type": "skill",
+      "path": "skills/verify-then-commit",
+      "description": "Use when about to commit or push after making or resuming changes \u2014 especially after a subagent or another session edited code, before claiming work is done, or when tempted to commit because edits \"look right\" without running the project's tests, typecheck, and lint.",
+      "provider": {
+        "claude": "installed",
+        "codex": "manual"
+      },
+      "maturity": "tested",
+      "mutation": [
+        "disk"
+      ],
+      "version_introduced": "0.2.0"
+    },
+    {
+      "name": "handoff",
+      "type": "command",
+      "path": "commands/handoff.md",
+      "description": "Generate a clean, scope-bounded prompt for a future session (Claude Code, Fable, or Codex)",
+      "provider": {
+        "claude": "installed",
+        "codex": "unsupported"
+      },
+      "maturity": "tested",
+      "mutation": [
+        "disk"
+      ],
+      "version_introduced": "0.2.0"
+    },
+    {
+      "name": "license-audit",
+      "type": "command",
+      "path": "commands/license-audit.md",
+      "description": "Audit this repo for license compliance (deps, vendored code, fonts, assets, datasets, snippets).",
+      "provider": {
+        "claude": "installed",
+        "codex": "unsupported"
+      },
+      "maturity": "documented",
+      "mutation": [
+        "disk"
+      ],
+      "version_introduced": "0.2.0"
+    },
+    {
+      "name": "notes-home",
+      "type": "command",
+      "path": "commands/notes-home.md",
+      "description": "Show, set, migrate, or reset the Bindle notes home (point it at an Obsidian vault)",
+      "provider": {
+        "claude": "installed",
+        "codex": "unsupported"
+      },
+      "maturity": "tested",
+      "mutation": [
+        "disk"
+      ],
+      "version_introduced": "0.3.0"
+    },
+    {
+      "name": "project-profile",
+      "type": "command",
+      "path": "commands/project-profile.md",
+      "description": "Create or update the portable project profile in the notes home (explicit export only)",
+      "provider": {
+        "claude": "installed",
+        "codex": "unsupported"
+      },
+      "maturity": "tested",
+      "mutation": [
+        "disk"
+      ],
+      "version_introduced": "0.2.0"
+    },
+    {
+      "name": "promote-insight",
+      "type": "command",
+      "path": "commands/promote-insight.md",
+      "description": "Classify one insight and route it to its home (skill, project rule, profile, gate, privacy rule) with explicit confirmation",
+      "provider": {
+        "claude": "installed",
+        "codex": "unsupported"
+      },
+      "maturity": "tested",
+      "mutation": [
+        "disk"
+      ],
+      "version_introduced": "0.2.0"
+    },
+    {
+      "name": "session-end",
+      "type": "command",
+      "path": "commands/session-end.md",
+      "description": "Close out the session \u2014 write a durable session note (outside the repo) and surface candidate improvements",
+      "provider": {
+        "claude": "installed",
+        "codex": "unsupported"
+      },
+      "maturity": "tested",
+      "mutation": [
+        "disk"
+      ],
+      "version_introduced": "0.2.0"
+    },
+    {
+      "name": "session-start",
+      "type": "command",
+      "path": "commands/session-start.md",
+      "description": "Orient a new session \u2014 repo state, project profile, prior notes, validation gates",
+      "provider": {
+        "claude": "installed",
+        "codex": "unsupported"
+      },
+      "maturity": "tested",
+      "mutation": [],
+      "version_introduced": "0.2.0"
+    },
+    {
+      "name": "workflow-review",
+      "type": "command",
+      "path": "commands/workflow-review.md",
+      "description": "Review recent session notes/profiles/handoffs for recurring friction and promotable patterns",
+      "provider": {
+        "claude": "installed",
+        "codex": "unsupported"
+      },
+      "maturity": "tested",
+      "mutation": [],
+      "version_introduced": "0.2.0"
+    },
+    {
+      "name": "claude",
+      "type": "global-guidance",
+      "path": "global/CLAUDE.md",
+      "description": "Bindle's global preferences and hard rules installed to ~/.claude/CLAUDE.md for every Claude Code session: branch/PR discipline gated on an observable repo signal, verify-before-commit, and other universally-safe defaults.",
+      "provider": {
+        "claude": "installed",
+        "codex": "n/a"
+      },
+      "maturity": "documented",
+      "mutation": [],
+      "version_introduced": "0.2.0"
+    },
+    {
+      "name": "agents",
+      "type": "global-guidance",
+      "path": "global/AGENTS.md",
+      "description": "Bindle's global preferences for Codex, installed to an explicit --codex-home target's AGENTS.md: the Codex-native equivalent of global/CLAUDE.md, including project-context guidance.",
+      "provider": {
+        "claude": "n/a",
+        "codex": "installed"
+      },
+      "maturity": "documented",
+      "mutation": [],
+      "version_introduced": "0.2.0"
+    },
+    {
+      "name": "session-context",
+      "type": "script",
+      "path": "bin/session-context.sh",
+      "description": "Emit a compact, budget-capped orientation blob for the current project (notes-home resolution, latest session note/handoff paths, open in-progress issues, a one-line git summary); run on every Claude Code session start via global/hooks/session-start-context.py.",
+      "provider": {
+        "claude": "installed",
+        "codex": "untested"
+      },
+      "maturity": "tested",
+      "mutation": [],
+      "version_introduced": "0.3.0"
+    },
+    {
+      "name": "slugify",
+      "type": "script",
+      "path": "bin/slugify.sh",
+      "description": "Canonical, dependency-free implementation of the session-continuity slug rule (lowercase, collapse non-[a-z0-9] runs to one '-', trim edges) for notes-home path segments; self-tested via --self-test, wired into bin/check.sh.",
+      "provider": {
+        "claude": "manual",
+        "codex": "manual"
+      },
+      "maturity": "tested",
+      "mutation": [],
+      "version_introduced": "0.2.0"
+    },
+    {
+      "name": "notes-home",
+      "type": "script",
+      "path": "bin/notes-home.sh",
+      "description": "Inspect and durably configure where Bindle's session workflows keep their notes (docs/notes-home.md): status/set/migrate/reset against BINDLE_NOTES_DIR, with a surgical, confirm-before-write settings.json edit; backs the /notes-home command.",
+      "provider": {
+        "claude": "manual",
+        "codex": "untested"
+      },
+      "maturity": "tested",
+      "mutation": [
+        "disk"
+      ],
+      "version_introduced": "0.3.0"
+    },
+    {
+      "name": "session-notes-format",
+      "type": "contract",
+      "path": "docs/session-notes-format.md",
+      "description": "The provider-neutral session-continuity contract (notes home, naming, artifact shapes, privacy rules) extracted from the session-continuity skill and commands, with explicit contract levels; the session-continuity skill automates it for Claude Code, and Codex follows it directly.",
+      "provider": {
+        "claude": "installed",
+        "codex": "manual"
+      },
+      "maturity": "documented",
+      "mutation": [],
+      "version_introduced": "0.3.0"
+    },
+    {
+      "name": "hands-on-keyboard-contract",
+      "type": "contract",
+      "path": "docs/hands-on-keyboard.md",
+      "description": "The provider-neutral contract for a navigator/driver collaboration mode: roles, the default interaction loop, escalation modes, decision checkpoints, and how to follow it manually from Codex or another assistant; the hands-on-keyboard skill is the Claude-native automation of this contract.",
+      "provider": {
+        "claude": "installed",
+        "codex": "manual"
+      },
+      "maturity": "documented",
+      "mutation": [],
+      "version_introduced": "0.3.0"
+    },
+    {
+      "name": "delegated-implementation-packets",
+      "type": "contract",
+      "path": "docs/delegated-implementation-packets.md",
+      "description": "The reusable contract for turning an approved issue into a bounded, subagent-ready implementation packet: ten required sections, a copyable template, a worked example, and the plan-only vs. authorized-implementation split.",
+      "provider": {
+        "claude": "manual",
+        "codex": "manual"
+      },
+      "maturity": "documented",
+      "mutation": [],
+      "version_introduced": "0.3.0"
+    },
+    {
+      "name": "capability-inventory",
+      "type": "contract",
+      "path": "docs/capability-inventory.md",
+      "description": "The schema reference (fields, enums) and completeness model (bijection for skill/command/agent/global-guidance; classified not_a_capability ledger for scripts/contracts) for capabilities.json, plus the \"how to add a capability\" workflow, including the skill-portability-audit.md bound-table coupling; the inventory's own normative contract.",
+      "provider": {
+        "claude": "manual",
+        "codex": "manual"
+      },
+      "maturity": "documented",
+      "mutation": [],
+      "version_introduced": "0.3.0"
+    },
+    {
+      "name": "privacy-boundaries",
+      "type": "contract",
+      "path": "docs/privacy-boundaries.md",
+      "description": "What counts as private for this repo, where private content is allowed to live, and the guardrails that keep it out of Git; enforced automatically for Claude via bin/check-private-info.sh and followed directly by Codex per using-bindle-with-codex.md.",
+      "provider": {
+        "claude": "installed",
+        "codex": "manual"
+      },
+      "maturity": "documented",
+      "mutation": [],
+      "version_introduced": "0.2.0"
+    }
+  ],
+  "not_a_capability": [
+    {
+      "path": "bin/check.sh",
+      "reason": "the top-level checker itself (runs the whole validation suite); machinery, not a capability an agent invokes for its own sake."
+    },
+    {
+      "path": "bin/install.sh",
+      "reason": "the installer that symlinks capabilities into provider homes; machinery underlying every skill/command/global-guidance row, not itself a capability."
+    },
+    {
+      "path": "bin/doctor.sh",
+      "reason": "diagnostic/repair tool for an existing install; internal machinery paired with install.sh, not a standalone capability."
+    },
+    {
+      "path": "bin/new.sh",
+      "reason": "scaffolding tool for authoring a new skill/agent/command from the templates; a contributor tool, not a shipped capability."
+    },
+    {
+      "path": "bin/release.sh",
+      "reason": "rolls the Unreleased CHANGELOG section into a dated version and bumps VERSION; release machinery, not a capability."
+    },
+    {
+      "path": "bin/check-private-info.sh",
+      "reason": "privacy scanner sourced by bin/check.sh and the pre-commit hook; internal machinery, not a standalone capability."
+    },
+    {
+      "path": "bin/install-hooks.sh",
+      "reason": "installs the pre-commit git hook framework; install/hook machinery, not a capability."
+    },
+    {
+      "path": "bin/install-session-hooks.sh",
+      "reason": "wires the SessionStart/session-end Python hooks into ~/.claude/settings.json; install/hook machinery, not a capability."
+    },
+    {
+      "path": "docs/issue-tracking.md",
+      "reason": "internal work-tracking convention for this repo's own issues/branches/PRs/CHANGELOG relationship; process reference, not a capability an agent invokes."
+    },
+    {
+      "path": "docs/iterative-improvement.md",
+      "reason": "internal design doc for the toolkit's own improvement loop and insight-routing table, consumed only by this repo's own /workflow-review and /promote-insight commands; reference, not a standalone portable contract."
+    },
+    {
+      "path": "docs/iterative-improvement-pressure-tests.md",
+      "reason": "pressure-test evidence log for the iterative-improvement commands; an audit artifact, not a capability."
+    },
+    {
+      "path": "docs/notes-home.md",
+      "reason": "user-facing summary that points to the actual portable contract (docs/session-notes-format.md, already an inventory row) and to the /notes-home command; not itself a distinct capability."
+    },
+    {
+      "path": "docs/ownership-boundaries.md",
+      "reason": "internal governance doc defining what Bindle owns/may touch; a project policy contract for maintainers, not an agent-invoked capability."
+    },
+    {
+      "path": "docs/portable-workflow-review.md",
+      "reason": "a point-in-time v0.2 planning inventory/architecture review artifact; historical reference, not a capability."
+    },
+    {
+      "path": "docs/product-boundary.md",
+      "reason": "internal scope-decision document (v0.3-v0.4 product boundary); reference, not a capability."
+    },
+    {
+      "path": "docs/provider-interop.md",
+      "reason": "internal standing policy on provider support boundaries and the Phase 1 Claude/Codex rules; reference doc, not directly invoked as a capability."
+    },
+    {
+      "path": "docs/runtime-security-privacy.md",
+      "reason": "internal engineering contract restricting what Bindle's own automatic/executable assets (hooks, scripts) may ship with; governs contributions, not a capability an agent follows during ordinary session work."
+    },
+    {
+      "path": "docs/sharing-skills.md",
+      "reason": "internal guidance on distributing this personal kit to collaborators; reference prose, not a capability."
+    },
+    {
+      "path": "docs/skill-portability-audit.md",
+      "reason": "the bound table cross-checked directly by the validator's own check_bound_table; an audit artifact, not a separate capability."
+    },
+    {
+      "path": "docs/sqlite-workflow-index.md",
+      "reason": "explicitly a deferred, not-implemented design note ('design only, deliberately deferred'); no shipped capability backs it."
+    },
+    {
+      "path": "docs/using-bindle-with-codex.md",
+      "reason": "a meta-guide for Codex describing which existing capabilities to use (docs/session-notes-format.md, docs/privacy-boundaries.md, bin/slugify.sh, bin/check-private-info.sh); not itself a distinct capability."
+    }
+  ]
+}

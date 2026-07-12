@@ -296,6 +296,27 @@ if [ -f bin/slugify.sh ]; then
   fi
 fi
 
+# --- 6b. capability inventory ----------------------------------------------
+# Reconcile capabilities.json against the actual repo. Runs only where the
+# validator ships (the real repo); skipped in minimal fixture repos that copy
+# check.sh but not check-inventory.py. Skipped with a notice if python3 is
+# absent — CI enforces it.
+echo "capability inventory:"
+if [ ! -f bin/check-inventory.py ]; then
+  echo "  - bin/check-inventory.py not present; skipping"
+elif ! command -v python3 >/dev/null 2>&1; then
+  echo "  - python3 not installed; skipping (CI enforces this)"
+elif [ ! -f capabilities.json ]; then
+  problem "capabilities.json missing (bin/check-inventory.py is present but the inventory is not)"
+else
+  if inv_out="$(python3 bin/check-inventory.py --root . 2>&1)"; then
+    ok "$inv_out"
+  else
+    printf '%s\n' "$inv_out" | sed 's/^/  /'
+    problem "capability inventory check failed (run: python3 bin/check-inventory.py)"
+  fi
+fi
+
 # --- 7. private info ---------------------------------------------------------
 # Personal-info guard (relay emails, home paths, transcripts, denylist terms).
 # Skipped in --content-only: the dedicated pre-commit hook runs it on staged

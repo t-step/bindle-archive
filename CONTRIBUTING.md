@@ -78,3 +78,6 @@ go; `bin/release.sh` cuts the release (and never pushes — you review first).
 - [ ] `make check` passes.
 - [ ] New skill went through (or is marked draft pending) the writing-skills loop.
 - [ ] `CHANGELOG [Unreleased]` updated.
+- [ ] New/renamed capability recorded in `capabilities.json` (see the
+      [capability-inventory doc](docs/capability-inventory.md)); `make check`
+      reconciles it.

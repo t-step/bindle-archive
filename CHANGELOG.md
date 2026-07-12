@@ -58,6 +58,13 @@ dated, versioned section at release time.
 
 ### Added
 
+- `capabilities.json` + `bin/check-inventory.py` (issue #29): a machine-readable
+  capability inventory reconciled against the repo by CI — bijection for
+  skills/commands/agents/global-guidance, a `not_a_capability` classified ledger
+  for scripts/contracts, path + frontmatter/maturity cross-checks, and a
+  `skill-portability-audit.md` drift check. `bin/new.sh` appends a draft row on
+  scaffold. See `docs/capability-inventory.md`. Doc generation and installer
+  consumption are deferred follow-ups.
 - `docs/delegated-implementation-packets.md` (issue #63): the reusable contract
   for turning an approved issue into a bounded, subagent-ready implementation
   packet. Defines the ten required sections (read-first, preflight, bounded
