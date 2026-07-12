@@ -150,6 +150,33 @@ rm -f "$REPO/skills/demo/PRESSURE-TESTS.md"
 out="$(python3 "$VALIDATOR" --root "$REPO" 2>&1)"
 check "tested skill without PRESSURE-TESTS.md is caught" contains "maturity 'tested' but no PRESSURE-TESTS.md" "$out"
 
+echo "bound-table drift (skill-portability-audit):"
+REPO="$TMP/audit-drift"
+mkfixture "$REPO"
+# audit table lists demo; add a second skill to the inventory + disk but NOT the table
+mkdir -p "$REPO/skills/second"
+printf -- '---\nname: second\ndescription: Second.\n---\n# second\n' >"$REPO/skills/second/SKILL.md"
+printf 'x\n' >"$REPO/skills/second/PRESSURE-TESTS.md"
+# Author the inventory with `second` present (on disk + inventory) but NOT in
+# the audit table, so only the bound-table drift check should fire.
+cat >"$REPO/capabilities.json" <<'JSON'
+{
+  "capabilities": [
+    {"name": "demo", "type": "skill", "path": "skills/demo", "description": "Demo skill.", "provider": {"claude": "installed", "codex": "untested"}, "maturity": "tested", "mutation": [], "version_introduced": "0.1.0"},
+    {"name": "second", "type": "skill", "path": "skills/second", "description": "Second.", "provider": {"claude": "installed", "codex": "untested"}, "maturity": "tested", "mutation": [], "version_introduced": "0.1.0"},
+    {"name": "foo", "type": "command", "path": "commands/foo.md", "description": "Demo command.", "provider": {"claude": "installed", "codex": "unsupported"}, "maturity": "documented", "mutation": ["disk"], "version_introduced": "0.1.0"},
+    {"name": "claude", "type": "global-guidance", "path": "global/CLAUDE.md", "description": "Global Claude guidance.", "provider": {"claude": "installed", "codex": "n/a"}, "maturity": "documented", "mutation": [], "version_introduced": "0.1.0"},
+    {"name": "agents", "type": "global-guidance", "path": "global/AGENTS.md", "description": "Global Codex guidance.", "provider": {"claude": "n/a", "codex": "manual"}, "maturity": "documented", "mutation": [], "version_introduced": "0.1.0"}
+  ],
+  "not_a_capability": [
+    {"path": "docs/skill-portability-audit.md", "reason": "audit doc"}
+  ]
+}
+JSON
+(cd "$REPO" && git add -A && git -c user.email=t@e.com -c user.name=t commit -q -m second)
+out="$(python3 "$VALIDATOR" --root "$REPO" 2>&1)"
+check "inventory skill absent from audit table is caught" contains "skill 'second' in inventory but not in skill-portability-audit table" "$out"
+
 echo
 echo "tests: ${pass} passed, ${fail} failed"
 [ "$fail" -eq 0 ]

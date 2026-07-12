@@ -223,6 +223,43 @@ def check_crosschecks(caps, root):
     return errors
 
 
+def _audit_skill_names(path):
+    names = set()
+    with open(path, encoding="utf-8") as fh:
+        lines = fh.read().splitlines()
+    in_table = False
+    for line in lines:
+        if line.strip().startswith("| Skill |"):
+            in_table = True
+            continue
+        if in_table:
+            if not line.strip().startswith("|"):
+                break
+            cell = line.split("|")[1].strip().strip("`").strip()
+            if not cell or set(cell) <= set("-: "):
+                continue  # separator row (|---|)
+            names.add(cell)
+    return names
+
+
+def check_bound_table(caps, root):
+    errors = []
+    audit = os.path.join(root, "docs/skill-portability-audit.md")
+    if not os.path.isfile(audit):
+        errors.append("docs/skill-portability-audit.md: missing (bound table for "
+                      "criterion c)")
+        return errors
+    inv = {c.get("name") for c in caps if c.get("type") == "skill"}
+    tbl = _audit_skill_names(audit)
+    for missing in sorted(inv - tbl):
+        errors.append("skill '%s' in inventory but not in skill-portability-audit "
+                      "table" % missing)
+    for extra in sorted(tbl - inv):
+        errors.append("skill '%s' in skill-portability-audit table but not in "
+                      "inventory" % extra)
+    return errors
+
+
 def main(argv=None):
     parser = argparse.ArgumentParser()
     parser.add_argument("--root", default=None)
@@ -240,6 +277,7 @@ def main(argv=None):
     errors += check_completeness_fuzzy(caps, ledger, root)
     errors += check_paths(caps, root)
     errors += check_crosschecks(caps, root)
+    errors += check_bound_table(caps, root)
     # NOTE: later tasks append more checks here.
     if errors:
         for e in errors:
