@@ -235,6 +235,33 @@ check "non-dict capability entry exits nonzero" test "$status" -ne 0
 check "non-dict capability entry gets a clean diagnostic" contains "not an object" "$out"
 check "non-dict capability entry does not produce a traceback" not_contains "Traceback" "$out"
 
+echo "manifest generation:"
+REPO="$TMP/emit"
+mkfixture "$REPO"
+out="$(python3 "$VALIDATOR" --root "$REPO" --emit-manifest - 2>&1)"
+check "banner is first line" contains "# GENERATED from capabilities.json" "$out"
+check "skill row emitted" contains "$(printf 'claude\tskill\tdemo\tskills/demo\tskills/demo')" "$out"
+check "command row emitted" contains "$(printf 'claude\tcommand\tfoo\tcommands/foo.md\tcommands/foo.md')" "$out"
+check "claude global row: dest is basename" contains "$(printf 'claude\tglobal-guidance\tclaude\tglobal/CLAUDE.md\tCLAUDE.md')" "$out"
+check "codex global row: provider is codex" contains "$(printf 'codex\tglobal-guidance\tagents\tglobal/AGENTS.md\tAGENTS.md')" "$out"
+check "no script/contract rows" not_contains "docs/skill-portability-audit.md" "$out"
+# deterministic ordering: claude skill < claude command < claude global < codex global
+check "codex row is last" test "$(printf '%s\n' "$out" | tail -1)" = "$(printf 'codex\tglobal-guidance\tagents\tglobal/AGENTS.md\tAGENTS.md')"
+
+REPO="$TMP/emit-override"
+mkfixture "$REPO"
+python3 -c '
+import json
+p = "'"$REPO"'/capabilities.json"
+d = json.load(open(p, encoding="utf-8"))
+for c in d["capabilities"]:
+    if c["name"] == "demo":
+        c["install_destination"] = "skills/renamed-demo"
+json.dump(d, open(p, "w", encoding="utf-8"), indent=2)
+'
+out="$(python3 "$VALIDATOR" --root "$REPO" --emit-manifest - 2>&1)"
+check "explicit install_destination override is emitted verbatim" contains "$(printf 'claude\tskill\tdemo\tskills/demo\tskills/renamed-demo')" "$out"
+
 echo
 echo "tests: ${pass} passed, ${fail} failed"
 [ "$fail" -eq 0 ]
