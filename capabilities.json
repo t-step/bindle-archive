@@ -462,6 +462,10 @@
       "reason": "pressure-test evidence log for the iterative-improvement commands; an audit artifact, not a capability."
     },
     {
+      "path": "docs/knowledge-promotion-pressure-tests.md",
+      "reason": "pressure-test method and recorded results for the knowledge-promotion workflow; QA record, not a capability."
+    },
+    {
       "path": "docs/notes-home.md",
       "reason": "user-facing summary that points to the actual portable contract (docs/session-notes-format.md, already an inventory row) and to the /notes-home command; not itself a distinct capability."
     },
