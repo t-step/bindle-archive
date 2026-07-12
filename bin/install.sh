@@ -284,62 +284,75 @@ if $ADOPT; then
   run_adopt_prepass
 fi
 
-_provider_label() { case "$1" in claude) printf Claude ;; codex) printf Codex ;; esac }
-_category_label() {
-  case "$1" in
-    skill) printf skills ;;
-    agent) printf agents ;;
-    command) printf commands ;;
-    global-guidance) printf 'global instructions' ;;
-  esac
-}
+# The installer walks a FIXED set of provider/category groups so that every
+# managed surface — including a currently-empty category — still gets its
+# header, mkdir, and (with --prune) sweep, matching the original per-function
+# behavior byte-for-byte. Item *destinations* still come only from the manifest
+# (bin/lib/manifest.sh); this fixed structure is presentation + prune coverage,
+# the same list doctor.sh hardcodes for its sweeps.
 
-# Streaming installer state: headers/mkdir emitted on category change; prune
-# runs once per category in _finalize_group.
-_CUR_KEY="" _CUR_PRUNE_DIR="" _CUR_PRUNE_PATH=""
-
-_finalize_group() {
-  [ -n "$_CUR_KEY" ] || return 0
-  if $PRUNE; then
-    if [ -n "$_CUR_PRUNE_DIR" ]; then
-      prune_dir "$_CUR_PRUNE_DIR"
-    elif [ -n "$_CUR_PRUNE_PATH" ]; then
-      prune_path "$_CUR_PRUNE_PATH"
-    fi
-  fi
-}
-
+_GRP_PROVIDER="" _GRP_CATEGORY=""
+# _link_in_group — manifest callback: links every row matching the group being
+# installed ($_GRP_PROVIDER/$_GRP_CATEGORY).
 # shellcheck disable=SC2329 # invoked indirectly via each_manifest_item
-_install_cb() {
-  local provider="$1" category="$2" name="$3" src="$4" dest_rel="$5" home sub
+_link_in_group() {
+  local provider="$1" category="$2" name="$3" src="$4" dest_rel="$5" home
+  [ "$provider" = "$_GRP_PROVIDER" ] && [ "$category" = "$_GRP_CATEGORY" ] || return 0
   case "$provider" in claude) home="$CLAUDE_HOME" ;; codex) home="$CODEX_HOME" ;; esac
-  case "$PROVIDER" in
-    claude) [ "$provider" = claude ] || return 0 ;;
-    codex) [ "$provider" = codex ] || return 0 ;;
-  esac
-  local key="$provider/$category"
-  if [ "$key" != "$_CUR_KEY" ]; then
-    _finalize_group
-    _CUR_KEY="$key"
-    printf '%s %s:\n' "$(_provider_label "$provider")" "$(_category_label "$category")"
-    case "$dest_rel" in
-      */*)
-        sub="${dest_rel%/*}"
-        mkdir -p "$home/$sub"
-        _CUR_PRUNE_DIR="$home/$sub" _CUR_PRUNE_PATH=""
-        ;;
-      *)
-        _CUR_PRUNE_DIR="" _CUR_PRUNE_PATH="$home/$dest_rel"
-        ;;
-    esac
-  fi
   link_item "$src" "$home/$dest_rel"
 }
 
+# _dir_group PROVIDER CATEGORY HEADER HOME SUBDIR — a directory category
+# (skills/agents/commands): header + mkdir + linked items + prune, all
+# unconditional (header and sweep fire even when the category is empty).
+# shellcheck disable=SC2329 # invoked from install_surfaces
+_dir_group() {
+  local provider="$1" category="$2" header="$3" home="$4" subdir="$5"
+  echo "$header"
+  mkdir -p "$home/$subdir"
+  _GRP_PROVIDER="$provider" _GRP_CATEGORY="$category"
+  each_manifest_item "$REPO_ROOT" _link_in_group
+  if $PRUNE; then prune_dir "$home/$subdir"; fi
+}
+
+# _file_group PROVIDER HEADER HOME_FILE — a flat global-guidance file
+# (CLAUDE.md/AGENTS.md): header + link fire only when a manifest row for that
+# file exists (source present), but the prune sweep is unconditional — matching
+# the original code exactly.
+_FILE_HEADER="" _FILE_HEADER_DONE=false
+# shellcheck disable=SC2329 # invoked indirectly via each_manifest_item
+_link_global() {
+  local provider="$1" category="$2" name="$3" src="$4" dest_rel="$5" home
+  [ "$provider" = "$_GRP_PROVIDER" ] && [ "$category" = global-guidance ] || return 0
+  case "$provider" in claude) home="$CLAUDE_HOME" ;; codex) home="$CODEX_HOME" ;; esac
+  if ! $_FILE_HEADER_DONE; then
+    echo "$_FILE_HEADER"
+    _FILE_HEADER_DONE=true
+  fi
+  link_item "$src" "$home/$dest_rel"
+}
+# shellcheck disable=SC2329 # invoked from install_surfaces
+_file_group() {
+  local provider="$1" header="$2" home_file="$3"
+  _GRP_PROVIDER="$provider" _FILE_HEADER="$header" _FILE_HEADER_DONE=false
+  each_manifest_item "$REPO_ROOT" _link_global
+  if $PRUNE; then prune_path "$home_file"; fi
+}
+
 install_surfaces() {
-  _CUR_KEY="" _CUR_PRUNE_DIR="" _CUR_PRUNE_PATH=""
-  each_manifest_item "$REPO_ROOT" _install_cb
-  _finalize_group
+  case "$PROVIDER" in
+    claude | all)
+      _dir_group claude skill "Claude skills:" "$CLAUDE_HOME" skills
+      _dir_group claude agent "Claude agents:" "$CLAUDE_HOME" agents
+      _dir_group claude command "Claude commands:" "$CLAUDE_HOME" commands
+      _file_group claude "Claude global instructions:" "$CLAUDE_HOME/CLAUDE.md"
+      ;;
+  esac
+  case "$PROVIDER" in
+    codex | all)
+      _file_group codex "Codex global instructions:" "$CODEX_HOME/AGENTS.md"
+      ;;
+  esac
 }
 
 install_surfaces
