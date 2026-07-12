@@ -194,6 +194,30 @@ printf -- '| `ghost` | ok |\n' >>"$REPO/docs/skill-portability-audit.md"
 out="$(python3 "$VALIDATOR" --root "$REPO" 2>&1)"
 check "audit-table skill absent from inventory fails" contains "skill 'ghost' in skill-portability-audit table but not in inventory" "$out"
 
+echo "new.sh appends a valid stub row:"
+REPO="$TMP/newsh"
+mkfixture "$REPO"
+mkdir -p "$REPO/bin"
+cp "$REPO_ROOT/bin/new.sh" "$REPO/bin/new.sh"
+python3 -c '
+import json
+p = "'"$REPO"'/capabilities.json"
+d = json.load(open(p, encoding="utf-8"))
+d["not_a_capability"].append({"path": "bin/new.sh", "reason": "scaffolding tool, not a shipped capability"})
+json.dump(d, open(p, "w", encoding="utf-8"), indent=2)
+'
+mkdir -p "$REPO/skills/_template"
+printf -- '---\nname: Skill-Name\ndescription: Use when placeholder.\n---\n' >"$REPO/skills/_template/SKILL.md"
+(cd "$REPO" && git add -A && git -c user.email=t@e.com -c user.name=t commit -q -m tmpl)
+(cd "$REPO" && bin/new.sh skill widget >/dev/null)
+(cd "$REPO" && git add -A && git -c user.email=t@e.com -c user.name=t commit -q -m widget)
+# shellcheck disable=SC2016 # single-quoted on purpose: backticks are literal markdown, not command substitution
+printf '| `widget` | ok |\n' >>"$REPO/docs/skill-portability-audit.md"
+out="$(python3 "$VALIDATOR" --root "$REPO" 2>&1)"
+status=$?
+check "repo still validates after new.sh skill" test "$status" -eq 0
+check "stub row present for the new skill" contains '"name": "widget"' "$(cat "$REPO/capabilities.json")"
+
 echo
 echo "tests: ${pass} passed, ${fail} failed"
 [ "$fail" -eq 0 ]
