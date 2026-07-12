@@ -233,6 +233,19 @@ def _semver_tuple(v):
     return tuple(int(x) for x in v.split("."))
 
 
+def _next_release_tuples(version):
+    """The single-bump-ahead versions that count as 'the next unreleased
+    release' from `version` — next patch, next minor, or next major. Two or
+    more bumps ahead is still out of bounds, regardless of which bump the
+    next actual release turns out to be."""
+    major, minor, patch = _semver_tuple(version)
+    return {
+        (major, minor, patch + 1),
+        (major, minor + 1, 0),
+        (major + 1, 0, 0),
+    }
+
+
 def check_schema(caps, version):
     errors = []
     seen = set()
@@ -267,8 +280,10 @@ def check_schema(caps, version):
         vi = str(cap.get("version_introduced", ""))
         if not SEMVER.match(vi):
             errors.append("%s: version_introduced '%s' is not semver" % (label, vi))
-        elif _semver_tuple(vi) > _semver_tuple(version):
-            errors.append("%s: version_introduced %s is ahead of VERSION %s"
+        elif (_semver_tuple(vi) > _semver_tuple(version)
+              and _semver_tuple(vi) not in _next_release_tuples(version)):
+            errors.append("%s: version_introduced %s is ahead of the next "
+                          "unreleased release from VERSION %s"
                           % (label, vi, version))
     return errors
 
@@ -340,7 +355,8 @@ def check_completeness_fuzzy(caps, ledger, root):
     inv_paths = {c.get("path") for c in caps
                  if c.get("type") in ("script", "contract")}
     led_paths = {e.get("path") for e in ledger}
-    candidates = [p for p in _tracked_under(root, "bin") if p.endswith(".sh")]
+    candidates = [p for p in _tracked_under(root, "bin")
+                  if p.endswith((".sh", ".py"))]
     candidates += [p for p in _tracked_under(root, "docs") if p.endswith(".md")]
     for path in sorted(set(candidates)):
         if any(rx.search(path) for rx in AUTO_EXCLUDE):

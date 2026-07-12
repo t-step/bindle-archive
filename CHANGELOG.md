@@ -38,6 +38,20 @@ dated, versioned section at release time.
   narrative provider capability matrix is untouched — not derivable from the
   inventory schema without duplicating its prose.
 
+### Fixed
+
+- **Harden capability inventory (#77).** `bin/check-inventory.py`'s fuzzy
+  classification now covers `bin/*.py` as well as `bin/*.sh`, closing a gap
+  where the validator itself (`bin/check-inventory.py`) wasn't required to be
+  classified; it's now ledgered as machinery. `version_introduced`'s ceiling
+  now accepts one bump ahead of `VERSION` (next patch, minor, or major) —
+  "the next unreleased release" — instead of only values `<= VERSION`, so a
+  capability added mid-cycle can record its true target version. Corrected
+  two rows (`session-context`, `capability-inventory`) that were clamped to
+  `0.3.0` by the old ceiling despite being added after the `v0.3.0` release
+  cut; `hands-on-keyboard`, also named in the issue, was verified to
+  predate the release and is unchanged.
+
 ### Changed
 
 - **Knowledge promotion graduated draft → tested (issue #87, packet 4).** All
