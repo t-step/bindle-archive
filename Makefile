@@ -19,6 +19,7 @@ test:
 	bin/test-check.sh
 	bin/test-check-frontmatter.sh
 	bin/test-check-inventory.sh
+	bin/test-manifest-lib.sh
 	bin/test-doctor.sh
 	bin/test-notes-home.sh
 	bin/test-nested-notes-guard.sh
