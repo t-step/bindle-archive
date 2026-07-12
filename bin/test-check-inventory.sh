@@ -177,6 +177,23 @@ JSON
 out="$(python3 "$VALIDATOR" --root "$REPO" 2>&1)"
 check "inventory skill absent from audit table is caught" contains "skill 'second' in inventory but not in skill-portability-audit table" "$out"
 
+REPO="$TMP/audit-template-row"
+mkfixture "$REPO"
+# shellcheck disable=SC2016 # single-quoted on purpose: backticks are literal markdown, not command substitution
+printf -- '| `skills/_template/` | n/a |\n' >>"$REPO/docs/skill-portability-audit.md"
+(cd "$REPO" && git add -A && git -c user.email=t@e.com -c user.name=t commit -q -m template-row)
+out="$(python3 "$VALIDATOR" --root "$REPO" 2>&1)"
+status=$?
+check "template row in audit table is ignored (still passes)" test "$status" -eq 0
+
+REPO="$TMP/audit-reverse-drift"
+mkfixture "$REPO"
+# shellcheck disable=SC2016 # single-quoted on purpose: backticks are literal markdown, not command substitution
+printf -- '| `ghost` | ok |\n' >>"$REPO/docs/skill-portability-audit.md"
+(cd "$REPO" && git add -A && git -c user.email=t@e.com -c user.name=t commit -q -m ghost-row)
+out="$(python3 "$VALIDATOR" --root "$REPO" 2>&1)"
+check "audit-table skill absent from inventory fails" contains "skill 'ghost' in skill-portability-audit table but not in inventory" "$out"
+
 echo
 echo "tests: ${pass} passed, ${fail} failed"
 [ "$fail" -eq 0 ]

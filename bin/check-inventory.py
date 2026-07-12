@@ -238,6 +238,8 @@ def _audit_skill_names(path):
             cell = line.split("|")[1].strip().strip("`").strip()
             if not cell or set(cell) <= set("-: "):
                 continue  # separator row (|---|)
+            if "/" in cell or cell.startswith("_"):
+                continue  # not a bare skill name (e.g. the skills/_template/ row)
             names.add(cell)
     return names
 
