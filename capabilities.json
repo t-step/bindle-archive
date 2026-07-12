@@ -369,6 +369,19 @@
       "maturity": "documented",
       "mutation": [],
       "version_introduced": "0.2.0"
+    },
+    {
+      "name": "knowledge-promotion",
+      "type": "contract",
+      "path": "docs/knowledge-promotion.md",
+      "description": "The provider-neutral knowledge-promotion contract (promotion ladder, project-map format, cursor and evidence semantics, promotion report) from the #81 design; /promote-knowledge automates it for Claude Code, and Codex or a human follows the manual procedure directly.",
+      "provider": {
+        "claude": "manual",
+        "codex": "manual"
+      },
+      "maturity": "documented",
+      "mutation": [],
+      "version_introduced": "0.3.0"
     }
   ],
   "not_a_capability": [

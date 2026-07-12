@@ -14,6 +14,11 @@ dated, versioned section at release time.
 
 ## [Unreleased]
 
+### Added
+
+- `docs/knowledge-promotion.md` — provider-neutral contract for promoting
+  project evidence into a per-project `map.md` (issue #81 design, wave 1).
+
 ### Changed
 
 - `skills/repo-hygiene-init/PRESSURE-TESTS.md` extended (issue #65): built the
