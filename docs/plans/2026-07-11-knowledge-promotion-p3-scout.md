@@ -69,7 +69,8 @@ or an unparseable reply, fall back to inline analysis (the packet-2
 behavior) and note the fallback in the report. No other command lines
 change.
 
-`capabilities.json` — one new row:
+**Repository-compliance note** (pre-existing registration gate — see
+packet 1's compliance note; paste verbatim):
 
 ```json
 {

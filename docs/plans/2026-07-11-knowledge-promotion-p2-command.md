@@ -80,7 +80,9 @@ the prompt; write them as numbered instructions the way
     facts) go to `/promote-insight`; workflow friction to
     `/workflow-review`.
 
-`capabilities.json` — one new row:
+**Repository-compliance note** (pre-existing registration gate — see
+packet 1's compliance note for the enforced field rules; paste verbatim,
+no inventory knowledge needed):
 
 ```json
 {
@@ -89,18 +91,20 @@ the prompt; write them as numbered instructions the way
   "path": "commands/promote-knowledge.md",
   "description": "Promote accumulated project evidence into the living project map (docs/knowledge-promotion.md contract): propose at most five exact diffs, confirm, write, advance the cursor.",
   "maturity": "draft",
-  "mutation": ["notes-home map.md (confirmed diffs + cursor line only)"],
+  "mutation": ["disk"],
   "provider": {"claude": "installed", "codex": "manual"},
   "version_introduced": "0.3.0"
 }
 ```
 
-Also update the packet-1 contract row's `provider.claude` from `"manual"`
-to `"installed"` (the automation now exists).
+`mutation` is a validator enum ({disk, network, external}); `disk` records
+that the command writes files (the notes-home map). The row is
+registration only — the actual write-scope rules (map.md only, confirmed
+content only) live in `docs/knowledge-promotion.md` and this command.
 
-If `make check` rejects the `mutation` value's shape, match the shape the
-validator and existing rows use (inspect other rows with non-empty
-`mutation`); keep the meaning "writes only map.md, only confirmed content".
+Also update the packet-1 contract row's `provider.claude` from `"manual"`
+to `"installed"` (keeps that row honest now that automation exists; not
+gate-enforced).
 
 CHANGELOG line under `### Added` (mark draft — pressure tests are
 packet 4):
@@ -157,7 +161,8 @@ diffs; the fenced entry *is* what gets written on confirmation.
 2. Write `commands/promote-knowledge.md` per §4 (frontmatter exact; body as
    numbered instructions; keep to the tone/length of
    `commands/session-end.md` — under ~90 lines).
-3. Apply the two `capabilities.json` changes and the CHANGELOG line.
+3. Apply the two registration changes from §4's compliance note and the
+   CHANGELOG line.
 4. `make check`, `make test`.
 5. Smoke-run manually (see §12) against a throwaway notes home.
 6. Commit: `feat: /promote-knowledge command (draft) — map promotion loop (#81)`.

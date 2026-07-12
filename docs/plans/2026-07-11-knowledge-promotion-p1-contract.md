@@ -93,9 +93,17 @@ One new contract doc, one `capabilities.json` row, one CHANGELOG line.
 | `capabilities.json` | one new row in `capabilities` (below) |
 | `CHANGELOG.md` | one line under `## [Unreleased]` → `### Added` |
 
-The `capabilities.json` row (the inventory gate in `make check` requires it
-for any new `docs/*.md`; this is gate compliance, not inventory feature
-work):
+**Repository-compliance note** (pre-existing gate, isolated here — it is
+not part of the knowledge-promotion contract, workflow, or acceptance
+criteria): this branch's base (`main` at `0e0c1ba`) already enforces, via
+`make check`, that every file under `commands/`, `agents/`, and `docs/*.md`
+is registered in `capabilities.json`. Paste the row below verbatim; no
+other knowledge of that machinery is needed. Field rules the validator
+enforces, verified on this branch: `mutation` ⊆ {disk, network, external};
+`maturity` ∈ {draft, documented, tested}; provider values ∈ {installed,
+manual, untested, unsupported, n/a}; `version_introduced` is semver and
+must not be ahead of the `VERSION` file (currently `0.3.0`). Packets 2–4
+refer back to this note.
 
 ```json
 {
@@ -110,9 +118,8 @@ work):
 }
 ```
 
-(`version_introduced` must not exceed the `VERSION` file — the validator
-rejects ahead-of-VERSION values. `provider.claude` becomes `installed` in
-packet 2 when the command exists.)
+(`provider.claude` becomes `installed` in packet 2 when the command
+exists.)
 
 CHANGELOG line under `### Added`:
 
@@ -244,11 +251,11 @@ stated in the report.
    branch); confirm `git status --short` is clean first.
 2. Write `docs/knowledge-promotion.md` per §4/§7. Reuse the design doc's
    prose where it is already normative; do not contradict it anywhere.
-3. Add the `capabilities.json` row from §6 (append to the `capabilities`
-   array; keep JSON valid — trailing commas break the validator).
+3. Add the `capabilities.json` row from §6's repository-compliance note
+   (append to the `capabilities` array; keep the JSON valid).
 4. Add the CHANGELOG line from §6.
-5. Run `make check` (the inventory, link, and private-info gates must pass)
-   and `make test`; fix only what those report about *your* files.
+5. Run `make check` and `make test`; fix only what they report about
+   *your* files.
 6. Commit: `docs: knowledge-promotion contract + map format (#81)`.
 
 ## 9. Acceptance criteria
@@ -258,8 +265,7 @@ stated in the report.
   of §7, byte-consistent with the design doc's decisions.
 - A reader with no Claude Code can execute the manual procedure of §4.10
   against a notes home using only this doc.
-- `make check` green (inventory bijection satisfied; all links resolve; no
-  private info).
+- `make check` and `make test` green.
 - No file outside §6's table changed.
 
 ## 10. Required tests

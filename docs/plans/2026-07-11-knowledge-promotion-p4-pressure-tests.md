@@ -57,12 +57,18 @@ scout-marked steps inline-only and say so in the results.)
 
 ### Graduation edits (only if everything passes)
 
+The draft→tested discipline is `CONTRIBUTING.md`'s; the `capabilities.json`
+touches are the pre-existing registration gate (see packet 1's
+repository-compliance note — paste and move on):
+
 - `capabilities.json`: `promote-knowledge` and `knowledge-scout` rows
-  `maturity: "draft"` → `"tested"`.
+  `maturity: "draft"` → `"tested"` (a validator enum value; verified valid
+  on this branch).
 - `CHANGELOG.md`: one `### Changed` line noting the pressure-test pass and
   draft-flag removal (edit the packet-2/3 Added lines' "(draft, pending
   pressure tests)" markers to "(tested)").
-- Inventory ledger entry for the new doc (gate compliance):
+- Registration entry for the new doc, in `capabilities.json`'s
+  `not_a_capability` list (same gate):
 
 ```json
 {
@@ -89,7 +95,7 @@ scout-marked steps inline-only and say so in the results.)
 | File | Change |
 |---|---|
 | `docs/knowledge-promotion-pressure-tests.md` | new |
-| `capabilities.json` | 2 maturity flips + 1 ledger entry |
+| `capabilities.json` | 2 maturity flips + 1 registration entry (compliance note) |
 | `CHANGELOG.md` | draft markers updated + 1 `### Changed` line |
 
 ## 7. Scenarios (fixture → scripted reply → filesystem pass condition)
