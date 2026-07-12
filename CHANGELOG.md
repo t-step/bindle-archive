@@ -16,6 +16,14 @@ dated, versioned section at release time.
 
 ### Added
 
+- `docs/knowledge-promotion.md` — provider-neutral contract for promoting
+  project evidence into a per-project `map.md` (issue #81 design, wave 1).
+- `/promote-knowledge` command (draft, pending pressure tests): runs the
+  knowledge-promotion contract end-to-end for one project (issue #81,
+  wave 1).
+- `agents/knowledge-scout.md` (draft, pending pressure tests): read-only
+  candidate digester used by `/promote-knowledge` when installed (issue
+  #81, wave 1).
 - **Single-sourced install destinations (#79).** `capabilities.json` is now the
   only hand-edited source of the type→install-destination mapping. A generated,
   committed `install-manifest.tsv` (drift-checked by `make check`) is consumed by

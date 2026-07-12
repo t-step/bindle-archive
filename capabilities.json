@@ -239,6 +239,34 @@
       "version_introduced": "0.2.0"
     },
     {
+      "name": "promote-knowledge",
+      "type": "command",
+      "path": "commands/promote-knowledge.md",
+      "description": "Promote project evidence into the living project map \u2014 propose, confirm, write",
+      "provider": {
+        "claude": "installed",
+        "codex": "manual"
+      },
+      "maturity": "draft",
+      "mutation": [
+        "disk"
+      ],
+      "version_introduced": "0.3.0"
+    },
+    {
+      "name": "knowledge-scout",
+      "type": "agent",
+      "path": "agents/knowledge-scout.md",
+      "description": "Use when /promote-knowledge needs the evidence set digested \u2014 reads the given notes-home files (and inline issue/PR extracts) and returns rung-classified promotion candidates per docs/knowledge-promotion.md. Read-only; never writes files; never promotes.",
+      "provider": {
+        "claude": "installed",
+        "codex": "unsupported"
+      },
+      "maturity": "draft",
+      "mutation": [],
+      "version_introduced": "0.3.0"
+    },
+    {
       "name": "claude",
       "type": "global-guidance",
       "path": "global/CLAUDE.md",
@@ -369,6 +397,19 @@
       "maturity": "documented",
       "mutation": [],
       "version_introduced": "0.2.0"
+    },
+    {
+      "name": "knowledge-promotion",
+      "type": "contract",
+      "path": "docs/knowledge-promotion.md",
+      "description": "The provider-neutral knowledge-promotion contract (promotion ladder, project-map format, cursor and evidence semantics, promotion report) from the #81 design; /promote-knowledge automates it for Claude Code, and Codex or a human follows the manual procedure directly.",
+      "provider": {
+        "claude": "installed",
+        "codex": "manual"
+      },
+      "maturity": "documented",
+      "mutation": [],
+      "version_introduced": "0.3.0"
     }
   ],
   "not_a_capability": [
