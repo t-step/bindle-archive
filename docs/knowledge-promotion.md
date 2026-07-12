@@ -42,7 +42,10 @@ Every candidate insight lands on exactly one rung, or is discarded:
 Most candidates land at rungs 0–1; rungs 4–6 are rare by design. In
 wave 1, rungs 4–5 exist only as tags — the tag records the lift candidate
 so nothing needs rewriting when wave 2 arrives. Rung 6 must never be
-written in wave 1; a would-be principle is recorded as a deferred item.
+written in wave 1; a would-be principle that *survives the promotion
+rules* is recorded as a deferred item — one that fails a rule (e.g. the
+consequence rule's generic-advice filter) is rejected with that rule,
+not deferred.
 
 ## What routes elsewhere
 
@@ -211,7 +214,11 @@ is a valid and common outcome.**
 - **Durability.** Still true if the current branch, PR, or implementation
   detail vanished; no session mechanics; plausibly matters in six months.
 - **Evidence.** At least one durable pointer (session note, issue, PR,
-  commit, committed doc). A tagged pattern candidate (`transfer?`) names
+  commit, committed doc) that records the claim's *support* — a decision
+  made, an outcome observed. A note that merely voices an unreproduced
+  hunch or half-remembered incident (no log, issue, commit, or
+  reproduction behind it) is not evidence for the claim it voices —
+  reject under this rule. A tagged pattern candidate (`transfer?`) names
   the second project it might transfer to.
 - **Uncertainty.** Unsettled or contested candidates land in Assumptions &
   tensions with confidence stated; conflicting evidence is shown on both
@@ -232,9 +239,14 @@ is a valid and common outcome.**
   owner-edited entry must say so explicitly.
 - **Supersession.** A superseded decision or learning gets its status
   flipped and a one-line tombstone in Superseded pointing at what replaced
-  it.
+  it. The status-token flip is the only edit the retired entry receives —
+  its claim text and field lines stay byte-intact; any replacement enters
+  as a *new* entry.
 - **Relitigation.** New evidence that *meets* a decision's `revisit-when:`
-  condition produces a proposed revision. Activity that re-argues a
+  condition produces a proposed revision, applied as a supersession —
+  never a rewrite of the settled entry in place, and never deferred to
+  wait for a replacement: when no replacement decision exists yet, the
+  tombstone points at the triggering evidence or an Open question. Activity that re-argues a
   settled decision *without* meeting the condition is flagged in the
   report as relitigation — a finding in its own right (the cognitive cache
   is being bypassed) — and produces no map change.

@@ -247,7 +247,7 @@
         "claude": "installed",
         "codex": "manual"
       },
-      "maturity": "draft",
+      "maturity": "tested",
       "mutation": [
         "disk"
       ],
@@ -262,7 +262,7 @@
         "claude": "installed",
         "codex": "unsupported"
       },
-      "maturity": "draft",
+      "maturity": "tested",
       "mutation": [],
       "version_introduced": "0.3.0"
     },

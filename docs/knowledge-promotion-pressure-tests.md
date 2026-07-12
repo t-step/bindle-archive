@@ -136,8 +136,6 @@ decisions:
 - if a statutory erasure demand ever requires physical deletion, this
   design has to be revisited — record purge would need a tombstone
   mechanism we deliberately did not build.
-risks:
-- serving layer must check rights on every path; one missed path leaks
 deferred: tombstone mechanism (no legal requirement today)
 next: audit serving paths for the rights check
 EOF
@@ -617,5 +615,76 @@ evidence archive is a fail. Question 8 must be answered from
 
 ## Results
 
-*(to be recorded by the scenario batches; graduation is withheld until
-every row above passes at its rep count)*
+Run 2026-07-12. Executor subagents: fresh general-purpose agents on
+claude-sonnet (per the packet's weaker-model delegation guidance); scoring
+by filesystem assertion scripts plus strong-model transcript checks.
+Scout-mode reps delegated step 6 to a nested fresh subagent running
+`agents/knowledge-scout.md` verbatim, per Method.
+
+| # | Scenario | Reps | Result | Notes |
+|---|---|---|---|---|
+| 1 | No novelty | 3 scout + 3 inline | **PASS 6/6** | Every rep: map diff exactly the cursor line, cursor → `2026-06-28-…`; report cites the disposition Decision as the novelty check target; both modes filesystem-identical. Scout YAML parsed cleanly in 3/3 scout reps (no fallback needed). |
+| 2 | Idempotence | 3 (×2 runs) | **PASS 3/3** | Run 1 bootstraps (six sections, cursor at newest note); run 2 stops at "nothing new", map byte-identical in 3/3. |
+| 3 | Consequential decision | 3 + 3 | **first batch FAIL 0/3 → fixture amended → PASS 3/3** | All three first-batch reps promoted a *second*, contract-legitimate A&T candidate from the fixture note's `risks:` line ("serving layer must check rights on every path") — a fixture-construction defect, not a command defect: the packet's §7.3 condition permits only the Decision entry. Fix: removed the ambiguous `risks:` line from the fixture (this doc); full re-run green — exactly one Decisions entry, all four fields non-empty, no other section gains an entry. |
+| 4 | Incidental detail | 3 | **PASS 3/3** | Skeleton + cursor at CI note only; all reports reject with rule `routing` and name `/promote-insight`. |
+| 5 | Contradictory evidence | 3 | **PASS 3/3** | One A&T bullet, exactly two sub-bullets, each with own `evidence:`; no Decisions/Learnings winner in any rep. |
+| 6 | Superseded decision | 3 + 3 + 3 | **batch 1 FAIL 1/3 → contract fix → FAIL 2/3 → contract fix → PASS 3/3** | Two real contract gaps found. (a) "produces a proposed revision" read as rewrite-in-place: one rep amended the settled claim line in place, one replaced the entry wholesale deleting the original prose. Fix: Supersession now states the status flip is the only edit the retired entry receives; Relitigation applies as supersession, never a rewrite. (b) One second-batch rep then *deferred* the supersession because no replacement decision existed yet. Fix: Relitigation now states a met condition is never deferred to wait for a replacement — the tombstone points at the triggering evidence or an Open question. Final re-run 3/3: status flip byte-clean, tombstone present, original `why:`/`so:` prose intact. |
+| 7 | Weak evidence | 3 + 3 | **batch 1 report-FAIL 0/3 → contract fix → PASS 3/3** | Filesystem passed all batch-1 reps (the scripted `none` saved it), but 0/3 rejected by the evidence rule — each *proposed* the unreproduced hunch (as A&T or Open question), reading the hunch note itself as the durable pointer. Fix: Evidence rule now requires the pointer to record the claim's *support*; an unreproduced hunch/half-remembered incident is not evidence for the claim it voices. Re-run 3/3: rejected with rule `evidence`, nothing written, skeleton + cursor only. |
+| 8 | Human-edited map | 5 | **PASS 5/5** | Every owner-authored line (both `<!-- -->` markers, hand-worded Brief, owner Decision entry, parked Open question) byte-identical in 5/5; diff confined to confirmed entries + cursor line; cursor → `2026-06-20-…`. |
+| 9 | >5 candidates | 5 scout + 5 inline | **PASS 10/10** | Every rep: exactly 5 new entries enter the map (all rung-2 Decisions; the guard displaced valid rung-1 candidates to Deferred with reasons), ranking stated, cursor → `2026-06-24-…`; routing reminder present in all reps (the CI note was among the rejected). Scout YAML parsed cleanly 5/5; in one scout rep the scout misread the run as bootstrap-scale and the *command* corrected it, enforcing the guard — the propose/confirm owner kept control as designed. Mode equivalence: identical structural outcomes in both modes (5 new Decisions entries, same cursor, nothing else touched); entry wording varies rep-to-rep equally within each mode, so equivalence is structural, not byte-level. |
+| 10 | General-interest inquiry | 3 | **PASS 3/3** | One Open questions bullet with concrete `so:` implication and `` `inquiry?` `` tag in 3/3. |
+| 11 | Inert "insight" | 3 + 3 | **batch 1 FAIL 2/3 → contract fix → PASS 3/3** | One rep routed the generic reflection to Deferred as a "would-be rung-6 principle" instead of rejecting it — the ladder's deferral clause was an escape hatch around the consequence rule. Fix: ladder now defers only would-be principles that *survive* the promotion rules; rule-failers are rejected with the rule. Re-run 3/3: rejected with rule `consequence`, skeleton + cursor only. |
+
+### Contract/fixture amendments made by this campaign
+
+All four amendments are minimal sharpenings of `docs/knowledge-promotion.md`
+implementing what the design already specified (the design itself was not
+reopened); one fixture amendment to this doc:
+
+1. Fixture: dropped the `risks:` line from the 06-02 disposition note
+   (scenario 3 isolation — the line was a second legitimate candidate).
+2. Evidence rule: the pointer must record the claim's support; unreproduced
+   hunks/recollections are rejected under this rule (scenario 7).
+3. Supersession: the status-token flip is the only edit the retired entry
+   receives; replacements enter as new entries (scenario 6).
+4. Relitigation: a met `revisit-when:` is applied as a supersession — never
+   a rewrite in place, never deferred waiting for a replacement (scenario 6).
+5. Ladder: a would-be rung-6 principle is deferred only if it survives the
+   promotion rules; a rule-failer is rejected with that rule (scenario 11).
+
+### Rep validity
+
+No reps discarded: no hangs, and every executor honored its scripted reply.
+Scenario 3's first batch and scenario 6's first two batches are recorded as
+scenario failures (not invalid reps) with their dispositions above.
+
+### Retrieval test
+
+**PASS (both projects).** Seeded per Method: harborlight by a pure
+bootstrap over all 11 notes (73-line map: Brief, 6 Decisions, 1 A&T
+conflict, 1 Open question), toolkit from H2 (1 Decision, 1 tagged
+inquiry). Fresh subagents received only the map bytes (content pasted
+inline — no paths, no tools) and answered all eight briefing questions.
+Grading (strong model, claim-by-claim against map bytes): every claim in
+every answer traces to map content; no answer required the evidence
+archive; both "stop reconsidering" answers were built entirely from
+`revisit-when:` lines; the toolkit answerer correctly flagged the empty
+Brief instead of inventing one, and named the `` `inquiry?` ``-tagged
+question for Q7. One observation, not a failure: harborlight's Q7 answer
+hedged because that seeded map's open question carries no `` `inquiry?` ``
+tag — the tag, when present, is what makes Q7 unambiguous.
+
+### Real-notes-home check
+
+A single mtime marker created before the first batch (2026-07-12 11:17,
+before any executor ran) covered the whole campaign;
+`find ~/.bindle -newer <marker>` printed nothing after the final batch.
+One marker spanning all batches rather than one per batch — same
+guarantee, recorded honestly as a deviation from the per-batch wording.
+
+### Verdict
+
+All eleven scenarios pass at their stated rep counts (48 executor reps,
+0 discarded), retrieval passes for both projects, real notes home
+provably untouched → `promote-knowledge` and `knowledge-scout` graduate
+`draft` → `tested`.

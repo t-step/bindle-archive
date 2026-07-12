@@ -18,10 +18,10 @@ dated, versioned section at release time.
 
 - `docs/knowledge-promotion.md` — provider-neutral contract for promoting
   project evidence into a per-project `map.md` (issue #81 design, wave 1).
-- `/promote-knowledge` command (draft, pending pressure tests): runs the
+- `/promote-knowledge` command (tested): runs the
   knowledge-promotion contract end-to-end for one project (issue #81,
   wave 1).
-- `agents/knowledge-scout.md` (draft, pending pressure tests): read-only
+- `agents/knowledge-scout.md` (tested): read-only
   candidate digester used by `/promote-knowledge` when installed (issue
   #81, wave 1).
 - **Single-sourced install destinations (#79).** `capabilities.json` is now the
@@ -32,6 +32,16 @@ dated, versioned section at release time.
 
 ### Changed
 
+- **Knowledge promotion graduated draft → tested (issue #87, packet 4).** All
+  eleven scenarios of `docs/knowledge-promotion-pressure-tests.md` pass at
+  their stated rep counts (48 fresh-subagent reps, filesystem-scored), plus
+  the eight-question retrieval test on both fixture maps; real notes home
+  provably untouched. The campaign surfaced and fixed four contract
+  ambiguities in `docs/knowledge-promotion.md` (evidence rule vs. unreproduced
+  hunches; supersession as status-flip-only; met `revisit-when:` never
+  rewritten in place or deferred; rung-6 deferral only for rule-survivors)
+  and one fixture defect (scenario 3's note carried a second legitimate
+  candidate). `promote-knowledge` and `knowledge-scout` are no longer drafts.
 - `skills/repo-hygiene-init/PRESSURE-TESTS.md` extended (issue #65): built the
   harder "detect vs. impose" fixture #14's caveats called for — a half-migrated
   Python repo with `flake8` + `isort` configured at `line-length = 100` but no
