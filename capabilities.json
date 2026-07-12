@@ -345,6 +345,19 @@
       "version_introduced": "0.3.0"
     },
     {
+      "name": "capability-inventory",
+      "type": "contract",
+      "path": "docs/capability-inventory.md",
+      "description": "The schema reference (fields, enums) and completeness model (bijection for skill/command/agent/global-guidance; classified not_a_capability ledger for scripts/contracts) for capabilities.json, plus the \"how to add a capability\" workflow, including the skill-portability-audit.md bound-table coupling; the inventory's own normative contract.",
+      "provider": {
+        "claude": "manual",
+        "codex": "manual"
+      },
+      "maturity": "documented",
+      "mutation": [],
+      "version_introduced": "0.3.0"
+    },
+    {
       "name": "privacy-boundaries",
       "type": "contract",
       "path": "docs/privacy-boundaries.md",
