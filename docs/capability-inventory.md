@@ -41,7 +41,7 @@ below). One record per capability:
 | `maturity` | yes | authored | enum: `draft·documented·tested`; a `skill` marked `tested` must have a `PRESSURE-TESTS.md` |
 | `mutation` | yes | authored | array, subset of `{disk, network, external}`; `[]` = read-only |
 | `version_introduced` | yes | authored | valid semver, `<=` repo `VERSION` |
-| `install_destination` | no | authored | if present, a `~/.claude/...`-style path string; source path must exist |
+| `install_destination` | no | authored | optional `~/.claude/...`-style annotation; **not currently validated by CI** (a follow-up may enforce it) |
 | `dependencies` | no | authored | array of other capability `name`s or external tool names |
 | `related_docs` | no | authored | array of repo-relative doc paths (must exist) |
 
