@@ -33,7 +33,7 @@ append_inventory_row() {
   version="$(cat VERSION 2>/dev/null || echo 0.0.0)"
   CAP_TYPE="$ctype" CAP_NAME="$cname" CAP_PATH="$cpath" \
     CAP_FM="$fmfile" CAP_VERSION="$version" python3 - <<'PY'
-import json, os, re, sys
+import json, os, re
 inv = "capabilities.json"
 data = json.load(open(inv, encoding="utf-8"))
 desc = ""

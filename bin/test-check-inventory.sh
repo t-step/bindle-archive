@@ -218,6 +218,23 @@ status=$?
 check "repo still validates after new.sh skill" test "$status" -eq 0
 check "stub row present for the new skill" contains '"name": "widget"' "$(cat "$REPO/capabilities.json")"
 
+echo "malformed capability entries:"
+REPO="$TMP/bad-entry"
+mkfixture "$REPO"
+python3 -c '
+import json
+p = "'"$REPO"'/capabilities.json"
+d = json.load(open(p, encoding="utf-8"))
+d["capabilities"].append("not-an-object")
+json.dump(d, open(p, "w", encoding="utf-8"), indent=2)
+'
+(cd "$REPO" && git add -A && git -c user.email=t@e.com -c user.name=t commit -q -m bad-entry)
+out="$(python3 "$VALIDATOR" --root "$REPO" 2>&1)"
+status=$?
+check "non-dict capability entry exits nonzero" test "$status" -ne 0
+check "non-dict capability entry gets a clean diagnostic" contains "not an object" "$out"
+check "non-dict capability entry does not produce a traceback" not_contains "Traceback" "$out"
+
 echo
 echo "tests: ${pass} passed, ${fail} failed"
 [ "$fail" -eq 0 ]

@@ -53,6 +53,9 @@ def check_schema(caps, version):
     errors = []
     seen = set()
     for i, cap in enumerate(caps):
+        if not isinstance(cap, dict):
+            errors.append("<row %d>: not an object" % i)
+            continue
         label = cap.get("name", "<row %d>" % i)
         for field in REQUIRED:
             if field not in cap:
@@ -275,11 +278,14 @@ def main(argv=None):
         return 1
     errors = []
     errors += check_schema(caps, version)
-    errors += check_completeness_clean(caps, root)
-    errors += check_completeness_fuzzy(caps, ledger, root)
-    errors += check_paths(caps, root)
-    errors += check_crosschecks(caps, root)
-    errors += check_bound_table(caps, root)
+    # Non-dict rows are already reported by check_schema above; drop them here
+    # so the remaining checks (which assume dict rows) don't also crash on them.
+    dict_caps = [c for c in caps if isinstance(c, dict)]
+    errors += check_completeness_clean(dict_caps, root)
+    errors += check_completeness_fuzzy(dict_caps, ledger, root)
+    errors += check_paths(dict_caps, root)
+    errors += check_crosschecks(dict_caps, root)
+    errors += check_bound_table(dict_caps, root)
     # NOTE: later tasks append more checks here.
     if errors:
         for e in errors:
