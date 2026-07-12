@@ -299,6 +299,76 @@ out="$(python3 "$VALIDATOR" --root "$REPO" 2>&1)"
 status=$?
 check "without --check-manifest, missing manifest is ignored" test "$status" -eq 0
 
+# seed_doc_stubs DIR — minimal README.md/docs/provider-interop.md carrying
+# empty GENERATED marker pairs for the three doc-table blocks (#78).
+seed_doc_stubs() {
+  local r="$1"
+  cat >"$r/README.md" <<'EOF'
+# Test
+<!-- GENERATED:readme-claude:BEGIN -->
+placeholder
+<!-- GENERATED:readme-claude:END -->
+<!-- GENERATED:readme-codex:BEGIN -->
+placeholder
+<!-- GENERATED:readme-codex:END -->
+EOF
+  mkdir -p "$r/docs"
+  cat >"$r/docs/provider-interop.md" <<'EOF'
+# Test
+<!-- GENERATED:provider-interop-install-table:BEGIN -->
+placeholder
+<!-- GENERATED:provider-interop-install-table:END -->
+EOF
+}
+
+echo "doc-table generation (README/provider-interop, #78):"
+REPO="$TMP/docs-ok"
+mkfixture "$REPO"
+seed_doc_stubs "$REPO"
+out="$(python3 "$VALIDATOR" --root "$REPO" --emit-docs 2>&1)"
+status=$?
+check "emit-docs exits 0" test "$status" -eq 0
+check "readme claude block populated" contains "Claude skills" "$(cat "$REPO/README.md")"
+check "readme codex block populated" contains "AGENTS.md" "$(cat "$REPO/README.md")"
+check "provider-interop table populated" contains "Claude install target" "$(cat "$REPO/docs/provider-interop.md")"
+out="$(python3 "$VALIDATOR" --root "$REPO" --check-docs 2>&1)"
+check "freshly emitted docs pass --check-docs" test "$?" -eq 0
+
+echo "doc-table drift guard:"
+REPO="$TMP/docs-stale"
+mkfixture "$REPO"
+seed_doc_stubs "$REPO"
+python3 "$VALIDATOR" --root "$REPO" --emit-docs >/dev/null
+sed -i.bak 's/Claude skills/Claude widgets/' "$REPO/README.md"
+rm -f "$REPO/README.md.bak"
+out="$(python3 "$VALIDATOR" --root "$REPO" --check-docs 2>&1)"
+status=$?
+check "stale doc block fails --check-docs" test "$status" -ne 0
+check "stale doc block names the fix" contains "README.md: generated doc tables stale" "$out"
+
+REPO="$TMP/docs-missing-markers"
+mkfixture "$REPO"
+printf '# Test\nno markers here\n' >"$REPO/README.md"
+printf '# Test\nno markers here\n' >"$REPO/docs/provider-interop.md"
+out="$(python3 "$VALIDATOR" --root "$REPO" --check-docs 2>&1)"
+status=$?
+check "missing markers fails --check-docs" test "$status" -ne 0
+check "missing markers names the fix" contains "not found" "$out"
+
+REPO="$TMP/docs-missing-file"
+mkfixture "$REPO"
+out="$(python3 "$VALIDATOR" --root "$REPO" --check-docs 2>&1)"
+status=$?
+check "missing README.md/provider-interop.md fails --check-docs" test "$status" -ne 0
+check "missing README.md names the fix" contains "README.md: missing" "$out"
+check "missing provider-interop.md names the fix" contains "docs/provider-interop.md: missing" "$out"
+
+REPO="$TMP/docs-off"
+mkfixture "$REPO"
+out="$(python3 "$VALIDATOR" --root "$REPO" 2>&1)"
+status=$?
+check "without --check-docs, missing doc files are ignored" test "$status" -eq 0
+
 echo
 echo "tests: ${pass} passed, ${fail} failed"
 [ "$fail" -eq 0 ]

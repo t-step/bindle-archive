@@ -1,6 +1,6 @@
 # Bindle — convenience entrypoints. The scripts in bin/ are the source of
 # truth; these targets just save keystrokes.
-.PHONY: check test install doctor hooks release new manifest help
+.PHONY: check test install doctor hooks release new manifest docs help
 
 help:
 	@echo "make check              run hygiene checks (bin/check.sh)"
@@ -11,6 +11,7 @@ help:
 	@echo "make new ARGS=\"skill x\"  scaffold a new item (bin/new.sh)"
 	@echo "make release BUMP=minor cut a release (bin/release.sh)"
 	@echo "make manifest           regenerate install-manifest.tsv from capabilities.json"
+	@echo "make docs               regenerate README/provider-interop generated tables"
 
 check:
 	bin/check.sh
@@ -46,3 +47,6 @@ release:
 manifest:
 	python3 bin/check-inventory.py --emit-manifest
 	@echo "wrote install-manifest.tsv"
+
+docs:
+	python3 bin/check-inventory.py --emit-docs

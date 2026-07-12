@@ -309,7 +309,7 @@ elif ! command -v python3 >/dev/null 2>&1; then
 elif [ ! -f capabilities.json ]; then
   problem "capabilities.json missing (bin/check-inventory.py is present but the inventory is not)"
 else
-  if inv_out="$(python3 bin/check-inventory.py --root . --check-manifest 2>&1)"; then
+  if inv_out="$(python3 bin/check-inventory.py --root . --check-manifest --check-docs 2>&1)"; then
     ok "$inv_out"
   else
     printf '%s\n' "$inv_out" | sed 's/^/  /'
