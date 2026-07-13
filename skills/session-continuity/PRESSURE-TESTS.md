@@ -283,6 +283,35 @@ not test an *explicit* "tidy up before we start" request. Sub-claim 4a does, wit
 a cleanly failing baseline, and the command holds the read-only line 5/5. A weaker
 model remains untested.
 
+## Claim 5 — a deferred profile proposal persists and resurfaces at the next `/session-end` run
+
+**Status: draft — not yet run.** Registered 2026-07-13 alongside the
+profile-proposals queue implementation; reps deferred to issue #103 per
+`CONTRIBUTING.md`'s pressure-test convention (sequential / parallel /
+defer-and-file-an-issue) — reps run there, not here.
+
+Claim: a profile-worthy fact that gets a **Defer** answer is not lost — it
+reappears, unchanged, the next time `/session-end` runs interactively on the
+same project. A **Reject** answer, by contrast, never reappears. This is the
+core behavior the old one-line suggestion lacked (see the design spec,
+`docs/superpowers/specs/2026-07-13-profile-proposals-queue-design.md`).
+
+Proposed method (mirrors Claim 1's fixture style): a throwaway git repo
+mimicking a mid-work session, plus a per-rep notes-home fixture directory
+(`BINDLE_NOTES_DIR` override, per sub-claim 1c's methodology fix — every arm
+gets its own override, not just GREEN). Two `/session-end` runs in sequence
+against the same fixture, with a scripted **Defer** answer on the first run's
+profile-proposal question:
+
+| Variant | Setup | What to check |
+|---|---|---|
+| RED | no queue mechanism (pre-this-plan `/session-end`) | after the first run's suggestion is deferred verbally, does a *second* run re-surface the same fact? Expected baseline failure: no — it's gone, only in the first session's prose. |
+| GREEN | this plan's `/session-end` + skill | first run: the fact is queued in `profile-proposals.md` and, on **Defer**, stays there untouched. Second run: the same entry is presented again for a decision. Filesystem is ground truth — diff `profile-proposals.md` between runs, and independently confirm `profile.md` is untouched by a deferred item. |
+
+A second, smaller pass verifies **Reject**: a rejected item's line must not
+appear in `profile-proposals.md` after the run that rejected it, on any
+later run.
+
 ## Closed mechanically (not a subagent claim)
 
 - **Slug derivation** (`My_App.v2` → `my-app-v2`) — done 2026-07-07. This is
@@ -356,8 +385,12 @@ unchanged.
 
 ## Not yet pressure-tested (still draft)
 
-- Nothing session-continuity-specific remains for Claim 1 (closed on Opus, Haiku,
-  and Sonnet 5). The two items formerly listed here — the scanner denylist pass
-  and an explicit-cleanup `/session-start` request — are closed by sub-claims 3c
-  and 4a. Remaining weaker/mid-bracket gaps (Claims 2–4 on Haiku or Sonnet 5) are
-  tracked in the operator's notes, not here.
+- **Claim 5** (profile-proposals queue Add/Defer/Reject persistence) — method
+  proposed, reps not yet run; paused pending the user's pressure-test
+  run-mode choice per `CONTRIBUTING.md`.
+- Nothing else session-continuity-specific remains for Claim 1 (closed on
+  Opus, Haiku, and Sonnet 5). The two items formerly listed here — the
+  scanner denylist pass and an explicit-cleanup `/session-start` request —
+  are closed by sub-claims 3c and 4a. Remaining weaker/mid-bracket gaps
+  (Claims 2–4 on Haiku or Sonnet 5) are tracked in the operator's notes, not
+  here.

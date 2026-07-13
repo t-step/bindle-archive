@@ -24,6 +24,7 @@ one `git add -A` away from being published.
   private-denylist.txt                # personal terms for check-private-info
   projects/<project>/
     profile.md                        # durable facts: gates, commands, safety notes
+    profile-proposals.md              # pending profile.md Add/Defer/Reject queue
     sessions/YYYY-MM-DD-<slug>.md     # one note per session
     handoffs/YYYY-MM-DD-<slug>.md     # paste-ready prompts for future sessions
 ```
@@ -41,6 +42,38 @@ one `git add -A` away from being published.
   note appear in the vault — plain Markdown is all Obsidian needs. Nothing here
   may *require* Obsidian (no plugin syntax, no sync assumptions).
 - Create directories on demand (`mkdir -p`). Plain Markdown only.
+
+## Profile proposals queue
+
+`profile-proposals.md` holds facts proposed for `profile.md` that don't yet
+have a decision. `/session-end` is the only writer: it loads any pending
+entries left over from earlier sessions, adds any new profile-worthy facts
+this session surfaced, and — on a live interactive turn — asks Add / Defer /
+Reject for each one via the `AskUserQuestion` tool (batched at most 4
+questions per call). Add moves the line into `profile.md`'s named section and
+drops the entry; Defer leaves the entry untouched, to resurface next time;
+Reject removes it for good. An unattended run never asks — it just appends
+new proposals as pending and moves on, so `profile.md` is never written to
+without an explicit per-item answer.
+
+Format — one entry per pending proposal:
+
+```markdown
+# Pending profile.md proposals — <project>
+
+Awaiting a decision (Add / Defer / Reject) at the next interactive
+/session-end. Deferred items stay here; rejected items are removed; added
+items move into profile.md and are removed from here.
+
+- [2026-07-12 product-boundary-retriage] (recurring instructions) Re-triage
+  product-boundary.md's backlog after any issue-state-changing PR.
+```
+
+Each entry is `- [<date> <session-slug>] (<profile.md section>) <exact
+proposed line>` — the section name matches one of `profile.md`'s seven
+headings (project, common commands, validation gates, important docs, safety
+notes, recurring instructions, context locations). The file doesn't exist
+until the first proposal is queued, and is deleted once the queue empties.
 
 ## Rules
 
@@ -96,7 +129,8 @@ tests-checks: what ran, pass/fail
 decisions: what was chosen and why (one line each)
 risks: what could bite later
 deferred: what was consciously not done
-candidate workflow improvements: (see Bindle's `docs/iterative-improvement.md`)
+candidate workflow improvements: (see Bindle's `docs/iterative-improvement.md`;
+  profile updates specifically: see "Profile proposals queue" above)
 next: the single best next prompt
 ```
 
@@ -119,3 +153,8 @@ Precision beats prose: a future session greps these files.
   stale and drowns the personal signal.
 - Blocking on a missing notes home — `mkdir -p` and continue; never ask the
   user to create directories.
+- Writing a profile-worthy fact straight into `profile.md` without queuing it
+  through `profile-proposals.md` first — even an obviously-true fact still
+  needs its own Add/Defer/Reject decision on a live turn; the only exception
+  is an unattended run, which queues it as pending and does not touch
+  `profile.md` at all.

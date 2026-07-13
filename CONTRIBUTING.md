@@ -55,6 +55,14 @@ Mechanics:
 - Build on existing skills by *referencing* them
   (`**REQUIRED BACKGROUND:** superpowers:test-driven-development`) — don't vendor
   copies. See the README's "Building on other sources".
+- Before running pressure-test reps (RED or REFACTOR) in an interactive
+  session, ask how: **sequential** (recommended — one subagent rep at a
+  time, bounded/predictable resource use), **parallel** (faster wall-clock,
+  runs reps concurrently), or **defer and file an issue** (don't run now —
+  create a `type: chore`, `status: triage` GitHub issue per
+  [docs/issue-tracking.md](docs/issue-tracking.md) describing the pressure
+  test to run later). In an unattended/autonomous run, skip the ask and
+  default to sequential.
 
 Agents and commands: same branch discipline; `agents/_template.md` and
 `commands/_template.md` document their Claude-native frontmatter.

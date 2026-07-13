@@ -10,8 +10,10 @@ output is a reviewed change to the right layer.
 1. `/session-start` — begin warm: repo state + profile + last note/handoff.
 2. Do the work.
 3. `/session-end` — write the session note; it ends with a **candidate
-   workflow improvements** section (new skill? skill update? profile update?
-   check to add? privacy rule? nothing?).
+   workflow improvements** section (new skill? skill update? check to add?
+   privacy rule? nothing?). Profile updates are resolved earlier, via the
+   **Profile proposals queue** (session-continuity's Add/Defer/Reject
+   flow).
 4. `/handoff` — when the work continues later or elsewhere.
 5. Periodically, `/workflow-review` — read across recent notes and surface
    recurring friction and proven patterns.
