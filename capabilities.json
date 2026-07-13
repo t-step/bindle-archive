@@ -370,7 +370,28 @@
       },
       "maturity": "documented",
       "mutation": [],
-      "version_introduced": "0.3.0"
+      "version_introduced": "0.3.0",
+      "related_docs": [
+        "docs/delegation-profiles.md"
+      ]
+    },
+    {
+      "name": "delegation-profiles",
+      "type": "contract",
+      "path": "docs/delegation-profiles.md",
+      "description": "The provider-neutral ladder (Mechanical, Review, Research, Implementation, Privileged) for what a delegated worker is authorized to do, independent of which model or provider executes it; a packet names a profile from this contract without naming a model.",
+      "provider": {
+        "claude": "manual",
+        "codex": "manual"
+      },
+      "maturity": "documented",
+      "mutation": [],
+      "version_introduced": "0.3.0",
+      "related_docs": [
+        "docs/delegated-implementation-packets.md",
+        "docs/runtime-security-privacy.md",
+        "docs/product-boundary.md"
+      ]
     },
     {
       "name": "capability-inventory",
