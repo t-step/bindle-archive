@@ -15,9 +15,10 @@ This is **not** a workflow engine, an agent runtime, or an execution loop
 a good packet. It deliberately references, rather than restates, the neighboring
 contracts:
 
-- **Which workflows apply and how they compose** is issue #31's composition and
-  precedence contract. A packet *selects* the minimal applicable set; it does
-  not define precedence.
+- **Which workflows apply and how they compose** is
+  [workflow-composition.md](workflow-composition.md)'s composition and
+  precedence contract, issue #31. A packet *selects* the minimal applicable
+  set; it does not define precedence.
 - **What a delegated worker of a given risk level may do** is
   [delegation-profiles.md](delegation-profiles.md)'s ladder (Mechanical,
   Review, Research, Implementation, Privileged), issue #32. A packet *names*
