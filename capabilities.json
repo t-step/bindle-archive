@@ -392,7 +392,8 @@
         "docs/delegated-implementation-packets.md",
         "docs/runtime-security-privacy.md",
         "docs/product-boundary.md",
-        "docs/workflow-composition.md"
+        "docs/workflow-composition.md",
+        "docs/workflow-eval.md"
       ]
     },
     {
@@ -411,6 +412,26 @@
         "docs/delegation-profiles.md",
         "docs/delegated-implementation-packets.md",
         "docs/provider-interop.md",
+        "docs/product-boundary.md",
+        "docs/workflow-eval.md"
+      ]
+    },
+    {
+      "name": "workflow-eval",
+      "type": "contract",
+      "path": "docs/workflow-eval.md",
+      "description": "The provider-neutral policy for what kinds of evaluation a workflow needs and how much, scaled to risk: seven eval categories, a risk-based minimum-coverage matrix keyed to runtime-security-privacy.md's C0-C5 classes, a state-based/model-graded result schema, and a rep-count stopping rule grounded in this repo's existing pressure-test practice.",
+      "provider": {
+        "claude": "manual",
+        "codex": "manual"
+      },
+      "maturity": "documented",
+      "mutation": [],
+      "version_introduced": "0.3.0",
+      "related_docs": [
+        "docs/runtime-security-privacy.md",
+        "docs/workflow-composition.md",
+        "docs/delegation-profiles.md",
         "docs/product-boundary.md"
       ]
     },
