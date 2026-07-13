@@ -141,4 +141,8 @@ notes home, filesystem as ground truth, 5 reps per variant):
 
 Per explicit instruction from this session: **pause before running the
 pressure tests and notify the user** — do not proceed into that stage
-automatically once the implementation is written.
+automatically once the implementation is written. When that stage starts,
+follow the new repo-wide convention in `CONTRIBUTING.md` (added alongside
+this spec): ask how to run the reps — sequential (recommended), parallel, or
+defer and file a `type: chore` / `status: triage` issue — rather than just
+launching them.
