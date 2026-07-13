@@ -58,7 +58,10 @@ convention).
 **Files:**
 - Create: `bin/release-manifest.py`
 - Create: `bin/test-release-manifest.sh`
-- Modify: `docs/plans/2026-07-12-release-manifest.md` (this file — none, already committed)
+- Modify: `capabilities.json` (one `not_a_capability` ledger entry for
+  `bin/release-manifest.py` — added here, not deferred, since the
+  pre-commit hook blocks a commit that introduces an unclassified tracked
+  `bin/*.py` file)
 
 **Interfaces:**
 - Produces (consumed by Task 2's `bin/release.sh` wiring):
@@ -495,10 +498,50 @@ shfmt -i 2 -ci -d bin/test-release-manifest.sh
 Expected: no output from either (clean). If `shfmt` reports a diff, run
 `shfmt -i 2 -ci -w bin/test-release-manifest.sh` and re-check.
 
-- [ ] **Step 6: Commit**
+- [ ] **Step 6: Classify `bin/release-manifest.py` in `capabilities.json`**
+
+`bin/check-inventory.py`'s fuzzy-candidate check runs on every commit (via
+the `bindle-content` pre-commit hook) and fails on any tracked `bin/*.py`
+file not classified in `capabilities.json` — so this file must be added in
+the same task that creates the script, not deferred, or Step 8's commit
+below will be blocked by the hook.
+
+Find the existing ledger entry for `bin/release.sh` (in the
+`not_a_capability` array):
+
+```json
+    {
+      "path": "bin/release.sh",
+      "reason": "rolls the Unreleased CHANGELOG section into a dated version and bumps VERSION; release machinery, not a capability."
+    },
+```
+
+Add a new entry immediately after it:
+
+```json
+    {
+      "path": "bin/release.sh",
+      "reason": "rolls the Unreleased CHANGELOG section into a dated version and bumps VERSION; release machinery, not a capability."
+    },
+    {
+      "path": "bin/release-manifest.py",
+      "reason": "the release-manifest generator itself; machinery invoked by bin/release.sh, not a capability an agent invokes for its own sake (same precedent as bin/check-inventory.py)."
+    },
+```
+
+- [ ] **Step 7: Run `make check`**
 
 ```bash
-git add bin/release-manifest.py bin/test-release-manifest.sh
+make check
+```
+
+Expected: passes, including the "capability inventory:" check — confirms
+`bin/release-manifest.py` is no longer unclassified.
+
+- [ ] **Step 8: Commit**
+
+```bash
+git add bin/release-manifest.py bin/test-release-manifest.sh capabilities.json
 git commit -m "feat: add bin/release-manifest.py generator + tests (#33)"
 ```
 
@@ -681,9 +724,9 @@ git commit -m "feat: wire bin/release-manifest.py into bin/release.sh (#33)"
 - Modify: `README.md` (the `## Versioning` section, currently lines 205–209)
 - Modify: `CONTRIBUTING.md` (the `## Versioning & release` section, currently
   lines 69–74)
-- Modify: `capabilities.json` (one `not_a_capability` ledger entry for
-  `bin/release-manifest.py`; one `contract`-type capability row for
-  `docs/release-manifest.md`)
+- Modify: `capabilities.json` (one `contract`-type capability row for
+  `docs/release-manifest.md`; `bin/release-manifest.py`'s ledger entry was
+  already added in Task 1)
 - Modify: `CHANGELOG.md` (`## [Unreleased]` section)
 
 **Interfaces:**
@@ -826,32 +869,13 @@ producing a deterministic manifest of what shipped — see
 (Same note as Step 2: write the real markdown links into `CONTRIBUTING.md`
 itself; this plan quotes them bare only to stay clean of the link scanner.)
 
-- [ ] **Step 4: Classify `bin/release-manifest.py` in `capabilities.json`**
+- [ ] **Step 4: Add a `capabilities.json` row for `docs/release-manifest.md`**
 
-Find the existing ledger entry for `bin/release.sh` (in the `not_a_capability`
-array):
-
-```json
-    {
-      "path": "bin/release.sh",
-      "reason": "rolls the Unreleased CHANGELOG section into a dated version and bumps VERSION; release machinery, not a capability."
-    },
-```
-
-Add a new entry immediately after it:
-
-```json
-    {
-      "path": "bin/release.sh",
-      "reason": "rolls the Unreleased CHANGELOG section into a dated version and bumps VERSION; release machinery, not a capability."
-    },
-    {
-      "path": "bin/release-manifest.py",
-      "reason": "the release-manifest generator itself; machinery invoked by bin/release.sh, not a capability an agent invokes for its own sake (same precedent as bin/check-inventory.py)."
-    },
-```
-
-- [ ] **Step 5: Add a `capabilities.json` row for `docs/release-manifest.md`**
+(Note: `bin/release-manifest.py`'s own `not_a_capability` ledger entry was
+already added in Task 1 Step 6, at the point the file was created — a
+tracked `bin/*.py` file must be classified in the same commit that creates
+it, or the pre-commit hook blocks the commit. Only the doc row is added
+here.)
 
 Find the existing row for `docs/capability-inventory.md` in the
 `capabilities` array (it has `"name": "capability-inventory"`) and add a new
@@ -876,7 +900,7 @@ object immediately after its closing `}`:
 (Match the existing file's exact indentation — 2 spaces per level, as shown
 in the `capability-inventory` row read earlier in this session.)
 
-- [ ] **Step 6: Add a `CHANGELOG.md` Unreleased entry**
+- [ ] **Step 5: Add a `CHANGELOG.md` Unreleased entry**
 
 Under the existing `## [Unreleased]` / `### Added` section, add:
 
@@ -890,7 +914,7 @@ Under the existing `## [Unreleased]` / `### Added` section, add:
   consistently. See `docs/release-manifest.md` (issue #33).
 ```
 
-- [ ] **Step 7: Run `make check` and fix anything it flags**
+- [ ] **Step 6: Run `make check` and fix anything it flags**
 
 ```bash
 make check
@@ -904,7 +928,7 @@ validation, re-check the new row/ledger-entry JSON against
 common mistakes: wrong `type` enum, `version_introduced` not `<=` the next
 allowed release version, missing required field.
 
-- [ ] **Step 8: Commit**
+- [ ] **Step 7: Commit**
 
 ```bash
 git add docs/release-manifest.md README.md CONTRIBUTING.md capabilities.json CHANGELOG.md
