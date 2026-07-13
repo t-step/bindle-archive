@@ -298,6 +298,27 @@ json.dump(d, open(p, "w", encoding="utf-8"), indent=2)
 out="$(python3 "$VALIDATOR" --root "$REPO" --emit-manifest - 2>&1)"
 check "explicit install_destination override is emitted verbatim" contains "$(printf 'claude\tskill\tdemo\tskills/demo\tskills/renamed-demo')" "$out"
 
+REPO="$TMP/emit-codex-skill"
+mkfixture "$REPO"
+python3 -c '
+import json
+p = "'"$REPO"'/capabilities.json"
+d = json.load(open(p, encoding="utf-8"))
+for c in d["capabilities"]:
+    if c["name"] == "demo":
+        c["provider"]["codex"] = "installed"
+json.dump(d, open(p, "w", encoding="utf-8"), indent=2)
+'
+out="$(python3 "$VALIDATOR" --root "$REPO" --emit-manifest - 2>&1)"
+check "codex-eligible skill still emits its claude row" contains "$(printf 'claude\tskill\tdemo\tskills/demo\tskills/demo')" "$out"
+check "codex-eligible skill emits a codex row with bare dest (not skills/demo)" contains "$(printf 'codex\tskill\tdemo\tskills/demo\tdemo')" "$out"
+check "codex-eligible skill's codex row sorts before codex global-guidance" test "$(printf '%s\n' "$out" | grep -n "$(printf 'codex\tskill\tdemo')" | cut -d: -f1)" -lt "$(printf '%s\n' "$out" | grep -n "$(printf 'codex\tglobal-guidance\tagents')" | cut -d: -f1)"
+
+REPO="$TMP/emit-codex-skill-off"
+mkfixture "$REPO"
+out="$(python3 "$VALIDATOR" --root "$REPO" --emit-manifest - 2>&1)"
+check "non-eligible skill (provider.codex=untested) emits no codex skill row" not_contains "$(printf 'codex\tskill\tdemo')" "$out"
+
 echo "manifest drift guard:"
 REPO="$TMP/manifest-ok"
 mkfixture "$REPO"
@@ -362,6 +383,15 @@ check "readme codex block populated" contains "AGENTS.md" "$(cat "$REPO/README.m
 check "provider-interop table populated" contains "Claude install target" "$(cat "$REPO/docs/provider-interop.md")"
 out="$(python3 "$VALIDATOR" --root "$REPO" --check-docs 2>&1)"
 check "freshly emitted docs pass --check-docs" test "$?" -eq 0
+check "codex doc block includes a skills row template" contains "skills/<name>/" "$(python3 -c "
+import sys
+sys.path.insert(0, '$REPO_ROOT/bin')
+import importlib.util
+spec = importlib.util.spec_from_file_location('ci', '$REPO_ROOT/bin/check-inventory.py')
+m = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(m)
+print(m.render_readme_codex_block())
+")"
 
 echo "doc-table drift guard:"
 REPO="$TMP/docs-stale"

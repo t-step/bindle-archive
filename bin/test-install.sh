@@ -59,6 +59,21 @@ codex	global-guidance	agents	global/AGENTS.md	AGENTS.md
 TSV
 }
 
+# add_codex_skill DIR NAME — add a Codex-eligible skill (with a support
+# file, to prove symlink resolution) to an already-built fixture repo,
+# appending both its Claude and Codex manifest rows. Does not touch
+# build_repo()'s existing fixture items or their hard-coded counts.
+add_codex_skill() {
+  local r="$1" name="$2"
+  mkdir -p "$r/skills/$name"
+  printf -- '---\nname: %s\ndescription: codex-eligible demo\n---\n' "$name" >"$r/skills/$name/SKILL.md"
+  printf 'pressure tested\n' >"$r/skills/$name/PRESSURE-TESTS.md"
+  {
+    printf 'claude\tskill\t%s\tskills/%s\tskills/%s\n' "$name" "$name" "$name"
+    printf 'codex\tskill\t%s\tskills/%s\t%s\n' "$name" "$name" "$name"
+  } >>"$r/install-manifest.tsv"
+}
+
 # ===========================================================================
 echo "fresh install:"
 REPO="$TMP/repo"
@@ -314,6 +329,118 @@ out="$("$REPO/bin/install.sh" --home "$HOME_DIR" --prune 2>&1)"
 check "empty agent category still prints its header" contains "Claude agents:" "$out"
 check "prune sweeps the empty category's orphan" not_exists "$HOME_DIR/agents/gone.md"
 check "empty-category prune is reported" contains "pruned" "$out"
+
+# ===========================================================================
+echo "codex skill install (eligible skill only):"
+REPO="$TMP/repo-codex-skill"
+CODEX_HOME="$TMP/codex-skill-home"
+AGENTS_SKILLS_HOME="$TMP/codex-skill-agents"
+build_repo "$REPO"
+add_codex_skill "$REPO" demo-codex
+"$REPO/bin/install.sh" --provider codex --codex-home "$CODEX_HOME" --agents-skills-home "$AGENTS_SKILLS_HOME" >/dev/null
+
+check "codex-eligible skill linked" links_to "$REPO/skills/demo-codex" "$AGENTS_SKILLS_HOME/demo-codex"
+check "support file resolves through the symlink" is_real_file "$AGENTS_SKILLS_HOME/demo-codex/PRESSURE-TESTS.md"
+check "Claude-only skill excluded from Codex skills home" not_exists "$AGENTS_SKILLS_HOME/demo"
+check "AGENTS.md still linked" links_to "$REPO/global/AGENTS.md" "$CODEX_HOME/AGENTS.md"
+
+echo "missing --agents-skills-home fails when a skill is eligible:"
+REPO="$TMP/repo-codex-skill-missing-home"
+build_repo "$REPO"
+add_codex_skill "$REPO" demo-codex
+out="$("$REPO/bin/install.sh" --provider codex --codex-home "$TMP/codex-skill-missing-home-codexhome" 2>&1)"
+status=$?
+check "missing --agents-skills-home fails" test "$status" -ne 0
+check "missing --agents-skills-home explains explicit target" contains "--agents-skills-home" "$out"
+
+echo "codex without eligible skills does not require --agents-skills-home:"
+REPO="$TMP/repo-codex-no-skill"
+build_repo "$REPO"
+out="$("$REPO/bin/install.sh" --provider codex --codex-home "$TMP/codex-no-skill-home" 2>&1)"
+status=$?
+check "codex install without eligible skills still succeeds" test "$status" -eq 0
+check "AGENTS.md linked without --agents-skills-home" links_to "$REPO/global/AGENTS.md" "$TMP/codex-no-skill-home/AGENTS.md"
+
+echo "all providers install the codex skill too:"
+REPO="$TMP/repo-all-codex-skill"
+CLAUDE_HOME="$TMP/all-cs-claude"
+CODEX_HOME="$TMP/all-cs-codex"
+AGENTS_SKILLS_HOME="$TMP/all-cs-agents"
+build_repo "$REPO"
+add_codex_skill "$REPO" demo-codex
+"$REPO/bin/install.sh" --provider all --home "$CLAUDE_HOME" --codex-home "$CODEX_HOME" --agents-skills-home "$AGENTS_SKILLS_HOME" >/dev/null
+check "all: codex-eligible skill linked to Claude too" links_to "$REPO/skills/demo-codex" "$CLAUDE_HOME/skills/demo-codex"
+check "all: codex-eligible skill linked to Codex skills home" links_to "$REPO/skills/demo-codex" "$AGENTS_SKILLS_HOME/demo-codex"
+
+echo "codex skill conflict safety:"
+REPO="$TMP/repo-codex-skill-conflict"
+AGENTS_SKILLS_HOME="$TMP/codex-skill-conflict"
+build_repo "$REPO"
+add_codex_skill "$REPO" demo-codex
+mkdir -p "$AGENTS_SKILLS_HOME"
+printf 'do not touch\n' >"$AGENTS_SKILLS_HOME/demo-codex"
+out="$("$REPO/bin/install.sh" --provider codex --codex-home "$TMP/codex-skill-conflict-codexhome" --agents-skills-home "$AGENTS_SKILLS_HOME" 2>&1)"
+status=$?
+check "codex skill conflict reported" contains "CONFLICT" "$out"
+check "codex skill conflict causes nonzero exit" test "$status" -ne 0
+check "codex skill foreign file untouched" is_real_file "$AGENTS_SKILLS_HOME/demo-codex"
+check "codex skill foreign file content kept" file_is "do not touch" "$AGENTS_SKILLS_HOME/demo-codex"
+
+echo "codex skill prune (only broken links into the repo):"
+REPO="$TMP/repo-codex-skill-prune"
+AGENTS_SKILLS_HOME="$TMP/codex-skill-prune"
+build_repo "$REPO"
+add_codex_skill "$REPO" demo-codex
+"$REPO/bin/install.sh" --provider codex --codex-home "$TMP/codex-skill-prune-codexhome" --agents-skills-home "$AGENTS_SKILLS_HOME" >/dev/null
+rm -rf "$REPO/skills/demo-codex"
+
+"$REPO/bin/install.sh" --provider codex --codex-home "$TMP/codex-skill-prune-codexhome" --agents-skills-home "$AGENTS_SKILLS_HOME" >/dev/null
+check "codex skill broken link kept without --prune" test -L "$AGENTS_SKILLS_HOME/demo-codex"
+
+out="$("$REPO/bin/install.sh" --provider codex --codex-home "$TMP/codex-skill-prune-codexhome" --agents-skills-home "$AGENTS_SKILLS_HOME" --prune 2>&1)"
+check "codex skill reports a prune" contains "pruned" "$out"
+check "codex skill broken link removed" not_exists "$AGENTS_SKILLS_HOME/demo-codex"
+
+echo "codex skill idempotent reinstall:"
+REPO="$TMP/repo-codex-skill-idem"
+AGENTS_SKILLS_HOME="$TMP/codex-skill-idem"
+build_repo "$REPO"
+add_codex_skill "$REPO" demo-codex
+"$REPO/bin/install.sh" --provider codex --codex-home "$TMP/codex-skill-idem-codexhome" --agents-skills-home "$AGENTS_SKILLS_HOME" >/dev/null
+out="$("$REPO/bin/install.sh" --provider codex --codex-home "$TMP/codex-skill-idem-codexhome" --agents-skills-home "$AGENTS_SKILLS_HOME" 2>&1)"
+check "codex skill idempotent: nothing relinked" contains "0 linked" "$out"
+
+echo "codex skill --adopt (moved-checkout):"
+REPO_A="$TMP/adopt-cs-a/repo"
+AGENTS_SKILLS_HOME="$TMP/adopt-cs-home"
+build_repo "$REPO_A"
+add_codex_skill "$REPO_A" demo-codex
+"$REPO_A/bin/install.sh" --provider codex --codex-home "$TMP/adopt-cs-codexhome" --agents-skills-home "$AGENTS_SKILLS_HOME" >/dev/null
+rm -rf "$TMP/adopt-cs-a"
+
+REPO_B="$TMP/adopt-cs-b/repo"
+build_repo "$REPO_B"
+add_codex_skill "$REPO_B" demo-codex
+out="$(printf 'y\n' | "$REPO_B/bin/install.sh" --provider codex --codex-home "$TMP/adopt-cs-codexhome" --agents-skills-home "$AGENTS_SKILLS_HOME" --adopt 2>&1)"
+status=$?
+check "codex skill adopt exits zero" test "$status" -eq 0
+check "codex skill relinked into surviving checkout" links_to "$REPO_B/skills/demo-codex" "$AGENTS_SKILLS_HOME/demo-codex"
+
+echo "codex skills home prune sweep fires even with zero eligible skills (regression):"
+REPO="$TMP/repo-codex-skill-empty-prune"
+AGENTS_SKILLS_HOME="$TMP/codex-skill-empty-prune"
+build_repo "$REPO"
+# No add_codex_skill this time: zero codex/skill manifest rows. Pre-seed an
+# orphaned Bindle-owned symlink under a fresh agents-skills-home, simulating a
+# skill that used to be Codex-eligible and was flipped back to manual — the
+# sweep must still fire, matching every other category's "header and sweep
+# fire even when the category is empty" guarantee.
+mkdir -p "$AGENTS_SKILLS_HOME"
+ln -s "$REPO/skills/gone" "$AGENTS_SKILLS_HOME/gone"
+out="$("$REPO/bin/install.sh" --provider codex --codex-home "$TMP/codex-skill-empty-prune-codexhome" --agents-skills-home "$AGENTS_SKILLS_HOME" --prune 2>&1)"
+check "codex skills home header prints even with zero eligible skills" contains "Codex skills:" "$out"
+check "codex skills home prune sweeps orphan with zero eligible skills" not_exists "$AGENTS_SKILLS_HOME/gone"
+check "codex skills home empty-eligibility prune is reported" contains "pruned" "$out"
 
 # --- result ----------------------------------------------------------------
 echo

@@ -49,6 +49,9 @@ DOC_ROWS_CLAUDE = [
 DOC_TRAILER_CLAUDE = {"src": "CLAUDE.md", "dest": "(not installed)",
                       "label": "Bindle project guidance for Claude"}
 DOC_ROWS_CODEX = [
+    {"type": "skill", "src": "skills/<name>/",
+     "dest": "<explicit-agents-skills-home>/<name>",
+     "label": "Codex skills (eligible only, see capabilities.json)"},
     {"type": "global-guidance", "src": "global/AGENTS.md",
      "dest": "<explicit-codex-home>/AGENTS.md", "label": None},
 ]
@@ -57,34 +60,41 @@ DOC_TRAILER_CODEX = {"src": "AGENTS.md", "dest": "(not installed)",
 DOC_MARKER_FMT = "<!-- GENERATED:%s:BEGIN -->", "<!-- GENERATED:%s:END -->"
 
 
-def _install_row(cap):
-    """(provider, category, name, src_rel, dest_rel) for an installable
-    capability, or None if its type is not installed or it is a _template."""
+def _install_rows(cap):
+    """List of (provider, category, name, src_rel, dest_rel) rows for an
+    installable capability — zero, one, or two rows. A skill capability
+    always installs to Claude, and additionally to Codex when
+    provider.codex == "installed" (explicit per-skill eligibility, not a
+    directory sweep — #57)."""
     t = cap.get("type")
     if t not in INSTALL_TYPES:
-        return None
+        return []
     name = cap.get("name")
     src_rel = cap.get("path")
     if not isinstance(name, str) or not isinstance(src_rel, str):
-        return None
+        return []
     if name.startswith(("_", ".")):
-        return None
+        return []
     if t == "global-guidance":
         provider = _GG_PROVIDER.get(name)
         if provider is None:
-            return None
-        dest_rel = os.path.basename(src_rel)
-    else:
-        provider = "claude"
-        dest_rel = src_rel
-    override = cap.get("install_destination")
-    if override:
-        dest_rel = override  # honored verbatim; latent (no row sets it today)
-    return (provider, t, name, src_rel, dest_rel)
+            return []
+        return [(provider, t, name, src_rel, os.path.basename(src_rel))]
+    dest_rel = cap.get("install_destination") or src_rel
+    rows = [("claude", t, name, src_rel, dest_rel)]
+    if t == "skill":
+        prov = cap.get("provider")
+        if isinstance(prov, dict) and prov.get("codex") == "installed":
+            # $AGENTS_SKILLS_HOME (Codex Agent Skills home) IS the skills
+            # root itself, unlike $CLAUDE_HOME/$CODEX_HOME which have a
+            # subdirectory appended — so the dest is the bare skill name,
+            # not src_rel ("skills/<name>").
+            rows.append(("codex", t, name, src_rel, name))
+    return rows
 
 
 def build_manifest(caps):
-    rows = [r for r in (_install_row(c) for c in caps) if r]
+    rows = [r for c in caps for r in _install_rows(c)]
     rows.sort(key=lambda r: (_PROVIDER_RANK.get(r[0], 99),
                              _CATEGORY_RANK.get(r[1], 99), r[2]))
     return rows

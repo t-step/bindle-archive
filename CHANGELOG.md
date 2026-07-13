@@ -37,6 +37,14 @@ dated, versioned section at release time.
   `--check-docs`, wired into `make check`, fails the build on drift. The
   narrative provider capability matrix is untouched — not derivable from the
   inventory schema without duplicating its prose.
+- **Codex Agent Skills install, wave 1 (#57).** `bin/install.sh --provider
+  codex --agents-skills-home DIR` now symlinks the two skills classified
+  Codex-eligible by the #61 audit — `verify-then-commit`, `fork-pr-flow` —
+  into the officially documented Codex Agent Skills home, driven by
+  `capabilities.json`'s `provider.codex: "installed"` metadata (not a
+  directory sweep). `doctor.sh --agents-skills-home DIR` diagnoses the new
+  destination. Confirmed by a real Codex session (see
+  `skill-portability-audit.md`'s uncertainty register).
 
 ### Fixed
 

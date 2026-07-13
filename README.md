@@ -26,8 +26,9 @@ Codex support is intentionally narrower:
 
 <!-- GENERATED:readme-codex:BEGIN -->
 ```
+skills/<name>/     ->  <explicit-agents-skills-home>/<name> Codex skills (eligible only, see capabilities.json)
 global/AGENTS.md   ->  <explicit-codex-home>/AGENTS.md
-AGENTS.md              (not installed)                 Bindle project guidance for Codex
+AGENTS.md              (not installed)                      Bindle project guidance for Codex
 ```
 <!-- GENERATED:readme-codex:END -->
 
