@@ -7,7 +7,7 @@
       "description": "Use when opening, targeting, or describing a pull request and deciding where changes land \u2014 whether the repo is a fork (origin vs upstream, avoiding \"upstream into upstream\") or one you own where changes should reach your own main via PR rather than a direct commit; also when unsure whether to push at all, or when tempted to merge a PR you just opened because you have access and were told to \"get it merged\".",
       "provider": {
         "claude": "installed",
-        "codex": "manual"
+        "codex": "installed"
       },
       "maturity": "tested",
       "mutation": [
@@ -114,7 +114,7 @@
       "description": "Use when about to commit or push after making or resuming changes \u2014 especially after a subagent or another session edited code, before claiming work is done, or when tempted to commit because edits \"look right\" without running the project's tests, typecheck, and lint.",
       "provider": {
         "claude": "installed",
-        "codex": "manual"
+        "codex": "installed"
       },
       "maturity": "tested",
       "mutation": [
