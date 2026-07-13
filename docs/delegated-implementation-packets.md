@@ -18,9 +18,10 @@ contracts:
 - **Which workflows apply and how they compose** is issue #31's composition and
   precedence contract. A packet *selects* the minimal applicable set; it does
   not define precedence.
-- **What a delegated worker of a given risk level may do** is issue #32's
-  delegation profiles (Mechanical, Review, Research, Implementation,
-  Privileged). A packet *names* a profile; it does not define the ladder.
+- **What a delegated worker of a given risk level may do** is
+  [delegation-profiles.md](delegation-profiles.md)'s ladder (Mechanical,
+  Review, Research, Implementation, Privileged), issue #32. A packet *names*
+  a profile; it does not define the ladder.
 - **The full discover → deduplicate → execute → verify → close-out loop** is
   issue #60's issue work loop. A packet is the artifact consumed at #60's
   "Bound and execute" step; it does not replace the loop around it.
