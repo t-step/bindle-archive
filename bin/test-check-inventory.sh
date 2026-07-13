@@ -383,6 +383,15 @@ check "readme codex block populated" contains "AGENTS.md" "$(cat "$REPO/README.m
 check "provider-interop table populated" contains "Claude install target" "$(cat "$REPO/docs/provider-interop.md")"
 out="$(python3 "$VALIDATOR" --root "$REPO" --check-docs 2>&1)"
 check "freshly emitted docs pass --check-docs" test "$?" -eq 0
+check "codex doc block includes a skills row template" contains "skills/<name>/" "$(python3 -c "
+import sys
+sys.path.insert(0, '$REPO_ROOT/bin')
+import importlib.util
+spec = importlib.util.spec_from_file_location('ci', '$REPO_ROOT/bin/check-inventory.py')
+m = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(m)
+print(m.render_readme_codex_block())
+")"
 
 echo "doc-table drift guard:"
 REPO="$TMP/docs-stale"

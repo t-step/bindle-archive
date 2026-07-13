@@ -49,6 +49,9 @@ DOC_ROWS_CLAUDE = [
 DOC_TRAILER_CLAUDE = {"src": "CLAUDE.md", "dest": "(not installed)",
                       "label": "Bindle project guidance for Claude"}
 DOC_ROWS_CODEX = [
+    {"type": "skill", "src": "skills/<name>/",
+     "dest": "<explicit-agents-skills-home>/<name>",
+     "label": "Codex skills (eligible only, see capabilities.json)"},
     {"type": "global-guidance", "src": "global/AGENTS.md",
      "dest": "<explicit-codex-home>/AGENTS.md", "label": None},
 ]

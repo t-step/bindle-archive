@@ -17,6 +17,26 @@ lowercase `~/.codex` is the local convention. The install is exactly one
 symlink: `global/AGENTS.md` → `<codex-home>/AGENTS.md`. Nothing else is
 installed for Codex.
 
+## Install eligible skills
+
+A small, explicit set of skills is Codex-eligible today — not every skill
+under `skills/`. Eligibility is per-skill metadata in `capabilities.json`
+(`provider.codex: "installed"`), not a directory sweep; see
+[skill-portability-audit.md](skill-portability-audit.md) for the full per-skill classification and
+rationale.
+
+```bash
+bin/install.sh --provider codex --codex-home ~/.codex --agents-skills-home ~/.agents/skills
+```
+
+`--agents-skills-home` is a second **explicit target directory you choose**,
+distinct from `--codex-home` — it is the officially documented Codex Agent
+Skills discovery root (conventionally `~/.agents/skills`), not Codex's
+configuration home. Each eligible skill is symlinked as a whole directory
+(support files like `PRESSURE-TESTS.md` ride along), so Codex discovers it
+the same way official docs describe: `SKILL.md` with `name`/`description`
+frontmatter, found by walking the Agent Skills directories.
+
 ## What Codex may use directly
 
 - a repo's own `AGENTS.md` (project guidance);
@@ -38,7 +58,9 @@ Claude-native paths. They exist in this repo, but Codex has no runtime for
 *these specific files* — do not try to invoke them, and do not claim to have
 run them:
 
-- Claude skills (`skills/*/SKILL.md`, installed to `~/.claude/skills/`);
+- Claude-only skills (`skills/*/SKILL.md`, installed to `~/.claude/skills/`)
+  that are **not** in the Codex-eligible set above — e.g.
+  `maintain-claude-md`, which manages Claude's own memory-file format;
 - Claude slash commands (`commands/*.md`, e.g. `/session-end`);
 - Claude subagents (`agents/*.md`);
 - Claude hooks (`global/hooks/*.py`, wired via `~/.claude/settings.json`).
