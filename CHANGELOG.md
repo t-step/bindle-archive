@@ -25,6 +25,12 @@ dated, versioned section at release time.
   applies to the same task, with the narrow-or-add relaxation rule, a
   stop-and-report contradiction rule, and an inheritance rule for delegated
   tasks (issue #31).
+- `docs/workflow-eval.md` — provider-neutral policy for what kinds of
+  evaluation a workflow needs and how much, scaled to risk: seven eval
+  categories, a risk-based minimum-coverage matrix keyed to
+  `runtime-security-privacy.md`'s C0-C5 classes, a state-based/model-graded
+  result schema, and a rep-count stopping rule grounded in this repo's
+  existing pressure-test practice (issue #35).
 - `docs/knowledge-promotion.md` — provider-neutral contract for promoting
   project evidence into a per-project `map.md` (issue #81 design, wave 1).
 - `/promote-knowledge` command (tested): runs the
