@@ -70,7 +70,9 @@ finished.
 
 Toolkit-level SemVer (see the README): a new skill/agent/command is a **minor**
 bump. Jot changes under `## [Unreleased]` in [CHANGELOG.md](CHANGELOG.md) as you
-go; `bin/release.sh` cuts the release (and never pushes — you review first).
+go; `bin/release.sh` cuts the release (and never pushes — you review first),
+producing a deterministic manifest of what shipped — see
+[docs/release-manifest.md](docs/release-manifest.md).
 
 ## Before you call it done
 

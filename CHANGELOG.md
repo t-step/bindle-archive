@@ -60,6 +60,13 @@ dated, versioned section at release time.
   directory sweep). `doctor.sh --agents-skills-home DIR` diagnoses the new
   destination. Confirmed by a real Codex session (see
   `skill-portability-audit.md`'s uncertainty register).
+- `bin/release-manifest.py` + `RELEASE-MANIFEST.json`: `bin/release.sh` now
+  produces a deterministic, provenance-rich manifest for every release —
+  commit, capability inventory snapshot, installed surfaces, verification
+  results, tool versions, and this release's changelog range — drawn from
+  `capabilities.json`/`install-manifest.tsv`, never hand-duplicated. The
+  release aborts before committing if the manifest can't be regenerated
+  consistently. See `docs/release-manifest.md` (issue #33).
 
 ### Fixed
 
