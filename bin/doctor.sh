@@ -30,6 +30,7 @@
 #   bin/doctor.sh                     # diagnose ~/.claude
 #   bin/doctor.sh --home DIR          # diagnose a different Claude home
 #   bin/doctor.sh --codex-home DIR    # also diagnose a Codex AGENTS.md target
+#   bin/doctor.sh --agents-skills-home DIR   # also diagnose Codex Agent Skills
 #
 # Exit codes:
 #   0  no findings (everything current, or nothing to report)
@@ -45,6 +46,8 @@ source "$REPO_ROOT/bin/lib/manifest.sh"
 CLAUDE_HOME="${HOME}/.claude"
 CODEX_HOME=""
 HAVE_CODEX=false
+AGENTS_SKILLS_HOME=""
+HAVE_AGENTS_SKILLS_HOME=false
 
 while [ $# -gt 0 ]; do
   case "$1" in
@@ -57,9 +60,14 @@ while [ $# -gt 0 ]; do
       HAVE_CODEX=true
       shift 2
       ;;
+    --agents-skills-home)
+      AGENTS_SKILLS_HOME="${2:-}"
+      HAVE_AGENTS_SKILLS_HOME=true
+      shift 2
+      ;;
     *)
       echo "Unknown option: $1" >&2
-      echo "Usage: bin/doctor.sh [--home DIR] [--codex-home DIR]" >&2
+      echo "Usage: bin/doctor.sh [--home DIR] [--codex-home DIR] [--agents-skills-home DIR]" >&2
       exit 2
       ;;
   esac
@@ -67,6 +75,7 @@ done
 
 current_count=0 missing_count=0 stale_count=0 broken_count=0 conflict_count=0 earlier_count=0
 CODEX_ITEMS=0
+AGENTS_SKILLS_ITEMS=0
 expected_dests=""
 
 # classify SRC DEST — sets STATE, DETAIL, ACTION for the (src, dest) pair.
@@ -203,9 +212,18 @@ _doctor_claude_cb() {
 # shellcheck disable=SC2329 # invoked indirectly, by name, via each_manifest_item
 _doctor_codex_cb() {
   [ "$1" = codex ] || return 0
+  [ "$2" = global-guidance ] || return 0
   [ -e "$4" ] || return 0
   CODEX_ITEMS=$((CODEX_ITEMS + 1))
   check_item "${4#"$REPO_ROOT"/}" "$4" "$CODEX_HOME/$5"
+}
+# shellcheck disable=SC2329 # invoked indirectly, by name, via each_manifest_item
+_doctor_codex_skills_cb() {
+  [ "$1" = codex ] || return 0
+  [ "$2" = skill ] || return 0
+  [ -e "$4" ] || return 0
+  AGENTS_SKILLS_ITEMS=$((AGENTS_SKILLS_ITEMS + 1))
+  check_item "${4#"$REPO_ROOT"/}" "$4" "$AGENTS_SKILLS_HOME/$5"
 }
 
 claude_section() {
@@ -223,6 +241,15 @@ codex_section() {
   CODEX_ITEMS=0
   each_manifest_item "$REPO_ROOT" _doctor_codex_cb
   [ "$CODEX_ITEMS" -gt 0 ] || echo "  - no global/AGENTS.md in this repo"
+}
+
+codex_skills_section() {
+  echo
+  echo "codex agent-skills home ($AGENTS_SKILLS_HOME):"
+  AGENTS_SKILLS_ITEMS=0
+  each_manifest_item "$REPO_ROOT" _doctor_codex_skills_cb
+  [ "$AGENTS_SKILLS_ITEMS" -gt 0 ] || echo "  - no Codex-eligible skills in this repo"
+  sweep_dir "$AGENTS_SKILLS_HOME" "skills"
 }
 
 notes_section() {
@@ -316,6 +343,9 @@ echo "repo root: $REPO_ROOT"
 claude_section
 if $HAVE_CODEX; then
   codex_section
+fi
+if $HAVE_AGENTS_SKILLS_HOME; then
+  codex_skills_section
 fi
 notes_section
 tools_section

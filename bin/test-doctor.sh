@@ -60,6 +60,18 @@ codex	global-guidance	agents	global/AGENTS.md	AGENTS.md
 TSV
 }
 
+# add_codex_skill DIR NAME — add a Codex-eligible skill to an already-built
+# fixture repo, appending both its Claude and Codex manifest rows.
+add_codex_skill() {
+  local r="$1" name="$2"
+  mkdir -p "$r/skills/$name"
+  printf -- '---\nname: %s\ndescription: codex-eligible demo\n---\n' "$name" >"$r/skills/$name/SKILL.md"
+  {
+    printf 'claude\tskill\t%s\tskills/%s\tskills/%s\n' "$name" "$name" "$name"
+    printf 'codex\tskill\t%s\tskills/%s\t%s\n' "$name" "$name" "$name"
+  } >>"$r/install-manifest.tsv"
+}
+
 # snapshot DIR — a read-only fingerprint of everything under DIR: path +
 # kind, symlink target (not followed) or file checksum. Used to prove
 # doctor.sh never writes to the home it inspects.
@@ -250,6 +262,54 @@ after_codex="$(snapshot "$CODEX_HOME")"
 
 check "claude home byte-identical before/after" test "$before" = "$after"
 check "codex home byte-identical before/after" test "$before_codex" = "$after_codex"
+
+# ===========================================================================
+echo "11. codex agent-skills section:"
+REPO="$TMP/repo11"
+HOME_DIR="$TMP/home11"
+CODEX_HOME="$TMP/codex11"
+AGENTS_SKILLS_HOME="$TMP/agents-skills11"
+build_repo "$REPO"
+add_codex_skill "$REPO" demo-codex
+"$REPO/bin/install.sh" --home "$HOME_DIR" >/dev/null
+"$REPO/bin/install.sh" --provider codex --codex-home "$CODEX_HOME" --agents-skills-home "$AGENTS_SKILLS_HOME" >/dev/null
+
+out_with="$("$REPO/bin/doctor.sh" --home "$HOME_DIR" --agents-skills-home "$AGENTS_SKILLS_HOME" 2>&1)"
+check "agent-skills section present" contains "codex agent-skills home (" "$out_with"
+check "eligible skill reported current" contains "demo-codex — current" "$out_with"
+
+out_without="$("$REPO/bin/doctor.sh" --home "$HOME_DIR" 2>&1)"
+check "no agent-skills section without the flag" not_contains "codex agent-skills home (" "$out_without"
+
+echo "12. codex agent-skills section reports findings:"
+REPO="$TMP/repo12"
+HOME_DIR="$TMP/home12"
+CODEX_HOME="$TMP/codex12"
+AGENTS_SKILLS_HOME="$TMP/agents-skills12"
+build_repo "$REPO"
+add_codex_skill "$REPO" demo-codex
+"$REPO/bin/install.sh" --home "$HOME_DIR" >/dev/null
+"$REPO/bin/install.sh" --provider codex --codex-home "$CODEX_HOME" --agents-skills-home "$AGENTS_SKILLS_HOME" >/dev/null
+rm -rf "$REPO/skills/demo-codex" # break the codex skill link
+
+out="$("$REPO/bin/doctor.sh" --home "$HOME_DIR" --agents-skills-home "$AGENTS_SKILLS_HOME" 2>&1)"
+status=$?
+check "broken codex skill link reported" contains "demo-codex — broken" "$out"
+check "findings cause nonzero exit" test "$status" -ne 0
+
+echo "13. codex agent-skills read-only guarantee:"
+REPO="$TMP/repo13"
+HOME_DIR="$TMP/home13"
+CODEX_HOME="$TMP/codex13"
+AGENTS_SKILLS_HOME="$TMP/agents-skills13"
+build_repo "$REPO"
+add_codex_skill "$REPO" demo-codex
+"$REPO/bin/install.sh" --home "$HOME_DIR" >/dev/null
+"$REPO/bin/install.sh" --provider codex --codex-home "$CODEX_HOME" --agents-skills-home "$AGENTS_SKILLS_HOME" >/dev/null
+before_agents="$(snapshot "$AGENTS_SKILLS_HOME")"
+"$REPO/bin/doctor.sh" --home "$HOME_DIR" --agents-skills-home "$AGENTS_SKILLS_HOME" >/dev/null 2>&1
+after_agents="$(snapshot "$AGENTS_SKILLS_HOME")"
+check "agent-skills home byte-identical before/after" test "$before_agents" = "$after_agents"
 
 # --- result ----------------------------------------------------------------
 echo
