@@ -168,7 +168,89 @@ For the next one or two minor releases, in order:
 Evaluation work (#35–#39) and the remaining pressure-test chores sit
 behind these — see the triage below.
 
-## Backlog triage (2026-07-10)
+**Status (2026-07-12): all six steps shipped.** #34, #24, #28, #30, #9,
+#21, #22, #31, #32, #29, #33 are closed; v0.3.0 released 2026-07-10, and
+the v0.4 candidates landed as `docs/workflow-composition.md`,
+`docs/delegation-profiles.md`, `capabilities.json`/`bin/check-inventory.py`,
+and `RELEASE-MANIFEST.json`/`bin/release-manifest.py` respectively. #35
+(eval policy/taxonomy/schema, listed as Research below at decision time)
+also shipped as `docs/workflow-eval.md`, unsplit — the "reshape option:
+split those halves" note in the original Research entry wasn't needed in
+practice. This near-term sequence is complete; no successor v0.5 sequence
+has been declared yet (see the refreshed triage below for what's actually
+open).
+
+## Backlog triage (2026-07-12)
+
+Refreshes the 2026-07-10 triage below against current issue state. Of that
+snapshot's 18 classified issues, 14 are now closed (all of Now and Next,
+plus #14/#15/#16/#17 from Later) — see Status note above. This table
+re-triages the remaining open issues plus six opened since 2026-07-10
+(#55, #58, #59, #60, #80, #88). Same categories and format as before.
+
+**Now:** none. The v0.3–v0.4 near-term sequence above is fully shipped;
+no new Now-tier work has been designated pending the next planning
+decision.
+
+**Next:** none currently ready. Every open issue below is either
+self-gated on evidence that hasn't materialized, blocked on the boundary
+question raised by #55, or too underspecified to triage yet — see Later,
+Research, and Needs input.
+
+**Later:**
+
+- **#11** spec-captain — unchanged from 2026-07-10: fits the
+  portable-workflow pattern but is a full contract + skill + pressure-test
+  unit; needs friction evidence and capacity. Not delegable. Verify: per
+  CONTRIBUTING.
+- **#18** SQLite notes index — unchanged: correctly self-gated ("when grep
+  starts to hurt"); design doc exists. Largely delegable when triggered.
+  Verify: self-tests; Markdown stays canonical.
+- **#88** knowledge promotion wave 2 (`knowledge.md`) — explicitly
+  self-gated by its own design doc: "do not start until wave 1 (#84–#87)
+  has real dogfood evidence." Partially delegable once triggered. Verify:
+  per `docs/design/2026-07-11-knowledge-promotion.md`.
+
+**Research (behind the evaluation revisit trigger, or a boundary
+question):**
+
+- **#36** eval harness — unchanged: this *is* the platform the boundary
+  defers; admitted only after three recorded needs the manual loop
+  couldn't serve. That evidence hasn't accumulated yet.
+- **#37** routing + holdout suites — behind #36 (unchanged).
+- **#38** composition/e2e suites — behind #36; its other named
+  prerequisite, #31, has now shipped, but #36's own gate still hasn't
+  fired, so #38 doesn't move yet.
+- **#39** weaker-model delegation evals — behind #36; its other named
+  prerequisite, #32, has now shipped, same situation as #38.
+- **#55** ("Reconcile Codex interoperability and DomI-derived workflow
+  dependencies") **+ children #58, #59, #60** — #55 explicitly argues that
+  current Codex has native Agent Skills, subagents, lifecycle hooks, and
+  plugin surfaces, and that this makes this document's "narrow adapter,
+  never a universal runtime" provider stance stale. That is a claim about
+  one of this document's own named Revisit triggers (see below), not a
+  routine backlog item — recorded here as a claim needing adjudication,
+  not treated as fired. Until that boundary question is resolved
+  explicitly (its own decision, the way #34 resolved v0.3–v0.4), #58
+  (DomI consumer profile/drift-status preflight), #59 (portable
+  package-release-integrity workflow), and #60 (portable issue work loop)
+  stay blocked behind it — each names #55 as parent and leans on the
+  provider-neutral-contract pattern #55's premise would extend. Not
+  delegable (boundary-level decision). Verify: a revisit decision document
+  citing concrete evidence, same shape as #34.
+
+**Needs input (not yet triageable):**
+
+- **#80** ("Brainstorm truth reconciliation and the repository drift
+  auditor") — the issue body is truncated mid-sentence (cuts off after
+  "the evidence hierarchy used when code, tests, docs, issues, plans, and
+  agent narration disagree; the"). Cannot be triaged against the boundary
+  as written — the "Desired outcome" list it's building toward never
+  arrives. Needs the body completed/re-filed before classification; likely
+  a manual-paste truncation (same pattern previously seen on #90), not a
+  tooling gap.
+
+## Backlog triage (2026-07-10, historical)
 
 Every open issue at decision time, classified against this boundary.
 Format: *category — rationale; prerequisites; delegable to a weaker
@@ -272,7 +354,13 @@ Concrete evidence that justifies reopening this boundary:
   install defaults.
 - **A third provider** with a real native surface worth adapting, or
   Codex gaining primitives (skills/commands) that make today's "narrow
-  adapter" stance wrong.
+  adapter" stance wrong. **Claimed 2026-07-12** (issue #55): current Codex
+  has native Agent Skills, subagents, lifecycle hooks, and plugin
+  surfaces; #55 argues this is exactly this trigger. Recorded as a claim,
+  not adjudicated as fired — see the Research entry for #55/#58/#59/#60
+  above. A real revisit (its own decision document, the way #34 resolved
+  v0.3–v0.4) is needed before this boundary's Provider boundary/non-goals
+  sections change.
 - **Three or more recorded eval needs** the manual pressure-test loop
   could not serve — unlocks the evaluation-infrastructure criteria above.
 - **A consumer materializes for a manifest** (dashboard, doctor, or an
