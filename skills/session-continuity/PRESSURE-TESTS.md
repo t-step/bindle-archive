@@ -286,9 +286,9 @@ model remains untested.
 ## Claim 5 — a deferred profile proposal persists and resurfaces at the next `/session-end` run
 
 **Status: draft — not yet run.** Registered 2026-07-13 alongside the
-profile-proposals queue implementation; reps are paused pending an explicit
-user go-ahead on run mode (see `CONTRIBUTING.md`'s pressure-test convention:
-sequential / parallel / defer-and-file-an-issue).
+profile-proposals queue implementation; reps deferred to issue #103 per
+`CONTRIBUTING.md`'s pressure-test convention (sequential / parallel /
+defer-and-file-an-issue) — reps run there, not here.
 
 Claim: a profile-worthy fact that gets a **Defer** answer is not lost — it
 reappears, unchanged, the next time `/session-end` runs interactively on the
