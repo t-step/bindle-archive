@@ -14,6 +14,8 @@
 #
 # Codex:
 #   global/AGENTS.md        ->  <codex-home>/AGENTS.md
+#   skills/<name>/SKILL.md  ->  <agents-skills-home>/<name>  (only skills with
+#                               provider.codex == "installed" in capabilities.json)
 #
 # Repo-root CLAUDE.md and AGENTS.md are this repo's OWN project memories and
 # are NOT installed.
@@ -25,7 +27,8 @@
 # Usage:
 #   bin/install.sh                                      # Claude install
 #   bin/install.sh --provider claude                    # Claude install
-#   bin/install.sh --provider codex --codex-home DIR    # Codex AGENTS.md
+#   bin/install.sh --provider codex --codex-home DIR --agents-skills-home DIR2
+#                                                        # Codex AGENTS.md + eligible skills
 #   bin/install.sh --provider all --codex-home DIR      # Claude + Codex
 #   bin/install.sh --prune                              # prune broken owned links
 #   bin/install.sh --home DIR                           # Claude home override
@@ -60,6 +63,7 @@ REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 source "$REPO_ROOT/bin/lib/manifest.sh"
 CLAUDE_HOME="${HOME}/.claude"
 CODEX_HOME=""
+AGENTS_SKILLS_HOME=""
 PROVIDER="claude"
 PRUNE=false
 ALLOW_CONFLICTS=false
@@ -98,6 +102,10 @@ while [ $# -gt 0 ]; do
       CODEX_HOME="${2:-}"
       shift 2
       ;;
+    --agents-skills-home)
+      AGENTS_SKILLS_HOME="${2:-}"
+      shift 2
+      ;;
     *)
       echo "Unknown option: $1" >&2
       exit 2
@@ -105,11 +113,27 @@ while [ $# -gt 0 ]; do
   esac
 done
 
+# codex_skill_rows_present — true if the manifest has at least one
+# provider=codex category=skill row (i.e. at least one skill is
+# Codex-eligible today). Never hard-coded — reflects capabilities.json.
+_have_codex_skill=false
+_mark_codex_skill() { [ "$1" = codex ] && [ "$2" = skill ] && _have_codex_skill=true; }
+codex_skill_rows_present() {
+  _have_codex_skill=false
+  each_manifest_item "$REPO_ROOT" _mark_codex_skill
+  $_have_codex_skill
+}
+
 case "$PROVIDER" in
   codex | all)
     if [ -z "$CODEX_HOME" ]; then
       echo "Codex install requires an explicit target: --codex-home DIR" >&2
       echo "Example: bin/install.sh --provider codex --codex-home ~/.codex" >&2
+      exit 2
+    fi
+    if codex_skill_rows_present && [ -z "$AGENTS_SKILLS_HOME" ]; then
+      echo "Codex skill install requires an explicit target: --agents-skills-home DIR" >&2
+      echo "Example: bin/install.sh --provider codex --agents-skills-home ~/.agents/skills" >&2
       exit 2
     fi
     ;;
@@ -126,6 +150,10 @@ case "$PROVIDER" in
   codex | all)
     mkdir -p "$CODEX_HOME"
     CODEX_HOME="$(cd "$CODEX_HOME" && pwd)"
+    if [ -n "$AGENTS_SKILLS_HOME" ]; then
+      mkdir -p "$AGENTS_SKILLS_HOME"
+      AGENTS_SKILLS_HOME="$(cd "$AGENTS_SKILLS_HOME" && pwd)"
+    fi
     ;;
 esac
 
@@ -203,8 +231,16 @@ prune_path() {
 _EACH_CB=""
 # shellcheck disable=SC2329 # invoked indirectly via each_manifest_item
 _each_expected_cb() {
-  local provider="$1" dest_rel="$5" src="$4" home
-  case "$provider" in claude) home="$CLAUDE_HOME" ;; codex) home="$CODEX_HOME" ;; esac
+  local provider="$1" category="$2" dest_rel="$5" src="$4" home
+  case "$provider" in
+    claude) home="$CLAUDE_HOME" ;;
+    codex)
+      case "$category" in
+        skill) home="$AGENTS_SKILLS_HOME" ;;
+        *) home="$CODEX_HOME" ;;
+      esac
+      ;;
+  esac
   case "$PROVIDER" in
     claude) [ "$provider" = claude ] || return 0 ;;
     codex) [ "$provider" = codex ] || return 0 ;;
@@ -298,7 +334,15 @@ _GRP_PROVIDER="" _GRP_CATEGORY=""
 _link_in_group() {
   local provider="$1" category="$2" name="$3" src="$4" dest_rel="$5" home
   [ "$provider" = "$_GRP_PROVIDER" ] && [ "$category" = "$_GRP_CATEGORY" ] || return 0
-  case "$provider" in claude) home="$CLAUDE_HOME" ;; codex) home="$CODEX_HOME" ;; esac
+  case "$provider" in
+    claude) home="$CLAUDE_HOME" ;;
+    codex)
+      case "$category" in
+        skill) home="$AGENTS_SKILLS_HOME" ;;
+        *) home="$CODEX_HOME" ;;
+      esac
+      ;;
+  esac
   link_item "$src" "$home/$dest_rel"
 }
 
@@ -350,6 +394,9 @@ install_surfaces() {
   esac
   case "$PROVIDER" in
     codex | all)
+      if [ -n "$AGENTS_SKILLS_HOME" ]; then
+        _dir_group codex skill "Codex skills:" "$AGENTS_SKILLS_HOME" ""
+      fi
       _file_group codex "Codex global instructions:" "$CODEX_HOME/AGENTS.md"
       ;;
   esac
