@@ -171,24 +171,27 @@ across the Opus/Haiku/Sonnet 5 brackets). **Routing is the one uncovered
 cell** — this policy surfaces that as a real, named gap rather than treating
 the existing log as complete coverage.
 
-### 2. `repo-hygiene-init` — C1, pressure-shaped, sufficient at its tier
+### 2. `repo-hygiene-init` — C2, pressure-shaped, Routing is the uncovered cell
 
 The "detects and matches an existing stack instead of imposing its own
 defaults" claim (CHANGELOG, issue #65): a hard-suppressed, transcript-verified
 fixture (a half-migrated repo with `flake8`+`isort` configured but no
 formatter, maximizing the pull toward consolidating everything into `ruff`)
 — the skill-naive baseline still did not fail (4/4 clean-baseline reps
-matched, 0/4 imposed `ruff`). Mutation class C1 (owned-surface / disk writes
-within the repo it's hygiene-initializing) → the matrix requires Conformance.
-The existing claim is Pressure-shaped and functions as Conformance evidence
-too (same reasoning as Example 1): the scenario tests whether the ordinary
-"detect, don't impose" contract holds, adversarially tempted. Correctly
-classified as sufficient at its tier — worth noting honestly, though, that
-the log's own conclusion is that this claim isn't established as
-*load-bearing*: the skill-naive baseline already passes this fixture, so the
-skill hasn't yet been shown to change the outcome. Coverage-sufficiency and
-load-bearing-ness are different questions; this policy only answers the
-first.
+matched, 0/4 imposed `ruff`). Mutation class C2 (repository mutation): the
+skill writes `.pre-commit-config.yaml`, `Makefile`, CI config, and `LICENSE`
+to a target project repo and, per its own pressure-test fixture, commits
+directly to `main` there — a target project repo is not an owned surface,
+the same reasoning already applied to `verify-then-commit` in Example 1.
+The matrix requires Conformance + Routing + a small Pressure set. The
+existing claim is Pressure-shaped and functions as Conformance evidence too
+(same reasoning as Example 1): the scenario tests whether the ordinary
+"detect, don't impose" contract holds, adversarially tempted. **Routing is
+the one uncovered cell** — worth noting honestly, though, that the log's own
+conclusion is that this claim isn't established as *load-bearing*: the
+skill-naive baseline already passes this fixture, so the skill hasn't yet
+been shown to change the outcome. Coverage-sufficiency and load-bearing-ness
+are different questions; this policy only answers the first.
 
 ### 3. `fork-pr-flow` — C5-capable, one Pressure claim, real coverage gap
 
