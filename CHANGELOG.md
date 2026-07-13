@@ -19,6 +19,12 @@ dated, versioned section at release time.
 - `docs/delegation-profiles.md` — provider-neutral ladder (Mechanical,
   Review, Research, Implementation, Privileged) for what a delegated worker
   is authorized to do, independent of model or provider (issue #32).
+- `docs/workflow-composition.md` — provider-neutral classification and
+  precedence contract (Invariants, Project instructions, Modes, Task
+  workflows, Provider adapters) for what happens when more than one workflow
+  applies to the same task, with the narrow-or-add relaxation rule, a
+  stop-and-report contradiction rule, and an inheritance rule for delegated
+  tasks (issue #31).
 - `docs/knowledge-promotion.md` — provider-neutral contract for promoting
   project evidence into a per-project `map.md` (issue #81 design, wave 1).
 - `/promote-knowledge` command (tested): runs the

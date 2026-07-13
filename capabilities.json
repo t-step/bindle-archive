@@ -372,7 +372,8 @@
       "mutation": [],
       "version_introduced": "0.3.0",
       "related_docs": [
-        "docs/delegation-profiles.md"
+        "docs/delegation-profiles.md",
+        "docs/workflow-composition.md"
       ]
     },
     {
@@ -390,6 +391,26 @@
       "related_docs": [
         "docs/delegated-implementation-packets.md",
         "docs/runtime-security-privacy.md",
+        "docs/product-boundary.md",
+        "docs/workflow-composition.md"
+      ]
+    },
+    {
+      "name": "workflow-composition",
+      "type": "contract",
+      "path": "docs/workflow-composition.md",
+      "description": "The provider-neutral classification and precedence contract (Invariants, Project instructions, Modes, Task workflows, Provider adapters) for what happens when more than one workflow applies to the same task, the narrow-or-add relaxation rule, and how a delegated task inherits each category.",
+      "provider": {
+        "claude": "manual",
+        "codex": "manual"
+      },
+      "maturity": "documented",
+      "mutation": [],
+      "version_introduced": "0.3.0",
+      "related_docs": [
+        "docs/delegation-profiles.md",
+        "docs/delegated-implementation-packets.md",
+        "docs/provider-interop.md",
         "docs/product-boundary.md"
       ]
     },
