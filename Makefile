@@ -28,6 +28,7 @@ test:
 	bin/test-session-context.sh
 	bin/test-session-hooks.sh
 	bin/test-install-session-hooks.sh
+	bin/test-release-manifest.sh
 
 install:
 	bin/install.sh
