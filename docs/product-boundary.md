@@ -225,16 +225,15 @@ before committing).
   criteria apply: needs a friction-justified candidate, enters as draft.
   Choice not delegable; drafting partially. Verify: pressure-tested or
   marked draft.
+- **#33** release manifest — promoted out of Later (2026-07-12): the
+  "consumer materializes" trigger below has fired (`bin/doctor.sh` now
+  reads machine-readable capability data via `install-manifest.tsv`,
+  generated from `capabilities.json`). #29, its other prerequisite, has
+  shipped. Partially delegable. Verify: `bin/release.sh` regenerates and
+  diffs the manifest before committing, fails the release on inconsistency.
 
 **Later:**
 
-- **#29** capability inventory — schema with no present consumer; unlocks
-  when #28's `--json` or #33 needs it and the capability set is stable.
-  Population is delegable once the schema is set. Verify: CI validates
-  referenced paths; one manual table generated from it.
-- **#33** release manifest — depends on #29; valuable once releases have
-  consumers beyond the owner. Partially delegable. Verify: deterministic
-  output, fails on inconsistency.
 - **#11** spec-captain — fits the portable-workflow pattern but is a
   full contract + skill + pressure-test unit; needs friction evidence and
   capacity after the v0.4 items. Not delegable. Verify: per CONTRIBUTING.
@@ -278,6 +277,8 @@ Concrete evidence that justifies reopening this boundary:
   could not serve — unlocks the evaluation-infrastructure criteria above.
 - **A consumer materializes for a manifest** (dashboard, doctor, or an
   external tool needs machine-readable capability data) — unlocks #29/#33.
+  **Fired 2026-07-12:** `bin/doctor.sh` reads `install-manifest.tsv` via
+  `bin/lib/manifest.sh`. #29 shipped; #33 moved to Next (see above).
 - **Recurring multi-workflow conflicts in real sessions** (precedence or
   composition failures recorded in notes) — justifies promoting #31 from
   doc-sized contract to something larger.
