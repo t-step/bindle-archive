@@ -189,6 +189,7 @@ the five categories above. This is what satisfies #31's acceptance criterion
 | `capability-inventory` | contract | Task workflow |
 | `privacy-boundaries` | contract | Task workflow |
 | `knowledge-promotion` | contract | Task workflow |
+| `workflow-composition` | contract | Task workflow |
 
 Most rows land on Task workflows, as the design predicted: they are each
 steps for a particular kind of work. `hands-on-keyboard` and its contract
