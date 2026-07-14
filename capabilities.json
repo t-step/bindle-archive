@@ -9,7 +9,7 @@
         "claude": "installed",
         "codex": "untested"
       },
-      "maturity": "draft",
+      "maturity": "tested",
       "mutation": [],
       "version_introduced": "0.4.0"
     },
