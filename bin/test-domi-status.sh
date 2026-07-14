@@ -87,9 +87,13 @@ make_consumer "$TMP/unv" "$FORTY" "$(printf 'c%.0s' {1..64})"
 # Force the locators to find nothing.
 run_ds "$TMP/unv" DOMI_SCRIPTS_DIR=/nonexistent DOMI_LOCAL_CHECKOUT=/nonexistent
 # shellcheck disable=SC2015
-[ "$CODE" -eq 4 ] && grep -qi "unverifiable" "$OUT" && grep -q "pin: domattioli/DomI@aaaaaaa" "$OUT" &&
-  ok "valid pin, no DomI → unverifiable (exit 4) + reports pin facts" ||
-  bad "valid pin, no DomI → unverifiable (exit 4) + pin facts [got $CODE]"
+[ "$CODE" -eq 4 ] &&
+  grep -qi "unverifiable" "$OUT" &&
+  grep -q "pin: domattioli/DomI@aaaaaaa" "$OUT" &&
+  grep -q "authority: domattioli/DomI (inherited:" "$OUT" &&
+  grep -q "branch-commit-discipline" "$OUT" &&
+  ok "valid pin, no DomI → unverifiable (exit 4) + pin facts + authority block" ||
+  bad "valid pin, no DomI → unverifiable + pin facts + authority block [got $CODE]"
 
 # --- usage error: unknown flag ---
 OUT="$TMP/out"

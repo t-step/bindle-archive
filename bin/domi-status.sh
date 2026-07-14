@@ -70,6 +70,9 @@ fi
 # 4. Fact reporting (always, offline-safe).
 echo "pin: $UPSTREAM@${SHA:0:7} branch=$BRANCH pinned_at=$PINNED_AT"
 
+# Inherited-policy categories and their authority (docs/domi-consumer.md).
+echo "authority: $UPSTREAM (inherited: branch-commit-discipline, destructive-action-hard-stops, context-session-management, delegation-dispatch, release-semver-governance, issue-session-workflow, sync-update-ownership)"
+
 # 5. Drift verdict — delegate to DomI's own scripts (report, don't reimplement).
 find_domi_scripts() {
   if [ -n "${DOMI_SCRIPTS_DIR+x}" ]; then
