@@ -5,7 +5,12 @@ Deterministic, mechanical checks for a Python package release. Judgment checks
 (change classification, track routing) return 'uncertain' — never guessed.
 Stdlib only. Never mutates; a green check is not authorization to publish.
 """
+import argparse
+import json
 import re
+import sys
+import tomllib
+from pathlib import Path
 
 SEMVER_RE = re.compile(r"^(\d+)\.(\d+)\.(\d+)$")
 
@@ -49,3 +54,89 @@ def required_movement(change_class, pre_1_0):
     if change_class == "data-only":
         return None
     return _MOVEMENT[bool(pre_1_0)].get(change_class)
+
+
+def _verdict(check, verdict, detail):
+    return {"check": check, "verdict": verdict, "detail": detail}
+
+
+def discover_version_sources(repo):
+    """Find declared package versions. Maps a source label -> raw version str.
+
+    Sources: pyproject.toml [project].version, [tool.poetry].version, and any
+    top-level package `__init__.py` defining `__version__`.
+    """
+    repo = Path(repo)
+    sources = {}
+    pyproject = repo / "pyproject.toml"
+    if pyproject.is_file():
+        data = tomllib.loads(pyproject.read_text())
+        proj = data.get("project", {}).get("version")
+        if proj is not None:
+            sources["pyproject:[project].version"] = proj
+        poetry = data.get("tool", {}).get("poetry", {}).get("version")
+        if poetry is not None:
+            sources["pyproject:[tool.poetry].version"] = poetry
+    # (["'])([^"']+)\1 — backreferenced quote; avoids a "]" + "(" adjacency
+    # that the repo's file-wide link checker would misread as a broken link.
+    ver_re = re.compile(r"""^__version__\s*=\s*(["'])([^"']+)\1""", re.M)
+    for init in sorted(repo.glob("*/__init__.py")):
+        m = ver_re.search(init.read_text())
+        if m:
+            sources[f"module:{init.relative_to(repo)}"] = m.group(2)
+    return sources
+
+
+def check_version_source_consistency(sources):
+    if not sources:
+        return _verdict(
+            "version_source_consistency", "uncertain", "no version source found"
+        )
+    distinct = set(sources.values())
+    if len(distinct) == 1:
+        return _verdict(
+            "version_source_consistency", "pass",
+            f"all sources agree on {next(iter(distinct))}",
+        )
+    return _verdict(
+        "version_source_consistency", "fail",
+        "version sources disagree: "
+        + ", ".join(f"{k}={v}" for k, v in sorted(sources.items())),
+    )
+
+
+def run_check(repo, args):
+    repo = Path(repo)
+    verdicts = []
+    sources = discover_version_sources(repo)
+    verdicts.append(check_version_source_consistency(sources))
+    ready = all(v["verdict"] != "fail" for v in verdicts)
+    return {"verdicts": verdicts, "ready": ready}
+
+
+def _print_report(report, as_json):
+    if as_json:
+        print(json.dumps(report, indent=2))
+        return
+    for v in report["verdicts"]:
+        print(f"{v['check']}: {v['verdict']} — {v['detail']}")
+    print(f"ready: {report['ready']}")
+
+
+def main(argv=None):
+    p = argparse.ArgumentParser(description="Portable package release-integrity checker")
+    sub = p.add_subparsers(dest="command", required=True)
+    c = sub.add_parser("check", help="run release-integrity checks on a repo")
+    c.add_argument("--repo", default=".", help="path to the package repo")
+    c.add_argument("--json", action="store_true", help="emit JSON")
+    args = p.parse_args(argv)
+    if args.command == "check":
+        report = run_check(args.repo, args)
+        _print_report(report, args.json)
+        # Exit non-zero only on a hard fail; 'uncertain' does not fail.
+        return 1 if any(v["verdict"] == "fail" for v in report["verdicts"]) else 0
+    return 2
+
+
+if __name__ == "__main__":
+    sys.exit(main())
