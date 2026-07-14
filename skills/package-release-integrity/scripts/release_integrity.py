@@ -105,11 +105,50 @@ def check_version_source_consistency(sources):
     )
 
 
+def resolved_package_version(sources):
+    """The agreed package version, or None if absent/conflicting."""
+    distinct = set(sources.values())
+    return next(iter(distinct)) if len(distinct) == 1 else None
+
+
+def check_tag_consistency(pkg_version, tag):
+    if tag is None:
+        return _verdict("tag_consistency", "uncertain", "no --tag supplied")
+    if pkg_version is None:
+        return _verdict("tag_consistency", "uncertain", "no resolved package version")
+    norm = tag[1:] if tag.startswith("v") else tag
+    if norm == pkg_version:
+        return _verdict("tag_consistency", "pass", f"tag {tag} == version {pkg_version}")
+    return _verdict(
+        "tag_consistency", "fail", f"tag {tag} (={norm}) != version {pkg_version}"
+    )
+
+
+def check_changelog_present(repo, pkg_version, required):
+    changelog = Path(repo) / "CHANGELOG.md"
+    if not changelog.is_file():
+        verdict = "fail" if required else "uncertain"
+        return _verdict("changelog_present", verdict, "CHANGELOG.md not found")
+    text = changelog.read_text()
+    if f"[{pkg_version}]" in text or "[Unreleased]" in text:
+        return _verdict(
+            "changelog_present", "pass", f"section for {pkg_version} or [Unreleased]"
+        )
+    verdict = "fail" if required else "uncertain"
+    return _verdict(
+        "changelog_present", verdict, f"no section for {pkg_version} or [Unreleased]"
+    )
+
+
 def run_check(repo, args):
     repo = Path(repo)
     verdicts = []
     sources = discover_version_sources(repo)
     verdicts.append(check_version_source_consistency(sources))
+    pkg_version = resolved_package_version(sources)
+    verdicts.append(check_tag_consistency(pkg_version, getattr(args, "tag", None)))
+    required = not getattr(args, "no_changelog_required", False)
+    verdicts.append(check_changelog_present(repo, pkg_version, required))
     ready = all(v["verdict"] != "fail" for v in verdicts)
     return {"verdicts": verdicts, "ready": ready}
 
@@ -129,6 +168,11 @@ def main(argv=None):
     c = sub.add_parser("check", help="run release-integrity checks on a repo")
     c.add_argument("--repo", default=".", help="path to the package repo")
     c.add_argument("--json", action="store_true", help="emit JSON")
+    c.add_argument("--tag", default=None, help="proposed/existing release tag")
+    c.add_argument(
+        "--no-changelog-required", action="store_true",
+        help="treat a missing changelog section as uncertain, not fail",
+    )
     args = p.parse_args(argv)
     if args.command == "check":
         report = run_check(args.repo, args)

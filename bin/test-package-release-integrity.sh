@@ -43,5 +43,18 @@ expect_contains "consistent -> pass" "version_source_consistency: pass"
 run python3 "$HELPER" check --repo "$FIX/inconsistent"
 expect_contains "inconsistent -> fail" "version_source_consistency: fail"
 
+echo "tag consistency:"
+run python3 "$HELPER" check --repo "$FIX/consistent" --tag v1.2.0
+expect_contains "matching tag -> pass" "tag_consistency: pass"
+run python3 "$HELPER" check --repo "$FIX/tag-mismatch" --tag v1.1.0
+expect_contains "mismatched tag -> fail" "tag_consistency: fail"
+expect_rc "mismatched tag -> rc 1" 1
+
+echo "changelog presence:"
+run python3 "$HELPER" check --repo "$FIX/consistent"
+expect_contains "changelog present -> pass" "changelog_present: pass"
+run python3 "$HELPER" check --repo "$FIX/missing-changelog"
+expect_contains "changelog absent -> fail" "changelog_present: fail"
+
 echo "test-package-release-integrity: $pass passed, $fail failed"
 [ "$fail" -eq 0 ]
