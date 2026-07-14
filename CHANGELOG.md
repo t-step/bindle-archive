@@ -30,6 +30,12 @@ dated, versioned section at release time.
   checkout root in step 1), and `commands/promote-insight.md`'s descriptive
   "a `bin/check-private-info.sh` pattern" is allowlisted, not a run. Closes #113.
 
+- **package-release-integrity (draft, #59):** portable, clean-room, defer-aware
+  package release-integrity workflow — contract doc, Claude-native skill, and a
+  stdlib-Python helper (version-source, tag, changelog, semver-movement checks;
+  judgment checks return `uncertain`; defers to DomI where it governs release
+  integrity). Draft until pressure-tested per superpowers:writing-skills.
+
 - `docs/delegation-profiles.md` — provider-neutral ladder (Mechanical,
   Review, Research, Implementation, Privileged) for what a delegated worker
   is authorized to do, independent of model or provider (issue #32).
