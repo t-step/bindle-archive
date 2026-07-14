@@ -134,5 +134,64 @@ else
   fi
 fi
 
+# --- delegation cases: require DomI's offline_drift_check.sh ---
+find_odc() {
+  if [ -n "${DOMI_SCRIPTS_DIR+x}" ]; then
+    # Env var set: use only that path
+    [ -n "$DOMI_SCRIPTS_DIR" ] && [ -f "$DOMI_SCRIPTS_DIR/offline_drift_check.sh" ] && {
+      echo "$DOMI_SCRIPTS_DIR/offline_drift_check.sh"
+      return 0
+    }
+  else
+    # Env var not set: check defaults
+    if [ -f "$HOME/.claude/skills/sync-from-domi/scripts/offline_drift_check.sh" ]; then
+      echo "$HOME/.claude/skills/sync-from-domi/scripts/offline_drift_check.sh"
+      return 0
+    fi
+  fi
+  return 1
+}
+
+if ODC="$(find_odc)"; then
+  # Build a fixture DomI checkout: a git repo with a MANIFEST.md at a known SHA.
+  DOMI="$TMP/DomI"
+  mkdir -p "$DOMI"
+  git -C "$DOMI" init -q -b main
+  git -C "$DOMI" config user.email t@t.t
+  git -C "$DOMI" config user.name t
+  printf 'fixture manifest\n' >"$DOMI/MANIFEST.md"
+  git -C "$DOMI" add MANIFEST.md
+  git -C "$DOMI" commit -qm init
+  DHEAD="$(git -C "$DOMI" rev-parse HEAD)"
+  DMHASH="$(git -C "$DOMI" show HEAD:MANIFEST.md | sha256sum | awk '{print $1}')"
+  SCRIPTS_DIR="$(dirname "$ODC")"
+
+  # current: pin sha == DomI HEAD, manifest hash matches.
+  make_consumer "$TMP/cur" "$DHEAD" "$DMHASH"
+  run_ds "$TMP/cur" DOMI_SCRIPTS_DIR="$SCRIPTS_DIR" DOMI_LOCAL_CHECKOUT="$DOMI"
+  # shellcheck disable=SC2015
+  [ "$CODE" -eq 0 ] && grep -q "current" "$OUT" &&
+    ok "pin at HEAD → current (exit 0)" ||
+    bad "pin at HEAD → current (exit 0) [got $CODE]"
+
+  # behind: pin sha != DomI HEAD.
+  make_consumer "$TMP/beh" "$FORTY" "$DMHASH"
+  run_ds "$TMP/beh" DOMI_SCRIPTS_DIR="$SCRIPTS_DIR" DOMI_LOCAL_CHECKOUT="$DOMI"
+  # shellcheck disable=SC2015
+  [ "$CODE" -eq 1 ] && grep -q "behind" "$OUT" &&
+    ok "pin behind HEAD → behind (exit 1)" ||
+    bad "pin behind HEAD → behind (exit 1) [got $CODE]"
+
+  # forked: pin sha == HEAD but manifest hash wrong.
+  make_consumer "$TMP/fork" "$DHEAD" "$(printf 'd%.0s' {1..64})"
+  run_ds "$TMP/fork" DOMI_SCRIPTS_DIR="$SCRIPTS_DIR" DOMI_LOCAL_CHECKOUT="$DOMI"
+  # shellcheck disable=SC2015
+  [ "$CODE" -eq 3 ] && grep -q "forked" "$OUT" &&
+    ok "manifest mismatch → forked (exit 3)" ||
+    bad "manifest mismatch → forked (exit 3) [got $CODE]"
+else
+  skipt "delegation (current/behind/forked)" "DomI offline_drift_check.sh not found"
+fi
+
 printf '\n%d passed, %d failed, %d skipped\n' "$pass" "$fail" "$skip"
 [ "$fail" -eq 0 ]

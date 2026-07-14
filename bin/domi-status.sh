@@ -70,6 +70,63 @@ fi
 # 4. Fact reporting (always, offline-safe).
 echo "pin: $UPSTREAM@${SHA:0:7} branch=$BRANCH pinned_at=$PINNED_AT"
 
-# 5. Drift verdict. Task 2 wires delegation here; until then, unverifiable.
-echo "unverifiable: drift not checked (no DomI delegation reachable)"
-exit 4
+# 5. Drift verdict — delegate to DomI's own scripts (report, don't reimplement).
+find_domi_scripts() {
+  if [ -n "${DOMI_SCRIPTS_DIR+x}" ]; then
+    # Env var set: use only that path (no fallback to defaults)
+    [ -n "$DOMI_SCRIPTS_DIR" ] && [ -f "$DOMI_SCRIPTS_DIR/offline_drift_check.sh" ] && {
+      echo "$DOMI_SCRIPTS_DIR"
+      return 0
+    }
+  else
+    # Env var not set: check defaults
+    [ -f "$HOME/.claude/skills/sync-from-domi/scripts/offline_drift_check.sh" ] && {
+      echo "$HOME/.claude/skills/sync-from-domi/scripts"
+      return 0
+    }
+  fi
+  return 1
+}
+find_domi_checkout() {
+  if [ -n "${DOMI_LOCAL_CHECKOUT+x}" ]; then
+    # Env var set: use only that path (no fallback to defaults)
+    [ -n "$DOMI_LOCAL_CHECKOUT" ] && [ -d "$DOMI_LOCAL_CHECKOUT/.git" ] && {
+      echo "$DOMI_LOCAL_CHECKOUT"
+      return 0
+    }
+  else
+    # Env var not set: check defaults
+    local d
+    for d in "../DomI" "/home/user/DomI"; do
+      [ -d "$d/.git" ] && {
+        echo "$d"
+        return 0
+      }
+    done
+  fi
+  return 1
+}
+
+report_verdict() { # report_verdict <label> <exit-code>
+  echo "$1"
+  exit "$2"
+}
+
+SCRIPTS="$(find_domi_scripts || true)"
+CHECKOUT="$(find_domi_checkout || true)"
+
+if [ -n "$SCRIPTS" ] && [ -n "$CHECKOUT" ]; then
+  # Delegate to DomI's offline sibling-clone drift checker. Its exit codes:
+  # 0 synced, 1 behind, 3 forked, 2 unpinned, 4 no-clone.
+  REPO_ROOT="$TARGET" DOMI_LOCAL_CHECKOUT="$CHECKOUT" \
+    bash "$SCRIPTS/offline_drift_check.sh" >/dev/null 2>&1
+  rc=$?
+  case "$rc" in
+    0) report_verdict "current: pin verified against DomI@${SHA:0:7}" 0 ;;
+    1) report_verdict "behind: pinned ${SHA:0:7} is behind DomI upstream — run sync-from-domi" 1 ;;
+    3) report_verdict "forked: MANIFEST.md hash mismatch at pinned SHA — local edit or corruption" 3 ;;
+    *) : ;; # 2/4/other → fall through to unverifiable
+  esac
+fi
+
+report_verdict "unverifiable: drift not checked (no DomI delegation reachable)" 4
