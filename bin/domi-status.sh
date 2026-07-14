@@ -19,11 +19,15 @@ TARGET=""
 while [ $# -gt 0 ]; do
   case "$1" in
     --repo)
-      TARGET="${2:-}"
+      [ $# -ge 2 ] || {
+        echo "domi-status.sh: --repo requires a path" >&2
+        exit 64
+      }
+      TARGET="$2"
       shift 2
       ;;
     -h | --help)
-      grep '^#' "$0" | sed 's/^#\{1,\} \{0,1\}//'
+      tail -n +2 "$0" | grep '^#' | sed 's/^#\{1,\} \{0,1\}//'
       exit 0
       ;;
     *)

@@ -91,5 +91,48 @@ run_ds "$TMP/unv" DOMI_SCRIPTS_DIR=/nonexistent DOMI_LOCAL_CHECKOUT=/nonexistent
   ok "valid pin, no DomI → unverifiable (exit 4) + reports pin facts" ||
   bad "valid pin, no DomI → unverifiable (exit 4) + pin facts [got $CODE]"
 
+# --- usage error: unknown flag ---
+OUT="$TMP/out"
+ERR="$TMP/err"
+bash "$DS" --bogus >"$OUT" 2>"$ERR"
+CODE=$?
+# shellcheck disable=SC2015
+[ "$CODE" -eq 64 ] && grep -q "unknown argument" "$ERR" &&
+  ok "unknown flag --bogus → usage error (exit 64)" ||
+  bad "unknown flag --bogus → usage error (exit 64) [got $CODE]"
+
+# --- usage error: --repo with no value (guard against infinite loop) ---
+OUT="$TMP/out"
+ERR="$TMP/err"
+if command -v timeout >/dev/null 2>&1; then
+  timeout 5 bash "$DS" --repo >"$OUT" 2>"$ERR"
+  CODE=$?
+  # shellcheck disable=SC2015
+  if [ "$CODE" -eq 124 ]; then
+    bad "--repo no value → usage error (exit 64) [TIMEOUT, infinite loop]"
+  elif [ "$CODE" -eq 64 ] && grep -q "requires a path" "$ERR"; then
+    ok "--repo no value → usage error (exit 64)"
+  else
+    bad "--repo no value → usage error (exit 64) [got $CODE]"
+  fi
+else
+  bash "$DS" --repo >"$OUT" 2>"$ERR" &
+  pid=$!
+  sleep 1
+  if kill -0 "$pid" 2>/dev/null; then
+    kill "$pid" 2>/dev/null || true
+    bad "--repo no value → usage error (exit 64) [TIMEOUT, infinite loop]"
+  else
+    wait "$pid"
+    CODE=$?
+    # shellcheck disable=SC2015
+    if [ "$CODE" -eq 64 ] && grep -q "requires a path" "$ERR"; then
+      ok "--repo no value → usage error (exit 64)"
+    else
+      bad "--repo no value → usage error (exit 64) [got $CODE]"
+    fi
+  fi
+fi
+
 printf '\n%d passed, %d failed, %d skipped\n' "$pass" "$fail" "$skip"
 [ "$fail" -eq 0 ]
