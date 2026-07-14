@@ -140,6 +140,65 @@ def check_changelog_present(repo, pkg_version, required):
     )
 
 
+_CLASSES = ("breaking", "additive", "patch", "data-only")
+
+
+def check_change_classification(change_class):
+    if change_class is None:
+        return _verdict(
+            "change_classification", "uncertain",
+            "no --change-class supplied; a human must classify the change",
+        )
+    if change_class not in _CLASSES:
+        return _verdict(
+            "change_classification", "fail",
+            f"unknown class {change_class!r}; expected one of {_CLASSES}",
+        )
+    return _verdict("change_classification", "pass", f"declared {change_class}")
+
+
+def check_version_movement(prev, pkg_version, change_class):
+    if change_class is None:
+        return _verdict(
+            "version_movement", "uncertain", "movement depends on the change class"
+        )
+    if change_class == "data-only":
+        return _verdict(
+            "version_movement", "uncertain", "data-only: routed under track_routing"
+        )
+    pv, nv = parse_version(prev or ""), parse_version(pkg_version or "")
+    if pv is None or nv is None:
+        return _verdict(
+            "version_movement", "uncertain",
+            "need valid --prev-version and package version to check movement",
+        )
+    want = required_movement(change_class, is_pre_1_0(nv))
+    got = bump_type(pv, nv)
+    if got == want:
+        return _verdict(
+            "version_movement", "pass",
+            f"{change_class} moved {prev}->{pkg_version} ({got}) as required",
+        )
+    return _verdict(
+        "version_movement", "fail",
+        f"{change_class} requires a {want} bump; {prev}->{pkg_version} was {got}",
+    )
+
+
+def check_track_routing(change_class, version_moved):
+    if change_class != "data-only":
+        return _verdict(
+            "track_routing", "uncertain",
+            "track routing only auto-checked for data-only changes",
+        )
+    if version_moved:
+        return _verdict(
+            "track_routing", "fail",
+            "data-only change moved the package version",
+        )
+    return _verdict("track_routing", "pass", "data-only change left the version unmoved")
+
+
 def run_check(repo, args):
     repo = Path(repo)
     verdicts = []
@@ -149,6 +208,13 @@ def run_check(repo, args):
     verdicts.append(check_tag_consistency(pkg_version, getattr(args, "tag", None)))
     required = not getattr(args, "no_changelog_required", False)
     verdicts.append(check_changelog_present(repo, pkg_version, required))
+    change_class = getattr(args, "change_class", None)
+    prev = getattr(args, "prev_version", None)
+    verdicts.append(check_change_classification(change_class))
+    verdicts.append(check_version_movement(prev, pkg_version, change_class))
+    pv, nv = parse_version(prev or ""), parse_version(pkg_version or "")
+    moved = bool(pv and nv and bump_type(pv, nv) is not None)
+    verdicts.append(check_track_routing(change_class, moved))
     ready = all(v["verdict"] != "fail" for v in verdicts)
     return {"verdicts": verdicts, "ready": ready}
 
@@ -173,6 +239,11 @@ def main(argv=None):
         "--no-changelog-required", action="store_true",
         help="treat a missing changelog section as uncertain, not fail",
     )
+    c.add_argument(
+        "--change-class", default=None, choices=_CLASSES,
+        help="declared change class; omitted => classification is uncertain",
+    )
+    c.add_argument("--prev-version", default=None, help="previously released version")
     args = p.parse_args(argv)
     if args.command == "check":
         report = run_check(args.repo, args)

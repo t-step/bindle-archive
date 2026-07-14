@@ -63,5 +63,24 @@ echo "tag consistency (no --tag supplied):"
 run python3 "$HELPER" check --repo "$FIX/consistent"
 expect_contains "no --tag -> uncertain" "tag_consistency: uncertain"
 
+echo "classification + movement (judgment gated):"
+run python3 "$HELPER" check --repo "$FIX/consistent"
+expect_contains "no class -> classification uncertain" "change_classification: uncertain"
+expect_contains "no class -> movement uncertain" "version_movement: uncertain"
+
+run python3 "$HELPER" check --repo "$FIX/pre-1.0-breaking" --prev-version 0.3.0 --change-class breaking
+expect_contains "pre-1.0 breaking minor -> pass" "version_movement: pass"
+run python3 "$HELPER" check --repo "$FIX/post-1.0-breaking" --prev-version 1.2.0 --change-class breaking
+expect_contains "post-1.0 breaking major -> pass" "version_movement: pass"
+run python3 "$HELPER" check --repo "$FIX/additive" --prev-version 1.2.0 --change-class additive
+expect_contains "additive minor -> pass" "version_movement: pass"
+run python3 "$HELPER" check --repo "$FIX/patch" --prev-version 1.2.0 --change-class patch
+expect_contains "patch -> pass" "version_movement: pass"
+
+run python3 "$HELPER" check --repo "$FIX/data-only" --prev-version 1.2.0 --change-class data-only
+expect_contains "data-only no move -> track pass" "track_routing: pass"
+run python3 "$HELPER" check --repo "$FIX/additive" --prev-version 1.2.0 --change-class data-only
+expect_contains "data-only but moved -> track fail" "track_routing: fail"
+
 echo "test-package-release-integrity: $pass passed, $fail failed"
 [ "$fail" -eq 0 ]
