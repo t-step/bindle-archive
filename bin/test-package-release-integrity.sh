@@ -82,5 +82,16 @@ expect_contains "data-only no move -> track pass" "track_routing: pass"
 run python3 "$HELPER" check --repo "$FIX/additive" --prev-version 1.2.0 --change-class data-only
 expect_contains "data-only but moved -> track fail" "track_routing: fail"
 
+echo "build/test gates (shell-out):"
+run python3 "$HELPER" check --repo "$FIX/consistent" --test-cmd "true"
+expect_contains "passing test-cmd -> pass" "verification_gate: pass"
+run python3 "$HELPER" check --repo "$FIX/consistent" --test-cmd "false"
+expect_contains "failing test-cmd -> fail" "verification_gate: fail"
+expect_rc "failing test-cmd -> rc 1" 1
+run python3 "$HELPER" check --repo "$FIX/consistent"
+expect_contains "no test-cmd -> uncertain" "verification_gate: uncertain"
+run python3 "$HELPER" check --repo "$FIX/consistent" --test-cmd "definitely-not-a-real-cmd-xyz"
+expect_contains "broken test-cmd -> uncertain (degraded)" "verification_gate: uncertain"
+
 echo "test-package-release-integrity: $pass passed, $fail failed"
 [ "$fail" -eq 0 ]

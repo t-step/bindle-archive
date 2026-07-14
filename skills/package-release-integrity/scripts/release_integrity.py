@@ -8,6 +8,7 @@ Stdlib only. Never mutates; a green check is not authorization to publish.
 import argparse
 import json
 import re
+import subprocess
 import sys
 import tomllib
 from pathlib import Path
@@ -199,6 +200,34 @@ def check_track_routing(change_class, version_moved):
     return _verdict("track_routing", "pass", "data-only change left the version unmoved")
 
 
+def run_gate(name, cmd, repo):
+    """Shell out to a repo-supplied command. pass=0, fail=nonzero,
+    uncertain=absent or unexecutable (degraded, never a false pass)."""
+    if not cmd:
+        return _verdict(name, "uncertain", "no command supplied for this gate")
+    try:
+        proc = subprocess.run(
+            cmd, shell=True, cwd=str(repo),
+            capture_output=True, text=True, timeout=600,
+        )
+    except (OSError, subprocess.SubprocessError) as exc:
+        return _verdict(name, "uncertain", f"could not run {cmd!r}: {exc} (degraded)")
+    # 126/127 are the shell's own "command not found/not executable" codes
+    # (POSIX sh/bash/zsh) — an execution failure, not a real gate failure.
+    # shell=True means Python never raises for this case; the shell reports
+    # it via returncode instead, so it must be classified as uncertain here
+    # to keep the "degraded, never a false pass/fail" guarantee.
+    if proc.returncode in (126, 127):
+        return _verdict(
+            name, "uncertain",
+            f"could not run {cmd!r}: shell exit {proc.returncode} "
+            f"({proc.stderr.strip() or 'command not found'}) (degraded)",
+        )
+    if proc.returncode == 0:
+        return _verdict(name, "pass", f"{cmd!r} exited 0")
+    return _verdict(name, "fail", f"{cmd!r} exited {proc.returncode}")
+
+
 def run_check(repo, args):
     repo = Path(repo)
     verdicts = []
@@ -215,6 +244,10 @@ def run_check(repo, args):
     pv, nv = parse_version(prev or ""), parse_version(pkg_version or "")
     moved = bool(pv and nv and bump_type(pv, nv) is not None)
     verdicts.append(check_track_routing(change_class, moved))
+    verdicts.append(run_gate("build_gate", getattr(args, "build_cmd", None), repo))
+    verdicts.append(
+        run_gate("verification_gate", getattr(args, "test_cmd", None), repo)
+    )
     ready = all(v["verdict"] != "fail" for v in verdicts)
     return {"verdicts": verdicts, "ready": ready}
 
@@ -244,6 +277,8 @@ def main(argv=None):
         help="declared change class; omitted => classification is uncertain",
     )
     c.add_argument("--prev-version", default=None, help="previously released version")
+    c.add_argument("--build-cmd", default=None, help="repo build/metadata command")
+    c.add_argument("--test-cmd", default=None, help="repo verification command")
     args = p.parse_args(argv)
     if args.command == "check":
         report = run_check(args.repo, args)
