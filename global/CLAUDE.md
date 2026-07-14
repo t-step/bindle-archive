@@ -17,6 +17,7 @@ should apply to only some projects belongs in that project's CLAUDE.md, not here
 - **Never push** to `origin`, `upstream`, or a deploy target (PyPI, HuggingFace, Vercel, etc.) unless I explicitly ask — I handle pushes and deploys myself. See the `fork-pr-flow` skill for the branch/PR mechanics.
 - **One fix at a time.** Reproduce a bug before proposing a fix; don't stack speculative fixes. See superpowers:systematic-debugging.
 - Prefer small, single-purpose, reviewable commits over one large blob.
+- **Fork for open-ended research or exploration** whose raw tool output (greps, file reads, intermediate reasoning) won't be needed again — keep the main session to synthesis, not transcripts. Stay inline only for a single quick lookup. This mirrors dispatching implementation work to a subagent, but for the research side, on the main model itself.
 
 ## Tooling defaults
 
