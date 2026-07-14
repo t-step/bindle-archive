@@ -16,6 +16,20 @@ dated, versioned section at release time.
 
 ### Added
 
+- **`make check` now guards Bindle-root path refs (#113).** A new `check.sh`
+  section scans the installed instruction assets (`skills/*/SKILL.md`,
+  `commands/*.md`, `agents/*.md`) and flags any inline-code `bin/*.sh` run-ref
+  that isn't `<bindle>/`-qualified — the class of bug #107/#113 fixed by hand,
+  now caught mechanically. It skips YAML frontmatter (so permission globs like
+  `Bash(bin/notes-home.sh status:*)` don't trip it) and honors a documented
+  `PATH_REF_ALLOW` substring allowlist for genuine descriptive mentions
+  (mirrors the existing `SH_EXCLUDE` idiom). Verified by a RED→GREEN fixture
+  suite in `bin/test-check.sh`. Enabling the guard surfaced two live cases
+  #114 missed: `commands/notes-home.md` had three bare `bin/notes-home.sh`
+  run-refs (now `<bindle>/`-qualified — the command already resolves the
+  checkout root in step 1), and `commands/promote-insight.md`'s descriptive
+  "a `bin/check-private-info.sh` pattern" is allowlisted, not a run. Closes #113.
+
 - `docs/delegation-profiles.md` — provider-neutral ladder (Mechanical,
   Review, Research, Implementation, Privileged) for what a delegated worker
   is authorized to do, independent of model or provider (issue #32).

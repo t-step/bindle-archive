@@ -135,6 +135,63 @@ status=$?
 check "does not error out on a spaced path" test "$status" -eq 0
 check "discovers the spaced-path script" contains "skills/demo space/scripts/my tool.sh" "$out"
 
+# ===========================================================================
+echo "Bindle-root path refs — flags a bare run-ref:"
+REPO="$TMP/repo-pathref"
+build_repo "$REPO"
+mkdir -p "$REPO/skills/demo"
+cat >"$REPO/skills/demo/SKILL.md" <<'EOF'
+---
+name: demo
+description: demo skill
+---
+Run `bin/check-private-info.sh` on the summary before committing.
+EOF
+git_commit "$REPO" "add skill with a bare Bindle-root run-ref"
+out="$(cd "$REPO" && bin/check.sh 2>&1)"
+status=$?
+
+check "flags the file with the bare run-ref" contains "skills/demo/SKILL.md" "$out"
+check "explains the fix (qualify with <bindle>/)" contains "qualify with <bindle>/" "$out"
+check "check.sh exits non-zero on a bare run-ref" test "$status" -ne 0
+
+# ===========================================================================
+echo "Bindle-root path refs — clean when qualified, allowlisted, or in frontmatter:"
+REPO="$TMP/repo-pathref-ok"
+build_repo "$REPO"
+mkdir -p "$REPO/skills/demo" "$REPO/skills/desc" "$REPO/commands"
+# already <bindle>/-qualified — must be clean
+cat >"$REPO/skills/demo/SKILL.md" <<'EOF'
+---
+name: demo
+description: demo skill
+---
+Run `<bindle>/bin/check-private-info.sh` on the summary before committing.
+EOF
+# a frontmatter permission glob — must NOT trip (frontmatter is skipped)
+cat >"$REPO/commands/notes.md" <<'EOF'
+---
+description: notes command
+allowed-tools: Bash(bin/notes-home.sh status:*)
+---
+Body text with no runnable Bindle-root refs.
+EOF
+# a descriptive mention covered by the shipped allowlist ("Where the tools live")
+cat >"$REPO/skills/desc/SKILL.md" <<'EOF'
+---
+name: desc
+description: desc skill
+---
+**Where the tools live.** Both `bin/domi-status.sh` and the docs are at the Bindle root.
+EOF
+git_commit "$REPO" "qualified + frontmatter-glob + allowlisted refs"
+out="$(cd "$REPO" && bin/check.sh 2>&1)"
+
+check "does not flag a <bindle>/-qualified ref" not_contains "skills/demo/SKILL.md" "$out"
+check "does not flag a frontmatter permission glob" not_contains "commands/notes.md" "$out"
+check "does not flag an allowlisted descriptive line" not_contains "skills/desc/SKILL.md" "$out"
+check "reports the section clean" contains "Bindle-root tool refs are" "$out"
+
 # --- result ----------------------------------------------------------------
 echo
 echo "tests: ${pass} passed, ${fail} failed"

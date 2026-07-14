@@ -36,6 +36,21 @@ cd "$REPO_ROOT" || exit 1
 # with why it's here — an undocumented exclusion is a bug waiting to hide.
 SH_EXCLUDE=()
 
+# Lines in the installed instruction assets (skills/commands/agents) that mention
+# a Bindle-root script (`bin/*.sh`) descriptively rather than as a run
+# instruction, so the "Bindle-root path refs" check (section 8) should not flag
+# them. Match is a plain substring of the offending line. Keep this narrow and
+# comment every entry with why — an undocumented allow is a bug waiting to hide.
+PATH_REF_ALLOW=(
+  # domi-consumer names the detector once, descriptively ("Where the tools
+  # live. Both `bin/domi-status.sh` ..."), before giving the qualified
+  # `<bindle>/bin/domi-status.sh` run form a few lines down.
+  "Where the tools live"
+  # promote-insight names the scanner as the *destination* for a privacy rule
+  # ("a `bin/check-private-info.sh` pattern or a denylist term"), not a run.
+  "**privacy rule**"
+)
+
 fail=0
 problem() {
   printf '  ✗ %s\n' "$1"
@@ -316,6 +331,54 @@ else
     problem "capability inventory check failed (run: python3 bin/check-inventory.py)"
   fi
 fi
+
+# --- 6c. Bindle-root path refs ---------------------------------------------
+# The installed instruction assets (skills/commands/agents) run from the cwd of
+# whatever project you're working in, NOT the Bindle checkout. A run instruction
+# that names a Bindle-root script by a bare, repo-relative path (`bin/foo.sh`)
+# misresolves there — worst case, a privacy scan the recipe blocks on is
+# silently skipped (issue #113). Require such refs to be `<bindle>/`-qualified.
+# Frontmatter is skipped (permission globs like `Bash(bin/x.sh:*)` aren't run
+# instructions); PATH_REF_ALLOW covers documented descriptive mentions.
+echo "Bindle-root path refs:"
+pathref_problems=0
+while IFS= read -r mdfile; do
+  [ -f "$mdfile" ] || continue
+  in_fm=0 lineno=0
+  while IFS= read -r line; do
+    lineno=$((lineno + 1))
+    # Skip the leading YAML frontmatter block (--- ... ---).
+    if [ "$lineno" -eq 1 ] && [ "$line" = "---" ]; then
+      in_fm=1
+      continue
+    fi
+    if [ "$in_fm" -eq 1 ]; then
+      [ "$line" = "---" ] && in_fm=0
+      continue
+    fi
+    # Documented descriptive mentions are not run instructions.
+    allowed=0
+    if [ "${#PATH_REF_ALLOW[@]}" -gt 0 ]; then
+      for a in "${PATH_REF_ALLOW[@]}"; do
+        case "$line" in *"$a"*) allowed=1 && break ;; esac
+      done
+    fi
+    [ "$allowed" -eq 1 ] && continue
+    # Inspect each inline-code span; flag a bin/*.sh not `<bindle>/`-qualified.
+    # shellcheck disable=SC2016  # the backticks are a literal regex, not expansion
+    spans="$(grep -oE '`[^`]+`' <<<"$line")"
+    while IFS= read -r span; do
+      [ -n "$span" ] || continue
+      stripped="$(sed -E 's#<bindle>/bin/[a-zA-Z0-9_-]+\.sh##g' <<<"$span")"
+      bad="$(grep -oE 'bin/[a-zA-Z0-9_-]+\.sh' <<<"$stripped" | head -1)"
+      if [ -n "$bad" ]; then
+        problem "$mdfile:$lineno: bare run-ref \`$bad\` — qualify with <bindle>/ or add to PATH_REF_ALLOW"
+        pathref_problems=$((pathref_problems + 1))
+      fi
+    done <<<"$spans"
+  done <"$mdfile"
+done < <(git ls-files 'skills/*/SKILL.md' 'commands/*.md' 'agents/*.md')
+[ "$pathref_problems" -eq 0 ] && ok "all Bindle-root tool refs are <bindle>/-qualified"
 
 # --- 7. private info ---------------------------------------------------------
 # Personal-info guard (relay emails, home paths, transcripts, denylist terms).
