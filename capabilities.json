@@ -334,6 +334,21 @@
       "version_introduced": "0.3.0"
     },
     {
+      "name": "domi-status",
+      "type": "script",
+      "path": "bin/domi-status.sh",
+      "description": "Read-only DomI-consumer detector: parses a repo's .domi-pin and reports a compact drift verdict (current/behind/forked/unverifiable/malformed/not-a-domi-consumer) by delegating the drift check to DomI's own check_pin.sh / offline_drift_check.sh, mirroring their exit codes; never reimplements DomI-owned policy.",
+      "provider": {
+        "claude": "manual",
+        "codex": "manual"
+      },
+      "maturity": "tested",
+      "mutation": [
+        "network"
+      ],
+      "version_introduced": "0.4.0"
+    },
+    {
       "name": "session-notes-format",
       "type": "contract",
       "path": "docs/session-notes-format.md",
