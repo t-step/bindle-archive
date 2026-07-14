@@ -55,6 +55,13 @@ run python3 "$HELPER" check --repo "$FIX/consistent"
 expect_contains "changelog present -> pass" "changelog_present: pass"
 run python3 "$HELPER" check --repo "$FIX/missing-changelog"
 expect_contains "changelog absent -> fail" "changelog_present: fail"
+run python3 "$HELPER" check --repo "$FIX/missing-changelog" --no-changelog-required
+expect_contains "changelog absent + no-required -> uncertain" "changelog_present: uncertain"
+expect_rc "changelog absent + no-required -> rc 0" 0
+
+echo "tag consistency (no --tag supplied):"
+run python3 "$HELPER" check --repo "$FIX/consistent"
+expect_contains "no --tag -> uncertain" "tag_consistency: uncertain"
 
 echo "test-package-release-integrity: $pass passed, $fail failed"
 [ "$fail" -eq 0 ]

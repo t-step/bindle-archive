@@ -130,7 +130,7 @@ def check_changelog_present(repo, pkg_version, required):
         verdict = "fail" if required else "uncertain"
         return _verdict("changelog_present", verdict, "CHANGELOG.md not found")
     text = changelog.read_text()
-    if f"[{pkg_version}]" in text or "[Unreleased]" in text:
+    if (pkg_version is not None and f"[{pkg_version}]" in text) or "[Unreleased]" in text:
         return _verdict(
             "changelog_present", "pass", f"section for {pkg_version} or [Unreleased]"
         )
