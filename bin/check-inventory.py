@@ -475,6 +475,34 @@ def check_bound_table(caps, root):
     return errors
 
 
+EXTERNAL_UPSTREAM_KEYS = {"name", "owner", "repo", "role", "pin_file",
+                          "authority_for", "detector", "contract"}
+
+
+def check_external_upstreams(root):
+    """Validate the optional top-level external_upstreams array: each entry is
+    an object carrying the full provenance key set. Not part of the bijection —
+    these describe dependencies, not Bindle capabilities."""
+    errors = []
+    path = os.path.join(root, "capabilities.json")
+    with open(path, encoding="utf-8") as fh:
+        data = json.load(fh)
+    ups = data.get("external_upstreams", [])
+    if not isinstance(ups, list):
+        return ["capabilities.json: 'external_upstreams' must be an array"]
+    for i, e in enumerate(ups):
+        label = "external_upstreams[%d]" % i
+        if not isinstance(e, dict):
+            errors.append("%s: must be an object" % label)
+            continue
+        missing = EXTERNAL_UPSTREAM_KEYS - set(e.keys())
+        if missing:
+            errors.append("%s: missing key(s) %s" % (label, sorted(missing)))
+        if not isinstance(e.get("authority_for", []), list):
+            errors.append("%s: 'authority_for' must be an array" % label)
+    return errors
+
+
 def main(argv=None):
     parser = argparse.ArgumentParser()
     parser.add_argument("--root", default=None)
@@ -522,6 +550,7 @@ def main(argv=None):
     errors += check_paths(dict_caps, root)
     errors += check_crosschecks(dict_caps, root)
     errors += check_bound_table(dict_caps, root)
+    errors += check_external_upstreams(root)
     if args.check_manifest:
         errors += check_manifest(dict_caps, root)
     if args.check_docs:

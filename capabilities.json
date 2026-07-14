@@ -640,5 +640,25 @@
       "path": "docs/using-bindle-with-codex.md",
       "reason": "a meta-guide for Codex describing which existing capabilities to use (docs/session-notes-format.md, docs/privacy-boundaries.md, bin/slugify.sh, bin/check-private-info.sh); not itself a distinct capability."
     }
+  ],
+  "external_upstreams": [
+    {
+      "name": "DomI",
+      "owner": "domattioli",
+      "repo": "domattioli/DomI",
+      "role": "upstream workflow authority",
+      "pin_file": ".domi-pin",
+      "authority_for": [
+        "branch-commit-discipline",
+        "destructive-action-hard-stops",
+        "context-session-management",
+        "delegation-dispatch",
+        "release-semver-governance",
+        "issue-session-workflow",
+        "sync-update-ownership"
+      ],
+      "detector": "bin/domi-status.sh",
+      "contract": "docs/domi-consumer.md"
+    }
   ]
 }
