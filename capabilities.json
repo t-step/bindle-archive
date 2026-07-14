@@ -1,6 +1,21 @@
 {
   "capabilities": [
     {
+      "name": "domi-consumer",
+      "type": "skill",
+      "path": "skills/domi-consumer",
+      "description": "Use when working in (or unsure whether you're in) a repository that consumes DomI — to detect the .domi-pin, report drift status (current/behind/forked/unverifiable/malformed), and see which inherited policy categories are owned upstream. Reports; never vendors or reimplements DomI-owned policy.",
+      "provider": {
+        "claude": "installed",
+        "codex": "untested"
+      },
+      "maturity": "draft",
+      "mutation": [
+        "network"
+      ],
+      "version_introduced": "0.4.0"
+    },
+    {
       "name": "fork-pr-flow",
       "type": "skill",
       "path": "skills/fork-pr-flow",
