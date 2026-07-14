@@ -67,6 +67,15 @@ dated, versioned section at release time.
   `capabilities.json`/`install-manifest.tsv`, never hand-duplicated. The
   release aborts before committing if the manifest can't be regenerated
   consistently. See `docs/release-manifest.md` (issue #33).
+- **DomI-consumer profile (#58).** `bin/domi-status.sh` — read-only detector
+  that checks if a repo is a DomI-consumer by delegating the drift verdict to
+  DomI's own `diagnose` script. `docs/domi-consumer.md` — provider-neutral
+  contract for what a DomI consumer is, what it owns, and what DomI owns
+  (lifecycle, config, consumption paths). `/domi-consumer` skill (draft — not
+  yet pressure-tested): reads the local DomI status and prepares a work
+  summary for inclusion in session notes. `capabilities.json` now includes
+  an `external_upstreams` section providing provenance for external scripts
+  (`domi-status.sh`) and their corresponding capabilities ledger rows.
 
 ### Fixed
 
