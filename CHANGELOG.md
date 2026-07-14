@@ -104,6 +104,28 @@ dated, versioned section at release time.
 
 ### Fixed
 
+- **Verified `package-release-integrity` under a real Codex session (#59
+  follow-up).** #59 shipped the skill *Codex-portable by construction* (a
+  stdlib-Python helper with no Claude-only primitive) but never *exercised* it
+  under Codex — the one open item on its audit row. Ran three `codex exec`
+  sessions (Codex CLI v0.143.0, `gpt-5.5`): given only the portable contract
+  (`docs/package-release-integrity.md`) + the helper path + a release context —
+  not the command — Codex read the contract, formed the invocation itself, and
+  returned the correct **discriminating** verdict each time: NOT READY on a
+  tag/version mismatch and on a data-only change that churned the version
+  (`track_routing: fail`), READY on a clean additive release. The audit row's
+  Codex status flips from "untested" to evidence-backed;
+  `skills/package-release-integrity/PRESSURE-TESTS.md` records the runs. The
+  data-only rep also closes that campaign's deferred agent-facing
+  `track_routing: fail` coverage.
+- **Corrected a stale `domi-consumer` audit row (#107 follow-up).**
+  `docs/skill-portability-audit.md` still marked the skill "draft — not
+  pressure-tested", but #107 had already pressure-tested it (5 reps/arm,
+  RED→GREEN) and both this CHANGELOG and `skills/domi-consumer/PRESSURE-TESTS.md`
+  recorded the `draft → tested` flip — only the audit table was never synced.
+  The row now reads **tested**, and its remaining follow-up (attempt a Codex
+  invocation of the bash wrapper) is stated accurately instead of "reassess once
+  pressure-tested".
 - **Qualify Bindle-root tool refs so they resolve from a non-Bindle cwd (#113).**
   `session-continuity` (a skill) and `/session-end`, `/promote-insight`,
   `/promote-knowledge` (globally-installed commands) told the agent to *run*
