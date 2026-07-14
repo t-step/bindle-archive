@@ -31,6 +31,13 @@ Provider files may repeat some rules in provider-native language. That is
 intentional. Drift is managed by review, not by merging dissimilar surfaces
 into one generated file.
 
+These rules were **reaffirmed** by the 2026-07-14 product-boundary revisit
+(`product-boundary.md` § "Revisit 2026-07-14"), which
+widened Codex from a "narrow adapter" to a supported provider that can host
+provider-native assets. The widening opens the *surface* — it does not merge
+these dissimilar surfaces, and automatic Claude→Codex asset conversion stays
+barred.
+
 What *does* travel between providers is the workflow contract underneath the
 provider assets — see [session-notes-format.md](session-notes-format.md) for
 the first one (session continuity). Portable workflows are specified as

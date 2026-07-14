@@ -97,6 +97,17 @@ dated, versioned section at release time.
 
 ### Changed
 
+- **Product-boundary revisit — the Codex-primitives trigger fired (issue #55).**
+  `docs/product-boundary.md` now adjudicates (in the shape #34 used) the Revisit
+  Trigger #55 claimed: verdict **FIRED**. On the #56 capability re-baseline and
+  the #57 shipped skill-install surface, Codex is reclassified from a
+  "supported-but-narrow adapter, not a peer" to a supported provider that can
+  host provider-native skills/subagents/hooks. The permanent guardrails hold —
+  non-equivalence, no *automatic* asset conversion (hand-authored native assets
+  are fine), no universal runtime, hooks still gated on the #30 safety contract,
+  and installer conflict-safety with per-asset eligibility; plugins stay
+  deferred. `docs/provider-interop.md` reaffirms its non-equivalence rules under
+  the widened stance. Doc-only; unblocks #59/#60.
 - `/session-end` (draft — not yet pressure-tested): profile-worthy facts now
   go through a persistent `profile-proposals.md` Add/Defer/Reject queue
   instead of a one-line suggestion that got lost between sessions. Deferred
