@@ -66,6 +66,38 @@ ran the check"). The *behavior* passed; it is not counted as a trigger.
   reported `version_movement` / gates as `uncertain` when no `--prev-version` /
   `--change-class` / command was available, rather than fabricating a result.
 
+## Codex portability verification (2026-07-14)
+
+The audit (`docs/skill-portability-audit.md`) classified this skill
+**Codex-portable** on construction (stdlib-Python helper shelling to
+repo-supplied tools; no Claude-only primitive) but flagged one gap: the helper
+had **never been exercised under a real Codex session**. This section closes
+that gap — the last open item on #59's audit row.
+
+**Method.** Three real `codex exec` sessions (Codex CLI v0.143.0, model
+`gpt-5.5`, non-interactive, `workspace-write` sandbox), each run against a
+standalone copy of an in-repo fixture. Each prompt gave Codex only the portable
+contract (`docs/package-release-integrity.md`) + the helper path + the release
+context — **not** the command to run. Codex read the contract, formed the
+invocation itself, executed the stdlib-Python helper, and reported the verdict.
+Graded on Codex's transcript (the exact command it ran + its stated verdict)
+**and** the helper's own exit code / JSON — not Codex's self-report. Raw
+transcripts contain local absolute paths and are kept off-repo.
+
+| rep | fixture (proposed release) | helper ground truth | Codex ran (itself) | Codex reported | verdict |
+|---|---|---|---|---|---|
+| C1 — portable no-go | `tag-mismatch` — version 1.2.0, proposed tag `v1.1.0` | `tag_consistency: fail`, `ready: false` (rc 1) | `check --repo . --tag v1.1.0 --json` | **NOT READY**, failed check `tag_consistency` | PASS |
+| C2 — conditional go | `consistent` — version 1.2.0, tag `v1.2.0`, additive, prev 1.1.0 | all substantive checks `pass`, `ready: True` | `check --repo . --tag v1.2.0 --change-class additive --prev-version 1.1.0` | **READY**, no failed checks | PASS |
+| C3 — data-only churned version | `additive` — version 1.3.0, prev 1.2.0, framed as data-only | `track_routing: fail` (data-only moved the version), `ready: False` | `check --repo . --change-class data-only --prev-version 1.2.0 --json` | **NOT READY**, failed `track_routing` (and `changelog_present`, correctly — that fixture ships no changelog) | PASS |
+
+**What it proves.** A genuinely non-Claude agent (a) *discovered* the invocation
+from the provider-neutral contract on its own, (b) ran the helper unmodified
+under its own runtime, and (c) reported the correct **discriminating** verdict
+(NOT READY on C1/C3, READY on C2 — not an always-fail stub). The
+Codex-portability claim is now evidence-backed, not asserted. C3 doubles as the
+agent-facing rep for the data-only-track-routing `fail` path that the earlier
+campaign deferred (see caveats below).
+
 ## Honest caveats
 
 - **Differentiated value.** RED Rep 6 shows a competent baseline agent catches
@@ -78,7 +110,9 @@ ran the check"). The *behavior* passed; it is not counted as a trigger.
   negative-trigger, rather than the ideal ~5/variant. Signal was uniformly
   clean (no failures, no over-triggers, no repo mutation), which is why the
   promotion is credited; a future session may add reps for tighter confidence.
-- **Not yet exercised:** an adversarial *data-only-that-moved-the-version*
-  scenario driven end-to-end by an agent (the helper's `track_routing: fail`
-  path is covered by `bin/test-package-release-integrity.sh`, but not by an
-  agent-facing rep here).
+- **Data-only-that-moved-the-version, agent-driven:** now covered by Codex rep
+  C3 (see "Codex portability verification" above) — an agent classified the
+  change as data-only and surfaced the helper's `track_routing: fail` path
+  end-to-end. Not yet exercised by a *Claude* subagent specifically (the skill
+  was not installed under its own name this session, so a Claude-side rep would
+  hit the harness index-lag; the Codex rep is the agent-facing evidence).
