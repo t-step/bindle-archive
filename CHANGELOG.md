@@ -83,6 +83,14 @@ dated, versioned section at release time.
 
 ### Fixed
 
+- **Scope the provider-interop Skills-matrix "followed" claim (#110).**
+  `docs/provider-interop.md`'s Skills row overclaimed that a real Codex
+  session behaviorally followed the skills "for the eligible skills" (plural,
+  implying both `verify-then-commit` and `fork-pr-flow`). Per the audit's
+  uncertainty register (`docs/skill-portability-audit.md` U1/U2), the probe
+  discovered *both* eligible skills but invocation-tested and followed only
+  `verify-then-commit`; `fork-pr-flow` was not separately probed this wave.
+  Row now matches U2 and `product-boundary.md` § "Revisit 2026-07-14".
 - **Harden capability inventory (#77).** `bin/check-inventory.py`'s fuzzy
   classification now covers `bin/*.py` as well as `bin/*.sh`, closing a gap
   where the validator itself (`bin/check-inventory.py`) wasn't required to be
