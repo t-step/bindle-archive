@@ -25,3 +25,12 @@ skills go through) before adding or changing items.
 - **Editing `global/CLAUDE.md` changes behavior in every project.** Keep each rule
   there universally safe or gated on an observable repo signal — see that file's
   header.
+- **Default to caveman mode (`full` intensity) in this repo.** Invoke the
+  `caveman` skill at session start and stay in it for the whole session —
+  don't wait for the user to ask. Drop it only for the skill's own
+  auto-clarity carve-outs (security warnings, irreversible-action
+  confirmations, misreadable multi-step sequences, or when the user asks to
+  clarify). *Why here and not `global/CLAUDE.md`:* this repo's sessions are
+  issue triage / retros / transcript review — high token volume, low risk of
+  losing nuance — so the win is worth it here without forcing the tradeoff on
+  every other project.
