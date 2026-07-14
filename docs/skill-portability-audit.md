@@ -43,7 +43,7 @@ Every claim below carries one of four evidence labels:
 Non-destructive verification performed for this audit (no real user home or
 provider settings touched; fixtures in the session scratchpad only):
 
-1. **Frontmatter shape** — all 8 skills have exactly the `name`/`description`
+1. **Frontmatter shape** — all 9 skills have exactly the `name`/`description`
    frontmatter Codex Agent Skills documents as required, with `name` matching
    the directory (`make check` green; **tested**, format level only).
 2. **Whole-directory symlink preserves support-file resolution** — a skill
@@ -69,7 +69,7 @@ provider settings touched; fixtures in the session scratchpad only):
 
 ## Summary
 
-- **Skills audited: 8** (every authored skill: `fork-pr-flow`,
+- **Skills audited: 9** (every authored skill: `domi-consumer`, `fork-pr-flow`,
   `hands-on-keyboard`, `license-compliance-auditor`, `maintain-claude-md`,
   `repo-hygiene-init`, `scoped-sequential-prs`, `session-continuity`,
   `verify-then-commit`), plus
