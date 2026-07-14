@@ -4,6 +4,7 @@ claude	skill	fork-pr-flow	skills/fork-pr-flow	skills/fork-pr-flow
 claude	skill	hands-on-keyboard	skills/hands-on-keyboard	skills/hands-on-keyboard
 claude	skill	license-compliance-auditor	skills/license-compliance-auditor	skills/license-compliance-auditor
 claude	skill	maintain-claude-md	skills/maintain-claude-md	skills/maintain-claude-md
+claude	skill	package-release-integrity	skills/package-release-integrity	skills/package-release-integrity
 claude	skill	repo-hygiene-init	skills/repo-hygiene-init	skills/repo-hygiene-init
 claude	skill	scoped-sequential-prs	skills/scoped-sequential-prs	skills/scoped-sequential-prs
 claude	skill	session-continuity	skills/session-continuity	skills/session-continuity

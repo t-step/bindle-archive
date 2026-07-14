@@ -43,7 +43,7 @@ Every claim below carries one of four evidence labels:
 Non-destructive verification performed for this audit (no real user home or
 provider settings touched; fixtures in the session scratchpad only):
 
-1. **Frontmatter shape** — all 9 skills have exactly the `name`/`description`
+1. **Frontmatter shape** — all 10 skills have exactly the `name`/`description`
    frontmatter Codex Agent Skills documents as required, with `name` matching
    the directory (`make check` green; **tested**, format level only).
 2. **Whole-directory symlink preserves support-file resolution** — a skill
@@ -69,10 +69,10 @@ provider settings touched; fixtures in the session scratchpad only):
 
 ## Summary
 
-- **Skills audited: 9** (every authored skill: `domi-consumer`, `fork-pr-flow`,
+- **Skills audited: 10** (every authored skill: `domi-consumer`, `fork-pr-flow`,
   `hands-on-keyboard`, `license-compliance-auditor`, `maintain-claude-md`,
-  `repo-hygiene-init`, `scoped-sequential-prs`, `session-continuity`,
-  `verify-then-commit`), plus
+  `package-release-integrity`, `repo-hygiene-init`, `scoped-sequential-prs`,
+  `session-continuity`, `verify-then-commit`), plus
   `skills/_template/` (not an authored skill; excluded from install and
   checks by the `_*` skip in `bin/install.sh` and `bin/check.sh` —
   classified **not applicable**).
@@ -160,6 +160,7 @@ is untested for every skill.
 | `session-continuity` | Notes home, session notes, handoffs, profiles — the privacy-safe cross-session memory | Bindle (portable contract already exists separately: [session-notes-format.md](session-notes-format.md)) | yes (tested, Claude; documented, Codex) | installed + pressure-tested (4+ claims incl. Haiku/Sonnet reruns) | untested | prose asserts "The `/session-start`, `/session-end`, `/handoff`, and `/project-profile` commands all follow these conventions" — Claude slash commands with **no Codex equivalent** (Codex custom prompts are deprecated) | Bindle repo checkout for `bin/slugify.sh` + `bin/check-private-info.sh` (conditional, degrades with a stated fallback); notes home dir | Claude: tested · Codex: unknown | **provider-specific** (Codex uses the doc, [#71](#decision-on-provider-specific-wording-71)) | **resolved #71 → option 2:** no wording change; Codex follows [session-notes-format.md](session-notes-format.md), skill stays Claude-native |
 | `hands-on-keyboard` | Navigator-not-driver collaboration mode; escalation ladder | Bindle (portable contract already exists separately: [hands-on-keyboard.md](hands-on-keyboard.md)) | yes (tested, Claude; documented, Codex) | installed + pressure-tested | untested | implicit trigger; prose addresses "Claude" 6× including the description — deliberate: the file self-describes as "the Claude-native automation of the provider-neutral contract" | `../../docs/hands-on-keyboard.md` (escapes the skill dir; resolves through a symlink install — tested; breaks on copy install) | Claude: tested · Codex: unknown | **provider-specific** (deliberate two-layer design, [#71](#decision-on-provider-specific-wording-71)) | **resolved #71 → option 2:** no wording change; Codex follows [hands-on-keyboard.md](hands-on-keyboard.md), skill stays the Claude adapter |
 | `maintain-claude-md` | Init/update/lint a repo's CLAUDE.md | Bindle | yes (tested, Claude; documented, Codex) | installed + pressure-tested (6 claims) | untested; **not recommended** | invocable as `/maintain-claude-md` (Claude skill-as-command surface); description references that invocation | none beyond file tools + `command -v` | Claude: tested · Codex: unknown | **provider-specific (Claude-only)** | none — the managed artifact (CLAUDE.md, `@`-includes, `.claude/settings.json`, loader stubs) *is* Claude Code provider surface; a Codex install would be misleading, not merely stale wording |
+| `package-release-integrity` | Validate a Python package release before publish (version/tag/changelog/semver-movement checks); judgment calls return `uncertain`, never guessed (issue #59) | Bindle | yes (scaffolded frontmatter placeholder; SKILL.md body not yet written — rewritten in a later task) | installed, **draft** — pure-logic helper only (`release_integrity.py` + `selftest.py`, unit-tested); no CLI wired up yet, not pressure-tested | untested | not yet determined — no CLI or SKILL.md invocation wording exists yet | Python 3 stdlib only (`re`); no runtime deps yet | Claude: draft/untested (unit-tested pure functions only) · Codex: untested | **assessment deferred** — stdlib-only so far, but Disposition/Invocation finalized once the CLI and SKILL.md body land | placeholder row added only to satisfy `bin/check-inventory.py`'s bound-table bijection at this early stage; populate the real Disposition/Invocation/Evidence once the CLI (later tasks) and SKILL.md rewrite (final task) exist |
 | `skills/_template/` | Authoring scaffold for new skills | Bindle | placeholder frontmatter (name ≠ dir by design) | never installed (`_*` skip, tested by inspection of `bin/install.sh`) | never installed | n/a | n/a | tested (skip logic read) | **not applicable / unsupported** | none — repo tooling, not an installable skill |
 
 ## Per-skill notes beyond the matrix

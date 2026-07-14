@@ -4,7 +4,7 @@
       "name": "domi-consumer",
       "type": "skill",
       "path": "skills/domi-consumer",
-      "description": "Use when working in (or unsure whether you're in) a repository that consumes DomI — to detect the .domi-pin, report drift status (current/behind/forked/unverifiable/malformed), and see which inherited policy categories are owned upstream. Reports; never vendors or reimplements DomI-owned policy.",
+      "description": "Use when working in (or unsure whether you're in) a repository that consumes DomI \u2014 to detect the .domi-pin, report drift status (current/behind/forked/unverifiable/malformed), and see which inherited policy categories are owned upstream. Reports; never vendors or reimplements DomI-owned policy.",
       "provider": {
         "claude": "installed",
         "codex": "untested"
@@ -517,7 +517,7 @@
       "name": "domi-consumer",
       "type": "contract",
       "path": "docs/domi-consumer.md",
-      "description": "The provider-neutral contract for detecting and reporting a DomI-consumer dependency: .domi-pin schema, the status vocabulary mirroring DomI check_pin.sh, source-of-truth/ownership rules, write-work gating, and the inherited-policy category→authority map; bin/domi-status.sh is the executable adapter and the domi-consumer skill is the Claude-native automation.",
+      "description": "The provider-neutral contract for detecting and reporting a DomI-consumer dependency: .domi-pin schema, the status vocabulary mirroring DomI check_pin.sh, source-of-truth/ownership rules, write-work gating, and the inherited-policy category\u2192authority map; bin/domi-status.sh is the executable adapter and the domi-consumer skill is the Claude-native automation.",
       "provider": {
         "claude": "installed",
         "codex": "manual"
@@ -525,6 +525,19 @@
       "maturity": "documented",
       "mutation": [],
       "version_introduced": "0.4.0"
+    },
+    {
+      "name": "package-release-integrity",
+      "type": "skill",
+      "path": "skills/package-release-integrity",
+      "description": "Use when [specific triggering conditions and symptoms \u2014 start with \"Use when\", third person; describe WHEN to use, not what it does]",
+      "provider": {
+        "claude": "untested",
+        "codex": "untested"
+      },
+      "maturity": "draft",
+      "mutation": [],
+      "version_introduced": "0.3.0"
     }
   ],
   "not_a_capability": [
