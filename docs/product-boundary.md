@@ -91,8 +91,10 @@ Bindle owns, and its releases are accountable for:
 - **Mature vs. experimental:** an asset is *mature* when it has passed (or
   baseline-passed) the CONTRIBUTING pressure-test loop with results
   recorded; otherwise it is a *draft* and must be labeled as such in the
-  CHANGELOG. Provider-wise, Claude Code is the mature implementation;
-  Codex is a supported-but-narrow adapter, not a peer.
+  CHANGELOG. Provider-wise, Claude Code is the mature implementation; Codex
+  is a supported provider (still maturing) that can host provider-native
+  assets — no longer a mere adapter. See the 2026-07-14 revisit below, which
+  fired the Codex-primitives trigger and moved this stance.
 
 ## Explicit non-goals (v0.3–v0.4)
 
@@ -104,9 +106,12 @@ Tempting directions that are out of scope until a revisit trigger fires:
 2. **Autonomous model routing** — no automatic model selection or
    cost-based dispatch. Delegation guidance may exist as documentation;
    choosing a model stays a human decision.
-3. **Universal asset conversion** — no automatic translation of Claude
+3. **Universal asset conversion** — no *automatic* translation of Claude
    skills/commands/agents into other providers' formats, and no
-   lowest-common-denominator asset schema.
+   lowest-common-denominator asset schema. (Refined 2026-07-14: a
+   Codex-native asset may be *hand-authored* as its own first-class asset,
+   or installed via explicit per-asset eligibility; only automatic
+   translation / adapter-generation stays barred — see the revisit below.)
 4. **A standalone evaluation platform** — the per-skill pressure-test
    discipline is the owned QA method. A reusable eval harness, suites, and
    scoring schemas are research until recurring need is demonstrated (see
@@ -192,10 +197,10 @@ re-triages the remaining open issues plus six opened since 2026-07-10
 no new Now-tier work has been designated pending the next planning
 decision.
 
-**Next:** none currently ready. Every open issue below is either
-self-gated on evidence that hasn't materialized, blocked on the boundary
-question raised by #55, or too underspecified to triage yet — see Later,
-Research, and Needs input.
+**Next:** #59 and #60, newly unblocked by the 2026-07-14 revisit below (the
+boundary question that gated them is resolved). The remaining open issues are
+either self-gated on evidence that hasn't materialized or too underspecified
+to triage yet — see Later, Research, and Needs input.
 
 **Later:**
 
@@ -224,20 +229,14 @@ question):**
 - **#39** weaker-model delegation evals — behind #36; its other named
   prerequisite, #32, has now shipped, same situation as #38.
 - **#55** ("Reconcile Codex interoperability and DomI-derived workflow
-  dependencies") **+ children #58, #59, #60** — #55 explicitly argues that
-  current Codex has native Agent Skills, subagents, lifecycle hooks, and
-  plugin surfaces, and that this makes this document's "narrow adapter,
-  never a universal runtime" provider stance stale. That is a claim about
-  one of this document's own named Revisit triggers (see below), not a
-  routine backlog item — recorded here as a claim needing adjudication,
-  not treated as fired. Until that boundary question is resolved
-  explicitly (its own decision, the way #34 resolved v0.3–v0.4), #58
-  (DomI consumer profile/drift-status preflight), #59 (portable
-  package-release-integrity workflow), and #60 (portable issue work loop)
-  stay blocked behind it — each names #55 as parent and leans on the
-  provider-neutral-contract pattern #55's premise would extend. Not
-  delegable (boundary-level decision). Verify: a revisit decision document
-  citing concrete evidence, same shape as #34.
+  dependencies") — **RESOLVED 2026-07-14.** The boundary question #55 raised
+  (whether the Codex-primitives Revisit Trigger fired) was adjudicated in the
+  "Revisit 2026-07-14" section below: verdict FIRED. The stance moved; the
+  standing guardrails held. Its children are no longer blocked on this
+  question — **#58** shipped (DomI consumer profile), and **#59** (portable
+  package-release-integrity workflow) and **#60** (portable issue work loop)
+  are unblocked to proceed with Codex-native participation in scope. #55
+  itself is a tracking epic; close or keep it open tracking #59/#60.
 
 **Needs input (not yet triageable):**
 
@@ -345,6 +344,68 @@ before committing).
 The `priority: now` labels that #35, #36, and #39 carried predate this
 boundary and were re-set to match it.
 
+## Revisit 2026-07-14 — the Codex-primitives trigger (#55)
+
+A revisit of this boundary in the shape #34 used, triggered by issue #55 and
+resolved here with cited evidence. This section is the authoritative decision
+record; the inline edits above (Mature-vs-experimental, non-goal #3, the fired
+trigger, the backlog entry) flow from it.
+
+### Verdict: FIRED (broad)
+
+The Codex-primitives Revisit Trigger is adjudicated **fired**. Evidence, both
+already landed and closed:
+
+- **#56** (Codex capability re-baseline) verified against current official
+  Codex/OpenAI docs that Codex has native primitives for Agent Skills,
+  subagents, hooks, and plugins — recorded per-surface in
+  `provider-interop.md` § "Codex capability re-baseline".
+- **#57** (install compatible shared skills for Codex) shipped a real shared
+  cross-provider install surface: two eligible skills install into a Codex
+  Agent-Skills home via `bin/install.sh`, gated by per-skill
+  `capabilities.json` `provider.codex` eligibility and covered by
+  `test-install.sh`; a real Codex session discovered and followed them.
+
+The second point is decisive: Bindle already shipped past the old "narrow
+adapter, never a peer" stance. Recording the trigger fired makes the boundary
+honest, not more speculative.
+
+### Stance change
+
+Codex is reclassified to a **supported provider that can host provider-native
+assets** across skills, subagents, and hooks — a change from the prior
+narrow-adapter stance. "Broad" means the *surface is open* — Bindle may ship
+Codex-native assets as first-class, not merely document manual participation.
+It does **not** claim parity, and this revisit authors no subagent/hook asset.
+
+### Guardrails preserved (the "not a universal runtime" floor)
+
+1. **Non-equivalence stays permanent.** A Claude asset is not a Codex asset;
+   no merged/generated single-source file. Drift is managed by review.
+2. **No *automatic* asset conversion.** A Codex-native subagent/hook is
+   hand-authored as its own asset, or installed via explicit per-asset
+   eligibility — never machine-translated from the Claude asset (non-goal #3,
+   refined not deleted).
+3. **No universal runtime, orchestrator, or execution loop** (non-goal #1).
+4. **Hooks stay gated on the #30 safety contract, per action** (non-goal #6);
+   any executable Codex automation must degrade to the manual workflow.
+5. **Installer conflict-safety, explicit targets, and per-asset eligibility
+   metadata** are preserved; no directory sweeps.
+
+### Plugins — deferred
+
+Codex's native plugin primitive has no Bindle equivalent on either provider
+and no present consumer. Recorded still-out (adjudicated-deferred, not fired);
+"broad" covers skills, subagents, and hooks, not plugins.
+
+### Flow-through
+
+- **#59** and **#60** are unblocked — Codex-native participation is now in
+  scope for them, not manual-docs-only.
+- **#58** already shipped; no action.
+- **#55** (epic) may close now (P0/P1 shipped, boundary resolved) or stay open
+  tracking #59/#60 — an operator call, not part of this doc change.
+
 ## Revisit triggers
 
 Concrete evidence that justifies reopening this boundary:
@@ -354,13 +415,12 @@ Concrete evidence that justifies reopening this boundary:
   install defaults.
 - **A third provider** with a real native surface worth adapting, or
   Codex gaining primitives (skills/commands) that make today's "narrow
-  adapter" stance wrong. **Claimed 2026-07-12** (issue #55): current Codex
-  has native Agent Skills, subagents, lifecycle hooks, and plugin
-  surfaces; #55 argues this is exactly this trigger. Recorded as a claim,
-  not adjudicated as fired — see the Research entry for #55/#58/#59/#60
-  above. A real revisit (its own decision document, the way #34 resolved
-  v0.3–v0.4) is needed before this boundary's Provider boundary/non-goals
-  sections change.
+  adapter" stance wrong. **Claimed 2026-07-12** (issue #55); **FIRED 2026-07-14**
+  — adjudicated in the "Revisit 2026-07-14" section below on #56/#57 evidence
+  (Codex's native Agent Skills/subagents/hooks, and the shared skill-install
+  path Bindle already shipped in #57). The revisit widened the provider stance
+  while preserving the non-equivalence, no-automatic-conversion, no-runtime, and
+  hook-safety guardrails; plugins stay deferred.
 - **Three or more recorded eval needs** the manual pressure-test loop
   could not serve — unlocks the evaluation-infrastructure criteria above.
 - **A consumer materializes for a manifest** (dashboard, doctor, or an
