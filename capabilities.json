@@ -10,9 +10,7 @@
         "codex": "untested"
       },
       "maturity": "draft",
-      "mutation": [
-        "network"
-      ],
+      "mutation": [],
       "version_introduced": "0.4.0"
     },
     {
@@ -352,15 +350,13 @@
       "name": "domi-status",
       "type": "script",
       "path": "bin/domi-status.sh",
-      "description": "Read-only DomI-consumer detector: parses a repo's .domi-pin and reports a compact drift verdict (current/behind/forked/unverifiable/malformed/not-a-domi-consumer) by delegating the drift check to DomI's own check_pin.sh / offline_drift_check.sh, mirroring their exit codes; never reimplements DomI-owned policy.",
+      "description": "Read-only DomI-consumer detector: parses a repo's .domi-pin and reports a compact drift verdict (current/behind/forked/unverifiable/malformed/not-a-domi-consumer) by delegating the drift check to DomI's own offline_drift_check.sh (an offline sibling-clone comparison), mirroring DomI's check_pin.sh exit-code contract; never reimplements DomI-owned policy.",
       "provider": {
         "claude": "manual",
         "codex": "manual"
       },
       "maturity": "tested",
-      "mutation": [
-        "network"
-      ],
+      "mutation": [],
       "version_introduced": "0.4.0"
     },
     {

@@ -22,6 +22,14 @@ A DomI-consumer repo commits `.domi-pin` at its root, five fields:
 | unverifiable | 4 | upstream unreachable — never reported as current |
 | malformed | 5 | pin format invalid |
 
+**How Bindle evaluates this:** `bin/domi-status.sh` delegates the drift verdict
+to DomI's `offline_drift_check.sh` — an **offline** comparison against a local
+DomI *sibling clone*. So `current`/`behind`/`forked` are evaluated against that
+local checkout, which can lag live upstream `HEAD` if it has not been fetched.
+A live-upstream check (DomI's `check_pin.sh`) is a documented follow-up; until
+then the detector never reports `current` unless the delegated offline check
+confirms it.
+
 ## Source of truth and ownership
 
 DomI owns the definition of every inherited policy. Bindle detects the pin,

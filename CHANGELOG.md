@@ -70,8 +70,8 @@ dated, versioned section at release time.
 - **DomI-consumer profile (#58).** `bin/domi-status.sh` — a read-only detector
   that parses a repo's `.domi-pin` and reports a compact drift verdict
   (`current`/`behind`/`forked`/`unverifiable`/`malformed`/`not-a-domi-consumer`),
-  delegating the drift check to DomI's own `check_pin.sh` /
-  `offline_drift_check.sh` rather than reimplementing it. `docs/domi-consumer.md`
+  delegating the drift check to DomI's own `offline_drift_check.sh` (an offline
+  sibling-clone comparison) rather than reimplementing it. `docs/domi-consumer.md`
   — a provider-neutral contract: the `.domi-pin` schema, the status vocabulary,
   source-of-truth/ownership rules, write-work gating, and the inherited-policy
   category→authority map. `/domi-consumer` skill (draft — not yet
