@@ -1,4 +1,5 @@
 # GENERATED from capabilities.json — do not edit; run 'make manifest'
+claude	skill	domi-consumer	skills/domi-consumer	skills/domi-consumer
 claude	skill	fork-pr-flow	skills/fork-pr-flow	skills/fork-pr-flow
 claude	skill	hands-on-keyboard	skills/hands-on-keyboard	skills/hands-on-keyboard
 claude	skill	license-compliance-auditor	skills/license-compliance-auditor	skills/license-compliance-auditor

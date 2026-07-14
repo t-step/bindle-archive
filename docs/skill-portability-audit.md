@@ -43,7 +43,7 @@ Every claim below carries one of four evidence labels:
 Non-destructive verification performed for this audit (no real user home or
 provider settings touched; fixtures in the session scratchpad only):
 
-1. **Frontmatter shape** — all 8 skills have exactly the `name`/`description`
+1. **Frontmatter shape** — all 9 skills have exactly the `name`/`description`
    frontmatter Codex Agent Skills documents as required, with `name` matching
    the directory (`make check` green; **tested**, format level only).
 2. **Whole-directory symlink preserves support-file resolution** — a skill
@@ -69,7 +69,7 @@ provider settings touched; fixtures in the session scratchpad only):
 
 ## Summary
 
-- **Skills audited: 8** (every authored skill: `fork-pr-flow`,
+- **Skills audited: 9** (every authored skill: `domi-consumer`, `fork-pr-flow`,
   `hands-on-keyboard`, `license-compliance-auditor`, `maintain-claude-md`,
   `repo-hygiene-init`, `scoped-sequential-prs`, `session-continuity`,
   `verify-then-commit`), plus
@@ -151,6 +151,7 @@ is untested for every skill.
 
 | Skill | Purpose | Owner / source of truth | F: format | C: Claude status | X: Codex status | Invocation assumptions | Runtime dependencies | Evidence level | Disposition | Required cleanup / follow-up |
 |---|---|---|---|---|---|---|---|---|---|---|
+| `domi-consumer` | Detect a DomI-consumer repo and report drift status by invoking `bin/domi-status.sh`, then interpret the verdict per `docs/domi-consumer.md` | Bindle (portable contract already exists separately: [domi-consumer.md](domi-consumer.md)) | yes (frontmatter only; added after this audit's 2026-07-11 pass, not re-run against it) | installed, **draft** — not pressure-tested | untested | implicit trigger; invokes `bin/domi-status.sh` (bash, provider-neutral) and reads its exit code / verdict | `bin/domi-status.sh` (portable bash detector, no Claude-only primitive), `docs/domi-consumer.md` (contract) | Claude: draft/untested · Codex: untested | **portable** (thin wrapper over a portable bash detector; no Claude-only primitive) | none required — reassess once pressure-tested and a Codex invocation is attempted |
 | `verify-then-commit` | Gate every commit on tests+typecheck+lint green | Bindle | yes (tested, Claude; documented, Codex) | installed + pressure-tested (10/10, 10/10, Sonnet 6/6) | **discovered by a real read-only Codex session via repo-scope symlink (tested, this audit)**; invocation untested | implicit trigger via description; none provider-specific | none (prose only); soft pointer to `superpowers:verification-before-completion` | Claude: tested · Codex: discovery tested, behavior unknown | **shared unchanged** | none required |
 | `fork-pr-flow` | Fork/owned-repo PR targeting, push discipline, no self-merge | Bindle | yes (tested, Claude; documented, Codex) | installed + pressure-tested (5/5 self-merge refusal + in-situ arm) | **discovered by a real read-only Codex session via repo-scope symlink (tested, this audit)**; invocation untested | implicit trigger; none provider-specific | `gh` CLI for PR steps (degrades to advice); git remotes | Claude: tested · Codex: discovery tested, behavior unknown | **shared unchanged** | none required; #57 should detect `gh`, not vendor it |
 | `scoped-sequential-prs` | Split big work into ordered, scope-isolated PRs with a 3-step contamination gate | Bindle | yes (tested, Claude; documented, Codex) | installed + pressure-tested (6 claims, Sonnet+Haiku, gate REFACTORed twice) | untested | implicit trigger; step 2 says "See superpowers:using-git-worktrees" | git, worktrees; soft deps: `superpowers:using-git-worktrees`, pairs-with pointers to `fork-pr-flow`/`verify-then-commit` | Claude: tested · Codex: unknown | **shared unchanged** | none required; degraded (not broken) without superpowers — document in #57 |

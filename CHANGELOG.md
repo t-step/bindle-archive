@@ -67,6 +67,19 @@ dated, versioned section at release time.
   `capabilities.json`/`install-manifest.tsv`, never hand-duplicated. The
   release aborts before committing if the manifest can't be regenerated
   consistently. See `docs/release-manifest.md` (issue #33).
+- **DomI-consumer profile (#58).** `bin/domi-status.sh` — a read-only detector
+  that parses a repo's `.domi-pin` and reports a compact drift verdict
+  (`current`/`behind`/`forked`/`unverifiable`/`malformed`/`not-a-domi-consumer`),
+  delegating the drift check to DomI's own `offline_drift_check.sh` (an offline
+  sibling-clone comparison) rather than reimplementing it. `docs/domi-consumer.md`
+  — a provider-neutral contract: the `.domi-pin` schema, the status vocabulary,
+  source-of-truth/ownership rules, write-work gating, and the inherited-policy
+  category→authority map. `/domi-consumer` skill (draft — not yet
+  pressure-tested): invokes the detector and interprets the verdict per the
+  contract, surfacing the inherited-policy categories and their upstream
+  authority; it never vendors or reimplements DomI policy. `capabilities.json`
+  gains an `external_upstreams` section recording DomI as an external upstream
+  integration with provenance/ownership metadata.
 
 ### Fixed
 

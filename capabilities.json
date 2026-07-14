@@ -1,6 +1,19 @@
 {
   "capabilities": [
     {
+      "name": "domi-consumer",
+      "type": "skill",
+      "path": "skills/domi-consumer",
+      "description": "Use when working in (or unsure whether you're in) a repository that consumes DomI — to detect the .domi-pin, report drift status (current/behind/forked/unverifiable/malformed), and see which inherited policy categories are owned upstream. Reports; never vendors or reimplements DomI-owned policy.",
+      "provider": {
+        "claude": "installed",
+        "codex": "untested"
+      },
+      "maturity": "draft",
+      "mutation": [],
+      "version_introduced": "0.4.0"
+    },
+    {
       "name": "fork-pr-flow",
       "type": "skill",
       "path": "skills/fork-pr-flow",
@@ -334,6 +347,19 @@
       "version_introduced": "0.3.0"
     },
     {
+      "name": "domi-status",
+      "type": "script",
+      "path": "bin/domi-status.sh",
+      "description": "Read-only DomI-consumer detector: parses a repo's .domi-pin and reports a compact drift verdict (current/behind/forked/unverifiable/malformed/not-a-domi-consumer) by delegating the drift check to DomI's own offline_drift_check.sh (an offline sibling-clone comparison), mirroring DomI's check_pin.sh exit-code contract; never reimplements DomI-owned policy.",
+      "provider": {
+        "claude": "manual",
+        "codex": "manual"
+      },
+      "maturity": "tested",
+      "mutation": [],
+      "version_introduced": "0.4.0"
+    },
+    {
       "name": "session-notes-format",
       "type": "contract",
       "path": "docs/session-notes-format.md",
@@ -486,6 +512,19 @@
       "maturity": "documented",
       "mutation": [],
       "version_introduced": "0.3.0"
+    },
+    {
+      "name": "domi-consumer",
+      "type": "contract",
+      "path": "docs/domi-consumer.md",
+      "description": "The provider-neutral contract for detecting and reporting a DomI-consumer dependency: .domi-pin schema, the status vocabulary mirroring DomI check_pin.sh, source-of-truth/ownership rules, write-work gating, and the inherited-policy category→authority map; bin/domi-status.sh is the executable adapter and the domi-consumer skill is the Claude-native automation.",
+      "provider": {
+        "claude": "installed",
+        "codex": "manual"
+      },
+      "maturity": "documented",
+      "mutation": [],
+      "version_introduced": "0.4.0"
     }
   ],
   "not_a_capability": [
@@ -596,6 +635,26 @@
     {
       "path": "docs/using-bindle-with-codex.md",
       "reason": "a meta-guide for Codex describing which existing capabilities to use (docs/session-notes-format.md, docs/privacy-boundaries.md, bin/slugify.sh, bin/check-private-info.sh); not itself a distinct capability."
+    }
+  ],
+  "external_upstreams": [
+    {
+      "name": "DomI",
+      "owner": "domattioli",
+      "repo": "domattioli/DomI",
+      "role": "upstream workflow authority",
+      "pin_file": ".domi-pin",
+      "authority_for": [
+        "branch-commit-discipline",
+        "destructive-action-hard-stops",
+        "context-session-management",
+        "delegation-dispatch",
+        "release-semver-governance",
+        "issue-session-workflow",
+        "sync-update-ownership"
+      ],
+      "detector": "bin/domi-status.sh",
+      "contract": "docs/domi-consumer.md"
     }
   ]
 }

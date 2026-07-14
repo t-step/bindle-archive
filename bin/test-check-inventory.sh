@@ -271,6 +271,54 @@ check "non-dict capability entry exits nonzero" test "$status" -ne 0
 check "non-dict capability entry gets a clean diagnostic" contains "not an object" "$out"
 check "non-dict capability entry does not produce a traceback" not_contains "Traceback" "$out"
 
+echo "external_upstreams provenance:"
+REPO="$TMP/upstream-missing-key"
+mkfixture "$REPO"
+python3 -c '
+import json
+p = "'"$REPO"'/capabilities.json"
+d = json.load(open(p, encoding="utf-8"))
+d["external_upstreams"] = [{
+    "name": "DomI",
+    "repo": "domattioli/DomI",
+    "role": "upstream workflow authority",
+    "pin_file": ".domi-pin",
+    "authority_for": ["branch-commit-discipline"],
+    "detector": "bin/domi-status.sh",
+    "contract": "docs/domi-consumer.md"
+}]
+json.dump(d, open(p, "w", encoding="utf-8"), indent=2)
+'
+(cd "$REPO" && git add -A && git -c user.email=t@e.com -c user.name=t commit -q -m upstream-missing-key)
+out="$(python3 "$VALIDATOR" --root "$REPO" 2>&1)"
+status=$?
+check "external_upstreams entry missing 'owner' exits nonzero" test "$status" -ne 0
+check "missing key is named" contains "missing key(s)" "$out"
+check "the missing key 'owner' is named" contains "'owner'" "$out"
+
+REPO="$TMP/upstream-ok"
+mkfixture "$REPO"
+python3 -c '
+import json
+p = "'"$REPO"'/capabilities.json"
+d = json.load(open(p, encoding="utf-8"))
+d["external_upstreams"] = [{
+    "name": "DomI",
+    "owner": "domattioli",
+    "repo": "domattioli/DomI",
+    "role": "upstream workflow authority",
+    "pin_file": ".domi-pin",
+    "authority_for": ["branch-commit-discipline"],
+    "detector": "bin/domi-status.sh",
+    "contract": "docs/domi-consumer.md"
+}]
+json.dump(d, open(p, "w", encoding="utf-8"), indent=2)
+'
+(cd "$REPO" && git add -A && git -c user.email=t@e.com -c user.name=t commit -q -m upstream-ok)
+out="$(python3 "$VALIDATOR" --root "$REPO" 2>&1)"
+status=$?
+check "well-formed external_upstreams entry passes" test "$status" -eq 0
+
 echo "manifest generation:"
 REPO="$TMP/emit"
 mkfixture "$REPO"
