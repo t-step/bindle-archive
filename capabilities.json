@@ -501,6 +501,19 @@
       "maturity": "documented",
       "mutation": [],
       "version_introduced": "0.3.0"
+    },
+    {
+      "name": "domi-consumer",
+      "type": "contract",
+      "path": "docs/domi-consumer.md",
+      "description": "The provider-neutral contract for detecting and reporting a DomI-consumer dependency: .domi-pin schema, the status vocabulary mirroring DomI check_pin.sh, source-of-truth/ownership rules, write-work gating, and the inherited-policy category→authority map; bin/domi-status.sh is the executable adapter and the domi-consumer skill is the Claude-native automation.",
+      "provider": {
+        "claude": "installed",
+        "codex": "manual"
+      },
+      "maturity": "documented",
+      "mutation": [],
+      "version_introduced": "0.4.0"
     }
   ],
   "not_a_capability": [
