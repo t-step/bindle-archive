@@ -635,6 +635,10 @@
     {
       "path": "docs/using-bindle-with-codex.md",
       "reason": "a meta-guide for Codex describing which existing capabilities to use (docs/session-notes-format.md, docs/privacy-boundaries.md, bin/slugify.sh, bin/check-private-info.sh); not itself a distinct capability."
+    },
+    {
+      "path": "docs/superpowers/specs/2026-07-14-package-release-integrity-design.md",
+      "reason": "a point-in-time brainstorming spec for the portable package-release-integrity workflow (#59); planning artifact, not itself a capability."
     }
   ],
   "external_upstreams": [
