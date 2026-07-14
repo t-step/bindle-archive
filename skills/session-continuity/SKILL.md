@@ -32,7 +32,10 @@ one `git add -A` away from being published.
 - `<project>` = the repo's directory basename, kebab-cased: lowercase, every
   run of non-`[a-z0-9]` characters collapses to a single `-`, and leading/
   trailing `-` are trimmed (`My_App.v2` → `my-app-v2`, `My  App!!` → `my-app`).
-  `bin/slugify.sh` is the canonical implementation of this rule (with a
+  `<bindle>/bin/slugify.sh` — at the root of your Bindle checkout, *not* the
+  repo you're working in (the installed skill dir ships only this `SKILL.md` as
+  a symlink into `<bindle>/skills/session-continuity/`; resolve it to find
+  `<bindle>`) — is the canonical implementation of this rule (with a
   `--self-test`); pipe a name through it rather than hand-deriving edge cases.
 - `<slug>` = 2–5 kebab-case words naming the session's goal, same rule. Never
   put `/`, spaces, or personal names in filenames.
@@ -103,7 +106,9 @@ produces two separate artifacts:
      paths only, no personal names/emails/denylist terms, no pasted transcript,
      no private "next-prompt for future-me" meta;
    - **run the scanner and block on it.** If the Bindle repo is reachable,
-     run `bin/check-private-info.sh <the summary file>`; if it flags anything,
+     run `<bindle>/bin/check-private-info.sh <the summary file>` (a Bindle-root
+     path, like `slugify.sh` above — not the repo you're scanning); if it flags
+     anything,
      do **not** leave the file in the repo — fix and re-run until it passes. A
      manual `grep` is not a substitute for running the scanner.
    - write it to the path the user named (or propose one and confirm); leave it
@@ -144,7 +149,7 @@ Precision beats prose: a future session greps these files.
   "The user explicitly asked" is honored *through that recipe*, not by dumping
   the private note into the repo.
 - Treating a manual `grep` as the privacy check. When a summary is repo-bound,
-  the recipe says *run `bin/check-private-info.sh`* — a grep is not that.
+  the recipe says *run `<bindle>/bin/check-private-info.sh`* — a grep is not that.
 - Writing a sanitized repo copy but skipping the full private note — the
   continuity record is the point; the repo copy is the extra, not the swap.
 - A handoff without scope boundaries ("continue the work") — the next session
