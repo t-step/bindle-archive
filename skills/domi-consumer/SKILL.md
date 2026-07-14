@@ -5,13 +5,23 @@ description: Use when working in (or unsure whether you're in) a repository that
 
 # DomI consumer status
 
-Run the read-only detector and interpret its verdict per
+Run the read-only detector and interpret its verdict per the contract
 `docs/domi-consumer.md`. Never claim `current` without the detector confirming
 it; never manufacture a local replacement for a DomI-owned policy.
 
+**Where the tools live.** Both `bin/domi-status.sh` and `docs/domi-consumer.md`
+are at the **root of your Bindle checkout** — the repo this skill installs from.
+The installed skill directory ships only this `SKILL.md` (it is a symlink into
+`<bindle>/skills/domi-consumer/`; resolve that symlink to find `<bindle>`). The
+script is **not** in the installed skill directory and **not** in the consumer
+repo you are inspecting — run it from your Bindle checkout, pointing `--repo` at
+the consumer repo.
+
 ## Steps
 
-1. Run: `bash bin/domi-status.sh --repo <repo-root>` (default: current repo).
+1. Run the detector from your Bindle checkout:
+   `bash <bindle>/bin/domi-status.sh --repo <consumer-repo-root>` (omit `--repo`
+   to default to the current repo).
 2. Read the exit code / verdict:
    - `not-a-domi-consumer` (2) — nothing to do.
    - `current` (0) — report the source and continue.

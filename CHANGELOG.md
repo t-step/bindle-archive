@@ -74,8 +74,8 @@ dated, versioned section at release time.
   sibling-clone comparison) rather than reimplementing it. `docs/domi-consumer.md`
   — a provider-neutral contract: the `.domi-pin` schema, the status vocabulary,
   source-of-truth/ownership rules, write-work gating, and the inherited-policy
-  category→authority map. `/domi-consumer` skill (draft — not yet
-  pressure-tested): invokes the detector and interprets the verdict per the
+  category→authority map. `domi-consumer` skill (pressure-tested — #107):
+  invokes the detector and interprets the verdict per the
   contract, surfacing the inherited-policy categories and their upstream
   authority; it never vendors or reimplements DomI policy. `capabilities.json`
   gains an `external_upstreams` section recording DomI as an external upstream
@@ -83,6 +83,19 @@ dated, versioned section at release time.
 
 ### Fixed
 
+- **Pressure-tested the `domi-consumer` skill; clarified its tool paths (#107).**
+  Ran the RED→GREEN campaign deferred in #58 (5 reps/arm, Sonnet 5,
+  transcript+filesystem graded): all four claims verified — correct verdict via
+  delegation (RED hand-rolls a *wrong* verdict 5/5; GREEN delegates → right one),
+  refuses to vendor DomI logic under pressure (RED vendors 5/5, GREEN 0/5),
+  honest on `unverifiable` (never upgrades to `current`), and clean negative
+  trigger (no fabricated dependency). The campaign surfaced a real portability
+  gap — `SKILL.md` referenced `bin/domi-status.sh`/`docs/domi-consumer.md` as if
+  skill-relative, but the installed skill dir ships only `SKILL.md`; agents in a
+  consumer-repo cwd flagged step 1 as broken. `SKILL.md` now states the detector
+  and contract live at the Bindle checkout root (resolve the installed symlink),
+  re-verified obstacle-free. Skill flipped `draft → tested`; see
+  `skills/domi-consumer/PRESSURE-TESTS.md`.
 - **Scope the provider-interop Skills-matrix "followed" claim (#110).**
   `docs/provider-interop.md`'s Skills row overclaimed that a real Codex
   session behaviorally followed the skills "for the eligible skills" (plural,
