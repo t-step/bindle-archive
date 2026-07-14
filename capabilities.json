@@ -537,7 +537,7 @@
       },
       "maturity": "draft",
       "mutation": [],
-      "version_introduced": "0.3.0"
+      "version_introduced": "0.4.0"
     },
     {
       "name": "package-release-integrity",
@@ -550,7 +550,7 @@
       },
       "maturity": "documented",
       "mutation": [],
-      "version_introduced": "0.3.0"
+      "version_introduced": "0.4.0"
     }
   ],
   "not_a_capability": [
