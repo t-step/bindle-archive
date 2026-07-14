@@ -364,7 +364,10 @@ already landed and closed:
   cross-provider install surface: two eligible skills install into a Codex
   Agent-Skills home via `bin/install.sh`, gated by per-skill
   `capabilities.json` `provider.codex` eligibility and covered by
-  `test-install.sh`; a real Codex session discovered and followed them.
+  `test-install.sh`. A live Codex probe discovered both eligible skills and
+  invocation-tested one (`verify-then-commit`) — which read the skill body and
+  followed its commit gate; `fork-pr-flow`'s invocation was not probed this
+  wave.
 
 The second point is decisive: Bindle already shipped past the old "narrow
 adapter, never a peer" stance. Recording the trigger fired makes the boundary
