@@ -80,6 +80,12 @@ repos:
         language: script
         pass_filenames: false
         always_run: true
+      - id: bindle-test-package-release-integrity
+        name: package release-integrity helper tests
+        entry: bin/test-package-release-integrity.sh
+        language: script
+        pass_filenames: false
+        always_run: true
       - id: bindle-link
         name: link new items into ~/.claude (post-merge)
         entry: bin/install.sh
