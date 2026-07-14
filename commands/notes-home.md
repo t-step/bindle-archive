@@ -27,14 +27,14 @@ Steps:
 
 1. Locate the Bindle checkout: `readlink ~/.claude/commands/notes-home.md`
    and take the repo root two levels up from the target. If the link or
-   checkout is missing, stop and tell the user to run `bin/notes-home.sh`
+   checkout is missing, stop and tell the user to run `<bindle>/bin/notes-home.sh`
    from their Bindle checkout by hand (the manual fallback always works).
 2. Parse the argument: default to `status`; otherwise `set <path>`,
    `migrate <path>`, or `reset`.
-3. `status`: run `bin/notes-home.sh status` and relay the result — where the
+3. `status`: run `<bindle>/bin/notes-home.sh status` and relay the result — where the
    notes home resolves, why, whether it's persisted in
    `~/.claude/settings.json`, and what's in it.
-4. `set <path>`: run `bin/notes-home.sh set <path>` (preview). Show the user
+4. `set <path>`: run `<bindle>/bin/notes-home.sh set <path>` (preview). Show the user
    the planned settings diff and any warning verbatim — especially the
    git-repo warning; if it fired, make sure they've read it before asking
    anything else. Ask for an explicit yes/no. On yes, re-run with `--apply`
