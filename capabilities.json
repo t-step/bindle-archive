@@ -538,6 +538,19 @@
       "maturity": "draft",
       "mutation": [],
       "version_introduced": "0.3.0"
+    },
+    {
+      "name": "package-release-integrity",
+      "type": "contract",
+      "path": "docs/package-release-integrity.md",
+      "description": "Provider-neutral contract for validating a Python package release (version-source, tag, changelog, semver movement, tracks) before publish; defers to DomI where a well-formed .domi-pin makes DomI's inherited release-semver-governance category authoritative.",
+      "provider": {
+        "claude": "manual",
+        "codex": "manual"
+      },
+      "maturity": "documented",
+      "mutation": [],
+      "version_introduced": "0.3.0"
     }
   ],
   "not_a_capability": [
