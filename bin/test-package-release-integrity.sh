@@ -93,5 +93,13 @@ expect_contains "no test-cmd -> uncertain" "verification_gate: uncertain"
 run python3 "$HELPER" check --repo "$FIX/consistent" --test-cmd "definitely-not-a-real-cmd-xyz"
 expect_contains "broken test-cmd -> uncertain (degraded)" "verification_gate: uncertain"
 
+echo "DomI defer path:"
+run python3 "$HELPER" check --repo "$FIX/domi-governed"
+expect_contains "domi-governed -> defer mode" "mode: defer"
+expect_contains "domi-governed -> defer banner" "DomI authoritative"
+expect_rc "domi-governed -> rc 0 (defer is not a failure)" 0
+run python3 "$HELPER" check --repo "$FIX/consistent"
+expect_contains "plain repo -> portable mode" "mode: portable"
+
 echo "test-package-release-integrity: $pass passed, $fail failed"
 [ "$fail" -eq 0 ]

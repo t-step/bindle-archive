@@ -228,8 +228,43 @@ def run_gate(name, cmd, repo):
     return _verdict(name, "fail", f"{cmd!r} exited {proc.returncode}")
 
 
+def detect_domi_authority(repo):
+    """True when the repo declares DomI release governance authoritative.
+
+    Reads .domi-pin directly (dependency-light; no shell-out to
+    bin/domi-status.sh, which lives at the Bindle checkout root, not inside a
+    consumer repo). Mirrors domi-status.sh's own validation exactly: a pin is
+    well-formed once 'upstream' is set and 'sha' is a 40-hex commit (see
+    domi-status.sh's "malformed" check). domi-status.sh's inherited-category
+    list is fixed, not a per-repo opt-in field — there is no 'owned_categories'
+    key in the real schema — so *any* well-formed pin always carries
+    'release-semver-governance' (see docs/domi-consumer.md's category table,
+    authoritative source skills/release-integrity). That category is this
+    checker's authority signal: a well-formed pin means DomI is authoritative
+    here, regardless of the pin's drift verdict (current/behind/forked/
+    unverifiable) — drift only affects freshness, not category ownership. A
+    missing or malformed pin is not authoritative.
+    """
+    pin = Path(repo) / ".domi-pin"
+    if not pin.is_file():
+        return False
+    fields = {}
+    for line in pin.read_text().splitlines():
+        line = line.strip()
+        if not line or line.startswith("#"):
+            continue
+        key, sep, value = line.partition(":")
+        if sep:
+            fields[key.strip()] = value.strip().strip('"')
+    upstream = fields.get("upstream", "")
+    sha = fields.get("sha", "")
+    return bool(upstream) and bool(re.fullmatch(r"[0-9a-f]{40}", sha))
+
+
 def run_check(repo, args):
     repo = Path(repo)
+    if detect_domi_authority(repo):
+        return {"mode": "defer", "verdicts": [], "ready": None}
     verdicts = []
     sources = discover_version_sources(repo)
     verdicts.append(check_version_source_consistency(sources))
@@ -249,12 +284,19 @@ def run_check(repo, args):
         run_gate("verification_gate", getattr(args, "test_cmd", None), repo)
     )
     ready = all(v["verdict"] != "fail" for v in verdicts)
-    return {"verdicts": verdicts, "ready": ready}
+    return {"mode": "portable", "verdicts": verdicts, "ready": ready}
 
 
 def _print_report(report, as_json):
     if as_json:
         print(json.dumps(report, indent=2))
+        return
+    print(f"mode: {report['mode']}")
+    if report["mode"] == "defer":
+        print(
+            "DomI authoritative — run DomI's release-integrity; "
+            "Bindle's checks are advisory-only here and do not replace it."
+        )
         return
     for v in report["verdicts"]:
         print(f"{v['check']}: {v['verdict']} — {v['detail']}")
@@ -283,6 +325,9 @@ def main(argv=None):
     if args.command == "check":
         report = run_check(args.repo, args)
         _print_report(report, args.json)
+        if report["mode"] == "defer":
+            # Deferral is not a failure — DomI is authoritative here.
+            return 0
         # Exit non-zero only on a hard fail; 'uncertain' does not fail.
         return 1 if any(v["verdict"] == "fail" for v in report["verdicts"]) else 0
     return 2
