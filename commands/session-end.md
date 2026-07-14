@@ -25,8 +25,8 @@ Steps:
 2. Reconstruct the session honestly from the conversation and git state — what
    was actually done, not what was intended. If tests weren't run, the note
    says "not run", not "passing". Settle today's date and this session's slug
-   now (`bin/slugify.sh`, session-continuity's slug rule) — steps 4 and 5 both
-   reuse it.
+   now (`<bindle>/bin/slugify.sh` — your Bindle checkout, not this repo;
+   session-continuity's slug rule) — steps 4 and 5 both reuse it.
 3. Label reconciliation (skip silently if there's no GitHub remote, `gh` is
    unavailable or unauthenticated, or this session touched no issues):
    - Identify issues this session touched — numbers referenced in the branch
@@ -107,7 +107,7 @@ Steps:
      (e.g. "save it as NOTES.md" / "so my teammate sees it"), do not write the
      note above into the repo. Follow the skill's **Repo-bound content**
      recipe: keep the full note in the notes home (step 5), then produce a
-     *separate* sanitized summary and run `bin/check-private-info.sh` on it —
+     *separate* sanitized summary and run `<bindle>/bin/check-private-info.sh` on it —
      block on the result — before leaving it (unstaged) in the repo.
 
 Reply with the note's full path and the note itself. If the user wants a

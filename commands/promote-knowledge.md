@@ -20,7 +20,7 @@ Steps:
    promotion/update rules, report shape). Today: !`date +%F`
 2. Resolve the project: `$ARGUMENTS` if non-empty; else the basename of
    `git rev-parse --show-toplevel` (plain `pwd` outside a repo), slugified
-   via `bin/slugify.sh` when the Bindle repo is reachable, else by the
+   via `<bindle>/bin/slugify.sh` (its Bindle-checkout root) when the Bindle repo is reachable, else by the
    documented slug rule.
 3. Read `projects/<project>/map.md` if it exists; note the
    `evidence through:` cursor. No map → this is a **bootstrap** run

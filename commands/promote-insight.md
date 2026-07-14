@@ -42,7 +42,8 @@ Steps:
    - project-repo changes only if the user confirms *in that context* — you
      propose the diff, they own applying it unless they tell you to;
    - notes-home changes (profile, denylist) can be written directly;
-   - run `bin/check-private-info.sh` on anything that will be committed.
+   - run `<bindle>/bin/check-private-info.sh` (your Bindle checkout, not this
+     repo) on anything that will be committed.
 5. Close the loop: one line on where it landed, and — if it replaced or
    obsoleted something (an old note, a stale instruction) — flag that for
    deletion too.

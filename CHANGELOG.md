@@ -83,6 +83,18 @@ dated, versioned section at release time.
 
 ### Fixed
 
+- **Qualify Bindle-root tool refs so they resolve from a non-Bindle cwd (#113).**
+  `session-continuity` (a skill) and `/session-end`, `/promote-insight`,
+  `/promote-knowledge` (globally-installed commands) told the agent to *run*
+  `bin/slugify.sh` / `bin/check-private-info.sh` by a bare, repo-relative path —
+  but those scripts live at the Bindle checkout root while these run from the
+  cwd of whatever project you're in, so the path misresolved (worst case: a
+  privacy scan the recipe blocks on gets silently skipped). Same class of gap
+  #107 fixed in `domi-consumer`. The run-instruction refs are now
+  `<bindle>/bin/...`-qualified with a "your Bindle checkout, not this repo"
+  clarifier. Doc clarification only — **not pressure-tested**. The durable guard
+  (a `make check` lint that catches a reintroduced bare ref without false-firing
+  on frontmatter permission patterns or descriptive prose) is deferred to #113.
 - **Pressure-tested the `domi-consumer` skill; clarified its tool paths (#107).**
   Ran the RED→GREEN campaign deferred in #58 (5 reps/arm, Sonnet 5,
   transcript+filesystem graded): all four claims verified — correct verdict via
