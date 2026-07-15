@@ -86,6 +86,12 @@ repos:
         language: script
         pass_filenames: false
         always_run: true
+      - id: bindle-test-issue-dedup-scan
+        name: issue-dedup-scan.sh helper tests
+        entry: bin/test-issue-dedup-scan.sh
+        language: script
+        pass_filenames: false
+        always_run: true
       - id: bindle-link
         name: link new items into ~/.claude (post-merge)
         entry: bin/install.sh
