@@ -16,6 +16,23 @@ dated, versioned section at release time.
 
 ### Added
 
+- **release-captain skill (#116, L3) — DRAFT:** `skills/release-captain/` — the
+  Claude-native skill that automates the release-captain contract's steps 1–5
+  (evidence via `bin/release-evidence.py`, then a version + timing
+  recommendation with rationale and confidence) and, only on explicit human
+  approval, drives the L4 strategy seam through two approval gates — show the
+  resolved strategy → approve → `dry-run` → effect preview → approve → mint an
+  ephemeral token → `apply` — to create or update the Release Please release PR.
+  Recommends and orchestrates only; never merges, tags, publishes, deploys, or
+  authorizes a release. **Draft — pending RED→GREEN pressure tests; not yet
+  promoted to `tested`, and #116 stays open until it is.**
+- **release-captain L4 strategy seam (#116):** `release-captain.toml` +
+  `bin/release-strategy.sh` (fail-closed strategy selection) + the
+  `local-release-please` artifact strategy (`bin/release-strategies/`, two-verb
+  `dry-run`/`apply`, ephemeral-token-gated) + Release Please config/manifest
+  (`release-type: simple`, seeded at 0.4.0) making Release Please the artifact
+  authority for `VERSION` + `CHANGELOG.md`. Intent → Release Captain, artifact →
+  Release Please, publication → human maintainer.
 - `/session-end` now lands the repo on clean, synced `main` as its final step
   when lossless (new `bin/session-end-land.sh`), reporting a blocker instead of
   forcing when work would be stranded.
