@@ -15,7 +15,8 @@
 #   3.  formatting   — no trailing whitespace, every tracked text file ends in
 #                      a newline
 #   4.  links        — repo-relative markdown links resolve
-#   5.  version      — VERSION is semver and CHANGELOG has an Unreleased section
+#   5.  version      — VERSION is semver; CHANGELOG has an Unreleased section
+#                      unless Release Please owns it (release-please-config.json)
 #   6.  skill scripts— python selftests, discovered by convention: any tracked
 #                      skills/<name>/scripts/selftest.py runs automatically
 #   7.  private info — bin/check-private-info.sh self-test + full tracked scan
@@ -275,7 +276,13 @@ elif ! [[ "$(cat VERSION)" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
 else
   ok "VERSION is valid semver ($(cat VERSION))"
 fi
-if [ -f CHANGELOG.md ] && ! grep -q '^## \[Unreleased\]' CHANGELOG.md; then
+# Release Please owns the changelog when configured (it generates versioned
+# sections from Conventional Commits and keeps no hand-maintained Unreleased
+# section). Only require Unreleased for the legacy bin/release.sh flow, i.e.
+# when release-please-config.json is absent.
+if [ ! -f release-please-config.json ] &&
+  [ -f CHANGELOG.md ] &&
+  ! grep -q '^## \[Unreleased\]' CHANGELOG.md; then
   problem "CHANGELOG.md missing '## [Unreleased]' section"
 fi
 

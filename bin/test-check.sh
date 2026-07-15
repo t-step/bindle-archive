@@ -192,6 +192,29 @@ check "does not flag a frontmatter permission glob" not_contains "commands/notes
 check "does not flag an allowlisted descriptive line" not_contains "skills/desc/SKILL.md" "$out"
 check "reports the section clean" contains "Bindle-root tool refs are" "$out"
 
+# ===========================================================================
+echo "CHANGELOG Unreleased requirement (legacy flow only):"
+# No release-please-config.json → the legacy bin/release.sh flow → an
+# Unreleased section is required, and its absence is a problem.
+REPO="$TMP/repo-nounrel-legacy"
+build_repo "$REPO"
+printf '# Changelog\n\n## [1.0.0] - 2020-01-01\n\n- shipped\n' >"$REPO/CHANGELOG.md"
+git_commit "$REPO" "drop Unreleased, no Release Please"
+out="$(cd "$REPO" && bin/check.sh 2>&1)"
+
+check "flags a missing Unreleased section without Release Please" contains "missing '## [Unreleased]' section" "$out"
+
+# release-please-config.json present → Release Please owns the changelog → an
+# Unreleased section is NOT required, and its absence must not be flagged.
+REPO="$TMP/repo-nounrel-rp"
+build_repo "$REPO"
+printf '# Changelog\n\n## [1.0.0] - 2020-01-01\n\n- shipped\n' >"$REPO/CHANGELOG.md"
+printf '{"packages":{".":{"release-type":"simple"}}}\n' >"$REPO/release-please-config.json"
+git_commit "$REPO" "drop Unreleased, Release Please configured"
+out="$(cd "$REPO" && bin/check.sh 2>&1)"
+
+check "does not require Unreleased when Release Please is configured" not_contains "missing '## [Unreleased]' section" "$out"
+
 # --- result ----------------------------------------------------------------
 echo
 echo "tests: ${pass} passed, ${fail} failed"
