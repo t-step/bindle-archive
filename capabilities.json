@@ -605,6 +605,38 @@
       "version_introduced": "0.5.0"
     },
     {
+      "name": "release-strategy",
+      "type": "script",
+      "path": "bin/release-strategy.sh",
+      "description": "Provider-neutral release-strategy seam for the release-captain workflow (L4 of #116). Reads the single `strategy` key from release-captain.toml and dispatches a verb (which|dry-run|apply) to bin/release-strategies/<strategy>.sh, failing closed (exit 64) on a missing file, missing key, or unknown strategy. Selection only — it performs no release action itself and knows nothing about approval; the orchestrator owns approval and the ephemeral token. No fallback, registry, or discovery.",
+      "provider": {
+        "claude": "manual",
+        "codex": "manual"
+      },
+      "maturity": "tested",
+      "mutation": [
+        "network",
+        "external"
+      ],
+      "version_introduced": "0.5.0"
+    },
+    {
+      "name": "local-release-please",
+      "type": "script",
+      "path": "bin/release-strategies/local-release-please.sh",
+      "description": "Local Release Please ARTIFACT strategy for the release-captain seam (L4 of #116). Release Please is the artifact authority (VERSION + CHANGELOG + release-PR contents); this strategy assembles `release-please release-pr`: dry-run previews read-only (proves zero mutation), apply creates/updates the release PR and requires an ephemeral --approval-token passed by the orchestrator (no token => hard stop, no invocation). It never merges, tags, creates a GitHub Release, publishes, or deploys — publication stays an explicitly human-authorized action. release-please binary resolved via RELEASE_PLEASE_CMD for test stubbing.",
+      "provider": {
+        "claude": "manual",
+        "codex": "manual"
+      },
+      "maturity": "tested",
+      "mutation": [
+        "network",
+        "external"
+      ],
+      "version_introduced": "0.5.0"
+    },
+    {
       "name": "issue-work-loop",
       "type": "skill",
       "path": "skills/issue-work-loop",
