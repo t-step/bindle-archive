@@ -32,9 +32,30 @@ rp() { # invoke the (possibly stubbed) release-please binary with args
   $RELEASE_PLEASE_CMD "$@"
 }
 
+# Resolve a GitHub token for release-please (its CLI requires --token; it does
+# not read GITHUB_TOKEN on its own). Prefer $GITHUB_TOKEN, fall back to the
+# local gh CLI. Echoes the token (possibly empty); the caller enforces presence
+# in the main shell so `exit` is not swallowed by a command-substitution subshell.
+resolve_gh_token() {
+  local t="${GITHUB_TOKEN:-}"
+  if [ -z "$t" ] && command -v gh >/dev/null 2>&1; then
+    t="$(gh auth token 2>/dev/null || true)"
+  fi
+  printf '%s' "$t"
+}
+
+# Enforce token presence in the MAIN shell (not a $()-subshell, so exit 4 is
+# not swallowed). Sets $gh_tok on success; exits 4 with a clear message if none.
+no_token_msg="local-release-please: no GitHub token (set GITHUB_TOKEN or run 'gh auth login')"
+
 case "$verb" in
   dry-run)
-    rp release-pr --repo-url="$repo_url" --dry-run "$@"
+    gh_tok="$(resolve_gh_token)"
+    [ -n "$gh_tok" ] || {
+      echo "$no_token_msg" >&2
+      exit 4
+    }
+    rp release-pr --repo-url="$repo_url" --token="$gh_tok" --dry-run "$@"
     ;;
   apply)
     token=""
@@ -55,7 +76,12 @@ case "$verb" in
       echo "local-release-please: apply refused — no approval token" >&2
       exit 3
     fi
-    rp release-pr --repo-url="$repo_url"
+    gh_tok="$(resolve_gh_token)"
+    [ -n "$gh_tok" ] || {
+      echo "$no_token_msg" >&2
+      exit 4
+    }
+    rp release-pr --repo-url="$repo_url" --token="$gh_tok"
     ;;
   *)
     echo "local-release-please: unknown verb '${verb:-<none>}'" >&2

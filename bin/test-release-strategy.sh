@@ -85,19 +85,34 @@ export RP_STUB_LOG="$TMP/rp.log"
 : >"$RP_STUB_LOG"
 before="$(snapshot)"
 
-# --- dry-run: calls release-please with --dry-run, mutates nothing ---
-out="$(cd "$FIX" && RC_CONFIG="$TMP/good.toml" RELEASE_PLEASE_CMD="$STUB" \
+# --- dry-run: calls release-please with --dry-run + --token, mutates nothing ---
+# GITHUB_TOKEN=faketoken so the real gh token is never used or logged by the stub.
+out="$(cd "$FIX" && GITHUB_TOKEN=faketoken RC_CONFIG="$TMP/good.toml" RELEASE_PLEASE_CMD="$STUB" \
   "$SEL" dry-run 2>&1)"
 code=$?
 after="$(snapshot)"
 {
   [ "$code" -eq 0 ] &&
     grep -q -- '--dry-run' "$RP_STUB_LOG" &&
+    grep -q -- '--token=faketoken' "$RP_STUB_LOG" &&
     grep -q 'release-pr' "$RP_STUB_LOG" &&
     [ "$before" = "$after" ]
 } &&
-  ok "dry-run assembles --dry-run + mutates nothing" ||
+  ok "dry-run assembles --dry-run + --token + mutates nothing" ||
   bad "dry-run ($code): log=$(cat "$RP_STUB_LOG"); mutated=$([ "$before" = "$after" ] && echo no || echo YES)"
+
+# --- dry-run with no token available: hard stop (exit 4), no invocation ---
+GHSTUB="$TMP/ghstub"
+mkdir -p "$GHSTUB"
+printf '#!/usr/bin/env bash\nexit 1\n' >"$GHSTUB/gh"
+chmod +x "$GHSTUB/gh"
+: >"$RP_STUB_LOG"
+out="$(cd "$FIX" && PATH="$GHSTUB:$PATH" GITHUB_TOKEN='' RC_CONFIG="$TMP/good.toml" \
+  RELEASE_PLEASE_CMD="$STUB" "$SEL" dry-run 2>&1)"
+code=$?
+{ [ "$code" -eq 4 ] && [ ! -s "$RP_STUB_LOG" ]; } &&
+  ok "dry-run with no token -> exit 4, no invocation" ||
+  bad "no-token ($code): log=$(cat "$RP_STUB_LOG")"
 
 # --- apply without token: refuses, no invocation ---
 : >"$RP_STUB_LOG"
@@ -108,17 +123,18 @@ code=$?
   ok "apply without token refuses, no invocation" ||
   bad "apply-no-token ($code): log=$(cat "$RP_STUB_LOG")"
 
-# --- apply with token: invokes release-please WITHOUT --dry-run ---
+# --- apply with token: invokes release-please with --token, WITHOUT --dry-run ---
 : >"$RP_STUB_LOG"
-out="$(cd "$FIX" && RC_CONFIG="$TMP/good.toml" RELEASE_PLEASE_CMD="$STUB" \
+out="$(cd "$FIX" && GITHUB_TOKEN=faketoken RC_CONFIG="$TMP/good.toml" RELEASE_PLEASE_CMD="$STUB" \
   "$SEL" apply --approval-token "eph-123" 2>&1)"
 code=$?
 {
   [ "$code" -eq 0 ] &&
     grep -q 'release-pr' "$RP_STUB_LOG" &&
+    grep -q -- '--token=faketoken' "$RP_STUB_LOG" &&
     ! grep -q -- '--dry-run' "$RP_STUB_LOG"
 } &&
-  ok "apply with token invokes release-pr (no --dry-run)" ||
+  ok "apply with token invokes release-pr (--token, no --dry-run)" ||
   bad "apply-token ($code): log=$(cat "$RP_STUB_LOG")"
 
 # --- Release Please config: valid JSON, simple type, manifest seeded 0.4.0 ---
