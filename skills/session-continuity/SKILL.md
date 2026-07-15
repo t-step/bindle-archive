@@ -81,11 +81,15 @@ until the first proposal is queued, and is deleted once the queue empties.
 ## Rules
 
 1. **Read-only toward the project repo.** Starting or ending a session, or
-   writing a handoff, must not modify the repo being worked on. The only
-   exception: the user *explicitly* asks for content in the repo (a
-   `/project-profile` export, or "put the session summary in the repo/PR"). An
-   explicit request is honored — but only via the **Repo-bound content** recipe
-   below, never by writing the raw note into the repo.
+   writing a handoff, must not modify the repo being worked on. One built-in
+   exception applies to `/session-end` only: as its final step it may switch to
+   `main` and fast-forward it to `origin/main` — a lossless navigation that
+   creates, modifies, or deletes no tracked file and makes no commit, done only
+   when safe and otherwise reported as a blocker (see the session-end command).
+   The other exception is content: the user *explicitly* asks for it in the
+   repo (a `/project-profile` export, or "put the session summary in the
+   repo/PR"). An explicit request is honored — but only via the **Repo-bound
+   content** recipe below, never by writing the raw note into the repo.
 2. **Notes are private by default.** Write them for yourself: local paths and
    blunt assessments are fine *in the notes home*. Content destined for a repo
    is a different artifact — see the recipe below; it is always the sanitized

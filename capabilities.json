@@ -734,6 +734,18 @@
     {
       "path": "docs/superpowers/plans/2026-07-14-package-release-integrity.md",
       "reason": "a point-in-time implementation plan for the portable package-release-integrity workflow (#59), paired with its design spec; planning artifact, not itself a capability."
+    },
+    {
+      "path": "docs/superpowers/specs/2026-07-15-session-end-land-on-main-design.md",
+      "reason": "a point-in-time brainstorming spec for the session-end land-on-main behavior; planning artifact, not itself a capability."
+    },
+    {
+      "path": "docs/superpowers/plans/2026-07-15-session-end-land-on-main.md",
+      "reason": "a point-in-time implementation plan for the session-end land-on-main behavior, paired with its design spec; planning artifact, not itself a capability."
+    },
+    {
+      "path": "bin/session-end-land.sh",
+      "reason": "a git-state helper for /session-end that lands the repo on clean, synced main when lossless; operational tooling, not itself an installed capability."
     }
   ],
   "external_upstreams": [

@@ -16,6 +16,9 @@ dated, versioned section at release time.
 
 ### Added
 
+- `/session-end` now lands the repo on clean, synced `main` as its final step
+  when lossless (new `bin/session-end-land.sh`), reporting a blocker instead of
+  forcing when work would be stranded.
 - **release-captain evidence helper (#116, L2):** `bin/release-evidence.py` —
   a stdlib, deterministic collector for Step 2 of the release-captain contract.
   Gathers merged PRs + linked issues since the latest tag (commits-since-tag as
