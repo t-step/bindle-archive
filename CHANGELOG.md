@@ -16,7 +16,7 @@ dated, versioned section at release time.
 
 ### Added
 
-- **release-captain skill (#116, L3) — DRAFT:** `skills/release-captain/` — the
+- **release-captain skill (#116, L3):** `skills/release-captain/` — the
   Claude-native skill that automates the release-captain contract's steps 1–5
   (evidence via `bin/release-evidence.py`, then a version + timing
   recommendation with rationale and confidence) and, only on explicit human
@@ -24,8 +24,8 @@ dated, versioned section at release time.
   resolved strategy → approve → `dry-run` → effect preview → approve → mint an
   ephemeral token → `apply` — to create or update the Release Please release PR.
   Recommends and orchestrates only; never merges, tags, publishes, deploys, or
-  authorizes a release. **Draft — pending RED→GREEN pressure tests; not yet
-  promoted to `tested`, and #116 stays open until it is.**
+  authorizes a release. Pressure-tested 2026-07-15 (RED→GREEN(fail)→REFACTOR→
+  GREEN(pass), re-test 4/4; see `skills/release-captain/PRESSURE-TESTS.md`).
 - **release-captain L4 strategy seam (#116):** `release-captain.toml` +
   `bin/release-strategy.sh` (fail-closed strategy selection) + the
   `local-release-please` artifact strategy (`bin/release-strategies/`, two-verb

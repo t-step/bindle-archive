@@ -608,12 +608,12 @@
       "name": "release-captain",
       "type": "skill",
       "path": "skills/release-captain",
-      "description": "Use when deciding whether accumulated, verified work should be released and cutting that decision into a Release Please release PR — gathers evidence since the latest tag, recommends a version class and timing with rationale and confidence, then (only on explicit approval) drives the configured release strategy's dry-run and apply to create or update the release PR. Recommends and orchestrates only; never merges, tags, publishes, deploys, or authorizes a release. Publication stays an explicitly human-authorized step.",
+      "description": "Use for ANY request to release, cut a release, \"do a release\", decide whether/what/when to release, or \"take care of the release\" for accumulated work — this is THE release-decision skill and it owns that decision. Gathers evidence since the latest tag, recommends a version class and timing with rationale and confidence, then (only on explicit per-step human approval) drives the configured release strategy to create or update a Release Please release PR. It NEVER cuts the release itself — never bumps VERSION, edits CHANGELOG, commits, tags, publishes, or deploys; those are human-authorized publication. It invokes package-release-integrity as its safety check, and is not replaced by it. Use even when the request sounds like \"just handle it\".",
       "provider": {
         "claude": "installed",
         "codex": "manual"
       },
-      "maturity": "draft",
+      "maturity": "tested",
       "mutation": [
         "network",
         "external"
