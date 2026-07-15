@@ -605,6 +605,22 @@
       "version_introduced": "0.5.0"
     },
     {
+      "name": "release-captain",
+      "type": "skill",
+      "path": "skills/release-captain",
+      "description": "Use when deciding whether accumulated, verified work should be released and cutting that decision into a Release Please release PR — gathers evidence since the latest tag, recommends a version class and timing with rationale and confidence, then (only on explicit approval) drives the configured release strategy's dry-run and apply to create or update the release PR. Recommends and orchestrates only; never merges, tags, publishes, deploys, or authorizes a release. Publication stays an explicitly human-authorized step.",
+      "provider": {
+        "claude": "installed",
+        "codex": "manual"
+      },
+      "maturity": "draft",
+      "mutation": [
+        "network",
+        "external"
+      ],
+      "version_introduced": "0.5.0"
+    },
+    {
       "name": "release-strategy",
       "type": "script",
       "path": "bin/release-strategy.sh",
