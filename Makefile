@@ -30,6 +30,7 @@ test:
 	bin/test-install-session-hooks.sh
 	bin/test-release-manifest.sh
 	bin/test-package-release-integrity.sh
+	bin/test-release-evidence.sh
 
 install:
 	bin/install.sh

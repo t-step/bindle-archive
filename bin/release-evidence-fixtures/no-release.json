@@ -1,0 +1,34 @@
+{
+  "current_version": "0.4.0",
+  "latest_tag": "v0.4.0",
+  "collection": {
+    "ok": true,
+    "queries": [
+      {"name": "git-tag", "status": "ok"},
+      {"name": "gh-pr-merged", "status": "ok"}
+    ]
+  },
+  "changes": [
+    {
+      "source": "merged-pr",
+      "ref": "#201",
+      "title": "docs: clarify the release-captain authority boundary",
+      "labels": [],
+      "body": "Wording only. Closes #200."
+    },
+    {
+      "source": "merged-pr",
+      "ref": "#202",
+      "title": "ci: cache the shellcheck download between runs",
+      "labels": [],
+      "body": "Build-time only; no shipped behavior change."
+    },
+    {
+      "source": "merged-pr",
+      "ref": "#203",
+      "title": "chore: bump the pre-commit mirror pin",
+      "labels": [],
+      "body": ""
+    }
+  ]
+}

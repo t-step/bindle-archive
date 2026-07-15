@@ -592,6 +592,19 @@
       "version_introduced": "0.5.0"
     },
     {
+      "name": "release-evidence",
+      "type": "script",
+      "path": "bin/release-evidence.py",
+      "description": "Deterministic release-evidence collector for the release-captain contract (L2 of #116, Step 2): gathers merged PRs + linked issues since the latest tag (commits-since-tag as fallback) and structures them in the contract's evidence-precedence order (release labels → breaking metadata → Conventional-Commit titles → commits → diff as support only), emitting JSON + a human summary. Classifies each change only where a deterministic signal exists and marks everything else uncertain; a label that contradicts the inference is flagged, not overridden; a failed sub-query degrades the verdict to uncertain. Collection layer only — it never decides the final version/timing and never merges, tags, publishes, or releases. Offline dry-run via --fixture (bin/release-evidence-fixtures/).",
+      "provider": {
+        "claude": "manual",
+        "codex": "manual"
+      },
+      "maturity": "tested",
+      "mutation": [],
+      "version_introduced": "0.5.0"
+    },
+    {
       "name": "issue-work-loop",
       "type": "skill",
       "path": "skills/issue-work-loop",

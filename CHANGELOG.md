@@ -16,6 +16,21 @@ dated, versioned section at release time.
 
 ### Added
 
+- **release-captain evidence helper (#116, L2):** `bin/release-evidence.py` —
+  a stdlib, deterministic collector for Step 2 of the release-captain contract.
+  Gathers merged PRs + linked issues since the latest tag (commits-since-tag as
+  a fallback) and structures them in the contract's evidence-precedence order,
+  emitting JSON plus a human summary. It classifies each change only where a
+  deterministic signal exists (a `release:` label, breaking metadata, or a
+  recognized Conventional-Commit type) and marks everything else `uncertain` —
+  a label that contradicts the inference is flagged, not overridden, and a
+  failed sub-query degrades the verdict to `uncertain`. Collection layer only:
+  it never decides the final version or timing and never merges, tags,
+  publishes, or releases. An offline `--fixture` dry-run demonstrates the
+  no-release, batch-patch, release-now-minor, and breaking/uncertain cases
+  (`bin/release-evidence-fixtures/`), covered by `bin/test-release-evidence.sh`
+  (wired into `make test`). The Claude-native skill (L3) and Release Please
+  wrapper (L4) remain open under #116.
 - **release-captain contract (#116, L1):** `docs/workflows/release-captain.md`
   — the provider-neutral release-decision loop that sits between "verified work
   has accumulated" and "a release should be cut." Six steps (orient, gather
