@@ -14,6 +14,21 @@ dated, versioned section at release time.
 
 ## [Unreleased]
 
+### Added
+
+- **release-captain contract (#116, L1):** `docs/workflows/release-captain.md`
+  — the provider-neutral release-decision loop that sits between "verified work
+  has accumulated" and "a release should be cut." Six steps (orient, gather
+  evidence, classify, recommend version + timing separately, explain + request
+  authorization, optional Release Please handoff), a
+  `none/patch/minor/breaking/uncertain` classification vocabulary and a
+  `no-release/batch/release-now` timing vocabulary, and the invariant that a
+  recommendation is never a release authorization. Recommends and explains
+  only; delegates version-number mapping to repository policy (Bindle's
+  CHANGELOG SemVer rule) and mechanical release-PR/tag/GitHub-Release work to
+  Release Please. Contract layer only — the evidence helper (L2), Claude-native
+  skill (L3), and Release Please wrapper (L4) remain open under #116.
+
 ## [0.4.0] - 2026-07-15
 
 ### Added
