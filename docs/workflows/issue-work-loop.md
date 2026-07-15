@@ -227,7 +227,7 @@ the same phase directly from this doc and the repo's shell scripts.
 |---|---|---|
 | 1. Orient | reads `CLAUDE.md`; `domi-consumer` skill (wraps `bin/domi-status.sh`) | reads `AGENTS.md`; runs `bin/domi-status.sh` directly |
 | 2. Discover & qualify | `gh issue view` (portable); reads `docs/delegation-profiles.md` | identical — `gh issue view`; reads the same doc |
-| 3. Deduplicate | runs `bin/issue-dedup-scan.sh <n>`, reads exit code + JSON | identical — same script, same exit-code contract, no provider-specific wrapper exists or is needed |
+| 3. Deduplicate | runs `bin/issue-dedup-scan.sh <n>`, reads exit code + JSON | identical — same script, same exit-code contract |
 | 4. Bound & execute | consults `docs/workflow-composition.md`, `docs/delegation-profiles.md`, `docs/delegated-implementation-packets.md`; applies `scoped-sequential-prs` / `fork-pr-flow` skills | reads the same contracts directly; applies the same rules manually (no skill runtime, same git/gh commands) |
 | 5. Verify | `verify-then-commit` skill | runs the repo's actual test/typecheck/lint commands directly, applying the same all-green-or-fix rule |
 | 6. Close out | `session-continuity` skill (via `/session-end` / `/handoff`) for notes; `gh`/`git` for PR and issue actions | writes the same note/handoff shape by hand per `session-continuity`'s documented conventions; identical `gh`/`git` actions |
