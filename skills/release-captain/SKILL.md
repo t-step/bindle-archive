@@ -1,9 +1,44 @@
 ---
 name: release-captain
-description: Use when deciding whether accumulated, verified work should be released and cutting that decision into a Release Please release PR — gathers evidence since the latest tag, recommends a version class and timing with rationale and confidence, then (only on explicit approval) drives the configured release strategy's dry-run and apply to create or update the release PR. Recommends and orchestrates only; never merges, tags, publishes, deploys, or authorizes a release. Publication stays an explicitly human-authorized step.
+description: Use for ANY request to release, cut a release, "do a release", decide whether/what/when to release, or "take care of the release" for accumulated work — this is THE release-decision skill and it owns that decision. Gathers evidence since the latest tag, recommends a version class and timing with rationale and confidence, then (only on explicit per-step human approval) drives the configured release strategy to create or update a Release Please release PR. It NEVER cuts the release itself — never bumps VERSION, edits CHANGELOG, commits, tags, publishes, or deploys; those are human-authorized publication. It invokes package-release-integrity as its safety check, and is not replaced by it. Use even when the request sounds like "just handle it".
 ---
 
 # Release captain
+
+## STOP — read before doing anything
+
+This skill **recommends and orchestrates a release decision. It never cuts the
+release.** Whatever the request says — "take care of it", "get it done", "handle
+the release", "just cut it" — that is **not** authority to release. Specifically,
+while running this skill you must **NOT**, on your own:
+
+- bump `VERSION`
+- edit or write `CHANGELOG.md`
+- `git commit` a release
+- `git tag` (a tag is a publication action)
+- push, publish, deploy, create a GitHub Release, or merge a release PR
+
+Each of those is **publication authority** and needs its own **explicit,
+per-action human approval** — never implied by the request, by your
+recommendation, or by a green check. The two artifact-creating steps
+(`dry-run`, then `apply`) run **only** after the two explicit approval gates
+below, and even `apply` only ever *proposes* a release PR — a human still merges
+it, tags, and publishes separately.
+
+**The failure this skill exists to prevent:** treating "the maintainer asked me
+to take care of the release" as permission to bump + commit + tag it yourself.
+If you catch yourself about to edit VERSION/CHANGELOG or run `git tag`, **stop**
+— you have left this skill's contract. Produce the recommendation and wait.
+
+## Relationship to `package-release-integrity`
+
+`release-captain` decides **whether / what / when** to release and orchestrates
+the cut. `package-release-integrity` **verifies that an already-decided cut is
+internally safe** (version-source agreement, tag/version consistency, changelog,
+semver movement). It is a **check this skill invokes** before publication — it
+is **not** a substitute for this skill and does not decide or authorize a
+release. If a release request tempts you toward `package-release-integrity`
+alone, you have skipped the decision layer: run `release-captain`.
 
 ## Overview
 
@@ -85,7 +120,13 @@ fabricated recommendation.
    evidence contradicts metadata, report the gap and decline a version/timing
    call — never fabricate one.
 
-Stop here unless the human explicitly approves proceeding.
+**Hard stop after step 5.** Output the recommendation and **stop**. Do not bump
+`VERSION`, edit `CHANGELOG.md`, commit, or tag — no matter how the request was
+phrased. The recommendation is the deliverable of steps 1–5; cutting the release
+is not yours to do. Proceed past this point only when the human explicitly
+approves the next step. Before any publication (i.e. before a human merges the
+resulting release PR and tags), run `package-release-integrity` to verify the
+cut is safe.
 
 ### Show the resolved strategy
 
