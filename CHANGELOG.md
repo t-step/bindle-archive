@@ -184,12 +184,17 @@ dated, versioned section at release time.
   and installer conflict-safety with per-asset eligibility; plugins stay
   deferred. `docs/provider-interop.md` reaffirms its non-equivalence rules under
   the widened stance. Doc-only; unblocks #59/#60.
-- `/session-end` (draft — not yet pressure-tested): profile-worthy facts now
-  go through a persistent `profile-proposals.md` Add/Defer/Reject queue
-  instead of a one-line suggestion that got lost between sessions. Deferred
-  proposals resurface at the next interactive `/session-end`; unattended runs
-  queue new proposals without asking and never write to `profile.md`. See
-  `docs/superpowers/specs/2026-07-13-profile-proposals-queue-design.md`.
+- `/session-end` (**Claim 5 graduated draft → tested, issue #103**):
+  profile-worthy facts now go through a persistent `profile-proposals.md`
+  Add/Defer/Reject queue instead of a one-line suggestion that got lost
+  between sessions. Deferred proposals resurface at the next interactive
+  `/session-end`; unattended runs queue new proposals without asking and never
+  write to `profile.md`. Pressure-tested with fresh subagents against
+  throwaway fixtures (GREEN 6/6 — Defer persists & resurfaces 3/3, Reject
+  never reappears 2/2, Add lands the line 1/1; pre-feature RED baseline loses
+  the fact 2/2), filesystem + transcript as ground truth; no skill edit needed
+  (clean RED→GREEN). See `skills/session-continuity/PRESSURE-TESTS.md` Claim 5
+  and `docs/superpowers/specs/2026-07-13-profile-proposals-queue-design.md`.
 - **Knowledge promotion graduated draft → tested (issue #87, packet 4).** All
   eleven scenarios of `docs/knowledge-promotion-pressure-tests.md` pass at
   their stated rep counts (48 fresh-subagent reps, filesystem-scored), plus
