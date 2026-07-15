@@ -32,6 +32,7 @@ test:
 	bin/test-package-release-integrity.sh
 	bin/test-release-evidence.sh
 	bin/test-session-end-land.sh
+	bin/test-release-strategy.sh
 
 install:
 	bin/install.sh
