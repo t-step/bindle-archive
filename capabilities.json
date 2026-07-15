@@ -577,6 +577,19 @@
       "maturity": "documented",
       "mutation": [],
       "version_introduced": "0.4.0"
+    },
+    {
+      "name": "issue-work-loop",
+      "type": "skill",
+      "path": "skills/issue-work-loop",
+      "description": "Use when picking up a repository issue and taking it from discovery to an honest end state \u2014 orienting to repo policy, deduplicating before claiming it, bounding and executing the fix, verifying real gates, and closing out with honest status. Automates the six-phase issue-work-loop contract for Claude by delegating each phase to Bindle-native skills; never lets implementation authority imply close/merge/publish authority.",
+      "provider": {
+        "claude": "installed",
+        "codex": "untested"
+      },
+      "maturity": "draft",
+      "mutation": [],
+      "version_introduced": "0.4.0"
     }
   ],
   "not_a_capability": [

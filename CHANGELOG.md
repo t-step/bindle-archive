@@ -37,6 +37,10 @@ dated, versioned section at release time.
   integrity). Pressure-tested 2026-07-14 (RED→GREEN, 9 reps; see
   `skills/package-release-integrity/PRESSURE-TESTS.md`).
 
+- **issue-work-loop** (#60): portable issue work loop — contract
+  `docs/workflows/issue-work-loop.md` + `bin/issue-dedup-scan.sh` (tested) +
+  `issue-work-loop` skill (**draft**, pressure-tests deferred).
+
 - `docs/delegation-profiles.md` — provider-neutral ladder (Mechanical,
   Review, Research, Implementation, Privileged) for what a delegated worker
   is authorized to do, independent of model or provider (issue #32).
