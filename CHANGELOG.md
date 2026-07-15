@@ -14,6 +14,8 @@ dated, versioned section at release time.
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-07-15
+
 ### Added
 
 - **`make check` now guards Bindle-root path refs (#113).** A new `check.sh`
