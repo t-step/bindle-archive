@@ -121,9 +121,15 @@ if [ "$CHECK" -eq 1 ]; then
 fi
 
 if [ "$cur" != "$MAIN" ]; then
-  git switch "$MAIN" --quiet
+  if ! git switch "$MAIN" --quiet 2>/dev/null; then
+    echo "ERROR: could not switch to $MAIN (is it checked out in another worktree?)"
+    exit 1
+  fi
 fi
-git merge --ff-only "origin/$MAIN" --quiet
+if ! git merge --ff-only "origin/$MAIN" --quiet 2>/dev/null; then
+  echo "ERROR: could not fast-forward $MAIN to origin/$MAIN"
+  exit 1
+fi
 
 echo "SAFE"
 echo "  On $MAIN, up to date with origin/$MAIN."

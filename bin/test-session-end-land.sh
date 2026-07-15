@@ -155,5 +155,24 @@ run "$R" --check
 [ "$(git -C "$R" rev-parse HEAD)" = "$before" ] &&
   ok "--check -> HEAD unchanged" || bad "--check mutated HEAD"
 
+# --- SAFE-path failure: main checked out in another worktree -> ERROR, no false SAFE ---
+R="$(new_fixture switchfail)"
+git -C "$R" switch -q -c feature
+echo w >"$R/w"
+git -C "$R" add w
+git -C "$R" commit -qm "feat: w"
+git -C "$R" switch -q main
+git -C "$R" merge -q --ff-only feature
+git -C "$R" push -q origin main
+git -C "$R" switch -q feature                         # end the "session" on the merged branch
+git -C "$R" worktree add -q "$TMP/wt.switchfail" main # main now checked out elsewhere
+run "$R"
+# shellcheck disable=SC2015
+[ "$code" -eq 1 ] && head -1 <<<"$out" | grep -q "^ERROR:" &&
+  ok "switch failure -> ERROR exit 1 (no false SAFE)" || bad "switch-fail verdict ($code): $out"
+# shellcheck disable=SC2015
+[ "$(git -C "$R" branch --show-current)" = "feature" ] &&
+  ok "switch failure -> stayed on feature" || bad "switch-fail moved HEAD"
+
 printf '\n%d passed, %d failed\n' "$pass" "$fail"
 [ "$fail" -eq 0 ]
