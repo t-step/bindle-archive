@@ -122,7 +122,9 @@ Steps:
    - **BLOCKED: <reason>** → nothing changed; relay the blocker (dirty tree,
      unmerged branch, diverged `main`, or detached HEAD) and the remediation it
      proposed, so the operator can resolve it. Do not try to force the landing.
-   - **ERROR** → not a git repo / no `origin`; report it and move on.
+   - **ERROR** → environment or landing problem (not a git repo, no `origin`,
+     or `main` is checked out elsewhere / couldn't fast-forward); report the
+     printed reason so the operator can clear it.
 
 Reply with the note's full path and the note itself. If the user wants a
 paste-ready prompt for the next session, that's `/handoff` — offer it, don't
