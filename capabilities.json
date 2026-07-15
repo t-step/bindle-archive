@@ -579,6 +579,19 @@
       "version_introduced": "0.4.0"
     },
     {
+      "name": "release-captain",
+      "type": "contract",
+      "path": "docs/workflows/release-captain.md",
+      "description": "The provider-neutral release-decision loop (L1 of #116): six steps (orient, gather evidence, classify, recommend version+timing separately, explain+request authorization, optional Release Please handoff), the none/patch/minor/breaking/uncertain classification and no-release/batch/release-now timing vocabulary, and the invariant that a recommendation is never a release authorization. Recommends and explains only; delegates version-number mapping to repository policy (Bindle's CHANGELOG SemVer rule) and mechanical release-PR/tag/GitHub-Release work to Release Please. The evidence helper (L2), skill (L3), and Release Please wrapper (L4) are deferred.",
+      "provider": {
+        "claude": "manual",
+        "codex": "manual"
+      },
+      "maturity": "documented",
+      "mutation": [],
+      "version_introduced": "0.5.0"
+    },
+    {
       "name": "issue-work-loop",
       "type": "skill",
       "path": "skills/issue-work-loop",
