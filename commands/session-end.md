@@ -109,6 +109,20 @@ Steps:
      recipe: keep the full note in the notes home (step 5), then produce a
      *separate* sanitized summary and run `<bindle>/bin/check-private-info.sh` on it —
      block on the result — before leaving it (unstaged) in the repo.
+7. Land the repo on clean `main` — do this **last**, after the note is written
+   and the privacy pass, so the note captured the branch context before HEAD
+   moves. Run `<bindle>/bin/session-end-land.sh` (your Bindle checkout's copy;
+   it operates on the current working repo). It is attempt-if-safe: it switches
+   to `main` and fast-forwards it to `origin/main` only when lossless, and
+   otherwise mutates nothing. Render its verdict into your reply and fold the
+   outcome into the note's **decisions**:
+   - **SAFE** → it landed; report the final state and pass along any
+     `git branch -d <branch>` suggestions it printed for merged local branches
+     — relay them, never run them yourself.
+   - **BLOCKED: <reason>** → nothing changed; relay the blocker (dirty tree,
+     unmerged branch, diverged `main`, or detached HEAD) and the remediation it
+     proposed, so the operator can resolve it. Do not try to force the landing.
+   - **ERROR** → not a git repo / no `origin`; report it and move on.
 
 Reply with the note's full path and the note itself. If the user wants a
 paste-ready prompt for the next session, that's `/handoff` — offer it, don't
