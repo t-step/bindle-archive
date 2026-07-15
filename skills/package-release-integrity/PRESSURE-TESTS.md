@@ -98,6 +98,72 @@ Codex-portability claim is now evidence-backed, not asserted. C3 doubles as the
 agent-facing rep for the data-only-track-routing `fail` path that the earlier
 campaign deferred (see caveats below).
 
+## Direct Codex helper verification (2026-07-15, issue #118)
+
+This follow-up ran the deterministic helper directly from a real Codex session,
+as required by #118. The session used Codex CLI `0.144.4`; the Claude-native
+`package-release-integrity` skill was neither installed in the repo/user Codex
+skill locations nor discovered in the session's skill catalog.
+
+The shell saved `$?` immediately after each helper invocation, then printed the
+captured streams and code, so the expected negative fixture did not abort or
+invalidate the run.
+
+### `tag-mismatch`
+
+Exact command:
+
+```console
+python3 skills/package-release-integrity/scripts/release_integrity.py check --repo skills/package-release-integrity/tests/fixtures/tag-mismatch --tag v1.1.0
+```
+
+Stdout:
+
+```text
+mode: portable
+version_source_consistency: pass — all sources agree on 1.2.0
+tag_consistency: fail — tag v1.1.0 (=1.1.0) != version 1.2.0
+changelog_present: pass — section for 1.2.0 or [Unreleased]
+change_classification: uncertain — no --change-class supplied; a human must classify the change
+version_movement: uncertain — movement depends on the change class
+track_routing: uncertain — track routing only auto-checked for data-only changes
+build_gate: uncertain — no command supplied for this gate
+verification_gate: uncertain — no command supplied for this gate
+ready: False
+```
+
+Stderr was empty. Exit code: `1`.
+
+**Verdict: PASS.** This matches `bin/test-package-release-integrity.sh` and the
+Claude-side behavior: the mismatched tag is a hard failure and makes the helper
+not ready, while omitted judgment inputs remain `uncertain` rather than guessed.
+
+### `domi-governed`
+
+Exact command:
+
+```console
+python3 skills/package-release-integrity/scripts/release_integrity.py check --repo skills/package-release-integrity/tests/fixtures/domi-governed
+```
+
+Stdout:
+
+```text
+mode: defer
+DomI authoritative — run DomI's release-integrity; Bindle's checks are advisory-only here and do not replace it.
+```
+
+Stderr was empty. Exit code: `0`.
+
+**Verdict: PASS.** This matches `bin/test-package-release-integrity.sh` and the
+Claude-side behavior: a well-formed `.domi-pin` selects defer mode, emits the
+DomI-authority banner, and exits zero because defer is not a helper failure.
+
+**Conclusion.** The stdlib helper works unchanged when explicitly invoked from
+Codex and preserves the tested verdict/exit-code contract. The correct
+capability classification is `manual`: the helper is Codex-runnable, but the
+Claude-native skill itself is not installed or discovered as a Codex skill.
+
 ## Honest caveats
 
 - **Differentiated value.** RED Rep 6 shows a competent baseline agent catches

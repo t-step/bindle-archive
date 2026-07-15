@@ -533,7 +533,7 @@
       "description": "Use when validating whether a Python package release is safe to cut \u2014 checking version-source agreement, tag/version consistency, changelog presence, and correct semver movement (including data-only track routing) before publish. Judgment calls (change classification) must be supplied, never guessed. Defers to DomI where a well-formed .domi-pin makes its release-semver-governance category authoritative; never itself authorizes publishing.",
       "provider": {
         "claude": "installed",
-        "codex": "untested"
+        "codex": "manual"
       },
       "maturity": "tested",
       "mutation": [],
