@@ -1,0 +1,35 @@
+{
+  "current_version": "0.4.0",
+  "latest_tag": "v0.4.0",
+  "collection": {
+    "ok": true,
+    "queries": [
+      {"name": "git-tag", "status": "ok"},
+      {"name": "gh-pr-merged", "status": "ok"}
+    ]
+  },
+  "changes": [
+    {
+      "source": "merged-pr",
+      "ref": "#221",
+      "title": "feat: add the release-captain evidence helper",
+      "labels": [],
+      "body": "New capability. Closes #127; part of #116.",
+      "linked_issues": ["#127", "#116"]
+    },
+    {
+      "source": "merged-pr",
+      "ref": "#222",
+      "title": "fix: correct the changelog Unreleased anchor check",
+      "labels": [],
+      "body": "Closes #220."
+    },
+    {
+      "source": "merged-pr",
+      "ref": "#223",
+      "title": "docs: expand the workflow-composition table",
+      "labels": [],
+      "body": ""
+    }
+  ]
+}

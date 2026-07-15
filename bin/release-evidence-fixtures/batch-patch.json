@@ -1,0 +1,34 @@
+{
+  "current_version": "0.4.0",
+  "latest_tag": "v0.4.0",
+  "collection": {
+    "ok": true,
+    "queries": [
+      {"name": "git-tag", "status": "ok"},
+      {"name": "gh-pr-merged", "status": "ok"}
+    ]
+  },
+  "changes": [
+    {
+      "source": "merged-pr",
+      "ref": "#211",
+      "title": "fix: stop spurious post-merge hook failures on git pull",
+      "labels": [],
+      "body": "Backward-compatible fix. Closes #210."
+    },
+    {
+      "source": "merged-pr",
+      "ref": "#212",
+      "title": "fix: resolve Bindle-root tool refs from a non-Bindle cwd",
+      "labels": [],
+      "body": "Closes #113."
+    },
+    {
+      "source": "merged-pr",
+      "ref": "#213",
+      "title": "perf: avoid re-scanning the whole tree in check.sh links pass",
+      "labels": [],
+      "body": "No behavior change beyond speed."
+    }
+  ]
+}
