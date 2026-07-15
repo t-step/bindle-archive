@@ -551,6 +551,19 @@
       "maturity": "documented",
       "mutation": [],
       "version_introduced": "0.4.0"
+    },
+    {
+      "name": "issue-dedup-scan",
+      "type": "script",
+      "path": "bin/issue-dedup-scan.sh",
+      "description": "Read-only prior-work dedup scan for a repository issue: deterministically gathers evidence (git history, in-repo specs/plans, open + merged PRs, issue comments) that #<n> may already be worked/done, emitting evidence JSON with the verdict in the exit code (0 no-evidence, 3 evidence-found, 4 uncertain); a failed sub-query yields uncertain, never a clean verdict. Phase-3 adapter for the issue-work-loop contract.",
+      "provider": {
+        "claude": "installed",
+        "codex": "untested"
+      },
+      "maturity": "tested",
+      "mutation": [],
+      "version_introduced": "0.4.0"
     }
   ],
   "not_a_capability": [
