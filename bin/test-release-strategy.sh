@@ -137,13 +137,16 @@ code=$?
   ok "apply with token invokes release-pr (--token, no --dry-run)" ||
   bad "apply-token ($code): log=$(cat "$RP_STUB_LOG")"
 
-# --- Release Please config: valid JSON, simple type, manifest seeded 0.4.0 ---
+# --- Release Please config: simple type, component-less tag, manifest is semver ---
+# The manifest version is NOT hardcoded — it advances every release (0.4.0 at
+# seed, 0.5.0 after the first cut, ...); assert it's a valid semver, not a value.
 CFG="$REPO_ROOT/release-please-config.json"
 MAN="$REPO_ROOT/.release-please-manifest.json"
-{ python3 -c "import json; c=json.load(open('$CFG')); \
+{ python3 -c "import json, re; c=json.load(open('$CFG')); \
     p=c['packages']['.']; assert p['release-type']=='simple', p; \
-    m=json.load(open('$MAN')); assert m['.']=='0.4.0', m"; } &&
-  ok "release-please config: simple type, manifest seeded 0.4.0" ||
+    assert c.get('include-component-in-tag') is False, c; \
+    m=json.load(open('$MAN')); assert re.match(r'^[0-9]+\.[0-9]+\.[0-9]+\$', m['.']), m"; } &&
+  ok "release-please config: simple type, component-less tag, manifest is semver" ||
   bad "release-please config invalid"
 
 printf '\n%d passed, %d failed\n' "$pass" "$fail"
