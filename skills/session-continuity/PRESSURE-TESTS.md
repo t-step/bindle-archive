@@ -285,32 +285,54 @@ model remains untested.
 
 ## Claim 5 — a deferred profile proposal persists and resurfaces at the next `/session-end` run
 
-**Status: draft — not yet run.** Registered 2026-07-13 alongside the
-profile-proposals queue implementation; reps deferred to issue #103 per
-`CONTRIBUTING.md`'s pressure-test convention (sequential / parallel /
-defer-and-file-an-issue) — reps run there, not here.
+**Status: VERIFIED (2026-07-14, issue #103). Clean RED→GREEN; no edit.**
 
 Claim: a profile-worthy fact that gets a **Defer** answer is not lost — it
 reappears, unchanged, the next time `/session-end` runs interactively on the
-same project. A **Reject** answer, by contrast, never reappears. This is the
-core behavior the old one-line suggestion lacked (see the design spec,
+same project. A **Reject** answer, by contrast, never reappears; an **Add**
+lands the line in `profile.md`. This is the core behavior the old one-line
+suggestion lacked (see the design spec,
 `docs/superpowers/specs/2026-07-13-profile-proposals-queue-design.md`).
 
-Proposed method (mirrors Claim 1's fixture style): a throwaway git repo
-mimicking a mid-work session, plus a per-rep notes-home fixture directory
-(`BINDLE_NOTES_DIR` override, per sub-claim 1c's methodology fix — every arm
-gets its own override, not just GREEN). Two `/session-end` runs in sequence
-against the same fixture, with a scripted **Defer** answer on the first run's
-profile-proposal question:
+Method (mirrors Claim 1's fixture style): fresh **Sonnet 5** general-purpose
+subagents, graded on Opus. Each rep gets its own throwaway git repo mimicking a
+mid-work session (committed `widget.py`/`README.md` + one uncommitted change)
+plus its own notes-home fixture (`BINDLE_NOTES_DIR` override — every arm, per
+sub-claim 1c's fix). The `/session-end` **command text and skill are pasted in**
+(GREEN = current `commands/session-end.md` + `SKILL.md`; RED = the pre-feature
+versions, `commands/session-end.md@145c16e^` + `SKILL.md@986e402^`, before either
+the command wiring or the SKILL.md queue section existed) so the version under
+test is fixed regardless of what is installed. GREEN persistence is a two-run
+chain against the *same* fixture: run 1 queues+decides, run 2 is a fresh subagent
+told nothing about run 1. Filesystem is ground truth — `profile-proposals.md` and
+`profile.md` diffed between runs; the run-2 transcript grepped for a real `Read`
+of `profile-proposals.md` (not self-report).
 
-| Variant | Setup | What to check |
-|---|---|---|
-| RED | no queue mechanism (pre-this-plan `/session-end`) | after the first run's suggestion is deferred verbally, does a *second* run re-surface the same fact? Expected baseline failure: no — it's gone, only in the first session's prose. |
-| GREEN | this plan's `/session-end` + skill | first run: the fact is queued in `profile-proposals.md` and, on **Defer**, stays there untouched. Second run: the same entry is presented again for a decision. Filesystem is ground truth — diff `profile-proposals.md` between runs, and independently confirm `profile.md` is untouched by a deferred item. |
+**Methodology caveat — interactive answer injected, not asked.** The GREEN
+"interactive" path routes through `AskUserQuestion`, which a subagent cannot
+answer live (and would otherwise mis-route to the unattended branch). So the
+decision was injected in the fixture prompt ("live turn; your answer = Defer /
+Reject / Add") and the subagent forbidden from calling `AskUserQuestion`
+(confirmed 0 calls in every GREEN transcript). This exercises the whole claim —
+load carryover → re-present → rewrite the file per the decision → gate `profile.md`
+— *except* the literal `AskUserQuestion` UI round-trip, which is command plumbing,
+not the persistence behavior Claim 5 asserts.
 
-A second, smaller pass verifies **Reject**: a rejected item's line must not
-appear in `profile-proposals.md` after the run that rejected it, on any
-later run.
+| Variant | Reps | Setup | Result (filesystem + transcript verified) |
+|---|---|---|---|
+| GREEN — Defer persists & resurfaces | 3 chains (6 runs) | current cmd+skill; run 1 Defer, run 2 (no new fact) Defer | **3/3.** Run 1: entry written to `profile-proposals.md`, `profile.md` never created. Run 2: fresh subagent **read the carryover** (`Read` of `profile-proposals.md` in transcript 3/3), re-presented it, and after Defer the entry was **byte-unchanged**; `profile.md` still absent. Resurface confirmed. |
+| GREEN — Reject never reappears | 2 | seeded queue; Reject | **2/2.** Entry dropped, queue emptied → `profile-proposals.md` deleted (per the "delete when empty" rule), `profile.md` untouched. A follow-up run on the rejected fixture found **nothing pending** — it never reappears. |
+| GREEN — Add lands the line | 1 | seeded queue (target: validation gates); Add | **1/1.** `profile.md` created via `/project-profile`'s path, the line appended under `## Validation gates`, the entry removed and the emptied queue file deleted. |
+| RED — baseline failure | 2 chains (4 runs) | pre-feature cmd+skill | **2/2.** Run 1: the fact went only into the session note's prose (candidate-improvements / a one-line "user's call" suggestion); **no `profile-proposals.md` created** — the mechanism doesn't exist. Run 2: a fresh pre-feature run **never re-surfaced** the prior fact for a decision (the old command is scoped to "*this* session" only). The deferred fact is lost exactly as the design spec's problem statement describes. |
+
+**The claim holds.** Defer persists and resurfaces (3/3), Reject is permanent and
+never reappears (2/2), Add promotes correctly (1/1); the pre-feature baseline
+loses the fact 2/2. No fixture rep leaked into the operator's real `~/.bindle`.
+
+**No edit (Iron Law).** Baseline fails, the shipped command+skill produce the
+specified behavior across all three decisions — a clean RED→GREEN with no failing
+test of the loaded skill to fix. `commands/session-end.md` and `SKILL.md` are
+unchanged. Weaker/Haiku bracket untested.
 
 ## Closed mechanically (not a subagent claim)
 
@@ -385,9 +407,6 @@ unchanged.
 
 ## Not yet pressure-tested (still draft)
 
-- **Claim 5** (profile-proposals queue Add/Defer/Reject persistence) — method
-  proposed, reps not yet run; paused pending the user's pressure-test
-  run-mode choice per `CONTRIBUTING.md`.
 - Nothing else session-continuity-specific remains for Claim 1 (closed on
   Opus, Haiku, and Sonnet 5). The two items formerly listed here — the
   scanner denylist pass and an explicit-cleanup `/session-start` request —
