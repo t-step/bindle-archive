@@ -22,6 +22,7 @@ repos:
       - id: check-shebang-scripts-are-executable
       - id: no-commit-to-branch # block direct commits to main; work on a branch, PR to main
         args: [--branch, main]
+        stages: [pre-commit] # only guard commits; must not fire on post-merge (git pull)
 
   # Managed shellcheck (no system install needed).
   - repo: https://github.com/shellcheck-py/shellcheck-py
@@ -95,6 +96,7 @@ repos:
       - id: bindle-link
         name: link new items into ~/.claude (post-merge)
         entry: bin/install.sh
+        args: [--allow-conflicts] # report conflicts (e.g. a user-owned CLAUDE.md) without failing the pull
         language: script
         pass_filenames: false
         always_run: true
