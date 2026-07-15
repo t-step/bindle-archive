@@ -564,6 +564,19 @@
       "maturity": "tested",
       "mutation": [],
       "version_introduced": "0.4.0"
+    },
+    {
+      "name": "issue-work-loop",
+      "type": "contract",
+      "path": "docs/workflows/issue-work-loop.md",
+      "description": "The provider-neutral issue work loop: the six phases (orient, discover, deduplicate, bound+execute, verify, close-out), the state vocabulary, and the two-authority invariant (repository mutation vs external/GitHub mutation are separate grants). Claude automates it via the issue-work-loop skill and bin/issue-dedup-scan.sh; Codex follows it directly.",
+      "provider": {
+        "claude": "installed",
+        "codex": "manual"
+      },
+      "maturity": "documented",
+      "mutation": [],
+      "version_introduced": "0.4.0"
     }
   ],
   "not_a_capability": [
