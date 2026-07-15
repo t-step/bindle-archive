@@ -12,6 +12,27 @@ All notable changes to Bindle are recorded here. The format follows
 Add notes under **Unreleased** as you go; `bin/release.sh` rolls them into a
 dated, versioned section at release time.
 
+## [0.5.0](https://github.com/thomas-estep/bindle/compare/v0.4.0...v0.5.0) (2026-07-15)
+
+
+### Features
+
+* /session-end lands on clean main as its final step ([0f94e52](https://github.com/thomas-estep/bindle/commit/0f94e525d9f05392402ba5ebe21032f8a0a89f22))
+* /session-end lands the repo on clean, synced main ([157bdf9](https://github.com/thomas-estep/bindle/commit/157bdf99245ed650445d42fb3fc4ee4348293886))
+* **#116:** release-captain Claude skill (L3, draft) + register ([bc08888](https://github.com/thomas-estep/bindle/commit/bc08888c791bbe4d18006b3f7830fb080baaa006))
+* **#116:** release-captain L4 — provider-neutral strategy seam + local Release Please ([f51f336](https://github.com/thomas-estep/bindle/commit/f51f3361bb3da11b1b15a2392375fa92cf9017a0))
+* **#116:** release-captain L4 — provider-neutral strategy seam + local Release Please ([b060f21](https://github.com/thomas-estep/bindle/commit/b060f21a23a686a5137eeae76216186d120843ee))
+* **#127:** deterministic release-captain evidence helper (L2) ([fca6e57](https://github.com/thomas-estep/bindle/commit/fca6e5787a1819f0578ca2f38c52c1bd778cd1ba))
+* **#127:** release-captain evidence helper (L2) ([f735211](https://github.com/thomas-estep/bindle/commit/f7352113040f1342fb6c068b75acdd8c598c050b))
+* session-end-land.sh — safe land-on-main helper ([a3f3b04](https://github.com/thomas-estep/bindle/commit/a3f3b040708535ddef73b2998d706b679d267499))
+
+
+### Bug Fixes
+
+* **#116:** strengthen release-captain restraint + trigger; promote to tested ([bfe15fb](https://github.com/thomas-estep/bindle/commit/bfe15fb2912fc3991eab8c4b2dcb9e77993f9714))
+* release-please strategy passes --token; config anchors on v0.4.0 release ([a9ea432](https://github.com/thomas-estep/bindle/commit/a9ea4326e7da9dcbf85683da3e82d3bfff53f6db))
+* session-end-land.sh guards switch/merge; false-SAFE on failure ([fff0f6c](https://github.com/thomas-estep/bindle/commit/fff0f6c64c7c5ce0f8a6be76120fa62d93ce81bc))
+
 ## [Unreleased]
 
 ### Added
