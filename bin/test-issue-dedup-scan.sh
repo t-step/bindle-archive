@@ -88,6 +88,15 @@ if printf '%s' "$out" | python3 -c 'import json,sys; json.load(sys.stdin)' 2>/de
   ok "commit-evidence output is valid JSON"
 else bad "commit-evidence output is NOT valid JSON: $out"; fi
 
+# 3b. a commit subject with a backslash + double-quote must still emit valid
+# JSON (regression: raw subject bytes were embedded unescaped -> broken JSON).
+git -C "$FIX" commit -q --allow-empty -m 'fix(#888): handle C:\path and a "quoted" arg'
+run 888 empty
+if [ "$code" -eq 3 ] &&
+  printf '%s' "$out" | python3 -c 'import json,sys; json.load(sys.stdin)' 2>/dev/null; then
+  ok "backslash/quote in commit subject -> still valid JSON (exit 3)"
+else bad "json-escape regression: code=$code out=$out"; fi
+
 # 4. a sub-query FAILS -> uncertain / exit 4 (never no-evidence)
 run 999 fail
 if [ "$code" -eq 4 ] && printf '%s' "$out" | grep -q '"verdict": "uncertain"'; then

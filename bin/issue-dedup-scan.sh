@@ -50,11 +50,20 @@ record_query() {
   [ "$2" = failed ] && failed=1
 }
 
+# _json_safe VALUE — fold characters that would break a JSON string (backslash,
+# double-quote, control chars incl. newlines) to a safe stand-in. Lossy but
+# always valid JSON; evidence fields are agent/human hints, not authoritative
+# data — the verdict lives in the exit code, never in this text.
+# Fold backslash (octal \134) and double-quote to single-quote; strip controls.
+_json_safe() {
+  printf '%s' "$1" | tr -d '\000-\037' | tr '\134"' "''"
+}
+
 # add_evidence SOURCE REF DETAIL
 add_evidence() {
   local obj
   obj=$(printf '{"source": "%s", "ref": "%s", "detail": "%s"}' \
-    "$1" "$2" "$3")
+    "$(_json_safe "$1")" "$(_json_safe "$2")" "$(_json_safe "$3")")
   evidence_json="${evidence_json:+$evidence_json, }$obj"
 }
 
