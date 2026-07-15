@@ -180,9 +180,12 @@ rather than fabricating one.
 
 Only after explicit maintainer approval, the workflow may invoke or instruct a
 checked-in wrapper that runs Release Please to create or update the release
-PR. Release Please owns the mechanical layer — version/changelog updates,
-tagging, and GitHub Release creation; Bindle owns the reasoning and authority
-boundaries above it. The handoff must:
+PR. The three authorities are distinct: **Release Please owns the mechanical
+release-PR artifact layer** — the version/changelog updates and the release PR
+itself; **tag, GitHub Release, package publication, and deployment belong to
+explicitly human-authorized publication** — a separate grant, never implied by
+a created release PR; and Bindle (Release Captain) owns the release *intent*
+and the authority boundaries above both. The handoff must:
 
 - pass only an *approved* recommendation into the mechanical step;
 - support dry-run/preview where available;
@@ -229,9 +232,12 @@ not guess a class or a number to produce a tidier output.
 ## 5. Fit with the rest of Bindle
 
 - **Above the mechanical layer.** This contract stops at a *recommendation*.
-  The mechanical release-PR/tag/GitHub-Release work belongs to Release Please
-  (target) or `bin/release.sh` (current interim), invoked only after human
-  approval per step 6.
+  The mechanical release-PR *artifact* work (version/changelog + the PR)
+  belongs to Release Please, invoked only after human approval per step 6; tag,
+  GitHub Release, package publication, and deployment are separate,
+  human-authorized publication, never implied by a created release PR.
+  `bin/release.sh` remains only as legacy/fallback publication tooling and does
+  not regenerate Release-Please-owned artifacts.
 - **Beside `#59` release-integrity.** `package-release-integrity` verifies a
   release is *safe to cut* (version-source agreement, tag/version consistency,
   changelog presence, correct semver movement). This contract decides *whether
