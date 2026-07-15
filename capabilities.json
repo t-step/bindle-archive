@@ -780,6 +780,10 @@
       "reason": "a point-in-time implementation plan for release-captain L4 (the strategy seam, PR-A of #116), paired with its design spec; planning artifact, not itself a capability."
     },
     {
+      "path": "docs/superpowers/plans/2026-07-15-release-captain-l3.md",
+      "reason": "a point-in-time implementation plan for release-captain L3 (the Claude skill, PR-B of #116), paired with its design spec; planning artifact, not itself a capability."
+    },
+    {
       "path": "docs/superpowers/plans/2026-07-15-session-end-land-on-main.md",
       "reason": "a point-in-time implementation plan for the session-end land-on-main behavior, paired with its design spec; planning artifact, not itself a capability."
     },
