@@ -74,6 +74,9 @@ run 123 haspr
 if [ "$code" -eq 3 ] && printf '%s' "$out" | grep -q '"verdict": "evidence-found"'; then
   ok "matching PR -> evidence-found (exit 3)"
 else bad "haspr: code=$code out=$out"; fi
+if printf '%s' "$out" | python3 -c 'import json,sys; json.load(sys.stdin)' 2>/dev/null; then
+  ok "haspr output is valid JSON"
+else bad "haspr output is NOT valid JSON: $out"; fi
 
 # 3. a git commit references the issue -> evidence-found / exit 3
 git -C "$FIX" commit -q --allow-empty -m "fix(#777): prior commit"
@@ -81,6 +84,9 @@ run 777 empty
 if [ "$code" -eq 3 ]; then
   ok "matching commit -> evidence-found (exit 3)"
 else bad "commit-evidence: code=$code out=$out"; fi
+if printf '%s' "$out" | python3 -c 'import json,sys; json.load(sys.stdin)' 2>/dev/null; then
+  ok "commit-evidence output is valid JSON"
+else bad "commit-evidence output is NOT valid JSON: $out"; fi
 
 # 4. a sub-query FAILS -> uncertain / exit 4 (never no-evidence)
 run 999 fail

@@ -24,7 +24,7 @@ GH="${GH:-gh}"
 N=""
 case "${1:-}" in
   -h | --help)
-    tail -n +2 "$0" | grep '^#' | sed 's/^#\{1,\} \{0,1\}//'
+    awk 'NR==1{next} /^#/{sub(/^# ?/,""); print; next} {exit}' "$0"
     exit 0
     ;;
   '')
@@ -91,12 +91,15 @@ fi
 
 # 3 + 4. open and merged PRs referencing the issue
 scan_prs() { # scan_prs <state>
-  local state="$1" json
+  local state="$1" json numbers
   if json=$("$GH" pr list --state "$state" --search "$N" \
     --json number,title,state,url 2>/dev/null); then
     # count matches by presence of a number field
     if printf '%s' "$json" | grep -q '"number"'; then
-      add_evidence "pr-$state" "$json" "PR(s) referencing #$N"
+      numbers=$(printf '%s' "$json" | grep -oE '"number"[[:space:]]*:[[:space:]]*[0-9]+' |
+        grep -oE '[0-9]+' | tr '\n' ',' | sed 's/,$//')
+      add_evidence "pr-$state" "$state" \
+        "$(printf 'PR(s) #%s referencing #%s' "$numbers" "$N" | tr '"' "'" | tr -d '\n' | cut -c1-80)"
     fi
     record_query "pr-$state" ok
   else
