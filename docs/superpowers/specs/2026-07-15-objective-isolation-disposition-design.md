@@ -136,7 +136,11 @@ Deliberate design choices:
   opposite of `session-end-land.sh`, which blocks on a dirty tree because it
   moves the primary `HEAD`.)
 - Worktrees are created under `.worktrees/<branch-leaf>` (already the repo's
-  convention; `.worktrees/` is git-ignored).
+  convention; `.worktrees/` is git-ignored). The path resolves under the
+  PRIMARY checkout — via the shared git-common-dir, not `--show-toplevel` —
+  so invoking the helper from inside a linked worktree still yields a
+  sibling under the primary's `.worktrees/`, never a worktree nested inside
+  the calling worktree.
 - Every fail-closed condition maps to a distinct `BLOCKED:` token; the helper
   never improvises past one.
 

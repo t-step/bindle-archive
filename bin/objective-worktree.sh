@@ -78,10 +78,15 @@ verdict() {
   return 0
 }
 
-ROOT="$(git rev-parse --show-toplevel 2>/dev/null)" || {
+# resolve the primary checkout root via the shared (common) git dir, so
+# worktrees always land under the primary repo's .worktrees/ even when this
+# helper is invoked from inside a linked worktree.
+COMMON_DIR="$(git rev-parse --git-common-dir 2>/dev/null)" || {
   verdict "ERROR: not a git repository" ""
   exit 1
 }
+COMMON_DIR="$(cd "$COMMON_DIR" && pwd)" # make absolute regardless of git version
+ROOT="$(dirname "$COMMON_DIR")"
 
 git -C "$ROOT" remote get-url origin >/dev/null 2>&1 || {
   verdict "ERROR: no origin remote" ""

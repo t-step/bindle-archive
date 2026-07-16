@@ -185,6 +185,38 @@ else
   fail "usage: expected exit 64, got rc=$RC"
 fi
 
+# Case 10: invoked from inside a linked worktree -> sibling under the
+# PRIMARY checkout, not nested under the calling worktree. Regression test
+# for Fix 1 (primary-checkout resolution via git-common-dir).
+T="$(mktemp -d)"
+W="$(make_sandbox "$T")"
+W_PHYS="$(cd "$W" && pwd -P)" # physical path: git resolves symlinks (e.g. macOS /var -> /private/var)
+git -C "$W" worktree add -q "$W/.worktrees/existing" -b feature/existing HEAD
+OUT="$(cd "$W/.worktrees/existing" && "$HELPER" feature/sib --check --no-fetch --base HEAD)"
+RC=$?
+LINE1="$(printf '%s\n' "$OUT" | head -1)"
+if [ "$RC" -eq 0 ] && printf '%s' "$LINE1" | grep -q "^READY: $W_PHYS/.worktrees/sib "; then
+  pass "from-worktree: sibling under primary '$W_PHYS/.worktrees/sib', not nested"
+else
+  fail "from-worktree: expected READY: $W_PHYS/.worktrees/sib ..., got: $LINE1 (rc=$RC)"
+fi
+rm -rf "$T"
+
+# Case 11: origin unavailable during fetch -> BLOCKED: origin-unavailable
+# (fail-closed branch, previously untested).
+T="$(mktemp -d)"
+W="$(make_sandbox "$T")"
+git -C "$W" remote set-url origin /nonexistent/definitely-not-here.git
+OUT="$(cd "$W" && "$HELPER" feature/of 2>/dev/null)"
+RC=$?
+LINE1="$(printf '%s\n' "$OUT" | head -1)"
+if [ "$RC" -eq 10 ] && printf '%s' "$LINE1" | grep -q "^BLOCKED: origin-unavailable"; then
+  pass "origin-unavailable: fetch failure -> BLOCKED (exit 10)"
+else
+  fail "origin-unavailable: expected BLOCKED: origin-unavailable exit 10, got: $LINE1 (rc=$RC)"
+fi
+rm -rf "$T"
+
 echo
 echo "objective-worktree: $PASS passed, $FAIL failed"
 [ "$FAIL" -eq 0 ]
