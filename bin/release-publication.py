@@ -8,6 +8,7 @@ import os
 from pathlib import Path
 import re
 import shutil
+import stat
 import subprocess
 import sys
 import tempfile
@@ -135,7 +136,9 @@ def _validate_draft(release, *, tag: str, commit: str, body: str) -> bool:
     return name_set == EXPECTED_ASSETS
 
 
-def _prepare(root: Path, repo: str, tag: str, temporary: Path) -> None:
+def _prepare(root: Path, repo: str, tag: str, temporary) -> None:
+    temporary.validate()
+    temporary_path = temporary.path
     source = _source_state(root, tag)
     if source.get("repository") != repo:
         raise PublicationError("repository argument does not match tagged source")
@@ -143,11 +146,13 @@ def _prepare(root: Path, repo: str, tag: str, temporary: Path) -> None:
         raise PublicationError("verify-source: inconsistent source state")
     commit = source["commit_sha"]
 
-    evidence = temporary / "evidence.json"
-    upload = temporary / "upload"
-    download = temporary / "download"
+    temporary.validate()
+    evidence = temporary_path / "evidence.json"
+    upload = temporary_path / "upload"
+    download = temporary_path / "download"
     upload.mkdir()
     download.mkdir()
+    temporary.validate()
     _run(
         [
             "python3", "bin/release-provenance.py", "collect-evidence",
@@ -155,6 +160,7 @@ def _prepare(root: Path, repo: str, tag: str, temporary: Path) -> None:
         ],
         cwd=root,
     )
+    temporary.validate()
     _run(
         [
             "python3", "bin/release-provenance.py", "generate",
@@ -165,6 +171,7 @@ def _prepare(root: Path, repo: str, tag: str, temporary: Path) -> None:
     )
     local_artifact = upload / ARTIFACT_NAME
     local_checksum = upload / CHECKSUM_NAME
+    temporary.validate()
     _run(
         [
             "python3", "bin/release-provenance.py", "verify",
@@ -173,6 +180,7 @@ def _prepare(root: Path, repo: str, tag: str, temporary: Path) -> None:
         ],
         cwd=root,
     )
+    temporary.validate()
     local_digest = hashlib.sha256(local_artifact.read_bytes()).digest()
     try:
         document = json.loads(
@@ -184,12 +192,14 @@ def _prepare(root: Path, repo: str, tag: str, temporary: Path) -> None:
     body = document.get("changelog") if isinstance(document, dict) else None
     if not isinstance(body, str):
         raise PublicationError("local artifact: missing changelog")
-    notes = temporary / "release-notes.md"
+    notes = temporary_path / "release-notes.md"
     notes.write_bytes(body.encode("utf-8"))
 
+    temporary.validate()
     release = _release_view(repo, tag)
     clobber = False
     if release is None:
+        temporary.validate()
         _run([
             "gh", "release", "create", tag, "--draft", "--verify-tag",
             "--target", commit, "--title", tag, "--notes-file", str(notes),
@@ -207,7 +217,9 @@ def _prepare(root: Path, repo: str, tag: str, temporary: Path) -> None:
     if clobber:
         upload_argv.append("--clobber")
     upload_argv.extend(["--repo", repo])
+    temporary.validate()
     _run(upload_argv)
+    temporary.validate()
     _run([
         "gh", "release", "download", tag,
         "--pattern", ARTIFACT_NAME,
@@ -216,6 +228,7 @@ def _prepare(root: Path, repo: str, tag: str, temporary: Path) -> None:
     ])
     downloaded_artifact = download / ARTIFACT_NAME
     downloaded_checksum = download / CHECKSUM_NAME
+    temporary.validate()
     try:
         downloaded_digest = hashlib.sha256(
             downloaded_artifact.read_bytes()
@@ -224,6 +237,7 @@ def _prepare(root: Path, repo: str, tag: str, temporary: Path) -> None:
         raise PublicationError(f"downloaded artifact: {exc}") from None
     if downloaded_digest != local_digest:
         raise PublicationError("downloaded artifact does not match uploaded JSON")
+    temporary.validate()
     _run(
         [
             "python3", "bin/release-provenance.py", "verify",
@@ -246,7 +260,74 @@ def _inside(root: Path, candidate: Path) -> bool:
     return candidate == root or root in candidate.parents
 
 
-def _temporary_directory(root: Path) -> Path:
+def _cleanup_temporary_entry(
+    entry: Path, expected_identity=None
+) -> bool:
+    try:
+        metadata = os.lstat(entry)
+    except FileNotFoundError:
+        return False
+    matches = True
+    if expected_identity is not None:
+        matches = (
+            stat.S_ISDIR(metadata.st_mode)
+            and expected_identity == (metadata.st_dev, metadata.st_ino)
+        )
+    if stat.S_ISDIR(metadata.st_mode):
+        shutil.rmtree(entry)
+    else:
+        os.unlink(entry)
+    return matches
+
+
+class PublicationTemporary:
+    """A validated lease on the original lexical mkdtemp entry."""
+
+    def __init__(self, path: Path, root: Path, metadata):
+        self.path = path
+        self.root = root
+        self.identity = (metadata.st_dev, metadata.st_ino)
+
+    def validate(self) -> None:
+        try:
+            metadata = os.lstat(self.path)
+        except OSError as exc:
+            raise PublicationError(f"temporary entry: {exc}") from None
+        if not stat.S_ISDIR(metadata.st_mode):
+            raise PublicationError("temporary entry must remain a real directory")
+        if (metadata.st_dev, metadata.st_ino) != self.identity:
+            raise PublicationError("temporary entry identity changed")
+        try:
+            canonical = self.path.resolve(strict=True)
+        except OSError as exc:
+            raise PublicationError(f"temporary entry: {exc}") from None
+        if canonical != self.path or _inside(self.root, canonical):
+            raise PublicationError(
+                "temporary entry must remain canonical and outside repository"
+            )
+
+    def cleanup(self, *, require_identity=False) -> None:
+        validation_error = None
+        if require_identity:
+            try:
+                self.validate()
+            except PublicationError as exc:
+                validation_error = exc
+        matched = _cleanup_temporary_entry(self.path, self.identity)
+        try:
+            os.lstat(self.path)
+        except FileNotFoundError:
+            pass
+        else:
+            _cleanup_temporary_entry(self.path)
+            raise PublicationError("temporary entry reappeared during cleanup")
+        if require_identity and (validation_error is not None or not matched):
+            raise validation_error or PublicationError(
+                "temporary entry identity changed before cleanup"
+            )
+
+
+def _temporary_directory(root: Path) -> PublicationTemporary:
     try:
         base = Path(tempfile.gettempdir()).resolve(strict=True)
     except OSError as exc:
@@ -261,19 +342,22 @@ def _temporary_directory(root: Path) -> Path:
         ))
     except OSError as exc:
         raise PublicationError(f"temporary directory: {exc}") from None
+    if (
+        not created.is_absolute()
+        or created.parent != base
+        or not created.name.startswith("bindle-publication.")
+    ):
+        if created.is_absolute() and created.parent == base:
+            _cleanup_temporary_entry(created)
+        raise PublicationError("mkdtemp returned an unexpected lexical entry")
     try:
-        resolved = created.resolve(strict=True)
-        if not resolved.is_dir() or _inside(root, resolved):
-            raise PublicationError(
-                "temporary directory must be outside repository root"
-            )
+        metadata = os.lstat(created)
+        temporary = PublicationTemporary(created, root, metadata)
+        temporary.validate()
     except (OSError, PublicationError):
-        if created.is_symlink():
-            created.unlink(missing_ok=True)
-        elif created.exists():
-            shutil.rmtree(created)
+        _cleanup_temporary_entry(created)
         raise
-    return resolved
+    return temporary
 
 
 def main(argv=None) -> int:
@@ -291,11 +375,17 @@ def main(argv=None) -> int:
     # leave temporary evidence, but cannot advance the still-draft release.
     try:
         _prepare(root, args.repo, args.tag, temporary)
+        temporary.cleanup(require_identity=True)
     except (PublicationError, OSError) as exc:
-        shutil.rmtree(temporary)
+        cleanup_error = None
+        try:
+            temporary.cleanup()
+        except (PublicationError, OSError) as cleanup_exc:
+            cleanup_error = cleanup_exc
         print(str(exc), file=sys.stderr)
+        if cleanup_error is not None:
+            print(f"temporary cleanup: {cleanup_error}", file=sys.stderr)
         return 1
-    shutil.rmtree(temporary)
     os.execvp("gh", [
         "gh", "release", "edit", args.tag, "--draft=false", "--repo", args.repo,
     ])

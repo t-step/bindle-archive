@@ -418,5 +418,78 @@ with tempfile.TemporaryDirectory(prefix="bindle-temp-base-test.") as temp_base:
         module.tempfile.tempdir = original_tempdir
         module.tempfile.mkdtemp = original_mkdtemp
         module._prepare = original_prepare
+
+with tempfile.TemporaryDirectory(prefix="bindle-temp-entry-test.") as temp_base:
+    temp_base = Path(temp_base)
+    symlinked_root = temp_base / "source"
+    symlinked_root.mkdir()
+    safe_base = temp_base / "safe-base"
+    safe_base.mkdir()
+    victim = temp_base / "victim"
+    victim.mkdir()
+    sentinel = victim / "sentinel"
+    sentinel.write_bytes(b"external victim must survive\n")
+    entry = safe_base.resolve() / "bindle-publication.swap"
+    prepare_calls = []
+    exec_calls = []
+    original_tempdir = module.tempfile.tempdir
+    original_mkdtemp = module.tempfile.mkdtemp
+    original_prepare = module._prepare
+    original_execvp = module.os.execvp
+
+    def swapped_mkdtemp(*, prefix, dir):
+        assert prefix == "bindle-publication."
+        assert Path(dir) == safe_base.resolve()
+        entry.mkdir()
+        entry.rmdir()
+        entry.symlink_to(victim, target_is_directory=True)
+        return str(entry)
+
+    module.tempfile.tempdir = str(safe_base)
+    module.tempfile.mkdtemp = swapped_mkdtemp
+    module._prepare = lambda *args: prepare_calls.append(args)
+    module.os.execvp = lambda *args: exec_calls.append(args)
+    try:
+        with contextlib.redirect_stderr(io.StringIO()):
+            assert module.main(["--root", str(symlinked_root),
+                                "--repo", owner_repo, "--tag", tag]) == 1
+        assert prepare_calls == []
+        assert exec_calls == []
+        assert not entry.exists() and not entry.is_symlink()
+        assert sentinel.read_bytes() == b"external victim must survive\n"
+        assert list(symlinked_root.iterdir()) == []
+    finally:
+        module.tempfile.tempdir = original_tempdir
+        module.tempfile.mkdtemp = original_mkdtemp
+        module._prepare = original_prepare
+        module.os.execvp = original_execvp
+
+with tempfile.TemporaryDirectory(prefix="bindle-temp-cleanup-test.") as temp_base:
+    temp_base = Path(temp_base)
+    symlinked_root = temp_base / "source"
+    symlinked_root.mkdir()
+    safe_base = temp_base / "safe-base"
+    safe_base.mkdir()
+    victim = temp_base / "victim"
+    victim.mkdir()
+    sentinel = victim / "sentinel"
+    sentinel.write_bytes(b"cleanup must not follow symlink\n")
+    original_tempdir = module.tempfile.tempdir
+    module.tempfile.tempdir = str(safe_base)
+    try:
+        temporary = module._temporary_directory(symlinked_root.resolve())
+        entry = temporary.path
+        shutil.rmtree(entry)
+        entry.symlink_to(victim, target_is_directory=True)
+        try:
+            temporary.cleanup(require_identity=True)
+        except module.PublicationError:
+            pass
+        else:
+            raise AssertionError("symlink-swapped cleanup entry was accepted")
+        assert not entry.exists() and not entry.is_symlink()
+        assert sentinel.read_bytes() == b"cleanup must not follow symlink\n"
+    finally:
+        module.tempfile.tempdir = original_tempdir
 print("test-release-publication: all scenarios passed")
 PY
