@@ -194,9 +194,17 @@ and the authority boundaries above both. The handoff must:
 - sync `VERSION` onto the release PR branch via `bin/release-please-sync.sh`
   (issue #137) — Release Please's own `extra-files` mechanism cannot update
   Bindle's bare, unannotated `VERSION` file, so this step closes that gap
-  locally, before the PR is reviewed;
+  locally, before the PR is reviewed; the `local-release-please` strategy's
+  `apply` verb chains this sync onto the same invocation automatically
+  (issue #152), so it is no longer a separately-remembered manual step;
 - run release-integrity verification (`package-release-integrity` / `#59`)
   before any publication;
+- when GitHub Actions cannot run `release.yml` (e.g. a billing block) and
+  publication must happen by hand, use `bin/release-publish.sh` rather than a
+  bare `gh release create` — it replicates `release.yml`'s changelog-section
+  extraction and additionally relabels the merged release PR from
+  `autorelease: pending` to `autorelease: tagged` (issue #152), which a bare
+  manual publish otherwise skips, aborting the next `release-pr` run;
 - never treat the recommendation, passing CI, or a created release PR as
   authorization to merge or publish (Section 2).
 
@@ -243,7 +251,12 @@ not guess a class or a number to produce a tidier output.
   `bin/release.sh` remains only as legacy/fallback publication tooling and does
   not regenerate Release-Please-owned artifacts. Bindle's bare `VERSION` file is
   kept current automatically: `bin/release-please-sync.sh` syncs it onto the
-  release PR branch as part of Step 6 (issue #137).
+  release PR branch as part of Step 6 (issue #137), chained automatically by
+  the `local-release-please` strategy's `apply` verb (issue #152). Manual
+  publication (while GitHub Actions cannot run `release.yml`) uses
+  `bin/release-publish.sh`, which additionally relabels the merged release PR
+  `autorelease: pending` → `autorelease: tagged` so the next `release-pr` run
+  doesn't abort on an outstanding untagged PR (issue #152).
 - **Beside `#59` release-integrity.** `package-release-integrity` verifies a
   release is *safe to cut* (version-source agreement, tag/version consistency,
   changelog presence, correct semver movement). This contract decides *whether

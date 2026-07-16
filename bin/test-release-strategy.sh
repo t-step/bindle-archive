@@ -123,9 +123,22 @@ code=$?
   ok "apply without token refuses, no invocation" ||
   bad "apply-no-token ($code): log=$(cat "$RP_STUB_LOG")"
 
-# --- apply with token: invokes release-please with --token, WITHOUT --dry-run ---
+# A stub release-please-sync.sh that records its argv and mutates nothing.
+SYNC_STUB="$TMP/sync-stub.sh"
+cat >"$SYNC_STUB" <<'EOF'
+#!/usr/bin/env bash
+echo "STUB-SYNC $*" >>"$SYNC_STUB_LOG"
+echo "release-please-sync stub ok"
+EOF
+chmod +x "$SYNC_STUB"
+export SYNC_STUB_LOG="$TMP/sync.log"
+
+# --- apply with token: invokes release-please with --token, WITHOUT --dry-run,
+# then chains release-please-sync.sh apply with the SAME token (#152) ---
 : >"$RP_STUB_LOG"
+: >"$SYNC_STUB_LOG"
 out="$(cd "$FIX" && GITHUB_TOKEN=faketoken RC_CONFIG="$TMP/good.toml" RELEASE_PLEASE_CMD="$STUB" \
+  RELEASE_PLEASE_SYNC_CMD="$SYNC_STUB" \
   "$SEL" apply --approval-token "eph-123" 2>&1)"
 code=$?
 {
@@ -136,6 +149,29 @@ code=$?
 } &&
   ok "apply with token invokes release-pr (--token, no --dry-run)" ||
   bad "apply-token ($code): log=$(cat "$RP_STUB_LOG")"
+{
+  grep -q -- 'apply' "$SYNC_STUB_LOG" &&
+    grep -q -- '--approval-token eph-123' "$SYNC_STUB_LOG"
+} &&
+  ok "apply chains release-please-sync.sh apply with the same token" ||
+  bad "apply-chains-sync: log=$(cat "$SYNC_STUB_LOG")"
+
+# --- apply: a failing chained sync fails the whole apply, no silent success ---
+FAIL_SYNC_STUB="$TMP/sync-fail-stub.sh"
+cat >"$FAIL_SYNC_STUB" <<'EOF'
+#!/usr/bin/env bash
+echo "sync stub: forced failure" >&2
+exit 1
+EOF
+chmod +x "$FAIL_SYNC_STUB"
+: >"$RP_STUB_LOG"
+out="$(cd "$FIX" && GITHUB_TOKEN=faketoken RC_CONFIG="$TMP/good.toml" RELEASE_PLEASE_CMD="$STUB" \
+  RELEASE_PLEASE_SYNC_CMD="$FAIL_SYNC_STUB" \
+  "$SEL" apply --approval-token "eph-456" 2>&1)"
+code=$?
+[ "$code" -ne 0 ] &&
+  ok "apply fails when the chained sync fails" ||
+  bad "apply-sync-failure ($code): $out"
 
 # --- Release Please config: simple type, component-less tag, manifest is semver ---
 # The manifest version is NOT hardcoded — it advances every release (0.4.0 at
