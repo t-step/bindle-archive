@@ -332,7 +332,10 @@ def _print_report(report, as_json):
         )
         return
     for v in report["verdicts"]:
-        print(f"{v['check']}: {v['verdict']} — {v['detail']}")
+        line = f"{v['check']}: {v['verdict']}"
+        if "detail" in v:
+            line += f" — {v['detail']}"
+        print(line)
     print(f"ready: {report['ready']}")
 
 

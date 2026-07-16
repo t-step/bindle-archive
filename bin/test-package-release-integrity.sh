@@ -26,6 +26,17 @@ expect_contains() {
     fail=$((fail + 1))
   fi
 }
+expect_not_contains() {
+  local desc="$1" needle="$2"
+  if contains "$needle"; then
+    echo "  FAIL: $desc (unexpected: $needle)"
+    printf '%s\n' "$OUT" | sed 's/^/    | /'
+    fail=$((fail + 1))
+  else
+    echo "  ok: $desc"
+    pass=$((pass + 1))
+  fi
+}
 expect_rc() {
   local desc="$1" want="$2"
   if [ "$RC" -eq "$want" ]; then
@@ -150,6 +161,19 @@ expect_rc "malformed version.txt -> publication rc 1" 1
 run python3 "$HELPER" publication-check --repo "$FIX/domi-governed" --tag v1.2.0 --json
 expect_publication_json "DomI authority -> defer not-ready report" "$DEFER_REPORT"
 expect_rc "DomI authority -> publication rc 1" 1
+
+echo "publication text report:"
+run python3 "$HELPER" publication-check --repo "$FIX/version-file" --tag v1.2.0
+expect_contains "ready text -> source pass" "version_source_consistency: pass"
+expect_contains "ready text -> ready true" "ready: True"
+expect_not_contains "ready text -> no traceback" "Traceback"
+expect_rc "ready text -> rc 0" 0
+
+run python3 "$HELPER" publication-check --repo "$FIX/version-file" --tag v1.1.0
+expect_contains "not-ready text -> tag fail" "tag_consistency: fail"
+expect_contains "not-ready text -> ready false" "ready: False"
+expect_not_contains "not-ready text -> no traceback" "Traceback"
+expect_rc "not-ready text -> rc 1" 1
 
 echo "test-package-release-integrity: $pass passed, $fail failed"
 [ "$fail" -eq 0 ]
