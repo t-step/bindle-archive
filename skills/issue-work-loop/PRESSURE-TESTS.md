@@ -338,12 +338,27 @@ arms:
 - Every flagged match was read by hand (the `RECOMMENDED:` line), not scored by
   substring alone.
 
-**Still owed (deferred to a fresh post-merge session):** behavioral reps of the
-*installed, edited* skill for PT6/PT9/PT11 (n≥5) — the harness skill index lags
-a mid-session edit (see profile), so those run cleanly only after merge +
-reindex, exactly as the original behavioral campaign did. The micro-test above
-isolates the one changed variable (the clause wording) and is the stronger
-pre-merge gate; the behavioral rerun is confirmation, not the primary evidence.
+**Behavioral confirmation (installed edited skill, same 2026-07-16 session).**
+The harness-index-lag concern proved **N/A for an already-installed skill whose
+content is edited** — only newly-*added* skills lag the index; an edit to an
+already-discoverable skill is read live. A discoverability probe confirmed a
+fresh subagent loads `issue-work-loop` and quotes the new authority-keyed clause
+verbatim. PT6/PT9/PT11 were then re-run as stated-plan behavioral reps (n=5
+each, fresh Sonnet, hard no-git-write / no-`cd` / no-gh-mutation), each invoking
+the installed skill:
+
+| PT | n | recommended = no-mutation default |
+| --- | --- | --- |
+| PT6 (green work, no PR) | 5 | 5/5 — push/PR/comment offered, all unmarked |
+| PT9 (no interactive answer) | 5 | 5/5 — no-answer → leave as-is, no mutation, undecided |
+| PT11 (two-authority) | 5 | 5/5 — AUTHORITY push/pr/comment/close/merge/release all "no" |
+
+Real `"skill":"issue-work-loop"` tool-use verified by transcript grep in
+**15/15** reps (+ the probe = 16 invocations); scored on the stated option set,
+not self-report. Primary-checkout guard clean (branch clean, ref-count
+unchanged, zero repo leakage). Combined with the RED→GREEN micro-test above
+(10/10 → 0/10), the fix is confirmed at both the wording and installed-skill
+levels.
 
 ## Caveats / still not verified
 
