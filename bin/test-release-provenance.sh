@@ -187,6 +187,23 @@ assert len(failed["checks"]) == 4
 assert failed["checks"][0]["status"] == "failed"
 assert failed["checks"][0]["exit_code"] == 7
 
+throwing_output = tmp / "throwing-evidence.json"
+throwing_seen = []
+def throwing_runner(argv, *, cwd, check=False):
+    throwing_seen.append(argv)
+    if len(throwing_seen) == 2:
+        raise OSError("simulated exec failure")
+    return subprocess.CompletedProcess(argv, 0)
+assert rp.collect_evidence(root, tag, throwing_output, runner=throwing_runner) is False
+throwing = json.loads(throwing_output.read_text())
+assert throwing_seen == list(commands.values())
+assert len(throwing["checks"]) == 4
+assert throwing["checks"][1] == {
+    "id": "release_integrity", "required": True,
+    "command": commands["release_integrity"], "status": "failed",
+    "exit_code": 127, "error": "OSError: simulated exec failure",
+}
+
 def rejected(candidate):
     try:
         rp.validate_evidence(candidate, source)
@@ -224,12 +241,20 @@ candidate["checks"].append({"id": "surprise", "required": True,
                             "command": ["true"], "status": "passed",
                             "exit_code": 0})
 rejected(candidate)
+candidate = copy.deepcopy(evidence)
+candidate["checks"].append({"id": "optional-surprise", "required": False,
+                            "command": ["true"], "status": "passed",
+                            "exit_code": 0})
+rejected(candidate)
 for field in ("schema_version", "repository", "tag", "commit_sha", "checks"):
     candidate = copy.deepcopy(evidence)
     del candidate[field]
     rejected(candidate)
 candidate = copy.deepcopy(evidence)
 candidate["checks"][0]["status"] = "bogus"
+rejected(candidate)
+candidate = copy.deepcopy(evidence)
+candidate["schema_version"] = True
 rejected(candidate)
 print("evidence contract ok")
 PY
@@ -376,11 +401,86 @@ run "$PY" "$HELPER" generate --root "$VALID" --tag v0.5.1 \
   --evidence "$EVIDENCE" --output-dir "$VALID"
 expect_rc "generation rejects output equal to repo root" 1
 
+printf '%s\n' stale-json >"$ARTIFACT"
+printf '%s\n' stale-checksum >"$CHECKSUM"
+run "$PY" "$HELPER" generate --root "$VALID" --tag v0.5.1 \
+  --evidence "$EVIDENCE" --output-dir "$OUTDIR"
+expect_rc "generation replaces ordinary existing external assets" 0
+run "$PY" "$HELPER" verify --root "$VALID" --tag v0.5.1 \
+  --artifact "$ARTIFACT" --checksum "$CHECKSUM"
+expect_rc "replaced ordinary assets remain valid" 0
+
+for asset in bindle-release-provenance.json bindle-release-provenance.json.sha256; do
+  SAFE_REPO="$TMP/symlink-${asset##*.}"
+  SAFE_OUT="$TMP/symlink-out-${asset##*.}"
+  SAFE_EVIDENCE="$TMP/symlink-evidence-${asset##*.}.json"
+  mkfixture "$SAFE_REPO"
+  safe_commit="$(git -C "$SAFE_REPO" rev-parse 'v0.5.1^{commit}')"
+  sed "s/$expected_commit/$safe_commit/g" "$EVIDENCE" >"$SAFE_EVIDENCE"
+  mkdir -p "$SAFE_OUT"
+  ln -s "$SAFE_REPO/version.txt" "$SAFE_OUT/$asset"
+  safe_version_before="$(cat "$SAFE_REPO/version.txt")"
+  safe_status_before="$(git -C "$SAFE_REPO" status --porcelain=v1 --untracked-files=all)"
+  run "$PY" "$HELPER" generate --root "$SAFE_REPO" --tag v0.5.1 \
+    --evidence "$SAFE_EVIDENCE" --output-dir "$SAFE_OUT"
+  expect_rc "generation rejects $asset symlink into repo" 1
+  run test "$(cat "$SAFE_REPO/version.txt")" = "$safe_version_before"
+  expect_rc "$asset symlink target bytes stay unchanged" 0
+  run test "$(git -C "$SAFE_REPO" status --porcelain=v1 --untracked-files=all)" = "$safe_status_before"
+  expect_rc "$asset symlink rejection leaves Git status unchanged" 0
+done
+
 cp "$ARTIFACT" "$TMP/corrupt.json"
 printf 'x' >>"$TMP/corrupt.json"
 run "$PY" "$HELPER" verify --root "$VALID" --tag v0.5.1 \
   --artifact "$TMP/corrupt.json" --checksum "$CHECKSUM"
 expect_rc "verification rejects digest mismatch" 1
+
+run "$PY" - "$ARTIFACT" "$TMP" <<'PY'
+import hashlib, json, pathlib, sys
+source, directory = map(pathlib.Path, sys.argv[1:])
+document = json.loads(source.read_text())
+cases = {
+    "compact": json.dumps(document, sort_keys=True, separators=(",", ":")).encode(),
+    "no-lf": source.read_bytes()[:-1],
+    "duplicate": source.read_text().replace(
+        '  "schema_version": 1,\n',
+        '  "schema_version": 1,\n  "schema_version": 1,\n', 1
+    ).encode(),
+}
+boolean = dict(document)
+boolean["schema_version"] = True
+cases["boolean-schema"] = (
+    json.dumps(boolean, sort_keys=True, indent=2) + "\n"
+).encode()
+for name, payload in cases.items():
+    artifact = directory / f"bytes-{name}.json"
+    checksum = directory / f"bytes-{name}.json.sha256"
+    artifact.write_bytes(payload)
+    checksum.write_bytes(
+        f"{hashlib.sha256(payload).hexdigest()}  bindle-release-provenance.json\n".encode()
+    )
+PY
+expect_rc "noncanonical artifact fixtures have matching checksums" 0
+for case in compact no-lf duplicate boolean-schema; do
+  run "$PY" "$HELPER" verify --root "$VALID" --tag v0.5.1 \
+    --artifact "$TMP/bytes-$case.json" \
+    --checksum "$TMP/bytes-$case.json.sha256"
+  expect_rc "verification rejects $case artifact bytes" 1
+done
+
+run "$PY" - "$EVIDENCE" "$TMP/duplicate-evidence.json" <<'PY'
+import pathlib, sys
+source, output = map(pathlib.Path, sys.argv[1:])
+output.write_text(source.read_text().replace(
+    '  "schema_version": 1,\n',
+    '  "schema_version": 1,\n  "schema_version": 1,\n', 1
+))
+PY
+expect_rc "duplicate-member evidence fixture is created" 0
+run "$PY" "$HELPER" generate --root "$VALID" --tag v0.5.1 \
+  --evidence "$TMP/duplicate-evidence.json" --output-dir "$TMP/duplicate-out"
+expect_rc "generation rejects duplicate evidence members" 1
 
 run "$PY" - "$ARTIFACT" "$TMP" <<'PY'
 import hashlib, json, pathlib, sys
@@ -415,6 +515,21 @@ sed "s/$expected_commit/$no_previous_commit/g" "$EVIDENCE" >"$TMP/no-previous-ev
 run "$PY" "$HELPER" generate --root "$NO_PREVIOUS" --tag v0.5.1 \
   --evidence "$TMP/no-previous-evidence.json" --output-dir "$TMP/no-previous-out"
 expect_rc "generation rejects no previous SemVer tag candidate" 1
+
+INVALID_SEMVER="$TMP/invalid-semver-previous"
+mkfixture "$INVALID_SEMVER"
+git -C "$INVALID_SEMVER" tag v0.5.0-01 v0.5.0
+invalid_semver_commit="$(git -C "$INVALID_SEMVER" rev-parse 'v0.5.1^{commit}')"
+sed "s/$expected_commit/$invalid_semver_commit/g" "$EVIDENCE" >"$TMP/invalid-semver-evidence.json"
+run "$PY" "$HELPER" generate --root "$INVALID_SEMVER" --tag v0.5.1 \
+  --evidence "$TMP/invalid-semver-evidence.json" \
+  --output-dir "$TMP/invalid-semver-out"
+expect_rc "invalid numeric-prerelease SemVer tag is ignored" 0
+run "$PY" - "$TMP/invalid-semver-out/bindle-release-provenance.json" <<'PY'
+import json, pathlib, sys
+assert json.loads(pathlib.Path(sys.argv[1]).read_text())["previous_version"] == "0.5.0"
+PY
+expect_rc "strict previous-tag selection keeps the valid SemVer candidate" 0
 
 TIED="$TMP/tied-previous"
 mkfixture "$TIED"

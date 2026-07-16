@@ -4,9 +4,11 @@
 import argparse
 import hashlib
 import json
+import os
 import re
 import subprocess
 import sys
+import tempfile
 from pathlib import Path
 from urllib.parse import urlparse
 
@@ -16,8 +18,10 @@ ARTIFACT_NAME = "bindle-release-provenance.json"
 CHECKSUM_NAME = f"{ARTIFACT_NAME}.sha256"
 TOOLS = ["git", "bash", "python3", "shellcheck", "shfmt"]
 SEMVER_TAG = re.compile(
-    r"^v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)"
-    r"(?:-[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?"
+    r"^v(?P<major>0|[1-9][0-9]*)\."
+    r"(?P<minor>0|[1-9][0-9]*)\."
+    r"(?P<patch>0|[1-9][0-9]*)"
+    r"(?:-(?P<prerelease>[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*))?"
     r"(?:\+[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?$"
 )
 
@@ -160,9 +164,38 @@ def _json_bytes(document: dict) -> bytes:
     )
 
 
+def _json_object(pairs):
+    result = {}
+    for key, value in pairs:
+        if key in result:
+            raise ValueError(f"JSON: duplicate object member {key!r}")
+        result[key] = value
+    return result
+
+
+def _parse_json(text: str, label: str):
+    try:
+        return json.loads(text, object_pairs_hook=_json_object)
+    except json.JSONDecodeError as exc:
+        raise ValueError(f"{label}: invalid JSON ({exc})") from None
+
+
+def _atomic_write(path: Path, content: bytes) -> None:
+    descriptor, temporary = tempfile.mkstemp(
+        dir=path.parent, prefix=f".{path.name}.", suffix=".tmp"
+    )
+    temporary_path = Path(temporary)
+    try:
+        with os.fdopen(descriptor, "wb") as handle:
+            handle.write(content)
+        os.replace(temporary_path, path)
+    finally:
+        temporary_path.unlink(missing_ok=True)
+
+
 def _write_json(path: Path, document: dict) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_bytes(_json_bytes(document))
+    _atomic_write(path, _json_bytes(document))
 
 
 def collect_evidence(
@@ -177,16 +210,25 @@ def collect_evidence(
     checks = []
     successful = True
     for check_id, command in required_commands(tag).items():
-        completed = runner(command, cwd=root, check=False)
-        passed = completed.returncode == 0
+        error = None
+        try:
+            completed = runner(command, cwd=root, check=False)
+            exit_code = completed.returncode
+        except OSError as exc:
+            exit_code = 127
+            error = f"OSError: {exc}"
+        passed = exit_code == 0
         successful = successful and passed
-        checks.append({
+        check = {
             "id": check_id,
             "required": True,
             "command": command,
             "status": "passed" if passed else "failed",
-            "exit_code": completed.returncode,
-        })
+            "exit_code": exit_code,
+        }
+        if error is not None:
+            check["error"] = error
+        checks.append(check)
     document = {
         "schema_version": 1,
         "repository": repository,
@@ -204,7 +246,7 @@ def validate_evidence(evidence: dict, source: dict) -> dict:
     }
     if not isinstance(evidence, dict) or set(evidence) != expected_top:
         raise ValueError("evidence: expected exact top-level key set")
-    if evidence["schema_version"] != 1:
+    if type(evidence["schema_version"]) is not int or evidence["schema_version"] != 1:
         raise ValueError("evidence: unsupported schema_version")
     for field in ("repository", "tag", "commit_sha"):
         if evidence[field] != source[field]:
@@ -215,10 +257,13 @@ def validate_evidence(evidence: dict, source: dict) -> dict:
     commands = required_commands(source["tag"])
     seen = set()
     for check in evidence["checks"]:
-        expected_keys = {
+        base_keys = {
             "id", "required", "command", "status", "exit_code"
         }
-        if not isinstance(check, dict) or set(check) != expected_keys:
+        if (
+            not isinstance(check, dict)
+            or set(check) not in (base_keys, base_keys | {"error"})
+        ):
             raise ValueError("evidence: check has invalid key set")
         check_id = check["id"]
         if not isinstance(check_id, str) or check_id in seen:
@@ -227,9 +272,13 @@ def validate_evidence(evidence: dict, source: dict) -> dict:
         if check["status"] not in STATUS:
             raise ValueError(f"evidence: invalid status for {check_id}")
         if check_id not in commands:
-            if check["required"] is True:
-                raise ValueError(f"evidence: unknown required check {check_id}")
-            continue
+            raise ValueError(f"evidence: unknown check {check_id}")
+        if "error" in check and (
+            check["status"] != "failed"
+            or not isinstance(check["error"], str)
+            or not check["error"]
+        ):
+            raise ValueError(f"evidence: invalid error for {check_id}")
         if check["required"] is not True:
             raise ValueError(f"evidence: {check_id} must be required")
         if check["command"] != commands[check_id]:
@@ -247,10 +296,7 @@ def validate_evidence(evidence: dict, source: dict) -> dict:
 
 
 def _tagged_json(root: Path, commit: str, path: str):
-    try:
-        return json.loads(_tagged_file(root, commit, path))
-    except json.JSONDecodeError as exc:
-        raise ValueError(f"{path}: invalid JSON ({exc})") from None
+    return _parse_json(_tagged_file(root, commit, path), path)
 
 
 def _capability_snapshot(root: Path, commit: str) -> list[dict]:
@@ -332,7 +378,7 @@ def _previous_version(root: Path, tag: str, commit: str) -> str:
         for candidate in git(
             root, "tag", "--merged", parent, "--list", "v*"
         ).splitlines()
-        if candidate != tag and SEMVER_TAG.fullmatch(candidate)
+        if candidate != tag and _is_semver_tag(candidate)
     ]
     if not candidates:
         raise ValueError("previous version: no reachable SemVer tag")
@@ -352,12 +398,35 @@ def _previous_version(root: Path, tag: str, commit: str) -> str:
     return nearest[0][1:]
 
 
+def _is_semver_tag(tag: str) -> bool:
+    match = SEMVER_TAG.fullmatch(tag)
+    if match is None:
+        return False
+    prerelease = match.group("prerelease")
+    if prerelease is None:
+        return True
+    return not any(
+        len(identifier) > 1 and identifier.startswith("0")
+        for identifier in prerelease.split(".")
+        if identifier.isdigit()
+    )
+
+
 def _outside_repo(root: Path, output_dir: Path) -> Path:
     root = root.resolve()
     output_dir = output_dir.resolve()
     if output_dir == root or root in output_dir.parents:
         raise ValueError("output directory must be outside repository root")
     return output_dir
+
+
+def _validate_asset_target(root: Path, target: Path) -> None:
+    if not target.is_symlink():
+        return
+    resolved = target.resolve()
+    if resolved == root or root in resolved.parents:
+        raise ValueError(f"{target.name}: symlink target resolves inside repository")
+    raise ValueError(f"{target.name}: asset target must not be a symlink")
 
 
 def build_provenance(root: Path, tag: str, evidence: dict) -> dict:
@@ -382,7 +451,9 @@ def generate(
 ) -> tuple[Path, Path]:
     root = root.resolve()
     output_dir = _outside_repo(root, Path(output_dir))
-    evidence = json.loads(Path(evidence_path).read_text(encoding="utf-8"))
+    evidence = _parse_json(
+        Path(evidence_path).read_text(encoding="utf-8"), "evidence"
+    )
     document = build_provenance(root, tag, evidence)
     payload = _json_bytes(document)
     digest = hashlib.sha256(payload).hexdigest()
@@ -390,8 +461,10 @@ def generate(
     output_dir.mkdir(parents=True, exist_ok=True)
     artifact_path = output_dir / ARTIFACT_NAME
     checksum_path = output_dir / CHECKSUM_NAME
-    artifact_path.write_bytes(payload)
-    checksum_path.write_bytes(checksum)
+    _validate_asset_target(root, artifact_path)
+    _validate_asset_target(root, checksum_path)
+    _atomic_write(artifact_path, payload)
+    _atomic_write(checksum_path, checksum)
     return artifact_path, checksum_path
 
 
@@ -403,7 +476,9 @@ def verify_artifact(
     expected_checksum = f"{digest}  {ARTIFACT_NAME}\n".encode("ascii")
     if Path(checksum_path).read_bytes() != expected_checksum:
         raise ValueError("checksum: detached checksum or digest mismatch")
-    document = json.loads(payload)
+    document = _parse_json(payload.decode("utf-8"), "artifact")
+    if payload != _json_bytes(document):
+        raise ValueError("artifact: non-canonical JSON bytes")
     expected_keys = {
         "schema_version", "artifact_type", "repository", "tag",
         "tag_object_sha", "tagger_timestamp", "commit_sha", "version",
@@ -412,7 +487,7 @@ def verify_artifact(
     }
     if not isinstance(document, dict) or set(document) != expected_keys:
         raise ValueError("artifact: invalid schema key set")
-    if document["schema_version"] != 1:
+    if type(document["schema_version"]) is not int or document["schema_version"] != 1:
         raise ValueError("artifact: unsupported schema_version")
     if document["artifact_type"] != "bindle-release-provenance":
         raise ValueError("artifact: invalid artifact_type")
