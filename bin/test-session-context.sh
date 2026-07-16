@@ -142,6 +142,53 @@ out="$(run_sc "$H2" -- --bogus 2>&1)"
 status=$?
 check "unknown flag exits 2" exit_is "$status" 2
 
+# --- install health (#192) ---------------------------------------------------
+# A co-installed tool can replace a Bindle-owned symlink with a real file. That
+# silently voids every rule in global/CLAUDE.md and produces no error, so a
+# session must be told at start rather than on the next remembered doctor run.
+
+echo
+echo "10. reports a conflicting managed destination:"
+HC="$TMP/hc"
+mkdir -p "$HC/.claude"
+printf 'not a bindle symlink\n' >"$HC/.claude/CLAUDE.md"
+out="$(run_sc "$HC" -- --cwd "$REPO" --home "$HC/.claude" 2>&1)"
+status=$?
+check "still exits 0 with a conflict present" exit_is "$status" 0
+check "reports install health" contains "install health:" "$out"
+check "counts the conflict" contains "1 conflict" "$out"
+check "names the conflicting item" contains "CLAUDE.md" "$out"
+check "points at doctor for detail" contains "bin/doctor.sh" "$out"
+
+echo
+echo "11. reports a broken owned symlink:"
+HB="$TMP/hb"
+mkdir -p "$HB/.claude/skills"
+ln -s "$REPO_ROOT/skills/does-not-exist" "$HB/.claude/skills/does-not-exist"
+out="$(run_sc "$HB" -- --cwd "$REPO" --home "$HB/.claude" 2>&1)"
+check "reports install health" contains "install health:" "$out"
+check "counts the broken link" contains "1 broken" "$out"
+
+echo
+echo "12. stays silent when nothing is conflicting or broken:"
+# Everything is merely *missing* here. Missing means "not installed" -- loud and
+# self-evident. Only the silent states (conflict/broken) are worth a line.
+HM="$TMP/hm"
+mkdir -p "$HM/.claude"
+out="$(run_sc "$HM" -- --cwd "$REPO" --home "$HM/.claude" 2>&1)"
+check "no health line when only missing" not_contains "install health:" "$out"
+
+echo
+echo "13. install health degrades to silence on a home doctor cannot read:"
+# doctor exits nonzero on findings and 2 on usage errors; session-context runs
+# under pipefail, so an unguarded call would take the whole session start down.
+HX="$TMP/hx/does/not/exist"
+out="$(run_sc "$TMP/hx" -- --cwd "$REPO" --home "$HX" 2>&1)"
+status=$?
+check "still exits 0 on an unreadable home" exit_is "$status" 0
+check "emits no health line" not_contains "install health:" "$out"
+check "leaks no doctor usage error" not_contains "usage" "$out"
+
 echo
 echo "passed $pass, failed $fail"
 [ "$fail" -eq 0 ]

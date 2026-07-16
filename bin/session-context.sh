@@ -146,11 +146,52 @@ open_issues() {
   echo "$out" | paste -sd, - | sed 's/,/, #/g; s/^/#/'
 }
 
+# --- install health (#192) --------------------------------------------------
+# A co-installed tool can replace a Bindle-owned symlink with a real file. That
+# voids every rule in global/CLAUDE.md and raises nothing: no error, no missing
+# file. bin/doctor.sh already classifies it; the gap was that nothing ran doctor
+# unprompted, so the failure waited on someone remembering to look.
+#
+# Only the silent states are worth a line. `missing` means Bindle isn't
+# installed — self-evident the moment you look for a skill. `conflict` and
+# `broken` are the ones that hide.
+#
+# Never fails a session: any problem resolving or running doctor prints nothing.
+install_health() {
+  local claude_home="${CLAUDE_HOME_OVERRIDE:-${HOME}/.claude}"
+  local doctor="$SCRIPT_DIR/doctor.sh"
+  [ -x "$doctor" ] || return 0
+  [ -d "$claude_home" ] || return 0
+
+  local out summary conflict broken names
+  # doctor exits 1 on findings and 2 on usage errors; neither is our problem.
+  out="$("$doctor" --home "$claude_home" 2>/dev/null)" || true
+  summary="$(printf '%s\n' "$out" | grep -m1 '^summary: ' || true)"
+  [ -n "$summary" ] || return 0
+
+  conflict="$(printf '%s\n' "$summary" | sed -n 's/.*, \([0-9][0-9]*\) conflict.*/\1/p')"
+  broken="$(printf '%s\n' "$summary" | sed -n 's/.*, \([0-9][0-9]*\) broken.*/\1/p')"
+  conflict="${conflict:-0}"
+  broken="${broken:-0}"
+  [ "$conflict" -gt 0 ] || [ "$broken" -gt 0 ] || return 0
+
+  # doctor prints findings as: "  ✗ NAME — STATE: DETAIL"
+  names="$(printf '%s\n' "$out" |
+    awk -F' — ' '/ — (conflict|broken):/ {
+      sub(/^[[:space:]]*[^[:space:]]+[[:space:]]+/, "", $1); print $1
+    }' | paste -sd',' - | sed 's/,/, /g')"
+
+  printf 'install health: %s conflict, %s broken%s — run bin/doctor.sh\n' \
+    "$conflict" "$broken" "${names:+ ($names)}"
+}
+
 # --- assemble ----------------------------------------------------------------
 
 resolve_notes_home
 
 {
+  # Health first: a warning must survive the MAX_BYTES truncation below.
+  install_health
   echo "project: $PROJECT ($(git_summary))"
   echo "notes home: $NOTES_DIR (via $NOTES_SOURCE)"
   echo "latest session note: $(latest_in "$NOTES_DIR/projects/$PROJECT/sessions")"
