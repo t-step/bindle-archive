@@ -151,6 +151,33 @@ happens to pass, and do not treat a partial/incomplete scan as a clean `0`.
   blob) and `fork-pr-flow` (where changes land, and never merging a PR you
   just opened without explicit authorization).
 
+### Workspace isolation (authorized repository-mutating passes)
+
+Before the first repository mutation of an *authorized* pass, isolate the
+work in a dedicated worktree:
+
+1. Inspect repository and worktree state.
+2. Fetch `origin`.
+3. Resolve `origin/main` (or a repo-mandated base) to a commit SHA — the base
+   is the freshly-fetched remote tip, never a possibly-stale local `main`.
+4. Create the objective branch from that exact SHA.
+5. Create a dedicated worktree for that branch; perform all objective-related
+   mutations inside it, leaving the primary checkout and unrelated worktrees
+   untouched.
+
+Record the worktree path, branch, base ref, and base SHA as closeout evidence
+(§9; `docs/delegated-implementation-packets.md` §10).
+
+Fail closed and report — never improvise — when `origin` or `origin/main` is
+unavailable, the intended branch already exists with incompatible state, the
+worktree path is occupied or ambiguous, repository instructions require a
+different base branch, or the task cannot safely be isolated.
+
+**Read-only and plan-only passes are exempt.** A pass whose Phase-2
+deliverable is `analysis`, or whose delegation profile is Review or Research
+(`docs/delegation-profiles.md`), creates no branch or worktree — isolation is
+a precondition of *mutating* work, not a ritual applied to every pass.
+
 ## 7. Phase 5 — Verify
 
 - Run the repository's **actual** verification commands — discovered in
@@ -189,6 +216,28 @@ Depending on the Phase 5 result:
   folding it into this pass's scope — expanding scope without saying so
   defeats Phase 4's bounding.
 
+### Deliverable disposition
+
+Once Phase 5's verification state is known, stop at a single contextual
+decision on how the deliverable should proceed. The decision offers only the
+actions actually valid for this deliverable and state — not the full universe
+of git/GitHub actions — derived from: the deliverable named in Phase 2, the
+real implementation and verification state, existing PR/issue state, the
+explicit mutation authority already granted (Section 2), and repository
+instructions. Mark the recommended action when there is a clear one; ask a
+follow-up only when the chosen action genuinely needs one (draft vs. ready
+PR; close with or without a comment).
+
+**No answer means:** leave the deliverable in its current state; perform no
+push, PR creation, issue mutation, merge, close, release, or publication; and
+report that disposition remains undecided. This is the two-authority
+invariant at its decision point — the specific external grant is *requested*
+here, never assumed.
+
+Prefer a concise explanatory comment when closing an issue; permit no-comment
+closure only when the user explicitly chooses it, or there is genuinely no
+useful explanation to preserve.
+
 ## 9. State vocabulary
 
 **The five Phase 3 dedup verdicts** (mutually exclusive, one applies):
@@ -216,6 +265,12 @@ be named in Phase 2 and reported honestly in Phase 6):
 - `handoff` — work incomplete; a durable note/handoff left per
   `session-continuity` for a future session to pick up.
 
+**Workspace provenance** (recorded for every authorized repository-mutating
+pass): the worktree path, branch, base ref, and base SHA the pass ran in —
+carried into closeout evidence per `docs/delegated-implementation-packets.md`
+§10. It is what makes "the base was `origin/main`" checkable rather than
+narrated.
+
 ## 10. Provider mapping
 
 Each phase's *requirement* is identical across providers; only the
@@ -228,9 +283,9 @@ the same phase directly from this doc and the repo's shell scripts.
 | 1. Orient | reads `CLAUDE.md`; `domi-consumer` skill (wraps `bin/domi-status.sh`) | reads `AGENTS.md`; runs `bin/domi-status.sh` directly |
 | 2. Discover & qualify | `gh issue view` (portable); reads `docs/delegation-profiles.md` | identical — `gh issue view`; reads the same doc |
 | 3. Deduplicate | runs `bin/issue-dedup-scan.sh <n>`, reads exit code + JSON | identical — same script, same exit-code contract |
-| 4. Bound & execute | consults `docs/workflow-composition.md`, `docs/delegation-profiles.md`, `docs/delegated-implementation-packets.md`; applies `scoped-sequential-prs` / `fork-pr-flow` skills | reads the same contracts directly; applies the same rules manually (no skill runtime, same git/gh commands) |
+| 4. Bound & execute | consults `docs/workflow-composition.md`, `docs/delegation-profiles.md`, `docs/delegated-implementation-packets.md`; applies `scoped-sequential-prs` / `fork-pr-flow` skills; isolates the pass via `bin/objective-worktree.sh` | reads the same contracts directly; applies the same rules manually (no skill runtime, same git/gh commands); creates the worktree with `git worktree add` from the fetched origin/main SHA |
 | 5. Verify | `verify-then-commit` skill | runs the repo's actual test/typecheck/lint commands directly, applying the same all-green-or-fix rule |
-| 6. Close out | `session-continuity` skill (via `/session-end` / `/handoff`) for notes; `gh`/`git` for PR and issue actions | writes the same note/handoff shape by hand per `session-continuity`'s documented conventions; identical `gh`/`git` actions |
+| 6. Close out | `session-continuity` skill (via `/session-end` / `/handoff`) for notes; `gh`/`git` for PR and issue actions; the deliverable-disposition decision is one `AskUserQuestion` | writes the same note/handoff shape by hand per `session-continuity`'s documented conventions; identical `gh`/`git` actions; the disposition decision is a literal prompt to the human |
 
 The contract in Sections 1–9 is what stays fixed. This table is the only
 place providers are allowed to differ — consistent with

@@ -59,8 +59,11 @@ rather than dropping it.
    left to the worker to guess.
 2. **Preflight** — the checks that must hold before work starts: current branch
    and that it is not `main`; working-tree status is clean; the PR base is
-   correct; the issue is open, actionable, and not blocked; named dependencies
-   are satisfied. A failed preflight is a stop condition, not something to fix
+   correct; and, for an authorized repository-mutating packet, that the work
+   runs in a dedicated worktree whose branch is based on a freshly-resolved
+   `origin/main` (or the mandated base) SHA, not a stale local `main`; the
+   issue is open, actionable, and not blocked; named dependencies are
+   satisfied. A failed preflight is a stop condition, not something to fix
    silently.
 3. **Bounded objective** — one PR-able outcome stated in observable terms ("the
    audit's two matrix rows read *provider-specific* and a decision section
@@ -93,9 +96,11 @@ rather than dropping it.
    bounded without losing the observation: it becomes a follow-up issue, not a
    silent edit in this PR.
 10. **Closeout evidence** — what the worker returns: the final diff or repository
-    state, the exact commands run and their real results, any remaining
-    uncertainty, and the concrete PR/issue state (numbers, URLs, open/closed).
-    Closeout is evidence, not narration — it is checkable against rule 1.
+    state, the workspace provenance (the worktree path, branch, base ref, and
+    base SHA the work ran in), the exact commands run and their real results,
+    any remaining uncertainty, and the concrete PR/issue state (numbers, URLs,
+    open/closed). Closeout is evidence, not narration — it is checkable
+    against rule 1.
 
 ## Plan-only pass vs. authorized implementation pass
 
@@ -131,6 +136,8 @@ Copy this into an issue body or a handoff prompt and fill every section.
 ### Preflight
 - On a `feature/<x>` or `fix/<x>` branch cut from `main`, not `main` itself.
 - Working tree clean; PR base is `main` (or: <base>).
+- For a mutating packet: work runs in a dedicated worktree; branch based on a
+  fresh `origin/main` (or `<base>`) SHA `<sha>`, not stale local `main`.
 - Issue #<n> is open, actionable, and unblocked; dependencies <…> satisfied.
 
 ### Bounded objective
@@ -162,6 +169,8 @@ Copy this into an issue body or a handoff prompt and fill every section.
 ### Closeout evidence
 - Final diff/state, commands run + real results, remaining uncertainty,
   PR/issue numbers and their state.
+- Workspace provenance: worktree `<path>`, branch `<branch>`, base ref `<ref>`,
+  base SHA `<sha>`.
 ```
 
 ## Worked example

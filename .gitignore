@@ -3,6 +3,7 @@
 .claude/settings.local.json
 __pycache__/
 *.pyc
+.worktrees/
 
 # Local/private Claude workflow files — session scratch, personal notes, env.
 # These must never be committed anywhere; bin/check-private-info.sh also
