@@ -162,3 +162,11 @@ Promoted to `tested`; #116 can close.
   Bindle's own v0.5.0 cut.
 - Codex portability is **classified, not verified** (audit row: `manual`/
   untested) — a Codex run against the contract remains follow-up.
+- **(2026-07-16, issue #153)** The second-approval-gate + apply-token wording
+  was reworked so the operator supplies the approval token verbatim (via
+  `AskUserQuestion`) instead of the orchestrator minting it — closing a real
+  auto-mode classifier flag on the old self-minted flow. This specific
+  behavior (does the reworded wording actually stop an agent from inventing
+  the token string?) has **not** been pressure-tested — deferred per
+  CONTRIBUTING.md's "defer and file an issue" path. See the tracking issue
+  filed for this campaign before treating the reworked flow as verified.
