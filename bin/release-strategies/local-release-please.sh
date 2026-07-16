@@ -3,18 +3,29 @@
 # local-release-please.sh — the local Release Please ARTIFACT strategy for
 # Release Captain (L4 of #116). Release Please is the artifact authority: it
 # owns the VERSION bump, the CHANGELOG.md content, and the release PR. This
-# strategy assembles the `release-please release-pr` invocation and nothing
-# else. It NEVER merges, tags, creates a GitHub Release, publishes, or deploys —
-# publication is a separate, explicitly human-authorized action.
+# strategy assembles the `release-please release-pr` invocation and, on
+# `apply`, chains `release-please-sync.sh apply` onto the same release PR
+# branch (issue #152) — Release Please's own `extra-files` mechanism cannot
+# update Bindle's bare, unannotated `VERSION` file, so without this chain the
+# release PR is created with `VERSION` still disagreeing with the manifest
+# until someone remembers the separate sync step. This strategy NEVER merges,
+# tags, creates a GitHub Release, publishes, or deploys — publication is a
+# separate, explicitly human-authorized action.
 #
 # Verbs:
 #   dry-run  read-only preview; proves zero mutation.
-#   apply    create/update the release PR; requires --approval-token <ephemeral>
-#            passed by the orchestrator for this one invocation. No token =>
-#            hard stop, no invocation. The token is ephemeral invocation state,
-#            never a reusable secret or a persisted approval marker.
+#   apply    create/update the release PR, then sync VERSION onto it;
+#            requires --approval-token <ephemeral> passed by the orchestrator
+#            for this one invocation (reused for the chained sync — one grant
+#            covers both, since together they leave the release PR in one
+#            consistent state). No token => hard stop, no invocation. The
+#            token is ephemeral invocation state, never a reusable secret or a
+#            persisted approval marker.
 #
 set -euo pipefail
+
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+: "${RELEASE_PLEASE_SYNC_CMD:=$REPO_ROOT/bin/release-please-sync.sh}"
 
 verb="${1:-}"
 shift || true
@@ -82,6 +93,7 @@ case "$verb" in
       exit 4
     }
     rp release-pr --repo-url="$repo_url" --token="$gh_tok"
+    "$RELEASE_PLEASE_SYNC_CMD" apply --approval-token "$token"
     ;;
   *)
     echo "local-release-please: unknown verb '${verb:-<none>}'" >&2
