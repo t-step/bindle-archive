@@ -167,9 +167,32 @@ reusable secret and never persisted — and run:
 <bindle>/bin/release-strategy.sh apply --approval-token <ephemeral-token>
 ```
 
-`apply` may only create or update the release PR. It never merges, tags,
-publishes, or deploys. The resulting release PR is a **proposal**; its merge is
-a separate human decision.
+`apply` creates or updates the release PR, then (for the `local-release-please`
+strategy) chains `<bindle>/bin/release-please-sync.sh apply` onto that same PR
+branch with the same token — issue #152 — so `VERSION` never disagrees with the
+manifest on the release PR without a separately-remembered step. It never
+merges, tags, publishes, or deploys. The resulting release PR is a
+**proposal**; its merge is a separate human decision.
+
+### Publishing (separate, human-authorized, outside this skill)
+
+Once a human has merged the release PR and created/pushed the `vX.Y.Z` tag,
+publishing the GitHub Release is its own explicitly human-authorized action —
+this skill has no part in it. While GitHub Actions stays billing-blocked (see
+`docs/workflows/release-captain.md` §5), `release.yml` never fires on the
+pushed tag, so publish manually with `<bindle>/bin/release-publish.sh`, which
+replicates `release.yml`'s `gh release create` step exactly and additionally
+closes the relabel gap #152 identified: a manual publish leaves the merged
+release PR labeled `autorelease: pending` forever (the real release-please
+GitHub Action would relabel it to `autorelease: tagged`; ours never runs), and
+the next `release-please release-pr` then aborts on "untagged, merged release
+PRs outstanding." Same dry-run/apply + ephemeral-token shape as the other
+release scripts:
+
+```bash
+bin/release-publish.sh dry-run vX.Y.Z
+bin/release-publish.sh apply vX.Y.Z --approval-token <ephemeral-token>
+```
 
 ## Stop conditions (before `apply`)
 
