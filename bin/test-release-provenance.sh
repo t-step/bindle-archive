@@ -94,6 +94,10 @@ mkfixture() {
   git -C "$repo" symbolic-ref HEAD refs/heads/main
   git -C "$repo" remote add origin git@github.com:example/bindle.git
 
+  printf '%s\n' '{"capabilities":[{"name":"demo","type":"skill","provider":{"claude":"installed","codex":"untested"},"maturity":"tested","version_introduced":"0.5.0"}]}' >"$repo/capabilities.json"
+  printf '%s\n' '# generated' \
+    $'claude\tskill\tdemo\tskills/demo\tskills/demo' >"$repo/install-manifest.tsv"
+
   printf '%s\n' '0.5.0' >"$repo/version.txt"
   printf '%s\n' '{".": "0.5.0"}' >"$repo/.release-please-manifest.json"
   printf '%s\n' '# Changelog' '' '## [0.5.0] - 2026-07-01' '' '- Previous.' >"$repo/CHANGELOG.md"
@@ -120,6 +124,116 @@ run "$PY" "$HELPER" verify-source --root "$VALID" --tag v0.5.1 --json
 expect_rc "valid annotated tag exits zero" 0
 expect_json "valid annotated tag reports exact source state" \
   "$expected_commit" "$expected_tag_object" "$expected_timestamp"
+
+echo "evidence collection and validation:"
+run "$PY" - "$HELPER" "$VALID" "$TMP" <<'PY'
+import copy
+import importlib.util
+import json
+from pathlib import Path
+import subprocess
+import sys
+
+helper, root, tmp = Path(sys.argv[1]), Path(sys.argv[2]), Path(sys.argv[3])
+spec = importlib.util.spec_from_file_location("release_provenance", helper)
+rp = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(rp)
+tag = "v0.5.1"
+commands = {
+    "version_state": ["python3", "bin/release-provenance.py", "verify-source", "--tag", tag],
+    "release_integrity": ["python3", "skills/package-release-integrity/scripts/release_integrity.py", "publication-check", "--repo", ".", "--tag", tag],
+    "make_check": ["make", "check"],
+    "make_test": ["make", "test"],
+}
+assert rp.required_commands(tag) == commands
+
+seen = []
+def passing_runner(argv, *, cwd, check=False):
+    assert isinstance(argv, list)
+    assert Path(cwd) == root.resolve()
+    assert check is False
+    seen.append(argv)
+    return subprocess.CompletedProcess(argv, 0)
+
+output = tmp / "evidence.json"
+result = rp.collect_evidence(root, tag, output, runner=passing_runner)
+assert result is True
+assert seen == list(commands.values())
+evidence = json.loads(output.read_text())
+source = rp.verify_source(root, tag)
+assert evidence == {
+    "schema_version": 1,
+    "repository": source["repository"],
+    "tag": tag,
+    "commit_sha": source["commit_sha"],
+    "checks": [
+        {"id": key, "required": True, "command": command,
+         "status": "passed", "exit_code": 0}
+        for key, command in commands.items()
+    ],
+}
+assert output.read_bytes() == (json.dumps(evidence, sort_keys=True, indent=2) + "\n").encode()
+assert rp.validate_evidence(evidence, source) == evidence
+
+failed_output = tmp / "failed-evidence.json"
+calls = 0
+def failing_runner(argv, *, cwd, check=False):
+    global calls
+    calls += 1
+    return subprocess.CompletedProcess(argv, 7 if calls == 1 else 0)
+assert rp.collect_evidence(root, tag, failed_output, runner=failing_runner) is False
+failed = json.loads(failed_output.read_text())
+assert len(failed["checks"]) == 4
+assert failed["checks"][0]["status"] == "failed"
+assert failed["checks"][0]["exit_code"] == 7
+
+def rejected(candidate):
+    try:
+        rp.validate_evidence(candidate, source)
+    except ValueError:
+        return
+    raise AssertionError("invalid evidence accepted")
+
+for check_id in commands:
+    index = next(i for i, c in enumerate(evidence["checks"]) if c["id"] == check_id)
+    absent = copy.deepcopy(evidence)
+    absent["checks"].pop(index)
+    rejected(absent)
+    duplicate = copy.deepcopy(evidence)
+    duplicate["checks"].append(copy.deepcopy(duplicate["checks"][index]))
+    rejected(duplicate)
+    for status in ("unknown", "skipped", "failed"):
+        candidate = copy.deepcopy(evidence)
+        candidate["checks"][index]["status"] = status
+        rejected(candidate)
+    candidate = copy.deepcopy(evidence)
+    candidate["checks"][index]["exit_code"] = 9
+    rejected(candidate)
+    candidate = copy.deepcopy(evidence)
+    candidate["checks"][index]["command"] = ["true"]
+    rejected(candidate)
+
+candidate = copy.deepcopy(evidence)
+candidate["tag"] = "v9.9.9"
+rejected(candidate)
+candidate = copy.deepcopy(evidence)
+candidate["commit_sha"] = "0" * 40
+rejected(candidate)
+candidate = copy.deepcopy(evidence)
+candidate["checks"].append({"id": "surprise", "required": True,
+                            "command": ["true"], "status": "passed",
+                            "exit_code": 0})
+rejected(candidate)
+for field in ("schema_version", "repository", "tag", "commit_sha", "checks"):
+    candidate = copy.deepcopy(evidence)
+    del candidate[field]
+    rejected(candidate)
+candidate = copy.deepcopy(evidence)
+candidate["checks"][0]["status"] = "bogus"
+rejected(candidate)
+print("evidence contract ok")
+PY
+expect_rc "required evidence contract accepts only exact successful checks" 0
 
 run "$PY" "$HELPER" verify-source --root "$VALID" --tag v0.5.0 --json
 expect_rc "historical lightweight v0.5.0 exits nonzero" 1
@@ -190,6 +304,126 @@ run "$PY" "$HELPER" verify-source --root "$NO_CHANGELOG" --tag v0.5.1 --json
 expect_rc "missing changelog section exits nonzero" 1
 expect_exact "missing changelog section has stable reason" \
   "CHANGELOG.md: missing exact '## [0.5.1]' section"
+
+echo "provenance artifact generation and verification:"
+EVIDENCE="$TMP/evidence.json"
+OUTDIR="$TMP/artifacts"
+mkdir -p "$OUTDIR"
+run "$PY" "$HELPER" collect-evidence --root "$VALID" --tag v0.5.1 --output "$EVIDENCE"
+expect_rc "real evidence collection exits nonzero when fixture commands fail" 1
+run "$PY" - "$HELPER" "$VALID" "$EVIDENCE" <<'PY'
+import importlib.util, json, pathlib, sys
+helper, root, output = map(pathlib.Path, sys.argv[1:])
+spec = importlib.util.spec_from_file_location("rp", helper)
+rp = importlib.util.module_from_spec(spec); spec.loader.exec_module(rp)
+source = rp.verify_source(root, "v0.5.1")
+evidence = {
+    "schema_version": 1, "repository": source["repository"],
+    "tag": source["tag"], "commit_sha": source["commit_sha"],
+    "checks": [{"id": key, "required": True, "command": command,
+                "status": "passed", "exit_code": 0}
+               for key, command in rp.required_commands(source["tag"]).items()],
+}
+output.write_text(json.dumps(evidence, sort_keys=True, indent=2) + "\n")
+PY
+expect_rc "fixture evidence document is created" 0
+
+status_before="$(git -C "$VALID" status --porcelain=v1 --untracked-files=all)"
+refs_before="$(git -C "$VALID" show-ref)"
+run "$PY" "$HELPER" generate --root "$VALID" --tag v0.5.1 \
+  --evidence "$EVIDENCE" --output-dir "$OUTDIR"
+expect_rc "generation exits zero" 0
+ARTIFACT="$OUTDIR/bindle-release-provenance.json"
+CHECKSUM="$OUTDIR/bindle-release-provenance.json.sha256"
+run test -f "$ARTIFACT"
+expect_rc "generation writes exact JSON asset name" 0
+run test -f "$CHECKSUM"
+expect_rc "generation writes exact checksum asset name" 0
+run "$PY" - "$ARTIFACT" "$CHECKSUM" "$expected_commit" <<'PY'
+import hashlib, json, pathlib, re, sys
+artifact, checksum = map(pathlib.Path, sys.argv[1:3])
+payload = artifact.read_bytes()
+document = json.loads(payload)
+assert payload == (json.dumps(document, sort_keys=True, indent=2) + "\n").encode("utf-8")
+digest = hashlib.sha256(payload).hexdigest()
+assert checksum.read_bytes() == f"{digest}  bindle-release-provenance.json\n".encode("ascii")
+assert document["schema_version"] == 1
+assert document["artifact_type"] == "bindle-release-provenance"
+assert document["commit_sha"] == sys.argv[3]
+assert document["version"] == "0.5.1"
+assert document["previous_version"] == "0.5.0"
+assert document["verification_evidence"]["checks"]
+assert document["capabilities"][0]["name"] == "demo"
+assert document["installed_surfaces"][0]["dest"] == "skills/demo"
+assert "Current." in document["changelog"]
+assert set(document["tool_versions"]) == {"git", "bash", "python3", "shellcheck", "shfmt"}
+print("artifact bytes ok")
+PY
+expect_rc "JSON and detached checksum bytes are exact and complete" 0
+run test "$(git -C "$VALID" status --porcelain=v1 --untracked-files=all)" = "$status_before"
+expect_rc "generation leaves Git status unchanged" 0
+run test "$(git -C "$VALID" show-ref)" = "$refs_before"
+expect_rc "generation leaves Git refs unchanged" 0
+run "$PY" "$HELPER" verify --root "$VALID" --tag v0.5.1 \
+  --artifact "$ARTIFACT" --checksum "$CHECKSUM"
+expect_rc "semantic and checksum verification exits zero" 0
+
+mkdir -p "$VALID/inside-output"
+run "$PY" "$HELPER" generate --root "$VALID" --tag v0.5.1 \
+  --evidence "$EVIDENCE" --output-dir "$VALID/inside-output"
+expect_rc "generation rejects output below repo root" 1
+run "$PY" "$HELPER" generate --root "$VALID" --tag v0.5.1 \
+  --evidence "$EVIDENCE" --output-dir "$VALID"
+expect_rc "generation rejects output equal to repo root" 1
+
+cp "$ARTIFACT" "$TMP/corrupt.json"
+printf 'x' >>"$TMP/corrupt.json"
+run "$PY" "$HELPER" verify --root "$VALID" --tag v0.5.1 \
+  --artifact "$TMP/corrupt.json" --checksum "$CHECKSUM"
+expect_rc "verification rejects digest mismatch" 1
+
+run "$PY" - "$ARTIFACT" "$TMP" <<'PY'
+import hashlib, json, pathlib, sys
+source, directory = map(pathlib.Path, sys.argv[1:])
+for field, value in {
+    "tag": "v9.9.9",
+    "commit_sha": "0" * 40,
+    "version": "9.9.9",
+    "verification_evidence": {"schema_version": 1},
+}.items():
+    document = json.loads(source.read_text())
+    document[field] = value
+    payload = (json.dumps(document, sort_keys=True, indent=2) + "\n").encode()
+    artifact = directory / f"semantic-{field}.json"
+    checksum = directory / f"semantic-{field}.json.sha256"
+    artifact.write_bytes(payload)
+    checksum.write_bytes(f"{hashlib.sha256(payload).hexdigest()}  bindle-release-provenance.json\n".encode())
+PY
+expect_rc "semantic mismatch fixtures are created with valid checksums" 0
+for field in tag commit_sha version verification_evidence; do
+  run "$PY" "$HELPER" verify --root "$VALID" --tag v0.5.1 \
+    --artifact "$TMP/semantic-$field.json" \
+    --checksum "$TMP/semantic-$field.json.sha256"
+  expect_rc "verification rejects $field mismatch after checksum validation" 1
+done
+
+NO_PREVIOUS="$TMP/no-previous"
+mkfixture "$NO_PREVIOUS"
+git -C "$NO_PREVIOUS" tag -d v0.5.0 >/dev/null
+no_previous_commit="$(git -C "$NO_PREVIOUS" rev-parse 'v0.5.1^{commit}')"
+sed "s/$expected_commit/$no_previous_commit/g" "$EVIDENCE" >"$TMP/no-previous-evidence.json"
+run "$PY" "$HELPER" generate --root "$NO_PREVIOUS" --tag v0.5.1 \
+  --evidence "$TMP/no-previous-evidence.json" --output-dir "$TMP/no-previous-out"
+expect_rc "generation rejects no previous SemVer tag candidate" 1
+
+TIED="$TMP/tied-previous"
+mkfixture "$TIED"
+git -C "$TIED" tag v0.4.9 v0.5.0
+tied_commit="$(git -C "$TIED" rev-parse 'v0.5.1^{commit}')"
+sed "s/$expected_commit/$tied_commit/g" "$EVIDENCE" >"$TMP/tied-evidence.json"
+run "$PY" "$HELPER" generate --root "$TIED" --tag v0.5.1 \
+  --evidence "$TMP/tied-evidence.json" --output-dir "$TMP/tied-out"
+expect_rc "generation rejects tied nearest previous SemVer tags" 1
 
 echo "test-release-provenance: $pass passed, $fail failed"
 [ "$fail" -eq 0 ]
