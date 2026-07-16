@@ -177,7 +177,8 @@ behind these — see the triage below.
 #21, #22, #31, #32, #29, #33 are closed; v0.3.0 released 2026-07-10, and
 the v0.4 candidates landed as `docs/workflow-composition.md`,
 `docs/delegation-profiles.md`, `capabilities.json`/`bin/check-inventory.py`,
-and `RELEASE-MANIFEST.json`/`bin/release-manifest.py` respectively. #35
+and `RELEASE-MANIFEST.json`/`bin/release-manifest.py` respectively (both since
+retired from the release path — see #137). #35
 (eval policy/taxonomy/schema, listed as Research below at decision time)
 also shipped as `docs/workflow-eval.md`, unsplit — the "reshape option:
 split those halves" note in the original Research entry wasn't needed in

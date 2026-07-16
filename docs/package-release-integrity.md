@@ -10,8 +10,8 @@ routing for data-only changes, and a repo-supplied verification gate — all
 checked mechanically where a machine can, flagged `uncertain` where only a
 human can decide, and never a substitute for the repo's own release process.
 
-This is **not** the contract for what a *Bindle* release itself shipped —
-that is `docs/release-manifest.md` (#33), a different, narrower concern. It
+This is **not** the contract for what a *Bindle* release itself shipped, which
+is a different, narrower concern. It
 is also not a replacement for DomI's own release-governance policy where a
 repo has adopted it; see the defer rule below. And it never bumps a version,
 tags a release, publishes to a registry, or otherwise authorizes anything —
@@ -165,12 +165,6 @@ replace it." The process exits `0` — deferring is not a failure.
 
 ## Where this fits
 
-- `docs/release-manifest.md` (#33) is a distinct, narrower concern: it
-  records what a *Bindle* release itself shipped
-  (`RELEASE-MANIFEST.json`), after the fact. This contract instead checks
-  whether *any* Python package release — Bindle's own or a downstream
-  repo's — is internally consistent *before* it ships. Neither restates the
-  other.
 - The `domi-consumer` skill (`docs/domi-consumer.md`) owns `.domi-pin`
   detection, the drift vocabulary, and the inherited-policy category table
   this contract's defer rule reads from. This contract reuses that

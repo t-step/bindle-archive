@@ -9,8 +9,8 @@ Resolves the contract layer (L1) of issue `#116`; related `#59`
 ## 1. Purpose & scope
 
 Bindle already has release-integrity checking (`package-release-integrity`,
-`docs/package-release-integrity.md`) and mechanical release cutting
-(`bin/release.sh`, `bin/release-manifest.py`). What it lacks is the **decision
+`docs/package-release-integrity.md`) and mechanical release cutting (Release
+Please, with `bin/release.sh` as legacy/fallback). What it lacks is the **decision
 layer** between "verified work has accumulated" and "a release should be cut":
 whether a release is justified at all, what version movement it warrants,
 whether to release now or batch, and — critically — the evidence and
@@ -70,9 +70,9 @@ releasable."
 ### Step 1 — Orient
 
 - Identify the latest valid release tag and the current version source of
-  truth — for Bindle, the `VERSION` file cross-checked against
-  `RELEASE-MANIFEST.json`; do not assume a version from a changelog heading
-  alone.
+  truth — for Bindle, the `VERSION` file (kept in sync with the Release Please
+  release PR automatically by `bin/release-please-sync.sh`, issue #137); do not
+  assume a version from a changelog heading alone.
 - Verify the intended base branch and real remote state (`main`, up to date)
   — don't assume a branch or a clean tree.
 - Read repository-local release policy, **including pre-1.0 semantics**. For
@@ -191,6 +191,10 @@ and the authority boundaries above both. The handoff must:
 - support dry-run/preview where available;
 - preserve Release Please's release PR as the **human promotion gate** — the
   PR is a proposal, its merge is a person's decision;
+- sync `VERSION` onto the release PR branch via `bin/release-please-sync.sh`
+  (issue #137) — Release Please's own `extra-files` mechanism cannot update
+  Bindle's bare, unannotated `VERSION` file, so this step closes that gap
+  locally, before the PR is reviewed;
 - run release-integrity verification (`package-release-integrity` / `#59`)
   before any publication;
 - never treat the recommendation, passing CI, or a created release PR as
@@ -237,7 +241,9 @@ not guess a class or a number to produce a tidier output.
   GitHub Release, package publication, and deployment are separate,
   human-authorized publication, never implied by a created release PR.
   `bin/release.sh` remains only as legacy/fallback publication tooling and does
-  not regenerate Release-Please-owned artifacts.
+  not regenerate Release-Please-owned artifacts. Bindle's bare `VERSION` file is
+  kept current automatically: `bin/release-please-sync.sh` syncs it onto the
+  release PR branch as part of Step 6 (issue #137).
 - **Beside `#59` release-integrity.** `package-release-integrity` verifies a
   release is *safe to cut* (version-source agreement, tag/version consistency,
   changelog presence, correct semver movement). This contract decides *whether
@@ -257,7 +263,7 @@ and the repo's shell scripts.
 
 | Step | Claude asset (when built) | Codex / human equivalent |
 |---|---|---|
-| 1. Orient | reads `CLAUDE.md`, `VERSION`, `RELEASE-MANIFEST.json`, `CHANGELOG.md` policy; `domi-consumer` skill | reads `AGENTS.md` + the same files; runs `bin/domi-status.sh` directly |
+| 1. Orient | reads `CLAUDE.md`, `VERSION`, `CHANGELOG.md` policy; `domi-consumer` skill | reads `AGENTS.md` + the same files; runs `bin/domi-status.sh` directly |
 | 2. Gather evidence | L2 evidence helper (deferred) over `gh` PR/issue data + `git log` | same `gh` / `git log` queries by hand, same precedence order |
 | 3. Classify | L3 skill applies the vocabulary; metadata precedence enforced | applies the same vocabulary manually from this doc |
 | 4. Recommend version + timing | L3 skill, using the repo policy mapping from step 1 | same mapping applied by hand |

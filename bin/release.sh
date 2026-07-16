@@ -75,15 +75,8 @@ awk -v ver="$new" -v day="$today" '
   { print }
 ' CHANGELOG.md >CHANGELOG.md.tmp && mv CHANGELOG.md.tmp CHANGELOG.md
 
-# --- release manifest -------------------------------------------------------
-# Generate twice and diff (ignoring timestamp) before writing anything —
-# a release fails here rather than commit an inconsistent manifest.
-echo "Verifying the release manifest can be generated deterministically..."
-python3 bin/release-manifest.py --version "$new" --previous "$cur" --verify-determinism
-python3 bin/release-manifest.py --version "$new" --previous "$cur" --emit
-
 # --- commit + tag ----------------------------------------------------------
-git add VERSION CHANGELOG.md RELEASE-MANIFEST.json
+git add VERSION CHANGELOG.md
 git commit -q -m "Release v${new}"
 git tag -a "v${new}" -m "Bindle v${new}"
 
