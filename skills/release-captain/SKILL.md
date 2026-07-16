@@ -155,16 +155,19 @@ version bump, changelog delta, and PR that would be created or updated).
 
 ### Second approval gate
 
-Show the resolved strategy again (`which`) and request a second explicit human
-approval to apply. No approval → stop.
+Show the resolved strategy again (`which`) and, via `AskUserQuestion` (or an
+explicit chat reply if `AskUserQuestion` isn't available), ask the human to
+both approve the apply *and* supply an **approval token** in the same
+answer — any short freeform string is fine. The token is not a secret; its
+only job is proving the value came from the operator, not from you. Use their
+answer text verbatim as `<operator-approval-token>` below. Never invent this
+string yourself, and never reuse one operator answer as the token for a
+later, separate approval request. No approval / no token → stop.
 
 ### Apply
 
-Mint an **ephemeral approval token** — fresh for this one invocation, never a
-reusable secret and never persisted — and run:
-
 ```bash
-<bindle>/bin/release-strategy.sh apply --approval-token <ephemeral-token>
+<bindle>/bin/release-strategy.sh apply --approval-token <operator-approval-token>
 ```
 
 `apply` creates or updates the release PR, then (for the `local-release-please`
@@ -186,12 +189,13 @@ closes the relabel gap #152 identified: a manual publish leaves the merged
 release PR labeled `autorelease: pending` forever (the real release-please
 GitHub Action would relabel it to `autorelease: tagged`; ours never runs), and
 the next `release-please release-pr` then aborts on "untagged, merged release
-PRs outstanding." Same dry-run/apply + ephemeral-token shape as the other
-release scripts:
+PRs outstanding." Same dry-run/apply + approval-token shape as the other
+release scripts — same operator-supplied token, sourced the same way (never
+minted by you):
 
 ```bash
 bin/release-publish.sh dry-run vX.Y.Z
-bin/release-publish.sh apply vX.Y.Z --approval-token <ephemeral-token>
+bin/release-publish.sh apply vX.Y.Z --approval-token <operator-approval-token>
 ```
 
 ## Stop conditions (before `apply`)
@@ -202,7 +206,9 @@ Halt before `apply` on any of:
 - a dirty precondition where cleanliness is required;
 - stale evidence (the evidence helper degraded to `uncertain` or could not
   gather);
-- a failed `dry-run`.
+- a failed `dry-run`;
+- no operator-supplied approval token at the second approval gate (never
+  substitute a self-generated string).
 
 ## Fit with the rest of Bindle
 
