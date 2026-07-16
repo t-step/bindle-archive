@@ -57,6 +57,7 @@
 - Modify: `bin/test-release-evidence.sh`
 - Modify: `bin/test-release-strategy.sh`
 - Modify: `Makefile`
+- Modify: `capabilities.json`
 - Delete: `bin/release.sh`
 - Delete: `RELEASE-MANIFEST.json`
 
@@ -117,7 +118,7 @@ Update fixture writers from `"$r/VERSION"` to `"$r/version.txt"`, diagnostics fr
 }
 ```
 
-Remove the `release` phony target/help line, delete `bin/release.sh`, and delete tracked `RELEASE-MANIFEST.json`.
+Remove the `release` phony target/help line, delete `bin/release.sh`, delete tracked `RELEASE-MANIFEST.json`, and remove the retired `bin/release.sh` ledger row from `capabilities.json` in the same change so the inventory gate remains green.
 
 - [ ] **Step 4: Run focused and full verification**
 
@@ -223,6 +224,7 @@ git commit -m "feat: add strict publication integrity mode"
 - Rename: `bin/release-manifest.py` → `bin/release-provenance.py`
 - Rename: `bin/test-release-manifest.sh` → `bin/test-release-provenance.sh`
 - Modify: `Makefile`
+- Modify: `capabilities.json`
 
 **Interfaces:**
 - Produces: `verify_source(root: Path, tag: str) -> dict` with `repository`, `tag`, `tag_object_sha`, `tagger_timestamp`, `commit_sha`, and `version`.
@@ -272,6 +274,10 @@ def annotated_tag(root, tag):
 ```
 
 Validate `HEAD`, `v<version.txt>`, `.release-please-manifest.json["."]`, and the exact `## [<version>]` changelog header. Use `git for-each-ref --format=%(taggerdate:iso-strict)` for `tagger_timestamp`.
+
+Rename the script ledger path from `bin/release-manifest.py` to
+`bin/release-provenance.py` in the same commit; retain its machinery/not-an-
+installed-capability classification until Task 7 rewrites the final wording.
 
 - [ ] **Step 4: Verify and commit**
 
@@ -366,6 +372,7 @@ git commit -m "feat: generate verified release provenance"
 - Create: `bin/release-publication.py`
 - Create: `bin/test-release-publication.sh`
 - Modify: `Makefile`
+- Modify: `capabilities.json`
 
 **Interfaces:**
 - Produces: CLI `python3 bin/release-publication.py --repo OWNER/REPO --tag TAG`.
@@ -448,6 +455,10 @@ os.execvp("gh", [
 ```
 
 Do not use `TemporaryDirectory` cleanup, `finally`, `atexit`, logging, or another command after `os.execvp`.
+
+Add a `not_a_capability` ledger row for `bin/release-publication.py` in this
+same commit so `make check` validates the new script without waiting for the
+final documentation task.
 
 - [ ] **Step 5: Verify and commit**
 
@@ -578,7 +589,12 @@ Rename the capability row to:
 }
 ```
 
-Preserve the row's provider/maturity/mutation shape, replace the retired script ledger rows with the two new Python helpers, and add this plan's `not_a_capability` row. Add an Unreleased `Fixed` entry closing #137 and naming the authority split, annotated-tag gate, draft verification, and retired cutter.
+Preserve the row's provider/maturity/mutation shape, finalize the descriptions
+of the incrementally maintained `bin/release-provenance.py` and
+`bin/release-publication.py` ledger rows, and retain this plan's
+`not_a_capability` row. Add an Unreleased `Fixed` entry closing #137 and naming
+the authority split, annotated-tag gate, draft verification, and retired
+cutter.
 
 - [ ] **Step 5: Run the repository-wide search and all verification**
 
