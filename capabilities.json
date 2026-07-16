@@ -688,7 +688,7 @@
       "reason": "scaffolding tool for authoring a new skill/agent/command from the templates; a contributor tool, not a shipped capability."
     },
     {
-      "path": "bin/release-manifest.py",
+      "path": "bin/release-provenance.py",
       "reason": "the standalone release-manifest generator; it emits or verifies a deterministic provenance manifest only when explicitly invoked, and is internal machinery rather than a capability an agent invokes for its own sake (same precedent as bin/check-inventory.py)."
     },
     {
