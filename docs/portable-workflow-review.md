@@ -25,7 +25,7 @@ Supporting tooling, all in `bin/`:
 - `install.sh` — the symlink installer (`--prune`, `--home DIR` for tests).
 - `check.sh` — hygiene checks: shellcheck/shfmt, frontmatter (`name` +
   `description`, name↔folder/filename match), whitespace/EOF, repo-relative
-  markdown links resolve, semver `VERSION` + `Unreleased` changelog section.
+  markdown links resolve, semver `version.txt` + Release Please changelog state.
   `--content-only` mode for the pre-commit hook.
 - `test-install.sh` — end-to-end installer tests against a fake repo and a temp
   `--home` (13 assertions; see coverage below).

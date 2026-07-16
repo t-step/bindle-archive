@@ -215,6 +215,89 @@ out="$(cd "$REPO" && bin/check.sh 2>&1)"
 
 check "does not require Unreleased when Release Please is configured" not_contains "missing '## [Unreleased]' section" "$out"
 
+# ===========================================================================
+echo "retired release fallbacks are absent from live surfaces:"
+out="$(
+  python3 - "$REPO_ROOT" <<'PY'
+import os
+import re
+import subprocess
+import sys
+
+root = os.path.realpath(sys.argv[1])
+historical = (
+    "docs/design/",
+    "docs/plans/",
+    "docs/superpowers/specs/",
+    "docs/superpowers/plans/",
+)
+patterns = (
+    re.compile(r"(?<![A-Za-z0-9_])VER" + r"SION(?![A-Za-z0-9_])"),
+    re.compile(r"RELEASE-MANIFEST" + r"\.json"),
+    re.compile(r"bin/release" + r"\.sh"),
+    re.compile(r"\bmake[ \t]+release\b"),
+    re.compile(r"extra-files[^\n]*VER" + r"SION"),
+)
+
+
+def allowed_history(path):
+    return path == "CHANGELOG.md" or path.startswith(historical)
+
+
+def allowed_negative_test(path, line):
+    if path == "bin/test-release-publication.sh":
+        return (
+            '"RELEASE-MANIFEST' + '.json"' in line
+            or "Historical prose mentions gh release create and RELEASE-MANIFEST" + ".json." in line
+        )
+    if path == "bin/test-release-strategy.sh":
+        return 'os.path.join(root, "VER' + 'SION")' in line
+    if path == "skills/release-captain/PRESSURE-TESTS.md":
+        fragments = (
+            "with a `VER" + "SION`",
+            "bumped VER" + "SION",
+            "bumped `VER" + "SION`",
+            "new tag / VER" + "SION bump",
+            "`VER" + "SION`, edits",
+            "bumps VER" + "SION",
+            "edit VER" + "SION/CHANGELOG",
+        )
+        return any(fragment in line for fragment in fragments)
+    return False
+
+
+tracked = subprocess.check_output(
+    ["git", "-C", root, "ls-files", "-z"], text=True
+).split("\0")
+failures = []
+for path in tracked:
+    if not path or allowed_history(path):
+        continue
+    if path == "VER" + "SION":
+        failures.append(f"{path}: root retired version path exists")
+        continue
+    full = os.path.join(root, path)
+    try:
+        with open(full, encoding="utf-8") as handle:
+            lines = handle.readlines()
+    except (OSError, UnicodeDecodeError):
+        continue
+    for number, line in enumerate(lines, 1):
+        if any(pattern.search(line) for pattern in patterns):
+            if allowed_negative_test(path, line):
+                continue
+            failures.append(f"{path}:{number}:{line.rstrip()}")
+
+print("\n".join(failures))
+raise SystemExit(bool(failures))
+PY
+)"
+status=$?
+[ "$status" -eq 0 ] || printf '%s\n' "$out"
+
+check "live files contain no retired release fallback" test "$status" -eq 0
+check "fallback scan reports no forbidden paths" test -z "$out"
+
 # --- result ----------------------------------------------------------------
 echo
 echo "tests: ${pass} passed, ${fail} failed"

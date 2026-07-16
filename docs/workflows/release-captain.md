@@ -8,10 +8,10 @@ Resolves the contract layer (L1) of issue `#116`; related `#59`
 
 ## 1. Purpose & scope
 
-Bindle already has release-integrity checking (`package-release-integrity`,
-`docs/package-release-integrity.md`) and mechanical release cutting
-(`bin/release.sh`, `bin/release-manifest.py`). What it lacks is the **decision
-layer** between "verified work has accumulated" and "a release should be cut":
+Bindle has release-integrity checking (`package-release-integrity`,
+`docs/package-release-integrity.md`) and Release Please owns the release-PR
+artifacts. Release Captain is the **decision layer** between "verified work has
+accumulated" and "a release should be proposed":
 whether a release is justified at all, what version movement it warrants,
 whether to release now or batch, and — critically — the evidence and
 uncertainty behind that call.
@@ -70,9 +70,12 @@ releasable."
 ### Step 1 — Orient
 
 - Identify the latest valid release tag and the current version source of
-  truth — for Bindle, the `VERSION` file cross-checked against
-  `RELEASE-MANIFEST.json`; do not assume a version from a changelog heading
-  alone.
+  truth. For Bindle, `version.txt` is the sole checked-in version source and
+  must agree with the root (`.`) entry of `.release-please-manifest.json` and
+  the merged Release Please release-PR commit; do not infer it from a changelog
+  heading alone.
+- Do not read or validate release provenance here. Provenance is evidence for
+  post-tag publication, not pre-release recommendation or release-PR state.
 - Verify the intended base branch and real remote state (`main`, up to date)
   — don't assume a branch or a clean tree.
 - Read repository-local release policy, **including pre-1.0 semantics**. For
@@ -197,10 +200,9 @@ and the authority boundaries above both. The handoff must:
   authorization to merge or publish (Section 2).
 
 This step is the boundary between this contract (L1) and the Release Please
-configuration and wrapper (L4 of `#116`, deferred). Bindle's current interim
-mechanical path is `bin/release.sh`; the target mechanical layer named by this
-contract is Release Please, and migrating from one to the other is L4's scope,
-not this document's.
+configuration and wrapper (L4 of `#116`). It ends at a proposed release PR.
+Annotated tagging, post-tag provenance verification, GitHub Release mutation,
+package publication, and deployment are separate explicitly authorized paths.
 
 ## 4. Classification & timing vocabulary
 
@@ -236,8 +238,8 @@ not guess a class or a number to produce a tidier output.
   belongs to Release Please, invoked only after human approval per step 6; tag,
   GitHub Release, package publication, and deployment are separate,
   human-authorized publication, never implied by a created release PR.
-  `bin/release.sh` remains only as legacy/fallback publication tooling and does
-  not regenerate Release-Please-owned artifacts.
+  The merged release-PR commit, `version.txt`, Release Please manifest, and
+  changelog are the checked-in authority; no local cutter is a fallback.
 - **Beside `#59` release-integrity.** `package-release-integrity` verifies a
   release is *safe to cut* (version-source agreement, tag/version consistency,
   changelog presence, correct semver movement). This contract decides *whether
@@ -257,7 +259,7 @@ and the repo's shell scripts.
 
 | Step | Claude asset (when built) | Codex / human equivalent |
 |---|---|---|
-| 1. Orient | reads `CLAUDE.md`, `VERSION`, `RELEASE-MANIFEST.json`, `CHANGELOG.md` policy; `domi-consumer` skill | reads `AGENTS.md` + the same files; runs `bin/domi-status.sh` directly |
+| 1. Orient | reads `CLAUDE.md`, `version.txt`, `.release-please-manifest.json`, latest tag, and `CHANGELOG.md` policy; excludes post-tag provenance; `domi-consumer` skill | reads `AGENTS.md` + the same release state; excludes post-tag provenance; runs `bin/domi-status.sh` directly |
 | 2. Gather evidence | L2 evidence helper (deferred) over `gh` PR/issue data + `git log` | same `gh` / `git log` queries by hand, same precedence order |
 | 3. Classify | L3 skill applies the vocabulary; metadata precedence enforced | applies the same vocabulary manually from this doc |
 | 4. Recommend version + timing | L3 skill, using the repo policy mapping from step 1 | same mapping applied by hand |

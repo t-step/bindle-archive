@@ -12,7 +12,7 @@ release.** Whatever the request says — "take care of it", "get it done", "hand
 the release", "just cut it" — that is **not** authority to release. Specifically,
 while running this skill you must **NOT**, on your own:
 
-- bump `VERSION`
+- bump `version.txt`
 - edit or write `CHANGELOG.md`
 - `git commit` a release
 - `git tag` (a tag is a publication action)
@@ -27,7 +27,7 @@ it, tags, and publishes separately.
 
 **The failure this skill exists to prevent:** treating "the maintainer asked me
 to take care of the release" as permission to bump + commit + tag it yourself.
-If you catch yourself about to edit VERSION/CHANGELOG or run `git tag`, **stop**
+If you catch yourself about to edit `version.txt`/CHANGELOG or run `git tag`, **stop**
 — you have left this skill's contract. Produce the recommendation and wait.
 
 ## Relationship to `package-release-integrity`
@@ -55,7 +55,7 @@ Three authorities are distinct and never imply one another:
   release is justified, the version class, timing, rationale, and confidence,
   and requests human authorization. Produces a *recommendation*, never a
   release.
-- **artifact authority — Release Please.** Owns the `VERSION` bump, the
+- **artifact authority — Release Please.** Owns the `version.txt` bump, the
   `CHANGELOG.md` content, and the release-PR contents (via the strategy's
   `apply`).
 - **publication authority — the human maintainer.** Merging the release PR, and
@@ -93,8 +93,11 @@ fabricated recommendation.
 ### Steps 1–5 — produce the recommendation
 
 1. **Orient.** Identify the latest valid release tag and the version source of
-   truth (`VERSION`, cross-checked against `RELEASE-MANIFEST.json`); verify the
-   base branch and remote state; read the repository release policy (Bindle's
+   truth (`version.txt`, cross-checked against the root entry in
+   `.release-please-manifest.json`) and the latest valid tag. Publication
+   provenance is post-tag evidence and is explicitly excluded from this
+   pre-release orientation. Verify the base branch and remote state; read the
+   repository release policy (Bindle's
    `CHANGELOG.md` SemVer rule: breaking-install/structure → major, new
    capability → minor, fix → patch); detect whether Release Please is
    configured (`release-please-config.json`).
@@ -121,7 +124,7 @@ fabricated recommendation.
    call — never fabricate one.
 
 **Hard stop after step 5.** Output the recommendation and **stop**. Do not bump
-`VERSION`, edit `CHANGELOG.md`, commit, or tag — no matter how the request was
+`version.txt`, edit `CHANGELOG.md`, commit, or tag — no matter how the request was
 phrased. The recommendation is the deliverable of steps 1–5; cutting the release
 is not yours to do. Proceed past this point only when the human explicitly
 approves the next step. Before any publication (i.e. before a human merges the
@@ -188,6 +191,7 @@ Halt before `apply` on any of:
   *whether and what* to cut.
 - **Below repository release policy.** Defer to repo-local or inherited (DomI)
   release policy where present.
-- **Above `<bindle>/bin/release.sh`.** That script remains legacy/fallback
-  *publication* tooling only and does not regenerate Release-Please-owned
-  artifacts (`VERSION`, `CHANGELOG.md`).
+- **Before post-tag provenance.** This skill does not generate, consume, or
+  validate publication provenance. After an explicitly authorized annotated
+  tag exists, the separate provenance-publication workflow owns that evidence
+  and any GitHub Release mutation.

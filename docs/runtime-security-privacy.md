@@ -72,7 +72,9 @@ Executable-on-request assets, classified:
 | `bin/check.sh`, `bin/check-private-info.sh`, `bin/slugify.sh` | C0 | read/report only (self-tests use temp files) |
 | `bin/test-install.sh`, `bin/test-check.sh`, `bin/test-check-frontmatter.sh`, `bin/test-doctor.sh` | C1 | temp fixtures only; never the real environment |
 | `bin/install.sh` | C1 | owned symlinks only, per ownership-boundaries |
-| `bin/new.sh`, `bin/release.sh` | C2 | repo-local writes, human-invoked; release never pushes |
+| `bin/new.sh` | C2 | repo-local scaffolding writes, human-invoked |
+| `bin/release-provenance.py` | C1 | reads tagged state and caller evidence; generation writes only caller-selected assets outside the repo and never mutates Git/GitHub |
+| `bin/release-publication.py` | C3 | verifies GitHub draft assets and performs publication as the final mutation |
 | `bin/notes-home.sh` | C1 | `status` is read-only; `set`/`migrate`/`reset` preview by default and write only on explicit confirmation (`--apply`/TTY yes). Its `~/.claude/settings.json` writes follow rule 7 below verbatim — validate, back up, touch only `env.BINDLE_NOTES_DIR`, show the diff — even though it is not a hook |
 | `/session-*`, `/handoff`, `/project-profile`, `/workflow-review`, `/promote-insight`, `/notes-home` commands | C1/C3 | human-invoked; write to the notes home; note *contents* stay out of repos per privacy-boundaries |
 

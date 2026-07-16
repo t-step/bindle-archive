@@ -177,7 +177,8 @@ behind these — see the triage below.
 #21, #22, #31, #32, #29, #33 are closed; v0.3.0 released 2026-07-10, and
 the v0.4 candidates landed as `docs/workflow-composition.md`,
 `docs/delegation-profiles.md`, `capabilities.json`/`bin/check-inventory.py`,
-and `RELEASE-MANIFEST.json`/`bin/release-manifest.py` respectively. #35
+and the capability inventory/then-current tracked release record respectively
+(the latter was later retired in favor of post-tag release provenance). #35
 (eval policy/taxonomy/schema, listed as Research below at decision time)
 also shipped as `docs/workflow-eval.md`, unsplit — the "reshape option:
 split those halves" note in the original Research entry wasn't needed in
@@ -277,8 +278,8 @@ before committing).
   block on #29 (add inventory fields only if #29 lands). Not delegable.
   Verify: `make check`; #21 can cite it for every trigger/data-access row.
 - **#9** cut v0.3.0 — after the above land. Partially delegable
-  (`bin/release.sh` is mechanical; the go/no-go is the owner's). Verify:
-  `make check` + `make test` green, CHANGELOG honest about drafts.
+  (Release Please owns the release PR; the go/no-go is the owner's). Verify:
+  `make check` + `make test` green and publication provenance verified.
 
 **Next (v0.4 window):**
 
@@ -310,8 +311,9 @@ before committing).
   "consumer materializes" trigger below has fired (`bin/doctor.sh` now
   reads machine-readable capability data via `install-manifest.tsv`,
   generated from `capabilities.json`). #29, its other prerequisite, has
-  shipped. Partially delegable. Verify: `bin/release.sh` regenerates and
-  diffs the manifest before committing, fails the release on inconsistency.
+  shipped. Partially delegable. Its tracked-manifest implementation was later
+  replaced by the post-tag release-provenance contract; verify the downloaded
+  attached artifact and checksum before publication.
 
 **Later:**
 

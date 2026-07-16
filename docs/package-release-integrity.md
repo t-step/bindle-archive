@@ -10,9 +10,10 @@ routing for data-only changes, and a repo-supplied verification gate — all
 checked mechanically where a machine can, flagged `uncertain` where only a
 human can decide, and never a substitute for the repo's own release process.
 
-This is **not** the contract for what a *Bindle* release itself shipped —
-that is `docs/release-manifest.md` (#33), a different, narrower concern. It
-is also not a replacement for DomI's own release-governance policy where a
+Bindle's post-tag publication record is separately governed by
+`docs/release-provenance.md`. The strict publication mode defined below is one
+required evidence item for that record, not a replacement for it. This
+contract is also not a replacement for DomI's own release-governance policy where a
 repo has adopted it; see the defer rule below. And it never bumps a version,
 tags a release, publishes to a registry, or otherwise authorizes anything —
 see Boundaries.
@@ -59,7 +60,8 @@ its authority signal, it does not reimplement it.
 ## The helper contract
 
 `skills/package-release-integrity/scripts/release_integrity.py` is stdlib-only
-Python (`tomllib`, `re`, `subprocess`) with one verb:
+Python (`tomllib`, `re`, `subprocess`) with two verbs. Generic pre-release
+assessment is:
 
 ```
 release_integrity.py check --repo PATH
@@ -93,6 +95,31 @@ report's `mode` is `"defer"`, `verdicts` is empty, and `ready` is `None`.
 is `fail`. `uncertain` never fails the process — it is a "a human must
 decide" signal, not an error. A deferral (`mode: "defer"`) also exits `0`;
 deferring to DomI is not a failure.
+
+### Strict publication mode
+
+Post-tag Bindle evidence uses:
+
+```text
+release_integrity.py publication-check --repo PATH --tag TAG
+```
+
+This judgment-free mode emits and requires exactly three passing verdicts:
+`version_source_consistency`, `tag_consistency`, and `changelog_present`. It
+accepts none of the generic mode's change-class, previous-version, build/test,
+or changelog-override options and never emits `uncertain`. A well-formed DomI
+pin produces `mode: "defer"`, `ready: false`, and a nonzero exit: deferral is
+not acceptable as successful publication evidence. Any mismatch also exits
+nonzero. Build and test outcomes are distinct required checks in the
+release-provenance evidence envelope, so they are not duplicated here.
+
+A passing `publication-check` is necessary but not sufficient publication
+integrity. The draft GitHub Release must also have both attached provenance
+assets. Those exact assets must be downloaded, their bytes checked by the
+detached SHA-256, and the JSON semantically verified against the annotated tag,
+release commit, `version.txt`, Release Please manifest, changelog, and complete
+successful evidence. Missing or unverified attached provenance is a hard
+publication-integrity failure.
 
 ## Three worked examples
 
@@ -140,6 +167,9 @@ replace it." The process exits `0` — deferring is not a failure.
 - **A green check is not authorization to publish.** `ready: True` is a
   necessary signal, never a sufficient one — a human still decides whether
   to cut the release.
+- **A passing publication check is not complete publication integrity.** The
+  attached provenance and checksum must be downloaded and verified under
+  `docs/release-provenance.md` before the draft can be published.
 - **`ready: True` does not mean "all checks ran and passed."** Because
   `ready = all(verdict != "fail" for verdict in verdicts)`, a repo can
   report `ready: True` while a gate is `uncertain` — no `--test-cmd` was
@@ -165,12 +195,10 @@ replace it." The process exits `0` — deferring is not a failure.
 
 ## Where this fits
 
-- `docs/release-manifest.md` (#33) is a distinct, narrower concern: it
-  records what a *Bindle* release itself shipped
-  (`RELEASE-MANIFEST.json`), after the fact. This contract instead checks
-  whether *any* Python package release — Bindle's own or a downstream
-  repo's — is internally consistent *before* it ships. Neither restates the
-  other.
+- `docs/release-provenance.md` governs Bindle's post-tag publication artifact
+  and attached-asset verification. This contract's strict mechanical subset is
+  consumed as one of its exact four evidence checks; generic `check` remains
+  the portable pre-release assessment for Python packages.
 - The `domi-consumer` skill (`docs/domi-consumer.md`) owns `.domi-pin`
   detection, the drift vocabulary, and the inherited-policy category table
   this contract's defer rule reads from. This contract reuses that

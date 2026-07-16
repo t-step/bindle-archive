@@ -2,7 +2,7 @@
 #
 # local-release-please.sh — the local Release Please ARTIFACT strategy for
 # Release Captain (L4 of #116). Release Please is the artifact authority: it
-# owns the VERSION bump, the CHANGELOG.md content, and the release PR. This
+# owns the version.txt bump, the CHANGELOG.md content, and the release PR. This
 # strategy assembles the `release-please release-pr` invocation and nothing
 # else. It NEVER merges, tags, creates a GitHub Release, publishes, or deploys —
 # publication is a separate, explicitly human-authorized action.

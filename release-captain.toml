@@ -4,6 +4,6 @@
 # named here must have a matching script at bin/release-strategies/<name>.sh.
 # There is no fallback, registry, or discovery: an unknown or missing value is
 # a hard stop. The strategy is an ARTIFACT strategy (Release Please owns the
-# VERSION/CHANGELOG/release-PR artifacts); it never merges, tags, publishes, or
+# version.txt/CHANGELOG/release-PR artifacts); it never merges, tags, publishes, or
 # deploys — publication is a separate, explicitly human-authorized action.
 strategy = "local-release-please"

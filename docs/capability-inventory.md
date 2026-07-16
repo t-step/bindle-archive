@@ -40,7 +40,7 @@ below). One record per capability:
 | `provider` | yes | authored | object `{claude, codex}`, each enum: `installed·manual·untested·unsupported·n/a` |
 | `maturity` | yes | authored | enum: `draft·documented·tested`; a `skill` marked `tested` must have a `PRESSURE-TESTS.md` |
 | `mutation` | yes | authored | array, subset of `{disk, network, external}`; `[]` = read-only |
-| `version_introduced` | yes | authored | valid semver, `<=` repo `VERSION` |
+| `version_introduced` | yes | authored | valid semver, `<=` repo `version.txt` |
 | `install_destination` | no | authored | optional per-row override of the derived destination. Destinations are otherwise derived from `type` into the generated `install-manifest.tsv`, which `make check` drift-checks and `install.sh`/`doctor.sh` consume (see #79). Honored for a same-directory rename; a cross-subdirectory override is not fully wired (parent-dir creation and prune coverage) and no row uses one today. |
 | `dependencies` | no | authored | array of other capability `name`s or external tool names |
 | `related_docs` | no | authored | array of repo-relative doc paths (must exist) |

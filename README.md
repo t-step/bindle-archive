@@ -204,8 +204,8 @@ promoted automatically. See [docs/sharing-skills.md](docs/sharing-skills.md).
 
 ## Versioning
 
-Bindle is versioned as a whole with Semantic Versioning. The current version
-lives in `VERSION`, and `bin/release.sh` cuts an annotated local tag. It never
-pushes. Every release also produces a deterministic, provenance-rich
-manifest recording exactly what shipped — see
-[docs/release-manifest.md](docs/release-manifest.md).
+Bindle is versioned as a whole with Semantic Versioning. `version.txt` is the
+sole checked-in version source, and Release Please owns its update alongside
+the manifest and changelog in the release PR. Future releases use an annotated
+direct tag and attach separately verified post-tag provenance — see
+[docs/release-provenance.md](docs/release-provenance.md).

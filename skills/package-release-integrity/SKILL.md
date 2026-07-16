@@ -1,6 +1,6 @@
 ---
 name: package-release-integrity
-description: Use when validating whether a Python package release is safe to cut — checking version-source agreement, tag/version consistency, changelog presence, and correct semver movement (including data-only track routing) before publish. Judgment calls (change classification) must be supplied, never guessed. Defers to DomI where a well-formed .domi-pin makes its release-semver-governance category authoritative; never itself authorizes publishing.
+description: Use when validating whether a Python package release is safe to cut or checking the strict mechanical subset required for post-tag publication. Judgment calls (change classification) must be supplied, never guessed. Defers to DomI where a well-formed .domi-pin makes its release-semver-governance category authoritative; never itself authorizes publishing.
 ---
 
 # Package release integrity
@@ -29,9 +29,35 @@ publish.
 When NOT to use:
 - To actually publish, tag, or bump a version — this skill has no mutation
   path; that stays with the repo's own release tooling.
-- In a repo where `docs/release-manifest.md`'s Bindle-release-manifest
-  concern applies — that's a different, narrower contract (what a Bindle
-  release itself shipped, after the fact), not this one.
+- As a substitute for Bindle's post-tag provenance contract. The publication
+  mode below supplies one evidence check; it does not generate, attach,
+  download, or verify the publication artifact.
+
+## Strict publication check
+
+For Bindle's post-tag evidence, run the judgment-free mechanical subset:
+
+```bash
+python3 skills/package-release-integrity/scripts/release_integrity.py \
+  publication-check --repo . --tag <tag>
+```
+
+`publication-check` requires exactly these verdicts to pass:
+`version_source_consistency`, `tag_consistency`, and `changelog_present`.
+Unlike generic `check`, it accepts no change class, previous version, build
+command, test command, or no-changelog override; it never reports `uncertain`.
+A well-formed DomI pin returns `mode: "defer"`, `ready: false`, and a nonzero
+publication exit instead of treating advisory Bindle checks as evidence. Any
+missing source, mismatch, or missing released changelog section also exits
+nonzero.
+
+This is only the `release_integrity` item in the four-check publication
+evidence envelope. Publication integrity additionally requires the attached
+`bindle-release-provenance.json` and detached checksum to be downloaded from
+the draft, byte-checked, and semantically verified against the annotated tag,
+commit, version, and complete successful evidence. If the attached artifact is
+absent or unverified, publication integrity fails even when
+`publication-check` passes.
 
 ## Steps
 
@@ -63,6 +89,9 @@ python3 skills/package-release-integrity/scripts/release_integrity.py check \
 6. **Report.** Relay the verdict list (or the defer notice) and `ready`
    as-is; do not summarize `uncertain` verdicts as passes and do not treat
    `ready: True` as permission to publish.
+
+These six steps describe the generic pre-release `check` mode. They do not
+replace the strict post-tag `publication-check` or its attached-artifact gate.
 
 ## Judgment boundary
 
@@ -104,6 +133,9 @@ not reimplement drift detection itself.
 - **Under defer, do not override DomI.** Once `mode: "defer"` fires, this
   skill's own checks are advisory-only at best and must not be run as if
   they were authoritative — don't hand-roll a substitute assessment.
+- **Do not publish on a helper-only result.** Even a passing strict mechanical
+  check is insufficient until the attached provenance and checksum have been
+  downloaded and verified under `docs/release-provenance.md`.
 
 **REQUIRED BACKGROUND:** `docs/package-release-integrity.md` (the full
 contract: all nine checks, verdict keys, and worked examples) and the
