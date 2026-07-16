@@ -49,7 +49,7 @@ build_repo() {
   cp "$CHECK_SRC" "$r/bin/check.sh"
   cp "$PRIVATE_INFO_SRC" "$r/bin/check-private-info.sh"
   chmod +x "$r/bin/check.sh" "$r/bin/check-private-info.sh"
-  printf '0.1.0\n' >"$r/VERSION"
+  printf '0.1.0\n' >"$r/version.txt"
   printf '# Changelog\n\n## [Unreleased]\n\n- nothing yet\n' >"$r/CHANGELOG.md"
   (cd "$r" && git init -q && git symbolic-ref HEAD refs/heads/main)
   git_commit "$r" "init"
@@ -194,8 +194,8 @@ check "reports the section clean" contains "Bindle-root tool refs are" "$out"
 
 # ===========================================================================
 echo "CHANGELOG Unreleased requirement (legacy flow only):"
-# No release-please-config.json → the legacy bin/release.sh flow → an
-# Unreleased section is required, and its absence is a problem.
+# No release-please-config.json → an Unreleased section is required, and its
+# absence is a problem.
 REPO="$TMP/repo-nounrel-legacy"
 build_repo "$REPO"
 printf '# Changelog\n\n## [1.0.0] - 2020-01-01\n\n- shipped\n' >"$REPO/CHANGELOG.md"

@@ -46,7 +46,7 @@ build_repo() {
   printf -- '---\ndescription: d\n---\nbody\n' >"$r/commands/demo.md"
   printf -- '# CLAUDE\n' >"$r/global/CLAUDE.md"
   printf -- '# AGENTS\n' >"$r/global/AGENTS.md"
-  printf -- '0.1.0\n' >"$r/VERSION"
+  printf -- '0.1.0\n' >"$r/version.txt"
 
   mkdir -p "$r/bin/lib"
   cp "$REPO_ROOT/bin/lib/manifest.sh" "$r/bin/lib/manifest.sh"

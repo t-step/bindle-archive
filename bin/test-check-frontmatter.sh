@@ -49,7 +49,7 @@ build_repo() {
   cp "$CHECK_SRC" "$r/bin/check.sh"
   cp "$PRIVATE_INFO_SRC" "$r/bin/check-private-info.sh"
   chmod +x "$r/bin/check.sh" "$r/bin/check-private-info.sh"
-  printf '0.1.0\n' >"$r/VERSION"
+  printf '0.1.0\n' >"$r/version.txt"
   printf '# Changelog\n\n## [Unreleased]\n\n- nothing yet\n' >"$r/CHANGELOG.md"
   (cd "$r" && git init -q && git symbolic-ref HEAD refs/heads/main)
   git_commit "$r" "init"

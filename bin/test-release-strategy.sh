@@ -137,16 +137,44 @@ code=$?
   ok "apply with token invokes release-pr (--token, no --dry-run)" ||
   bad "apply-token ($code): log=$(cat "$RP_STUB_LOG")"
 
-# --- Release Please config: simple type, component-less tag, manifest is semver ---
+# --- Release Please config: version.txt is the sole simple-type release authority ---
 # The manifest version is NOT hardcoded — it advances every release (0.4.0 at
 # seed, 0.5.0 after the first cut, ...); assert it's a valid semver, not a value.
 CFG="$REPO_ROOT/release-please-config.json"
 MAN="$REPO_ROOT/.release-please-manifest.json"
-{ python3 -c "import json, re; c=json.load(open('$CFG')); \
-    p=c['packages']['.']; assert p['release-type']=='simple', p; \
-    assert c.get('include-component-in-tag') is False, c; \
-    m=json.load(open('$MAN')); assert re.match(r'^[0-9]+\.[0-9]+\.[0-9]+\$', m['.']), m"; } &&
-  ok "release-please config: simple type, component-less tag, manifest is semver" ||
+DRY_RUN_FIXTURE="$REPO_ROOT/bin/fixtures/release-please-simple-dry-run.json"
+{
+  python3 - "$DRY_RUN_FIXTURE" "$CFG" "$MAN" "$REPO_ROOT" <<'PY'
+import json
+import os
+import re
+import sys
+
+fixture_path, config_path, manifest_path, root = sys.argv[1:]
+with open(fixture_path, encoding="utf-8") as fh:
+    fixture = json.load(fh)
+with open(config_path, encoding="utf-8") as fh:
+    config = json.load(fh)
+with open(manifest_path, encoding="utf-8") as fh:
+    manifest = json.load(fh)
+
+changed = {
+    path
+    for path in fixture["before"] | fixture["after"]
+    if fixture["before"].get(path) != fixture["after"].get(path)
+}
+assert changed == {"version.txt"}, changed
+package = config["packages"]["."]
+assert package["release-type"] == "simple", package
+assert "extra-files" not in package, package
+assert config.get("include-component-in-tag") is False, config
+assert re.match(r"^[0-9]+\.[0-9]+\.[0-9]+$", manifest["."]), manifest
+with open(os.path.join(root, "version.txt"), encoding="utf-8") as fh:
+    assert fh.read().strip() == manifest["."], manifest
+assert not os.path.exists(os.path.join(root, "VERSION"))
+PY
+} &&
+  ok "release-please config: version.txt is the sole simple-type authority" ||
   bad "release-please config invalid"
 
 printf '\n%d passed, %d failed\n' "$pass" "$fail"

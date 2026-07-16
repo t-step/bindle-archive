@@ -1,0 +1,7 @@
+{
+  "release_please_version": "17.6.1",
+  "release_type": "simple",
+  "before": {"version.txt": "0.5.0\n"},
+  "after": {"version.txt": "0.5.1\n"},
+  "custom_post_processing": false
+}

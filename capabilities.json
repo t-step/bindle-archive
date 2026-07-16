@@ -688,10 +688,6 @@
       "reason": "scaffolding tool for authoring a new skill/agent/command from the templates; a contributor tool, not a shipped capability."
     },
     {
-      "path": "bin/release.sh",
-      "reason": "rolls the Unreleased CHANGELOG section into a dated version and bumps VERSION; release machinery, not a capability."
-    },
-    {
       "path": "bin/release-manifest.py",
       "reason": "the release-manifest generator itself; machinery invoked by bin/release.sh, not a capability an agent invokes for its own sake (same precedent as bin/check-inventory.py)."
     },

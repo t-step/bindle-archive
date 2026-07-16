@@ -35,7 +35,7 @@ GitHub Release, or writes to the repo (except an explicit --emit target).
 
 Usage:
   bin/release-evidence.py [--root DIR] [--format json|text|both] [--emit PATH]
-      Live mode: read VERSION, detect the latest tag, query merged PRs via gh.
+      Live mode: read version.txt, detect the latest tag, query merged PRs via gh.
   bin/release-evidence.py --fixture PATH [--format ...] [--emit ...]
       Dry-run mode: load pre-recorded raw evidence JSON, skip all git/gh calls.
       This is the deterministic, offline path the fixtures exercise.
@@ -313,13 +313,9 @@ def _git(root, *args):
     return out.stdout.strip()
 
 
-def _read_version(root):
-    path = os.path.join(root, "VERSION")
-    try:
-        with open(path, encoding="utf-8") as fh:
-            return fh.read().strip()
-    except OSError:
-        return None
+def read_version(root):
+    with open(os.path.join(root, "version.txt"), encoding="utf-8") as fh:
+        return fh.read().strip()
 
 
 def collect_live(root, gh="gh"):
@@ -335,7 +331,7 @@ def collect_live(root, gh="gh"):
         if status == "failed":
             ok = False
 
-    current_version = _read_version(root)
+    current_version = read_version(root)
 
     latest_tag = None
     tag_date = None
@@ -448,7 +444,12 @@ def main(argv=None):
                   file=sys.stderr)
             return 1
     else:
-        raw = collect_live(root)
+        try:
+            raw = collect_live(root)
+        except OSError as exc:
+            print("release-evidence: cannot read version.txt: %s" % exc,
+                  file=sys.stderr)
+            return 1
 
     result = structure_evidence(raw)
 

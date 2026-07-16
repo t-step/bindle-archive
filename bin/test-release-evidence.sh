@@ -125,9 +125,10 @@ check "text: notes that uncertain changes need judgment" \
   bash -c 'contains "need human/model judgment" "$1"' _ "$txt"
 
 # --- pure classification-logic unit tests (imported directly) ---------------
+printf '0.5.0\n' >"$STUB/version.txt"
 unit="$(
-  "$PY" - "$HELPER" <<'PYEOF'
-import importlib.util, sys
+  "$PY" - "$HELPER" "$STUB" <<'PYEOF'
+import importlib.util, os, sys
 spec = importlib.util.spec_from_file_location("release_evidence", sys.argv[1])
 m = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(m)
@@ -155,6 +156,15 @@ c2 = cls(title="Reshape the thing")
 assert c2["class"] == "uncertain" and c2["contradiction"] is False, c2
 # a commit-sourced conventional change ranks as commits-since-tag (4)
 assert cls(title="feat: x", source="commit")["precedence"] == 4
+# canonical version reader
+assert m.read_version(sys.argv[2]) == "0.5.0"
+os.remove(os.path.join(sys.argv[2], "version.txt"))
+try:
+    m.read_version(sys.argv[2])
+except OSError as exc:
+    assert "version.txt" in str(exc), exc
+else:
+    raise AssertionError("missing version.txt did not fail")
 print("ok")
 PYEOF
 )"

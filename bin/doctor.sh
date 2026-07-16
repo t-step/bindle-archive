@@ -333,10 +333,12 @@ tools_section() {
 }
 
 # --- header ------------------------------------------------------------
-if [ -f "$REPO_ROOT/VERSION" ]; then
-  echo "Bindle v$(cat "$REPO_ROOT/VERSION")"
+VERSION_FILE="$REPO_ROOT/version.txt"
+if [ -f "$VERSION_FILE" ]; then
+  version="$(cat "$VERSION_FILE")"
+  echo "Bindle v$version"
 else
-  echo "Bindle (VERSION file missing)"
+  echo "Bindle (version.txt file missing)"
 fi
 echo "repo root: $REPO_ROOT"
 

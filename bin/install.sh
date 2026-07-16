@@ -409,8 +409,10 @@ echo "Done: ${linked} linked, ${current} already current, ${conflicts} conflicts
 if [ "$adopted" -gt 0 ]; then
   echo "adopted ${adopted} link(s) from an earlier checkout"
 fi
-if [ -f "$REPO_ROOT/VERSION" ]; then
-  echo "Bindle v$(cat "$REPO_ROOT/VERSION") installed for provider(s): $PROVIDER"
+VERSION_FILE="$REPO_ROOT/version.txt"
+if [ -f "$VERSION_FILE" ]; then
+  version="$(cat "$VERSION_FILE")"
+  echo "Bindle v$version installed for provider(s): $PROVIDER"
 else
   echo "Bindle installed for provider(s): $PROVIDER"
 fi

@@ -30,7 +30,8 @@ append_inventory_row() {
     return 0
   fi
   local version
-  version="$(cat VERSION 2>/dev/null || echo 0.0.0)"
+  VERSION_FILE="$REPO_ROOT/version.txt"
+  version="$(cat "$VERSION_FILE")"
   CAP_TYPE="$ctype" CAP_NAME="$cname" CAP_PATH="$cpath" \
     CAP_FM="$fmfile" CAP_VERSION="$version" python3 - <<'PY'
 import json, os, re

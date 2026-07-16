@@ -235,7 +235,7 @@ def load_inventory(root):
 
 
 def read_version(root):
-    with open(os.path.join(root, "VERSION"), encoding="utf-8") as fh:
+    with open(os.path.join(root, "version.txt"), encoding="utf-8") as fh:
         return fh.read().strip()
 
 
@@ -293,7 +293,7 @@ def check_schema(caps, version):
         elif (_semver_tuple(vi) > _semver_tuple(version)
               and _semver_tuple(vi) not in _next_release_tuples(version)):
             errors.append("%s: version_introduced %s is ahead of the next "
-                          "unreleased release from VERSION %s"
+                          "unreleased release from version.txt %s"
                           % (label, vi, version))
     return errors
 

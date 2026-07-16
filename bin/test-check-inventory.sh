@@ -37,7 +37,7 @@ trap 'rm -rf "$TMP"' EXIT
 mkfixture() {
   local r="$1"
   mkdir -p "$r/skills/demo" "$r/commands" "$r/global" "$r/docs"
-  printf '0.3.0\n' >"$r/VERSION"
+  printf '0.3.0\n' >"$r/version.txt"
   printf -- '---\nname: demo\ndescription: Demo skill.\n---\n# demo\n' >"$r/skills/demo/SKILL.md"
   printf 'tested\n' >"$r/skills/demo/PRESSURE-TESTS.md"
   printf -- '---\ndescription: Demo command.\n---\n# foo\n' >"$r/commands/foo.md"
@@ -101,7 +101,7 @@ for vi in 0.3.1 0.4.0 1.0.0; do
   rm -f "$REPO/capabilities.json.bak"
   out="$(python3 "$VALIDATOR" --root "$REPO" 2>&1)"
   status=$?
-  check "version_introduced $vi (one bump ahead of VERSION 0.3.0) passes" test "$status" -eq 0
+  check "version_introduced $vi (one bump ahead of version.txt 0.3.0) passes" test "$status" -eq 0
 done
 
 REPO="$TMP/vi-too-far"
@@ -111,7 +111,7 @@ rm -f "$REPO/capabilities.json.bak"
 out="$(python3 "$VALIDATOR" --root "$REPO" 2>&1)"
 status=$?
 check "version_introduced two minors ahead still fails" test "$status" -ne 0
-check "names the ceiling as the next unreleased release" contains "is ahead of the next unreleased release from VERSION 0.3.0" "$out"
+check "names the ceiling as the next unreleased release" contains "is ahead of the next unreleased release from version.txt 0.3.0" "$out"
 
 REPO="$TMP/bad-json"
 mkfixture "$REPO"
