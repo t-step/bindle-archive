@@ -31,10 +31,13 @@ Supporting tooling, all in `bin/`:
   `--home` (13 assertions; see coverage below).
 - `new.sh` — scaffold skill/agent/command from `_template` files.
 - `install-hooks.sh` — `pre-commit install` (pre-commit + post-merge stages).
-- `release.sh` — SemVer bump + changelog roll + annotated tag; never pushes.
+- The former local version-bump/tag wrapper from this point-in-time inventory
+  is retired. Release Please now owns checked-in release state, and post-tag
+  provenance publication uses the dedicated verified workflow.
 
-A `Makefile` wraps these (`check`, `test`, `install`, `hooks`, `new`,
-`release`).
+Current convenience targets cover `check`, `test`, `install`, `doctor`,
+`hooks`, `new`, `manifest`, and `docs`. Release publication has no convenience
+target.
 
 ## Installer ownership model
 

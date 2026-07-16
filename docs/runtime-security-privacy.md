@@ -73,8 +73,8 @@ Executable-on-request assets, classified:
 | `bin/test-install.sh`, `bin/test-check.sh`, `bin/test-check-frontmatter.sh`, `bin/test-doctor.sh` | C1 | temp fixtures only; never the real environment |
 | `bin/install.sh` | C1 | owned symlinks only, per ownership-boundaries |
 | `bin/new.sh` | C2 | repo-local scaffolding writes, human-invoked |
-| `bin/release-provenance.py` | C1 | reads tagged state and caller evidence; generation writes only caller-selected assets outside the repo and never mutates Git/GitHub |
-| `bin/release-publication.py` | C3 | verifies GitHub draft assets and performs publication as the final mutation |
+| `bin/release-provenance.py` | C1 | reads tagged state and caller evidence; generation writes only caller-selected local assets outside the repo and never mutates Git/GitHub |
+| `bin/release-publication.py` | C1/C4/C5 | C1: identity-pinned external temp evidence/upload/download files, removed before final publish; C4: `gh` release view/upload/download traffic; C5: draft creation, asset replacement, and final publication. It never reads transcripts or note contents, so C3 does not apply. The tagged-release workflow is the explicit publication trigger; every pre-publish failure leaves the release unpublished (and any created release as a draft), and the C5 publish edit is the final process replacement after verified cleanup. |
 | `bin/notes-home.sh` | C1 | `status` is read-only; `set`/`migrate`/`reset` preview by default and write only on explicit confirmation (`--apply`/TTY yes). Its `~/.claude/settings.json` writes follow rule 7 below verbatim — validate, back up, touch only `env.BINDLE_NOTES_DIR`, show the diff — even though it is not a hook |
 | `/session-*`, `/handoff`, `/project-profile`, `/workflow-review`, `/promote-insight`, `/notes-home` commands | C1/C3 | human-invoked; write to the notes home; note *contents* stay out of repos per privacy-boundaries |
 

@@ -86,19 +86,38 @@ trusted. Collect the document with `release-provenance.py collect-evidence`.
 ## Artifact and detached checksum
 
 `release-provenance.py generate` emits two assets outside the checkout. The
-JSON contains at least:
+JSON object has exactly these keys and no others:
 
-- `schema_version` and `artifact_type` (`bindle-release-provenance`);
-- repository, annotated tag name, tag-object SHA, tagger timestamp, released
-  `commit_sha`, version, and deterministic previous version;
-- the released changelog section;
-- capability-inventory and installed-surface snapshots;
-- the complete validated evidence document; and
-- relevant tool versions.
+| Key | Meaning |
+|---|---|
+| `schema_version` | integer `1` |
+| `artifact_type` | `bindle-release-provenance` |
+| `repository` | tagged source repository in `OWNER/REPO` form |
+| `tag` | annotated release tag |
+| `tag_object_sha` | annotated tag-object SHA |
+| `tagger_timestamp` | annotated tagger date in strict ISO form |
+| `commit_sha` | exact directly tagged released commit |
+| `version` | tagged `version.txt` value |
+| `previous_version` | deterministic preceding SemVer tag, without `v` |
+| `changelog` | exact verified released changelog section |
+| `capabilities` | sorted tagged capability snapshot |
+| `installed_surfaces` | sorted tagged install-manifest snapshot |
+| `verification_evidence` | complete validated exact four-check document |
+| `tool_versions` | exact `git`, `bash`, `python3`, `shellcheck`, and `shfmt` map |
 
 The exact `commit_sha` is the tagged commit, never its parent. The previous
 version is the nearest reachable SemVer-shaped `v*` tag before that commit,
 excluding the current tag; absence or ambiguity fails rather than guessing.
+
+### Generation output directory
+
+`generate --output-dir` never creates the output directory. The supplied path
+must resolve strictly to a pre-existing real directory, its canonical resolved
+path must be outside the repository root, and the generator walks and opens
+that canonical directory without following replacement symlinks. Existing
+asset targets may be replaced only when they are ordinary entries; either
+named asset being a symlink is a hard failure. Writes use unique same-directory
+temporary files, atomic replacement, and directory fsync.
 
 The JSON bytes are UTF-8, keys sorted lexicographically, two-space indented,
 with exactly one trailing LF. The detached
@@ -120,11 +139,25 @@ python3 bin/release-provenance.py verify --tag <tag> \
 
 ## Draft creation and exact reuse
 
-Create a draft for the exact repository and tag. A rerun may reuse only an
-unpublished draft whose tag, target commit, title, prerelease flag, and
-release-note metadata exactly match the expected values.
+The publication orchestrator first runs `gh release view`. Creation is allowed
+only when that command exits exactly `1` and stderr is exactly the normalized
+missing-release text `release not found` (with no content beyond its accepted
+line ending). Every other exit or stderr is a hard failure.
 
-The only allowed assets are `bindle-release-provenance.json` and
+Create a draft for the exact repository and tag. A rerun may reuse only a
+release view with this exact field set and values:
+
+- `tagName` equals the requested tag;
+- `targetCommitish` equals the verified released commit SHA;
+- `name` equals the tag;
+- `body` equals the verified provenance artifact's `changelog` string byte for
+  byte when UTF-8 encoded (the creation notes file contains exactly those
+  bytes, with no added newline);
+- `isDraft` is `true`; and
+- `isPrerelease` is `false`.
+
+The `assets` array must have unique string names. Its name set must be either
+empty or exactly `bindle-release-provenance.json` plus
 `bindle-release-provenance.json.sha256`:
 
 - neither present: upload both;
@@ -135,6 +168,23 @@ The only allowed assets are `bindle-release-provenance.json` and
 
 Conflicting metadata and already-published releases also fail closed. A rerun
 never edits conflicting state into compliance.
+
+## Publication temporary-directory lease
+
+Publication resolves the system temporary base strictly before doing release
+work. That base must be a directory outside the repository. Its newly created
+`bindle-publication.*` entry must be an absolute direct child of that canonical
+base, a real directory, canonical at its lexical path, and outside the
+repository. The orchestrator pins the entry's device/inode identity and
+revalidates its type, identity, canonical path, and external location before
+each evidence, generation, draft, upload, download, and verification boundary.
+
+On an ordinary failure it removes the temporary entry and leaves any release
+unpublished (and any release created by this run as a draft). On success it
+revalidates the pinned identity, removes the entry, proves it did not reappear,
+and only then replaces the process with the final publish command. Cleanup
+happens before that final `exec`; no cleanup, status write, or other fallible
+operation is scheduled after publication.
 
 ## Upload, download, verify, publish
 

@@ -234,26 +234,29 @@ historical = (
 patterns = (
     re.compile(r"(?<![A-Za-z0-9_])VER" + r"SION(?![A-Za-z0-9_])"),
     re.compile(r"RELEASE-MANIFEST" + r"\.json"),
-    re.compile(r"bin/release" + r"\.sh"),
+    re.compile(r"(?<![A-Za-z0-9_-])release" + r"\.sh(?![A-Za-z0-9_-])"),
     re.compile(r"\bmake[ \t]+release\b"),
     re.compile(r"extra-files[^\n]*VER" + r"SION"),
+    re.compile(r"(?i)\bMake" + r"file\b[^\n]*\brele" + r"ase\b"),
+    re.compile(r"(?i)\bmake[ \t]+targets?\b[^\n]*\brele" + r"ase\b"),
 )
+makefile_target = re.compile(r"(?m)^[ \t]*rele" + r"ase[ \t]*:")
 
 
 def allowed_history(path):
     return path == "CHANGELOG.md" or path.startswith(historical)
 
 
-def allowed_negative_test(path, line):
+def strip_approved_negative_occurrences(path, line):
     if path == "bin/test-release-publication.sh":
-        return (
-            '"RELEASE-MANIFEST' + '.json"' in line
-            or "Historical prose mentions gh release create and RELEASE-MANIFEST" + ".json." in line
+        approved = (
+            '"RELEASE-MANIFEST' + '.json"',
+            "Historical prose mentions gh release create and RELEASE-MANIFEST" + ".json.",
         )
-    if path == "bin/test-release-strategy.sh":
-        return 'os.path.join(root, "VER' + 'SION")' in line
-    if path == "skills/release-captain/PRESSURE-TESTS.md":
-        fragments = (
+    elif path == "bin/test-release-strategy.sh":
+        approved = ('os.path.join(root, "VER' + 'SION")',)
+    elif path == "skills/release-captain/PRESSURE-TESTS.md":
+        approved = (
             "with a `VER" + "SION`",
             "bumped VER" + "SION",
             "bumped `VER" + "SION`",
@@ -262,8 +265,31 @@ def allowed_negative_test(path, line):
             "bumps VER" + "SION",
             "edit VER" + "SION/CHANGELOG",
         )
-        return any(fragment in line for fragment in fragments)
-    return False
+    elif path == "skills/maintain-claude-md/PRESSURE-TESTS.md":
+        approved = (
+            "`setup.sh`, `test.sh`, and `release" + ".sh`",
+            "`release" + ".sh` deletes a `build/` directory.",
+            "`release" + ".sh` carries a `# DESTRUCTIVE if run` comment",
+            "`release" + ".sh` framed as a routine \"clean build artifacts,\"",
+            "destructive `release" + ".sh`** too",
+            "obviously-destructive `release" + ".sh`",
+        )
+    else:
+        approved = ()
+    for occurrence in approved:
+        line = line.replace(occurrence, "", 1)
+    return line
+
+
+smuggled_fallback = (
+    '"RELEASE-MANIFEST' + '.json" plus the live release' + '.sh wrapper'
+)
+smuggled_remainder = strip_approved_negative_occurrences(
+    "bin/test-release-publication.sh", smuggled_fallback
+)
+if not any(pattern.search(smuggled_remainder) for pattern in patterns):
+    print("negative-test exemption concealed an appended retired fallback")
+    raise SystemExit(1)
 
 
 tracked = subprocess.check_output(
@@ -283,9 +309,11 @@ for path in tracked:
     except (OSError, UnicodeDecodeError):
         continue
     for number, line in enumerate(lines, 1):
-        if any(pattern.search(line) for pattern in patterns):
-            if allowed_negative_test(path, line):
-                continue
+        remainder = strip_approved_negative_occurrences(path, line)
+        active_patterns = patterns + (
+            (makefile_target,) if path == "Makefile" else ()
+        )
+        if any(pattern.search(remainder) for pattern in active_patterns):
             failures.append(f"{path}:{number}:{line.rstrip()}")
 
 print("\n".join(failures))
