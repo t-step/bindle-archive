@@ -12,6 +12,7 @@ __pycache__/
 .claude-session/
 .claude-scratch/
 .superpowers/
+.worktrees/
 *.private.md
 *.local.md
 .scratch.md
