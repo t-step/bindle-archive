@@ -148,7 +148,8 @@ structurally in Phase 3 below, and holds at every other phase too.
    choice genuinely needs one (draft vs. ready PR; close with or without a
    comment). No answer = leave the deliverable as-is, perform no external
    mutation, and report disposition undecided. Prefer an explanatory comment
-   on issue closure; allow no-comment closure only on an explicit choice.
+   on issue closure; allow no-comment closure only on an explicit choice or
+   when there is genuinely no useful explanation to preserve.
 
 ## Boundaries / red flags
 

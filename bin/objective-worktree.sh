@@ -86,7 +86,7 @@ COMMON_DIR="$(git rev-parse --git-common-dir 2>/dev/null)" || {
   verdict "ERROR: not a git repository" ""
   exit 1
 }
-COMMON_DIR="$(cd "$COMMON_DIR" && pwd)" # make absolute regardless of git version
+COMMON_DIR="$(cd "$COMMON_DIR" && pwd -P)" # absolute + physical (resolve symlinks) regardless of git version
 ROOT="$(dirname "$COMMON_DIR")"
 
 git -C "$ROOT" remote get-url origin >/dev/null 2>&1 || {
@@ -112,8 +112,15 @@ if git -C "$ROOT" show-ref --verify --quiet "refs/heads/$BRANCH"; then
   exit 10
 fi
 
-LEAF="${BRANCH##*/}"
-WT="$ROOT/.worktrees/$LEAF"
+# Key the worktree path on a slug of the FULL branch name, not just its leaf,
+# so feature/x and fix/x don't both land on .worktrees/x. Same transform as
+# the repo's slugify rule: lowercase, non-alphanumeric runs -> '-', trimmed.
+SLUG="$(printf '%s' "$BRANCH" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9]\{1,\}/-/g; s/^-*//; s/-*$//')"
+if [ -z "$SLUG" ]; then
+  verdict "ERROR: unslugifiable branch" "branch '$BRANCH' has no path-safe characters"
+  exit 1
+fi
+WT="$ROOT/.worktrees/$SLUG"
 if [ -e "$WT" ]; then
   verdict "BLOCKED: worktree-occupied" "path '$WT' already exists"
   exit 10
