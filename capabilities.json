@@ -566,6 +566,22 @@
       "version_introduced": "0.4.0"
     },
     {
+      "name": "objective-worktree",
+      "type": "script",
+      "path": "bin/objective-worktree.sh",
+      "description": "Isolation helper for authorized repository-mutating objective work: fetches origin, resolves origin/main (or a --base ref) to a commit SHA, and creates the objective branch + a dedicated worktree at that exact SHA, emitting the resolved base SHA so a caller cannot merely claim the base was fresh. First stdout line is a verdict token (READY / BLOCKED: origin-unavailable|base-unavailable|branch-exists|worktree-occupied / ERROR) with the exit code carrying the verdict (0/10/1). Phase-4 adapter for the issue-work-loop contract.",
+      "provider": {
+        "claude": "installed",
+        "codex": "untested"
+      },
+      "maturity": "tested",
+      "mutation": [
+        "disk",
+        "network"
+      ],
+      "version_introduced": "0.6.0"
+    },
+    {
       "name": "issue-work-loop",
       "type": "contract",
       "path": "docs/workflows/issue-work-loop.md",
