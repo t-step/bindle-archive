@@ -104,6 +104,17 @@ structurally in Phase 3 below, and holds at every other phase too.
    large blob) and `fork-pr-flow` (where changes land, and never merging a
    PR you just opened without explicit authorization).
 
+   Before the first repository mutation of an authorized pass, isolate the
+   work: run `<bindle>/bin/objective-worktree.sh <branch>` — it fetches `origin`,
+   resolves `origin/main` (or a `--base` ref) to a SHA, and creates the
+   objective branch plus a dedicated worktree at that exact SHA. Do all
+   mutation inside that worktree, leaving the primary checkout untouched.
+   Read the emitted `READY: <path> <branch> <base-ref> <base-sha>` line and
+   record those four provenance fields for close-out; on a `BLOCKED:` or
+   `ERROR:` token, stop and report — never improvise the base or claim it was
+   fresh. A read-only or plan-only pass (Phase-2 deliverable `analysis`, or
+   a Review/Research profile) creates no worktree.
+
 5. **Verify — delegate to `verify-then-commit`.** Run the repository's
    actual verification commands discovered in Phase 1 — tests, typecheck,
    lint, in whatever form the repo actually defines them — never assumed
@@ -129,6 +140,16 @@ structurally in Phase 3 below, and holds at every other phase too.
    the way, record it explicitly rather than silently folding it into this
    pass's scope.
 
+   After verification, stop at the deliverable-disposition decision: present
+   one `AskUserQuestion` whose options are only the actions valid for this
+   deliverable and state — derived from the Phase-2 deliverable, the real
+   verification state, existing PR/issue state, and the explicit authority
+   granted — with the recommended action marked and a follow-up only when the
+   choice genuinely needs one (draft vs. ready PR; close with or without a
+   comment). No answer = leave the deliverable as-is, perform no external
+   mutation, and report disposition undecided. Prefer an explanatory comment
+   on issue closure; allow no-comment closure only on an explicit choice.
+
 ## Boundaries / red flags
 
 - Do not skip Phase 3 because the issue "looks straightforward" — the dedup
@@ -143,6 +164,9 @@ structurally in Phase 3 below, and holds at every other phase too.
   `dispatch-issue`, `gh-issues`, `verify-plan`) for any phase — this skill
   and the contract it automates are deliberately fleet-independent; those
   are a different fleet's tooling, not Bindle's.
+- Do not skip the Phase-4 worktree isolation for a mutating pass, and do not
+  claim the base was `origin/main` without the helper's emitted base SHA — a
+  narrated base is not a verified one.
 
 **REQUIRED BACKGROUND:** `docs/workflows/issue-work-loop.md` (the full
 six-phase contract, the two-authority invariant, and the state vocabulary
