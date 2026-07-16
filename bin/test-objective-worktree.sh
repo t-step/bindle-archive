@@ -2,7 +2,8 @@
 # test-objective-worktree.sh — fixture tests for bin/objective-worktree.sh.
 # Covers issue-work-loop pressure tests 1, 2, 4, 12: fresh-origin base even
 # when local main is stale; dirty primary untouched; fail-closed on
-# existing branch / occupied worktree; provenance in the READY line.
+# existing branch / occupied worktree; provenance in the READY line; plus a
+# leaf-collision regression (feature/x and fix/x must not share a path).
 set -uo pipefail
 unset GIT_DIR GIT_WORK_TREE GIT_INDEX_FILE GIT_OBJECT_DIRECTORY GIT_COMMON_DIR
 
@@ -77,7 +78,7 @@ RC=$?
 STILL_DIRTY="$(git -C "$W" status --porcelain | grep -c uncommitted.txt)"
 HEAD_AFTER="$(git -C "$W" rev-parse HEAD)"
 if [ "$RC" -eq 0 ] && [ "$STILL_DIRTY" -eq 1 ] && [ "$HEAD_BEFORE" = "$HEAD_AFTER" ] &&
-  [ -d "$W/.worktrees/y" ]; then
+  [ -d "$W/.worktrees/feature-y" ]; then
   pass "PT2: worktree created; primary tree still dirty; primary HEAD unmoved"
 else
   fail "PT2: primary checkout disturbed (rc=$RC dirty=$STILL_DIRTY head==$([ "$HEAD_BEFORE" = "$HEAD_AFTER" ] && echo y || echo n))"
@@ -101,7 +102,7 @@ rm -rf "$T"
 # Case 4 (PT4b): an occupied worktree path fails closed.
 T="$(mktemp -d)"
 W="$(make_sandbox "$T")"
-mkdir -p "$W/.worktrees/occupied"
+mkdir -p "$W/.worktrees/feature-occupied"
 OUT="$(cd "$W" && "$HELPER" feature/occupied)"
 RC=$?
 LINE1="$(printf '%s\n' "$OUT" | head -1)"
@@ -166,7 +167,7 @@ LINE1="$(printf '%s\n' "$OUT" | head -1)"
 # READY: <path> <branch> <base-ref> <base-sha>  -> 5 fields incl. token
 NFIELDS="$(printf '%s' "$LINE1" | awk '{print NF}')"
 if [ "$NFIELDS" -eq 5 ] &&
-  printf '%s' "$LINE1" | grep -q "\.worktrees/prov" &&
+  printf '%s' "$LINE1" | grep -q "\.worktrees/feature-prov" &&
   printf '%s' "$LINE1" | grep -q " feature/prov " &&
   printf '%s' "$LINE1" | grep -q " origin/main " &&
   printf '%s' "$LINE1" | grep -q " $BASE_SHA$"; then
@@ -195,10 +196,10 @@ git -C "$W" worktree add -q "$W/.worktrees/existing" -b feature/existing HEAD
 OUT="$(cd "$W/.worktrees/existing" && "$HELPER" feature/sib --check --no-fetch --base HEAD)"
 RC=$?
 LINE1="$(printf '%s\n' "$OUT" | head -1)"
-if [ "$RC" -eq 0 ] && printf '%s' "$LINE1" | grep -q "^READY: $W_PHYS/.worktrees/sib "; then
-  pass "from-worktree: sibling under primary '$W_PHYS/.worktrees/sib', not nested"
+if [ "$RC" -eq 0 ] && printf '%s' "$LINE1" | grep -q "^READY: $W_PHYS/.worktrees/feature-sib "; then
+  pass "from-worktree: sibling under primary '$W_PHYS/.worktrees/feature-sib', not nested"
 else
-  fail "from-worktree: expected READY: $W_PHYS/.worktrees/sib ..., got: $LINE1 (rc=$RC)"
+  fail "from-worktree: expected READY: $W_PHYS/.worktrees/feature-sib ..., got: $LINE1 (rc=$RC)"
 fi
 rm -rf "$T"
 
@@ -214,6 +215,22 @@ if [ "$RC" -eq 10 ] && printf '%s' "$LINE1" | grep -q "^BLOCKED: origin-unavaila
   pass "origin-unavailable: fetch failure -> BLOCKED (exit 10)"
 else
   fail "origin-unavailable: expected BLOCKED: origin-unavailable exit 10, got: $LINE1 (rc=$RC)"
+fi
+rm -rf "$T"
+
+# Case 12: branches sharing a leaf but differing in prefix (feature/x vs fix/x)
+# must NOT collide on the same worktree path. Regression for the #145 minor:
+# the path was keyed on the branch leaf alone.
+T="$(mktemp -d)"
+W="$(make_sandbox "$T")"
+FEAT_LINE="$(cd "$W" && "$HELPER" feature/dup --check | head -1)"
+FIX_LINE="$(cd "$W" && "$HELPER" fix/dup --check | head -1)"
+FEAT_WT="$(printf '%s' "$FEAT_LINE" | awk '{print $2}')"
+FIX_WT="$(printf '%s' "$FIX_LINE" | awk '{print $2}')"
+if [ -n "$FEAT_WT" ] && [ "$FEAT_WT" != "$FIX_WT" ]; then
+  pass "leaf-collision: feature/dup '$FEAT_WT' != fix/dup '$FIX_WT'"
+else
+  fail "leaf-collision: feature/dup and fix/dup share path '$FEAT_WT'"
 fi
 rm -rf "$T"
 
