@@ -23,6 +23,7 @@ should apply to only some projects belongs in that project's CLAUDE.md, not here
 
 - **Verify before committing:** run the project's tests + typecheck + lint and commit only if green. Never `--no-verify` or `--force`. See the `verify-then-commit` skill.
 - Match the repo's existing stack; detect tooling before adding any.
+- **CodeGraph** (`codegraph explore` / `codegraph_explore`, available when a `.codegraph/` directory exists at the repo root) bills a flat ~5.5k tokens per call no matter how small the question, so it only pays when it replaces a lot of reading. Reach for it when you'd otherwise open **6+ files** to orient: cross-file blast radius, dispatch tracing, or a name that collides across languages. For a single symbol or file, grep + Read costs roughly 4x less — use those. Never treat its output as an exhaustive list; it truncates silently, so confirm any "find every X" sweep with grep. If there is no `.codegraph/`, or the work is in a language the index doesn't cover (shell, markdown, docs), skip it entirely — indexing is my decision, not yours.
 
 ## Communication
 
