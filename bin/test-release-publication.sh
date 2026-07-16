@@ -23,6 +23,8 @@ import shutil
 import subprocess
 import sys
 import tempfile
+from types import SimpleNamespace
+from urllib.parse import quote
 
 repo_root = Path(sys.argv[1])
 orchestrator = Path(sys.argv[2])
@@ -419,8 +421,13 @@ def fixture(path):
     env = dict(os.environ, GIT_COMMITTER_DATE="2026-07-15T12:34:56Z")
     run(["git", "-C", str(path), "-c", "user.email=test@example.com",
          "-c", "user.name=Bindle Test", "tag", "-a", tag, "-m", tag], env=env)
-    return run(["git", "-C", str(path), "rev-parse", "HEAD"],
-               capture_output=True, text=True).stdout.strip()
+    commit_sha = run(["git", "-C", str(path), "rev-parse", "HEAD"],
+                     capture_output=True, text=True).stdout.strip()
+    tag_object_sha = run(
+        ["git", "-C", str(path), "rev-parse", f"refs/tags/{tag}"],
+        capture_output=True, text=True,
+    ).stdout.strip()
+    return commit_sha, tag_object_sha
 
 
 fake_gh = r'''#!/usr/bin/env python3
@@ -444,8 +451,28 @@ def persist_and_fail():
     state_path.write_text(json.dumps(state))
     raise SystemExit(9)
 
-verb = argv[2]
-if verb == "view":
+if argv[1] == "api":
+    state["api_calls"] += 1
+    if state["api_error"] in ("auth", "network"):
+        print(state["api_error"] + " failure", file=sys.stderr)
+        raise SystemExit(2)
+    if state["api_error"] == "json":
+        print("{")
+    elif state["api_error"] == "duplicate":
+        print('{"object": {}, "object": {}}')
+    else:
+        ref_path = "repos/" + expected_repo + "/git/ref/tags/" + state["encoded_tag"]
+        tag_path = "repos/" + expected_repo + "/git/tags/" + state["tag_object_sha"]
+        if argv == ["gh", "api", "--method", "GET", ref_path]:
+            remote = state["remote_ref"]
+            if state["remote_move"] and state["api_calls"] > 2:
+                remote = {"object": {"type": "tag", "sha": "f" * 40}}
+            print(json.dumps(remote))
+        elif argv == ["gh", "api", "--method", "GET", tag_path]:
+            print(json.dumps(state["remote_tag"]))
+        else:
+            raise AssertionError(argv)
+elif argv[1:3] == ["release", "view"]:
     assert argv == ["gh", "release", "view", expected_tag, "--repo",
                     expected_repo, "--json",
                     "tagName,targetCommitish,name,body,isDraft,isPrerelease,assets"]
@@ -459,7 +486,7 @@ if verb == "view":
         print("release not found", file=sys.stderr)
         raise SystemExit(1)
     print(json.dumps(state["release"]))
-elif verb == "create":
+elif argv[1:3] == ["release", "create"]:
     target = argv[7]
     notes_path = Path(argv[11])
     assert argv == ["gh", "release", "create", expected_tag, "--draft",
@@ -477,7 +504,9 @@ elif verb == "create":
         "name": expected_tag, "body": notes_bytes.decode(), "isDraft": True,
         "isPrerelease": False, "assets": [],
     }
-elif verb == "upload":
+    if state["after_create"] is not None:
+        state["release"].update(state["after_create"])
+elif argv[1:3] == ["release", "upload"]:
     files = [Path(argv[4]), Path(argv[5])]
     suffix = ["--clobber", "--repo", expected_repo] \
         if "--clobber" in argv else ["--repo", expected_repo]
@@ -500,7 +529,7 @@ elif verb == "upload":
         state["release"]["assets"].append({"name": source.name})
         if index == 0 and state["failure"] == "upload_second":
             persist_and_fail()
-elif verb == "download":
+elif argv[1:3] == ["release", "download"]:
     destination = Path(argv[9])
     patterns = [argv[5], argv[7]]
     assert argv == ["gh", "release", "download", expected_tag,
@@ -519,7 +548,7 @@ elif verb == "download":
         (destination / "bindle-release-provenance.json").write_text("corrupt\n")
     elif corruption == "checksum":
         (destination / "bindle-release-provenance.json.sha256").write_text("corrupt\n")
-elif verb == "edit":
+elif argv[1:3] == ["release", "edit"]:
     assert argv == ["gh", "release", "edit", expected_tag, "--draft=false",
                     "--repo", expected_repo]
     if state["failure"] == "edit":
@@ -534,7 +563,7 @@ state_path.write_text(json.dumps(state))
 with tempfile.TemporaryDirectory(prefix="bindle-publication-test.") as tmp_text:
     tmp = Path(tmp_text)
     source = tmp / "source"
-    commit_sha = fixture(source)
+    commit_sha, tag_object_sha = fixture(source)
     bindir = tmp / "path"
     bindir.mkdir()
     (bindir / "gh").write_text(fake_gh)
@@ -542,7 +571,8 @@ with tempfile.TemporaryDirectory(prefix="bindle-publication-test.") as tmp_text:
     base_env = dict(os.environ, PATH=f"{bindir}{os.pathsep}{os.environ['PATH']}")
 
     def invoke(initial_release, *, corruption=None, inspection=None,
-               failure=None):
+               failure=None, api_error=None, remote_ref=None,
+               remote_tag=None, remote_move=False, after_create=None):
         case = tmp / f"case-{len(list(tmp.glob('case-*')))}"
         case.mkdir()
         assets = case / "assets"
@@ -553,7 +583,15 @@ with tempfile.TemporaryDirectory(prefix="bindle-publication-test.") as tmp_text:
         state = {"release": initial_release, "assets_dir": str(assets),
                  "download_corruption": corruption,
                  "inspection_error": inspection, "failure": failure,
-                 "created_notes_hex": None}
+                 "created_notes_hex": None, "api_error": api_error,
+                 "after_create": after_create,
+                 "api_calls": 0, "remote_move": remote_move,
+                 "encoded_tag": quote(tag, safe=""),
+                 "tag_object_sha": tag_object_sha,
+                 "remote_ref": remote_ref or {
+                     "object": {"type": "tag", "sha": tag_object_sha}},
+                 "remote_tag": remote_tag or {
+                     "object": {"type": "commit", "sha": commit_sha}}}
         state_path.write_text(json.dumps(state))
         env = dict(base_env, GH_STATE=str(state_path), GH_LOG=str(log_path),
                    GH_ASSETS=str(assets), TMPDIR=str(case),
@@ -571,11 +609,23 @@ with tempfile.TemporaryDirectory(prefix="bindle-publication-test.") as tmp_text:
     final = ["gh", "release", "edit", tag, "--draft=false", "--repo", owner_repo]
     view = ["gh", "release", "view", tag, "--repo", owner_repo, "--json",
             "tagName,targetCommitish,name,body,isDraft,isPrerelease,assets"]
+    ref_api = ["gh", "api", "--method", "GET",
+               f"repos/{owner_repo}/git/ref/tags/{quote(tag, safe='')}"]
+    tag_api = ["gh", "api", "--method", "GET",
+               f"repos/{owner_repo}/git/tags/{tag_object_sha}"]
+
+    def kind(call):
+        if call == ref_api:
+            return "api-ref"
+        if call == tag_api:
+            return "api-tag"
+        return call[2]
 
     def assert_commands(logs, verbs, *, clobber=False):
-        assert [call[2] for call in logs] == verbs
-        assert logs[0] == view
-        for call in logs[1:]:
+        assert [kind(call) for call in logs] == verbs
+        for call in logs:
+            if call in (ref_api, tag_api):
+                continue
             verb = call[2]
             if verb == "create":
                 notes_path = Path(call[11])
@@ -615,7 +665,8 @@ with tempfile.TemporaryDirectory(prefix="bindle-publication-test.") as tmp_text:
     assert state["release"]["isDraft"] is False
     assert state["created_notes_hex"] == body.encode().hex()
     assert [item["name"] for item in state["release"]["assets"]] == sorted(asset_names)
-    assert_commands(logs, ["view", "create", "upload", "download", "edit"])
+    assert_commands(logs, ["api-ref", "api-tag", "view", "create", "view",
+                           "upload", "download", "api-ref", "api-tag", "edit"])
     assert logs[-1] == final
     assert leftovers == []
 
@@ -624,19 +675,63 @@ with tempfile.TemporaryDirectory(prefix="bindle-publication-test.") as tmp_text:
                 "assets": []}
     result, state, logs, _ = invoke(matching)
     assert result.returncode == 0, result.stderr
-    assert_commands(logs, ["view", "upload", "download", "edit"])
+    assert_commands(logs, ["api-ref", "api-tag", "view", "upload", "download",
+                           "api-ref", "api-tag", "edit"])
     assert not any(call[2] == "create" for call in logs)
     assert logs[-1] == final
 
     exact = dict(matching, assets=[{"name": name} for name in sorted(asset_names)])
     result, state, logs, _ = invoke(exact)
     assert result.returncode == 0, result.stderr
-    assert_commands(logs, ["view", "upload", "download", "edit"],
+    assert_commands(logs, ["api-ref", "api-tag", "view", "upload", "download",
+                           "api-ref", "api-tag", "edit"],
                     clobber=True)
     uploads = [call for call in logs if call[2] == "upload"]
     assert len(uploads) == 1 and "--clobber" in uploads[0]
     assert [item["name"] for item in state["release"]["assets"]] == sorted(asset_names)
     assert logs[-1] == final
+    assert logs[-3:] == [ref_api, tag_api, final]
+
+    for after_create in (
+        {"name": "server-normalized"},
+        {"isDraft": False},
+        {"assets": [{"name": "unexpected.txt"}]},
+    ):
+        result, state, logs, leftovers = invoke(
+            None, after_create=after_create
+        )
+        assert result.returncode != 0
+        assert not any(kind(call) in ("upload", "edit") for call in logs)
+        assert [kind(call) for call in logs][-3:] == ["view", "create", "view"]
+        assert leftovers == []
+
+    remote_failures = [
+        ({"object": {"type": "commit", "sha": tag_object_sha}}, None, None),
+        ({"object": {"type": "tag", "sha": "e" * 40}}, None, None),
+        (None, {"object": {"type": "tag", "sha": commit_sha}}, None),
+        (None, {"object": {"type": "commit", "sha": "d" * 40}}, None),
+    ]
+    for remote_ref, remote_tag, api_error in remote_failures:
+        result, state, logs, leftovers = invoke(
+            None, remote_ref=remote_ref, remote_tag=remote_tag,
+            api_error=api_error,
+        )
+        assert result.returncode != 0
+        assert state["release"] is None
+        assert not any(kind(call) in ("create", "upload", "edit") for call in logs)
+        assert leftovers == []
+    for api_error in ("auth", "network", "json", "duplicate"):
+        result, state, logs, leftovers = invoke(None, api_error=api_error)
+        assert result.returncode != 0
+        assert state["release"] is None
+        assert not any(kind(call) in ("create", "upload", "edit") for call in logs)
+        assert leftovers == []
+
+    result, state, logs, leftovers = invoke(matching, remote_move=True)
+    assert result.returncode != 0
+    assert state["release"]["isDraft"] is True
+    assert not any(kind(call) == "edit" for call in logs)
+    assert leftovers == []
 
     invalid = []
     invalid.append(dict(matching, assets=[{"name": "bindle-release-provenance.json"}]))
@@ -652,7 +747,7 @@ with tempfile.TemporaryDirectory(prefix="bindle-publication-test.") as tmp_text:
         assert result.returncode != 0
         assert state["release"] == release
         assert list(Path(state["assets_dir"]).iterdir()) == []
-        assert_commands(logs, ["view"])
+        assert_commands(logs, ["api-ref", "api-tag", "view"])
         assert not any(call[2] in ("upload", "edit") for call in logs), (release, logs)
         assert leftovers == []
 
@@ -660,7 +755,8 @@ with tempfile.TemporaryDirectory(prefix="bindle-publication-test.") as tmp_text:
         result, state, logs, leftovers = invoke(matching, corruption=corruption)
         assert result.returncode != 0
         assert state["release"]["isDraft"] is True
-        assert_commands(logs, ["view", "upload", "download"])
+        assert_commands(logs, ["api-ref", "api-tag", "view", "upload",
+                               "download"])
         assert sorted(item.name for item in Path(state["assets_dir"]).iterdir()) \
             == sorted(asset_names)
         assert not any(call[2] == "edit" for call in logs)
@@ -670,7 +766,7 @@ with tempfile.TemporaryDirectory(prefix="bindle-publication-test.") as tmp_text:
         result, state, logs, leftovers = invoke(None, inspection=inspection)
         assert result.returncode != 0
         assert state["release"] is None
-        assert_commands(logs, ["view"])
+        assert_commands(logs, ["api-ref", "api-tag", "view"])
         assert not any(call[2] in ("create", "upload", "edit") for call in logs)
         assert leftovers == []
 
@@ -696,11 +792,13 @@ with tempfile.TemporaryDirectory(prefix="bindle-publication-test.") as tmp_text:
         assert sorted(item.name for item in Path(state["assets_dir"]).iterdir()) \
             == expected_files
         expected_verbs = {
-            "create": ["view", "create"],
-            "upload_first": ["view", "upload"],
-            "upload_second": ["view", "upload"],
-            "download_json": ["view", "upload", "download"],
-            "download_checksum": ["view", "upload", "download"],
+            "create": ["api-ref", "api-tag", "view", "create"],
+            "upload_first": ["api-ref", "api-tag", "view", "upload"],
+            "upload_second": ["api-ref", "api-tag", "view", "upload"],
+            "download_json": ["api-ref", "api-tag", "view", "upload",
+                              "download"],
+            "download_checksum": ["api-ref", "api-tag", "view", "upload",
+                                  "download"],
         }[failure]
         assert_commands(logs, expected_verbs)
         assert not any(call[2] == "edit" for call in logs)
@@ -709,7 +807,8 @@ with tempfile.TemporaryDirectory(prefix="bindle-publication-test.") as tmp_text:
     result, state, logs, leftovers = invoke(matching, failure="edit")
     assert result.returncode != 0
     assert state["release"]["isDraft"] is True
-    assert_commands(logs, ["view", "upload", "download", "edit"])
+    assert_commands(logs, ["api-ref", "api-tag", "view", "upload", "download",
+                           "api-ref", "api-tag", "edit"])
     assert logs[-1] == final
     assert leftovers == []
 
@@ -720,6 +819,27 @@ assert module.release_not_found("release not found\n") is True
 for message in (" release not found\n", "release not found: v0.5.1\n",
                 "authentication required\n", "network error\n", ""):
     assert module.release_not_found(message) is False
+
+api_calls = []
+original_run_boundary = module._run
+
+def encoded_tag_run(argv, **kwargs):
+    api_calls.append(argv)
+    if "/git/ref/tags/" in argv[-1]:
+        payload = {"object": {"type": "tag", "sha": "a" * 40}}
+    else:
+        payload = {"object": {"type": "commit", "sha": "b" * 40}}
+    return SimpleNamespace(stdout=json.dumps(payload))
+
+module._run = encoded_tag_run
+try:
+    module._verify_remote_tag(owner_repo, {
+        "tag": "release/v0.5.1", "tag_object_sha": "a" * 40,
+        "commit_sha": "b" * 40,
+    })
+    assert api_calls[0][-1].endswith("/git/ref/tags/release%2Fv0.5.1")
+finally:
+    module._run = original_run_boundary
 
 with tempfile.TemporaryDirectory(prefix="bindle-temp-base-test.") as temp_base:
     symlinked_root = Path(temp_base) / "source"
@@ -820,9 +940,92 @@ with tempfile.TemporaryDirectory(prefix="bindle-temp-cleanup-test.") as temp_bas
             pass
         else:
             raise AssertionError("symlink-swapped cleanup entry was accepted")
-        assert not entry.exists() and not entry.is_symlink()
+        assert entry.is_symlink()
         assert sentinel.read_bytes() == b"cleanup must not follow symlink\n"
     finally:
         module.tempfile.tempdir = original_tempdir
+
+with tempfile.TemporaryDirectory(prefix="bindle-temp-real-replacement.") as temp_base:
+    temp_base = Path(temp_base)
+    source_root = temp_base / "source"
+    source_root.mkdir()
+    safe_base = temp_base / "safe-base"
+    safe_base.mkdir()
+    original_tempdir = module.tempfile.tempdir
+    original_prepare = module._prepare
+    original_execvp = module.os.execvp
+    exec_calls = []
+    replacement = {}
+
+    def replace_with_real_directory(root, repo, requested_tag, temporary):
+        entry = temporary.path
+        pinned = entry.with_name(entry.name + ".original")
+        (entry / "original-evidence").write_bytes(b"clean pinned contents\n")
+        entry.rename(pinned)
+        entry.mkdir()
+        sentinel = entry / "sentinel"
+        sentinel.write_bytes(b"replacement victim must survive\n")
+        replacement.update(entry=entry, pinned=pinned, sentinel=sentinel)
+        return {"tag": requested_tag, "tag_object_sha": "a" * 40,
+                "commit_sha": "b" * 40}
+
+    module.tempfile.tempdir = str(safe_base)
+    module._prepare = replace_with_real_directory
+    module.os.execvp = lambda *args: exec_calls.append(args)
+    try:
+        with contextlib.redirect_stderr(io.StringIO()):
+            assert module.main(["--root", str(source_root),
+                                "--repo", owner_repo, "--tag", tag]) == 1
+        assert exec_calls == []
+        assert replacement["sentinel"].read_bytes() == (
+            b"replacement victim must survive\n"
+        )
+        assert list(replacement["pinned"].iterdir()) == []
+    finally:
+        module.tempfile.tempdir = original_tempdir
+        module._prepare = original_prepare
+        module.os.execvp = original_execvp
+
+with tempfile.TemporaryDirectory(prefix="bindle-temp-child-race.") as temp_base:
+    temp_base = Path(temp_base)
+    source_root = temp_base / "source"
+    source_root.mkdir()
+    safe_base = temp_base / "safe-base"
+    safe_base.mkdir()
+    original_tempdir = module.tempfile.tempdir
+    original_stat = module.os.stat
+    module.tempfile.tempdir = str(safe_base)
+    temporary = module._temporary_directory(source_root.resolve())
+    child = temporary.path / "child"
+    child.mkdir()
+    (child / "original").write_bytes(b"original\n")
+    retired = temporary.path / "child.original"
+    sentinel = child / "sentinel"
+    child_stats = 0
+
+    def racing_stat(path, *args, **kwargs):
+        nonlocal_child = path == "child" and kwargs.get("dir_fd") == temporary.descriptor
+        global child_stats
+        if nonlocal_child:
+            child_stats += 1
+            if child_stats == 2:
+                child.rename(retired)
+                child.mkdir()
+                sentinel.write_bytes(b"racing replacement must survive\n")
+        return original_stat(path, *args, **kwargs)
+
+    module.os.stat = racing_stat
+    try:
+        try:
+            temporary.cleanup(require_identity=True)
+        except module.PublicationError:
+            pass
+        else:
+            raise AssertionError("check/delete child replacement race was accepted")
+        assert sentinel.read_bytes() == b"racing replacement must survive\n"
+    finally:
+        module.os.stat = original_stat
+        module.tempfile.tempdir = original_tempdir
+        shutil.rmtree(temporary.path)
 print("test-release-publication: all scenarios passed")
 PY

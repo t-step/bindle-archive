@@ -7,11 +7,11 @@ import json
 import os
 from pathlib import Path
 import re
-import shutil
 import stat
 import subprocess
 import sys
 import tempfile
+from urllib.parse import quote
 
 
 VIEW_FIELDS = "tagName,targetCommitish,name,body,isDraft,isPrerelease,assets"
@@ -102,6 +102,49 @@ def _release_view(repo: str, tag: str):
     return release
 
 
+def _api_object(repo: str, path: str, label: str) -> dict:
+    completed = _run(
+        ["gh", "api", "--method", "GET", f"repos/{repo}/{path}"],
+        capture_output=True,
+    )
+    try:
+        document = json.loads(
+            completed.stdout, object_pairs_hook=_json_object
+        )
+    except (json.JSONDecodeError, PublicationError) as exc:
+        raise PublicationError(f"{label}: invalid JSON ({exc})") from None
+    if not isinstance(document, dict) or not isinstance(
+        document.get("object"), dict
+    ):
+        raise PublicationError(f"{label}: missing object")
+    return document["object"]
+
+
+def _verify_remote_tag(repo: str, source: dict) -> None:
+    tag = source.get("tag")
+    tag_object_sha = source.get("tag_object_sha")
+    commit_sha = source.get("commit_sha")
+    if not all(isinstance(value, str) for value in (
+        tag, tag_object_sha, commit_sha
+    )):
+        raise PublicationError("verify-source: incomplete tag identity")
+    encoded_tag = quote(tag, safe="")
+    ref_object = _api_object(
+        repo, f"git/ref/tags/{encoded_tag}", "remote tag ref"
+    )
+    if ref_object.get("type") != "tag":
+        raise PublicationError("remote tag ref: annotated tag required")
+    if ref_object.get("sha") != tag_object_sha:
+        raise PublicationError("remote tag ref: tag-object SHA mismatch")
+    tag_object = _api_object(
+        repo, f"git/tags/{tag_object_sha}", "remote annotated tag"
+    )
+    if tag_object.get("type") != "commit":
+        raise PublicationError("remote annotated tag: direct commit required")
+    if tag_object.get("sha") != commit_sha:
+        raise PublicationError("remote annotated tag: commit SHA mismatch")
+
+
 def _validate_draft(release, *, tag: str, commit: str, body: str) -> bool:
     fields = {
         "tagName", "targetCommitish", "name", "body", "isDraft",
@@ -136,7 +179,7 @@ def _validate_draft(release, *, tag: str, commit: str, body: str) -> bool:
     return name_set == EXPECTED_ASSETS
 
 
-def _prepare(root: Path, repo: str, tag: str, temporary) -> None:
+def _prepare(root: Path, repo: str, tag: str, temporary) -> dict:
     temporary.validate()
     temporary_path = temporary.path
     source = _source_state(root, tag)
@@ -196,6 +239,8 @@ def _prepare(root: Path, repo: str, tag: str, temporary) -> None:
     notes.write_bytes(body.encode("utf-8"))
 
     temporary.validate()
+    _verify_remote_tag(repo, source)
+    temporary.validate()
     release = _release_view(repo, tag)
     clobber = False
     if release is None:
@@ -205,6 +250,14 @@ def _prepare(root: Path, repo: str, tag: str, temporary) -> None:
             "--target", commit, "--title", tag, "--notes-file", str(notes),
             "--repo", repo,
         ])
+        temporary.validate()
+        created_release = _release_view(repo, tag)
+        if created_release is None:
+            raise PublicationError("release create: draft missing after creation")
+        if _validate_draft(
+            created_release, tag=tag, commit=commit, body=body
+        ):
+            raise PublicationError("release create: expected an empty asset set")
     else:
         clobber = _validate_draft(
             release, tag=tag, commit=commit, body=body
@@ -246,6 +299,7 @@ def _prepare(root: Path, repo: str, tag: str, temporary) -> None:
         ],
         cwd=root,
     )
+    return source
 
 
 def _parser() -> argparse.ArgumentParser:
@@ -274,19 +328,53 @@ def _cleanup_temporary_entry(
             and expected_identity == (metadata.st_dev, metadata.st_ino)
         )
     if stat.S_ISDIR(metadata.st_mode):
-        shutil.rmtree(entry)
+        try:
+            os.rmdir(entry)
+        except OSError:
+            return False
     else:
         os.unlink(entry)
     return matches
 
 
+def _identity(metadata) -> tuple[int, int]:
+    return metadata.st_dev, metadata.st_ino
+
+
+def _cleanup_directory_fd(descriptor: int) -> None:
+    flags = os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW
+    for name in os.listdir(descriptor):
+        metadata = os.stat(name, dir_fd=descriptor, follow_symlinks=False)
+        if stat.S_ISDIR(metadata.st_mode):
+            child = os.open(name, flags, dir_fd=descriptor)
+            try:
+                if _identity(os.fstat(child)) != _identity(metadata):
+                    raise PublicationError(
+                        "temporary cleanup: child directory identity changed"
+                    )
+                _cleanup_directory_fd(child)
+            finally:
+                os.close(child)
+            current = os.stat(name, dir_fd=descriptor, follow_symlinks=False)
+            if not stat.S_ISDIR(current.st_mode) or _identity(current) != _identity(
+                metadata
+            ):
+                raise PublicationError(
+                    "temporary cleanup: child directory identity changed"
+                )
+            os.rmdir(name, dir_fd=descriptor)
+        else:
+            os.unlink(name, dir_fd=descriptor)
+
+
 class PublicationTemporary:
     """A validated lease on the original lexical mkdtemp entry."""
 
-    def __init__(self, path: Path, root: Path, metadata):
+    def __init__(self, path: Path, root: Path, metadata, descriptor: int):
         self.path = path
         self.root = root
-        self.identity = (metadata.st_dev, metadata.st_ino)
+        self.identity = _identity(metadata)
+        self.descriptor = descriptor
 
     def validate(self) -> None:
         try:
@@ -295,8 +383,10 @@ class PublicationTemporary:
             raise PublicationError(f"temporary entry: {exc}") from None
         if not stat.S_ISDIR(metadata.st_mode):
             raise PublicationError("temporary entry must remain a real directory")
-        if (metadata.st_dev, metadata.st_ino) != self.identity:
+        if _identity(metadata) != self.identity:
             raise PublicationError("temporary entry identity changed")
+        if self.descriptor is None or _identity(os.fstat(self.descriptor)) != self.identity:
+            raise PublicationError("temporary directory lease changed")
         try:
             canonical = self.path.resolve(strict=True)
         except OSError as exc:
@@ -307,24 +397,37 @@ class PublicationTemporary:
             )
 
     def cleanup(self, *, require_identity=False) -> None:
+        if self.descriptor is None:
+            raise PublicationError("temporary directory lease is closed")
         validation_error = None
         if require_identity:
             try:
                 self.validate()
             except PublicationError as exc:
                 validation_error = exc
-        matched = _cleanup_temporary_entry(self.path, self.identity)
         try:
-            os.lstat(self.path)
-        except FileNotFoundError:
-            pass
-        else:
-            _cleanup_temporary_entry(self.path)
+            _cleanup_directory_fd(self.descriptor)
+            try:
+                metadata = os.lstat(self.path)
+            except FileNotFoundError:
+                raise PublicationError(
+                    "temporary entry disappeared before final removal"
+                ) from None
+            if not stat.S_ISDIR(metadata.st_mode) or _identity(metadata) != self.identity:
+                raise PublicationError(
+                    "temporary entry identity changed before final removal"
+                )
+            if require_identity and validation_error is not None:
+                raise validation_error
+            os.rmdir(self.path)
+            try:
+                os.lstat(self.path)
+            except FileNotFoundError:
+                return
             raise PublicationError("temporary entry reappeared during cleanup")
-        if require_identity and (validation_error is not None or not matched):
-            raise validation_error or PublicationError(
-                "temporary entry identity changed before cleanup"
-            )
+        finally:
+            os.close(self.descriptor)
+            self.descriptor = None
 
 
 def _temporary_directory(root: Path) -> PublicationTemporary:
@@ -350,11 +453,17 @@ def _temporary_directory(root: Path) -> PublicationTemporary:
         if created.is_absolute() and created.parent == base:
             _cleanup_temporary_entry(created)
         raise PublicationError("mkdtemp returned an unexpected lexical entry")
+    descriptor = None
     try:
         metadata = os.lstat(created)
-        temporary = PublicationTemporary(created, root, metadata)
+        descriptor = os.open(
+            created, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW
+        )
+        temporary = PublicationTemporary(created, root, metadata, descriptor)
         temporary.validate()
     except (OSError, PublicationError):
+        if descriptor is not None:
+            os.close(descriptor)
         _cleanup_temporary_entry(created)
         raise
     return temporary
@@ -374,17 +483,23 @@ def main(argv=None) -> int:
     # Ordinary failures clean up explicitly. An external terminating signal can
     # leave temporary evidence, but cannot advance the still-draft release.
     try:
-        _prepare(root, args.repo, args.tag, temporary)
+        source = _prepare(root, args.repo, args.tag, temporary)
         temporary.cleanup(require_identity=True)
     except (PublicationError, OSError) as exc:
         cleanup_error = None
-        try:
-            temporary.cleanup()
-        except (PublicationError, OSError) as cleanup_exc:
-            cleanup_error = cleanup_exc
+        if temporary.descriptor is not None:
+            try:
+                temporary.cleanup()
+            except (PublicationError, OSError) as cleanup_exc:
+                cleanup_error = cleanup_exc
         print(str(exc), file=sys.stderr)
         if cleanup_error is not None:
             print(f"temporary cleanup: {cleanup_error}", file=sys.stderr)
+        return 1
+    try:
+        _verify_remote_tag(args.repo, source)
+    except (PublicationError, OSError) as exc:
+        print(str(exc), file=sys.stderr)
         return 1
     os.execvp("gh", [
         "gh", "release", "edit", args.tag, "--draft=false", "--repo", args.repo,

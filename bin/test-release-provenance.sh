@@ -323,6 +323,19 @@ expect_rc "Release Please manifest mismatch exits nonzero" 1
 expect_exact "Release Please manifest mismatch has stable reason" \
   ".release-please-manifest.json: root version 0.5.0 does not match version.txt 0.5.1"
 
+DUPLICATE_MANIFEST="$TMP/duplicate-manifest"
+mkfixture "$DUPLICATE_MANIFEST"
+git -C "$DUPLICATE_MANIFEST" tag -d v0.5.1 >/dev/null
+printf '%s\n' '{".": "9.9.9", ".": "0.5.1"}' \
+  >"$DUPLICATE_MANIFEST/.release-please-manifest.json"
+commit "$DUPLICATE_MANIFEST" duplicate-manifest
+annotate "$DUPLICATE_MANIFEST" v0.5.1
+run "$PY" "$HELPER" verify-source --root "$DUPLICATE_MANIFEST" \
+  --tag v0.5.1 --json
+expect_rc "duplicate Release Please root key exits nonzero" 1
+expect_exact "duplicate Release Please root key has stable reason" \
+  ".release-please-manifest.json: invalid JSON (JSON: duplicate object member '.')"
+
 NO_CHANGELOG="$TMP/no-changelog"
 mkfixture "$NO_CHANGELOG" 0.5.1 9.9.9
 run "$PY" "$HELPER" verify-source --root "$NO_CHANGELOG" --tag v0.5.1 --json

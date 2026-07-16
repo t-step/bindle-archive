@@ -255,25 +255,6 @@ def strip_approved_negative_occurrences(path, line):
         )
     elif path == "bin/test-release-strategy.sh":
         approved = ('os.path.join(root, "VER' + 'SION")',)
-    elif path == "skills/release-captain/PRESSURE-TESTS.md":
-        approved = (
-            "with a `VER" + "SION`",
-            "bumped VER" + "SION",
-            "bumped `VER" + "SION`",
-            "new tag / VER" + "SION bump",
-            "`VER" + "SION`, edits",
-            "bumps VER" + "SION",
-            "edit VER" + "SION/CHANGELOG",
-        )
-    elif path == "skills/maintain-claude-md/PRESSURE-TESTS.md":
-        approved = (
-            "`setup.sh`, `test.sh`, and `release" + ".sh`",
-            "`release" + ".sh` deletes a `build/` directory.",
-            "`release" + ".sh` carries a `# DESTRUCTIVE if run` comment",
-            "`release" + ".sh` framed as a routine \"clean build artifacts,\"",
-            "destructive `release" + ".sh`** too",
-            "obviously-destructive `release" + ".sh`",
-        )
     else:
         approved = ()
     for occurrence in approved:
@@ -289,6 +270,14 @@ smuggled_remainder = strip_approved_negative_occurrences(
 )
 if not any(pattern.search(smuggled_remainder) for pattern in patterns):
     print("negative-test exemption concealed an appended retired fallback")
+    raise SystemExit(1)
+
+pressure_test_retired_mention = "fixture used a VER" + "SION file"
+pressure_test_remainder = strip_approved_negative_occurrences(
+    "skills/example/PRESSURE-TESTS.md", pressure_test_retired_mention
+)
+if not any(pattern.search(pressure_test_remainder) for pattern in patterns):
+    print("pressure-test retired mention escaped the live-surface scan")
     raise SystemExit(1)
 
 

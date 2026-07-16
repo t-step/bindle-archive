@@ -84,8 +84,9 @@ def _version(root: Path, commit: str) -> str:
 
 
 def _release_please_version(root: Path, commit: str) -> str:
-    data = json.loads(
-        _tagged_file(root, commit, ".release-please-manifest.json")
+    data = _parse_json(
+        _tagged_file(root, commit, ".release-please-manifest.json"),
+        ".release-please-manifest.json",
     )
     version = data.get(".") if isinstance(data, dict) else None
     if not isinstance(version, str):
@@ -179,6 +180,8 @@ def _parse_json(text: str, label: str):
     try:
         return json.loads(text, object_pairs_hook=_json_object)
     except json.JSONDecodeError as exc:
+        raise ValueError(f"{label}: invalid JSON ({exc})") from None
+    except ValueError as exc:
         raise ValueError(f"{label}: invalid JSON ({exc})") from None
 
 

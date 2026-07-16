@@ -18,6 +18,11 @@ recommending a release.
 - Publication requires an annotated direct tag named `v<version.txt>`. Its tag
   object's immediate target must be the exact released commit and workflow
   `HEAD`; lightweight tags and tag-to-tag indirection fail.
+- The repository must protect release tags against update and deletion and
+  operate them as immutable references. Publication verifies the live GitHub
+  tag ref before any draft mutation and again at the last possible boundary
+  before publication; protection is still required because GitHub does not
+  provide an atomic transaction binding those reads to the release edit.
 - `bindle-release-provenance.json` and its detached checksum are generated
   after tagging, outside the repository, and attached to the GitHub Release.
 - Publication is the final mutation, after the uploaded assets have been
@@ -44,6 +49,15 @@ It requires all of the following:
 5. The tag is exactly `v<version.txt>`.
 6. `.release-please-manifest.json`'s root package equals `version.txt`.
 7. `CHANGELOG.md` contains the released version section.
+
+The publication orchestrator additionally queries GitHub's Git database API
+with argv-only `gh api` calls. The live `refs/tags/<URL-encoded-tag>` object
+must have type `tag` and the exact locally verified `tag_object_sha`. Fetching
+that annotated tag object must report an immediate object of type `commit` and
+the exact verified `commit_sha`. Authentication, network, malformed or
+duplicate-member JSON, lightweight remote refs, tag-to-tag targets, and every
+SHA mismatch fail closed. The same two checks run again after downloaded-asset
+verification and temporary cleanup, immediately before the final release edit.
 
 ## Exact verification evidence
 
@@ -169,22 +183,36 @@ empty or exactly `bindle-release-provenance.json` plus
 Conflicting metadata and already-published releases also fail closed. A rerun
 never edits conflicting state into compliance.
 
+After `gh release create` returns, the orchestrator reads the draft back with
+the same exact field set and applies the same strict metadata validation. The
+new draft must still be unpublished and have no assets. Server-normalized or
+otherwise changed metadata, concurrent publication, or an asset introduced
+between creation and read-back stops before upload.
+
 ## Publication temporary-directory lease
 
 Publication resolves the system temporary base strictly before doing release
 work. That base must be a directory outside the repository. Its newly created
 `bindle-publication.*` entry must be an absolute direct child of that canonical
 base, a real directory, canonical at its lexical path, and outside the
-repository. The orchestrator pins the entry's device/inode identity and
-revalidates its type, identity, canonical path, and external location before
-each evidence, generation, draft, upload, download, and verification boundary.
+repository. The orchestrator opens the original directory with
+`O_DIRECTORY|O_NOFOLLOW`, retains that descriptor lease, pins its device/inode
+identity, and revalidates its lexical type, identity, canonical path, and
+external location before each evidence, generation, draft, upload, download,
+and verification boundary.
 
-On an ordinary failure it removes the temporary entry and leaves any release
-unpublished (and any release created by this run as a draft). On success it
-revalidates the pinned identity, removes the entry, proves it did not reappear,
-and only then replaces the process with the final publish command. Cleanup
-happens before that final `exec`; no cleanup, status write, or other fallible
-operation is scheduled after publication.
+Cleanup recursively walks only the descriptor-pinned original directory with
+fd-relative, no-follow operations. It never traverses a replacement at the
+lexical pathname. Before the final root `rmdir`, the lexical entry must still
+be a real directory with the original device/inode; a mismatch is left
+untouched and publication fails. Safe temporary leaks are preferred to deleting
+an unknown replacement. The descriptor closes on every path.
+
+On an ordinary failure cleanup leaves any release unpublished (and any release
+created by this run as a draft). On success it removes the pinned entry, proves
+it did not reappear, rechecks the live remote tag, and only then replaces the
+process with the final publish command. No cleanup, status write, or other
+fallible operation is scheduled after publication.
 
 ## Upload, download, verify, publish
 
@@ -193,8 +221,11 @@ Download those exact named assets into a separate directory. Require the
 downloaded JSON digest to equal the locally validated upload digest, validate
 the downloaded detached checksum against the downloaded JSON bytes, and run
 independent semantic verification against the tag and released commit. Only
-then publish the draft. Publishing is the last command; every earlier failure
-leaves it unpublished.
+then clean the pinned temporary directory, repeat the live GitHub tag-ref and
+tag-object checks, and publish the draft. The final remote check and release
+edit are adjacent commands, but not an atomic GitHub operation; protected,
+immutable release tags remain a repository prerequisite. Publishing is the
+last command; every earlier failure leaves it unpublished.
 
 ## Local provenance path
 
