@@ -806,6 +806,10 @@
     {
       "path": "bin/session-end-land.sh",
       "reason": "a git-state helper for /session-end that lands the repo on clean, synced main when lossless; operational tooling, not itself an installed capability."
+    },
+    {
+      "path": "docs/superpowers/specs/2026-07-15-objective-isolation-disposition-design.md",
+      "reason": "a point-in-time brainstorming spec for the objective-isolation + deliverable-disposition gates on the issue work loop; planning artifact, not itself a capability."
     }
   ],
   "external_upstreams": [
