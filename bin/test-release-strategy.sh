@@ -158,6 +158,8 @@ with open(config_path, encoding="utf-8") as fh:
 with open(manifest_path, encoding="utf-8") as fh:
     manifest = json.load(fh)
 
+assert fixture["release_type"] == "simple", fixture
+assert fixture["custom_post_processing"] is False, fixture
 changed = {
     path
     for path in fixture["before"] | fixture["after"]

@@ -608,7 +608,7 @@
       "name": "release-captain",
       "type": "skill",
       "path": "skills/release-captain",
-      "description": "Use for ANY request to release, cut a release, \"do a release\", decide whether/what/when to release, or \"take care of the release\" for accumulated work — this is THE release-decision skill and it owns that decision. Gathers evidence since the latest tag, recommends a version class and timing with rationale and confidence, then (only on explicit per-step human approval) drives the configured release strategy to create or update a Release Please release PR. It NEVER cuts the release itself — never bumps VERSION, edits CHANGELOG, commits, tags, publishes, or deploys; those are human-authorized publication. It invokes package-release-integrity as its safety check, and is not replaced by it. Use even when the request sounds like \"just handle it\".",
+      "description": "Use for ANY request to release, cut a release, \"do a release\", decide whether/what/when to release, or \"take care of the release\" for accumulated work — this is THE release-decision skill and it owns that decision. Gathers evidence since the latest tag, recommends a version class and timing with rationale and confidence, then (only on explicit per-step human approval) drives the configured release strategy to create or update a Release Please release PR. It NEVER cuts the release itself — never directly edits the sole checked-in version authority (`version.txt`) or CHANGELOG, commits, merges, tags, publishes, or deploys; those are human-authorized publication. It invokes package-release-integrity as its safety check, and is not replaced by it. Use even when the request sounds like \"just handle it\".",
       "provider": {
         "claude": "installed",
         "codex": "manual"
@@ -640,7 +640,7 @@
       "name": "local-release-please",
       "type": "script",
       "path": "bin/release-strategies/local-release-please.sh",
-      "description": "Local Release Please ARTIFACT strategy for the release-captain seam (L4 of #116). Release Please is the artifact authority (VERSION + CHANGELOG + release-PR contents); this strategy assembles `release-please release-pr`: dry-run previews read-only (proves zero mutation), apply creates/updates the release PR and requires an ephemeral --approval-token passed by the orchestrator (no token => hard stop, no invocation). It never merges, tags, creates a GitHub Release, publishes, or deploys — publication stays an explicitly human-authorized action. release-please binary resolved via RELEASE_PLEASE_CMD for test stubbing.",
+      "description": "Local Release Please ARTIFACT strategy for the release-captain seam (L4 of #116). `version.txt` is the sole checked-in version authority; Release Please's simple release type proposes its update alongside CHANGELOG and the release-PR contents. This strategy assembles `release-please release-pr`: dry-run previews read-only (proves zero mutation), apply creates/updates the release PR and requires an ephemeral --approval-token passed by the orchestrator (no token => hard stop, no invocation). It never merges, tags, creates a GitHub Release, publishes, or deploys — publication stays an explicitly human-authorized action. release-please binary resolved via RELEASE_PLEASE_CMD for test stubbing.",
       "provider": {
         "claude": "manual",
         "codex": "manual"
@@ -689,7 +689,7 @@
     },
     {
       "path": "bin/release-manifest.py",
-      "reason": "the release-manifest generator itself; machinery invoked by bin/release.sh, not a capability an agent invokes for its own sake (same precedent as bin/check-inventory.py)."
+      "reason": "the standalone release-manifest generator; it emits or verifies a deterministic provenance manifest only when explicitly invoked, and is internal machinery rather than a capability an agent invokes for its own sake (same precedent as bin/check-inventory.py)."
     },
     {
       "path": "bin/check-private-info.sh",
