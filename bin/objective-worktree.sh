@@ -19,7 +19,8 @@
 #   BLOCKED: branch-exists        branch already exists
 #   BLOCKED: worktree-occupied    worktree path already exists
 #   ERROR: <reason>               not a git repo, no origin
-# followed by human-readable detail.
+# The verdict token is the only stdout line; any human-readable detail is
+# written to stderr.
 #
 # Exit codes: 0 READY · 10 BLOCKED · 1 ERROR · 64 usage error
 #
