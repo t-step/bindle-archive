@@ -653,6 +653,22 @@
       "version_introduced": "0.5.0"
     },
     {
+      "name": "release-please-sync",
+      "type": "script",
+      "path": "bin/release-please-sync.sh",
+      "description": "Syncs VERSION and regenerates RELEASE-MANIFEST.json onto the open Release Please release-PR branch (issue #137): Release Please's extra-files mechanism cannot update Bindle's bare, unannotated VERSION file, so this closes that gap by reading the version Release Please already computed from the PR branch's .release-please-manifest.json and writing it into VERSION, then regenerating RELEASE-MANIFEST.json via bin/release-manifest.py, in one follow-up commit pushed onto the same PR branch. dry-run previews read-only; apply requires an ephemeral --approval-token (no token => hard stop). Never creates a new PR, never touches main, never tags, merges, or publishes.",
+      "provider": {
+        "claude": "manual",
+        "codex": "manual"
+      },
+      "maturity": "tested",
+      "mutation": [
+        "network",
+        "external"
+      ],
+      "version_introduced": "0.6.0"
+    },
+    {
       "name": "issue-work-loop",
       "type": "skill",
       "path": "skills/issue-work-loop",

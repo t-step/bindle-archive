@@ -33,6 +33,7 @@ test:
 	bin/test-release-evidence.sh
 	bin/test-session-end-land.sh
 	bin/test-release-strategy.sh
+	bin/test-release-please-sync.sh
 
 install:
 	bin/install.sh
