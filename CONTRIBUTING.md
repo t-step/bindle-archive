@@ -77,10 +77,9 @@ finished.
 ## Versioning & release
 
 Toolkit-level SemVer (see the README): a new skill/agent/command is a **minor**
-bump. Jot changes under `## [Unreleased]` in [CHANGELOG.md](CHANGELOG.md) as you
-go; `bin/release.sh` cuts the release (and never pushes — you review first),
-producing a deterministic manifest of what shipped — see
-[docs/release-manifest.md](docs/release-manifest.md).
+bump. Release Please assembles the changelog and the version bump on the release
+PR from your Conventional Commit messages; `bin/release.sh` remains a
+legacy/fallback local cutter (and never pushes — you review first).
 
 ## Before you call it done
 

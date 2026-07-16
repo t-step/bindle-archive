@@ -28,12 +28,12 @@ test:
 	bin/test-session-context.sh
 	bin/test-session-hooks.sh
 	bin/test-install-session-hooks.sh
-	bin/test-release-manifest.sh
 	bin/test-package-release-integrity.sh
 	bin/test-release-evidence.sh
 	bin/test-session-end-land.sh
 	bin/test-objective-worktree.sh
 	bin/test-release-strategy.sh
+	bin/test-release-please-sync.sh
 
 install:
 	bin/install.sh

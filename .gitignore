@@ -22,3 +22,7 @@ personal-notes/
 .env
 .env.*
 !.env.example
+
+# Scratch git worktrees created by release tooling (bin/release-please-sync.sh)
+# and ad hoc local work — never committed.
+.worktrees/
