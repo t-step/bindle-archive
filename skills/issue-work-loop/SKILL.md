@@ -144,11 +144,19 @@ structurally in Phase 3 below, and holds at every other phase too.
    one `AskUserQuestion` whose options are only the actions valid for this
    deliverable and state — derived from the Phase-2 deliverable, the real
    verification state, existing PR/issue state, and the explicit authority
-   granted — with the recommended action marked and a follow-up only when the
-   choice genuinely needs one (draft vs. ready PR; close with or without a
-   comment). No answer = leave the deliverable as-is, perform no external
-   mutation, and report disposition undecided. Prefer an explanatory comment
-   on issue closure; allow no-comment closure only on an explicit choice or
+   granted — marking a recommended action only when it is safe under the
+   authority actually granted: when only implementation authority was
+   granted, the recommended default is the option that performs no external
+   mutation (leave the deliverable as-is), and every externally-mutating
+   option (push, PR creation/update, issue comment, close, merge, release)
+   stays offered but unmarked; mark one of those recommended only when its
+   specific grant is already in hand (selecting it in the decision is itself
+   what supplies the grant, so it need not be pre-marked to be chosen). Ask a
+   follow-up only when the chosen action genuinely needs one (draft vs. ready
+   PR; close with or without a comment). No answer = leave the deliverable
+   as-is, perform no external mutation, and report disposition undecided.
+   Prefer an explanatory comment on issue closure; allow no-comment closure
+   only on an explicit choice or
    when there is genuinely no useful explanation to preserve.
 
 ## Boundaries / red flags
