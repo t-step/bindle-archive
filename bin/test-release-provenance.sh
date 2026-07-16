@@ -401,6 +401,51 @@ run "$PY" "$HELPER" generate --root "$VALID" --tag v0.5.1 \
   --evidence "$EVIDENCE" --output-dir "$VALID"
 expect_rc "generation rejects output equal to repo root" 1
 
+run "$PY" - "$HELPER" "$VALID" "$EVIDENCE" "$TMP" <<'PY'
+import importlib.util
+from pathlib import Path
+import sys
+
+helper, root, evidence, tmp = map(Path, sys.argv[1:])
+spec = importlib.util.spec_from_file_location("rp", helper)
+rp = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(rp)
+parent = tmp / "missing-output-parent"
+parent.mkdir()
+output = parent / "missing-output"
+saved = tmp / "missing-output-parent-saved"
+redirect = root / "missing-output-redirect"
+attempted = []
+
+def attempt_swap(index, component):
+    if component == parent.name:
+        attempted.append(component)
+        parent.rename(saved)
+        parent.symlink_to(redirect, target_is_directory=True)
+
+try:
+    rp.generate(root, "v0.5.1", evidence, output,
+                before_component_open=attempt_swap)
+except ValueError as exc:
+    assert str(exc) == "output directory must already exist"
+else:
+    raise AssertionError("nonexistent output directory was accepted")
+assert attempted == []
+assert not output.exists()
+assert not saved.exists()
+assert not redirect.exists()
+print("nonexistent output rejected before race seam")
+PY
+expect_rc "nonexistent output cannot trigger containment-creating race" 0
+
+NOT_DIRECTORY="$TMP/not-an-output-directory"
+printf '%s\n' not-a-directory >"$NOT_DIRECTORY"
+run "$PY" "$HELPER" generate --root "$VALID" --tag v0.5.1 \
+  --evidence "$EVIDENCE" --output-dir "$NOT_DIRECTORY"
+expect_rc "generation rejects non-directory output path" 1
+expect_exact "non-directory output has stable reason" \
+  "output directory must be a directory"
+
 printf '%s\n' stale-json >"$ARTIFACT"
 printf '%s\n' stale-checksum >"$CHECKSUM"
 run "$PY" "$HELPER" generate --root "$VALID" --tag v0.5.1 \
@@ -487,6 +532,7 @@ for name in (rp.ARTIFACT_NAME, rp.CHECKSUM_NAME):
     assert not (later_redirect / "out" / name).exists(), name
 
 failure_output = tmp / "post-open-failure"
+failure_output.mkdir()
 captured = []
 def fail_after_open(directory_fd):
     captured.append(directory_fd)
@@ -624,6 +670,7 @@ mkfixture "$INVALID_SEMVER"
 git -C "$INVALID_SEMVER" tag v0.5.0-01 v0.5.0
 invalid_semver_commit="$(git -C "$INVALID_SEMVER" rev-parse 'v0.5.1^{commit}')"
 sed "s/$expected_commit/$invalid_semver_commit/g" "$EVIDENCE" >"$TMP/invalid-semver-evidence.json"
+mkdir -p "$TMP/invalid-semver-out"
 run "$PY" "$HELPER" generate --root "$INVALID_SEMVER" --tag v0.5.1 \
   --evidence "$TMP/invalid-semver-evidence.json" \
   --output-dir "$TMP/invalid-semver-out"

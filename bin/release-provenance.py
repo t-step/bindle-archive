@@ -467,15 +467,14 @@ def _open_canonical_directory(
             os.close(current_fd)
 
 
-def _pin_output_directory(
-    root: Path, output_dir: Path, before_component_open=None
-) -> tuple[Path, int]:
-    output_dir.mkdir(parents=True, exist_ok=True)
-    resolved = output_dir.resolve()
-    _require_outside_repo(root, resolved)
-    return resolved, _open_canonical_directory(
-        resolved, before_component_open
-    )
+def _existing_output_directory(root: Path, output_dir: Path) -> Path:
+    try:
+        resolved = output_dir.resolve(strict=True)
+    except FileNotFoundError:
+        raise ValueError("output directory must already exist") from None
+    if not resolved.is_dir():
+        raise ValueError("output directory must be a directory")
+    return _require_outside_repo(root, resolved)
 
 
 def _validate_asset_target_at(directory_fd: int, name: str) -> None:
@@ -562,7 +561,7 @@ def generate(
     after_output_open=None,
 ) -> tuple[Path, Path]:
     root = root.resolve()
-    output_dir = _outside_repo(root, Path(output_dir))
+    output_dir = Path(output_dir)
     evidence_payload = Path(evidence_path).read_bytes()
     evidence = _parse_json(evidence_payload.decode("utf-8"), "evidence")
     if evidence_payload != _json_bytes(evidence):
@@ -571,8 +570,9 @@ def generate(
     payload = _json_bytes(document)
     digest = hashlib.sha256(payload).hexdigest()
     checksum = f"{digest}  {ARTIFACT_NAME}\n".encode("ascii")
-    output_dir, directory_fd = _pin_output_directory(
-        root, output_dir, before_component_open
+    output_dir = _existing_output_directory(root, output_dir)
+    directory_fd = _open_canonical_directory(
+        output_dir, before_component_open
     )
     try:
         if after_output_open is not None:
