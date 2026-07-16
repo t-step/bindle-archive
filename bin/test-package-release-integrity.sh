@@ -36,6 +36,32 @@ expect_rc() {
     fail=$((fail + 1))
   fi
 }
+expect_publication_json() {
+  local desc="$1" want="$2"
+  if printf '%s' "$OUT" | python3 -c '
+import json
+import sys
+
+got = json.load(sys.stdin)
+want = json.loads(sys.argv[1])
+projected = {
+    "mode": got.get("mode"),
+    "verdicts": [
+        {"check": verdict.get("check"), "verdict": verdict.get("verdict")}
+        for verdict in got.get("verdicts", [])
+    ],
+    "ready": got.get("ready"),
+}
+raise SystemExit(0 if set(got) == set(want) and projected == want else 1)
+' "$want"; then
+    echo "  ok: $desc"
+    pass=$((pass + 1))
+  else
+    echo "  FAIL: $desc (unexpected publication JSON)"
+    printf '%s\n' "$OUT" | sed 's/^/    | /'
+    fail=$((fail + 1))
+  fi
+}
 
 echo "version-source consistency:"
 run python3 "$HELPER" check --repo "$FIX/consistent"
@@ -100,6 +126,37 @@ expect_contains "domi-governed -> defer banner" "DomI authoritative"
 expect_rc "domi-governed -> rc 0 (defer is not a failure)" 0
 run python3 "$HELPER" check --repo "$FIX/consistent"
 expect_contains "plain repo -> portable mode" "mode: portable"
+
+echo "strict publication check:"
+PASS_REPORT='{"mode":"publication","verdicts":[{"check":"version_source_consistency","verdict":"pass"},{"check":"tag_consistency","verdict":"pass"},{"check":"changelog_present","verdict":"pass"}],"ready":true}'
+TAG_FAIL_REPORT='{"mode":"publication","verdicts":[{"check":"version_source_consistency","verdict":"pass"},{"check":"tag_consistency","verdict":"fail"},{"check":"changelog_present","verdict":"pass"}],"ready":false}'
+CHANGELOG_FAIL_REPORT='{"mode":"publication","verdicts":[{"check":"version_source_consistency","verdict":"pass"},{"check":"tag_consistency","verdict":"pass"},{"check":"changelog_present","verdict":"fail"}],"ready":false}'
+DEFER_REPORT='{"mode":"defer","verdicts":[],"ready":false}'
+
+run python3 "$HELPER" publication-check --repo "$FIX/version-file" --tag v1.2.0 --json
+expect_publication_json "matching version.txt tag -> exact ready report" "$PASS_REPORT"
+expect_rc "matching version.txt tag -> rc 0" 0
+
+run python3 "$HELPER" publication-check --repo "$FIX/version-file" --tag v1.1.0 --json
+expect_publication_json "mismatched tag -> strict not-ready report" "$TAG_FAIL_REPORT"
+expect_rc "mismatched tag -> publication rc 1" 1
+
+run python3 "$HELPER" publication-check --repo "$FIX/missing-changelog" --tag v1.2.0 --json
+expect_publication_json "missing changelog -> strict not-ready report" "$CHANGELOG_FAIL_REPORT"
+expect_rc "missing changelog -> publication rc 1" 1
+
+TMP_ROOT="$(mktemp -d "${TMPDIR:-/tmp}/bindle-publication-test.XXXXXX")"
+trap 'rm -rf "$TMP_ROOT"' EXIT
+mkdir -p "$TMP_ROOT/malformed-version"
+printf '%s\n' 'not-semver' >"$TMP_ROOT/malformed-version/version.txt"
+printf '%s\n' '# Changelog' '## [Unreleased]' >"$TMP_ROOT/malformed-version/CHANGELOG.md"
+run python3 "$HELPER" publication-check --repo "$TMP_ROOT/malformed-version" --tag v1.2.0 --json
+expect_publication_json "malformed version.txt -> strict not-ready report" "$TAG_FAIL_REPORT"
+expect_rc "malformed version.txt -> publication rc 1" 1
+
+run python3 "$HELPER" publication-check --repo "$FIX/domi-governed" --tag v1.2.0 --json
+expect_publication_json "DomI authority -> defer not-ready report" "$DEFER_REPORT"
+expect_rc "DomI authority -> publication rc 1" 1
 
 echo "test-package-release-integrity: $pass passed, $fail failed"
 [ "$fail" -eq 0 ]

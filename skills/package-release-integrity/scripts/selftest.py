@@ -8,6 +8,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import release_integrity as ri
 
 _fail = 0
+FIXTURES = Path(__file__).resolve().parent.parent / "tests" / "fixtures"
 
 
 def check(desc, got, want):
@@ -47,6 +48,25 @@ check("pre patch->patch", ri.required_movement("patch", True), "patch")
 # data-only never moves the package version
 check("data-only->none post", ri.required_movement("data-only", False), None)
 check("data-only->none pre", ri.required_movement("data-only", True), None)
+
+# version.txt discovery and strict publication mode
+check(
+    "discover root version.txt",
+    ri.discover_version_sources(FIXTURES / "version-file"),
+    {"file:version.txt": "1.2.0"},
+)
+publication = ri.run_publication_check(FIXTURES / "version-file", "v1.2.0")
+check("publication mode", publication["mode"], "publication")
+check(
+    "publication checks",
+    [(v["check"], v["verdict"]) for v in publication["verdicts"]],
+    [
+        ("version_source_consistency", "pass"),
+        ("tag_consistency", "pass"),
+        ("changelog_present", "pass"),
+    ],
+)
+check("publication ready", publication["ready"], True)
 
 print(f"selftest: {'PASS' if _fail == 0 else 'FAIL'} ({_fail} failing)")
 sys.exit(1 if _fail else 0)

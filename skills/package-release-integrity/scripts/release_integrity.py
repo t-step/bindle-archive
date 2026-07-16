@@ -64,11 +64,15 @@ def _verdict(check, verdict, detail):
 def discover_version_sources(repo):
     """Find declared package versions. Maps a source label -> raw version str.
 
-    Sources: pyproject.toml [project].version, [tool.poetry].version, and any
-    top-level package `__init__.py` defining `__version__`.
+    Sources: root version.txt, pyproject.toml [project].version,
+    [tool.poetry].version, and any top-level package `__init__.py` defining
+    `__version__`.
     """
     repo = Path(repo)
     sources = {}
+    version_file = repo / "version.txt"
+    if version_file.is_file():
+        sources["file:version.txt"] = version_file.read_text().strip()
     pyproject = repo / "pyproject.toml"
     if pyproject.is_file():
         data = tomllib.loads(pyproject.read_text())
@@ -287,6 +291,24 @@ def run_check(repo, args):
     return {"mode": "portable", "verdicts": verdicts, "ready": ready}
 
 
+def run_publication_check(repo, tag):
+    repo = Path(repo)
+    if detect_domi_authority(repo):
+        return {"mode": "defer", "verdicts": [], "ready": False}
+    sources = discover_version_sources(repo)
+    version = resolved_package_version(sources)
+    verdicts = [
+        check_version_source_consistency(sources),
+        check_tag_consistency(version, tag),
+        check_changelog_present(repo, version, True),
+    ]
+    return {
+        "mode": "publication",
+        "verdicts": verdicts,
+        "ready": all(v["verdict"] == "pass" for v in verdicts),
+    }
+
+
 def _print_report(report, as_json):
     if as_json:
         print(json.dumps(report, indent=2))
@@ -321,6 +343,13 @@ def main(argv=None):
     c.add_argument("--prev-version", default=None, help="previously released version")
     c.add_argument("--build-cmd", default=None, help="repo build/metadata command")
     c.add_argument("--test-cmd", default=None, help="repo verification command")
+    publication = sub.add_parser(
+        "publication-check",
+        help="run strict mechanical publication checks on a repo",
+    )
+    publication.add_argument("--repo", default=".", help="path to the package repo")
+    publication.add_argument("--tag", required=True, help="release tag")
+    publication.add_argument("--json", action="store_true", help="emit JSON")
     args = p.parse_args(argv)
     if args.command == "check":
         report = run_check(args.repo, args)
@@ -330,6 +359,10 @@ def main(argv=None):
             return 0
         # Exit non-zero only on a hard fail; 'uncertain' does not fail.
         return 1 if any(v["verdict"] == "fail" for v in report["verdicts"]) else 0
+    if args.command == "publication-check":
+        report = run_publication_check(args.repo, args.tag)
+        _print_report(report, args.json)
+        return 0 if report["ready"] is True else 1
     return 2
 
 
