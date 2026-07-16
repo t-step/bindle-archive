@@ -44,15 +44,7 @@ import sys
 
 got = json.load(sys.stdin)
 want = json.loads(sys.argv[1])
-projected = {
-    "mode": got.get("mode"),
-    "verdicts": [
-        {"check": verdict.get("check"), "verdict": verdict.get("verdict")}
-        for verdict in got.get("verdicts", [])
-    ],
-    "ready": got.get("ready"),
-}
-raise SystemExit(0 if set(got) == set(want) and projected == want else 1)
+raise SystemExit(0 if got == want else 1)
 ' "$want"; then
     echo "  ok: $desc"
     pass=$((pass + 1))
@@ -131,6 +123,7 @@ echo "strict publication check:"
 PASS_REPORT='{"mode":"publication","verdicts":[{"check":"version_source_consistency","verdict":"pass"},{"check":"tag_consistency","verdict":"pass"},{"check":"changelog_present","verdict":"pass"}],"ready":true}'
 TAG_FAIL_REPORT='{"mode":"publication","verdicts":[{"check":"version_source_consistency","verdict":"pass"},{"check":"tag_consistency","verdict":"fail"},{"check":"changelog_present","verdict":"pass"}],"ready":false}'
 CHANGELOG_FAIL_REPORT='{"mode":"publication","verdicts":[{"check":"version_source_consistency","verdict":"pass"},{"check":"tag_consistency","verdict":"pass"},{"check":"changelog_present","verdict":"fail"}],"ready":false}'
+VERSION_FAIL_REPORT='{"mode":"publication","verdicts":[{"check":"version_source_consistency","verdict":"fail"},{"check":"tag_consistency","verdict":"pass"},{"check":"changelog_present","verdict":"pass"}],"ready":false}'
 DEFER_REPORT='{"mode":"defer","verdicts":[],"ready":false}'
 
 run python3 "$HELPER" publication-check --repo "$FIX/version-file" --tag v1.2.0 --json
@@ -150,8 +143,8 @@ trap 'rm -rf "$TMP_ROOT"' EXIT
 mkdir -p "$TMP_ROOT/malformed-version"
 printf '%s\n' 'not-semver' >"$TMP_ROOT/malformed-version/version.txt"
 printf '%s\n' '# Changelog' '## [Unreleased]' >"$TMP_ROOT/malformed-version/CHANGELOG.md"
-run python3 "$HELPER" publication-check --repo "$TMP_ROOT/malformed-version" --tag v1.2.0 --json
-expect_publication_json "malformed version.txt -> strict not-ready report" "$TAG_FAIL_REPORT"
+run python3 "$HELPER" publication-check --repo "$TMP_ROOT/malformed-version" --tag vnot-semver --json
+expect_publication_json "matching malformed version.txt tag -> strict not-ready report" "$VERSION_FAIL_REPORT"
 expect_rc "malformed version.txt -> publication rc 1" 1
 
 run python3 "$HELPER" publication-check --repo "$FIX/domi-governed" --tag v1.2.0 --json

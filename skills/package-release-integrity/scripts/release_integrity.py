@@ -297,10 +297,21 @@ def run_publication_check(repo, tag):
         return {"mode": "defer", "verdicts": [], "ready": False}
     sources = discover_version_sources(repo)
     version = resolved_package_version(sources)
+    version_source = check_version_source_consistency(sources)
+    if version_source["verdict"] == "pass" and parse_version(version) is None:
+        version_source = _verdict(
+            "version_source_consistency",
+            "fail",
+            f"resolved version {version!r} is not bare SemVer",
+        )
     verdicts = [
-        check_version_source_consistency(sources),
+        version_source,
         check_tag_consistency(version, tag),
         check_changelog_present(repo, version, True),
+    ]
+    verdicts = [
+        {"check": verdict["check"], "verdict": verdict["verdict"]}
+        for verdict in verdicts
     ]
     return {
         "mode": "publication",

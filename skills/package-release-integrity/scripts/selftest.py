@@ -56,17 +56,19 @@ check(
     {"file:version.txt": "1.2.0"},
 )
 publication = ri.run_publication_check(FIXTURES / "version-file", "v1.2.0")
-check("publication mode", publication["mode"], "publication")
 check(
-    "publication checks",
-    [(v["check"], v["verdict"]) for v in publication["verdicts"]],
-    [
-        ("version_source_consistency", "pass"),
-        ("tag_consistency", "pass"),
-        ("changelog_present", "pass"),
-    ],
+    "publication report has exact public shape",
+    publication,
+    {
+        "mode": "publication",
+        "verdicts": [
+            {"check": "version_source_consistency", "verdict": "pass"},
+            {"check": "tag_consistency", "verdict": "pass"},
+            {"check": "changelog_present", "verdict": "pass"},
+        ],
+        "ready": True,
+    },
 )
-check("publication ready", publication["ready"], True)
 
 print(f"selftest: {'PASS' if _fail == 0 else 'FAIL'} ({_fail} failing)")
 sys.exit(1 if _fail else 0)
