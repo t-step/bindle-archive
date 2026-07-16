@@ -436,7 +436,9 @@ mkfixture "$RACE_REPO"
 race_commit="$(git -C "$RACE_REPO" rev-parse 'v0.5.1^{commit}')"
 sed "s/$expected_commit/$race_commit/g" "$EVIDENCE" >"$RACE_EVIDENCE"
 run "$PY" - "$HELPER" "$RACE_REPO" "$RACE_EVIDENCE" "$TMP" <<'PY'
+import errno
 import importlib.util
+import os
 from pathlib import Path
 import sys
 
@@ -451,22 +453,62 @@ saved_parent = tmp / "race-parent-saved"
 redirect = root / "race-target"
 (redirect / "out").mkdir(parents=True)
 
-def swap_parent():
-    parent.rename(saved_parent)
-    parent.symlink_to(redirect, target_is_directory=True)
+def swap_ancestor(index, component):
+    if component == parent.name:
+        parent.rename(saved_parent)
+        parent.symlink_to(redirect, target_is_directory=True)
 
 try:
     rp.generate(root, "v0.5.1", evidence, output,
-                before_output_open=swap_parent)
+                before_component_open=swap_ancestor)
 except (OSError, ValueError):
     pass
 else:
     raise AssertionError("parent-directory swap was accepted")
 for name in (rp.ARTIFACT_NAME, rp.CHECKSUM_NAME):
     assert not (redirect / "out" / name).exists(), name
-print("parent swap rejected")
+
+later_parent = tmp / "later-race-parent"
+later_output = later_parent / "out"
+later_output.mkdir(parents=True)
+later_saved = tmp / "later-race-parent-saved"
+later_redirect = root / "later-race-target"
+(later_redirect / "out").mkdir(parents=True)
+
+def swap_after_open(directory_fd):
+    os.fstat(directory_fd)
+    later_parent.rename(later_saved)
+    later_parent.symlink_to(later_redirect, target_is_directory=True)
+
+rp.generate(root, "v0.5.1", evidence, later_output,
+            after_output_open=swap_after_open)
+for name in (rp.ARTIFACT_NAME, rp.CHECKSUM_NAME):
+    assert (later_saved / "out" / name).is_file(), name
+    assert not (later_redirect / "out" / name).exists(), name
+
+failure_output = tmp / "post-open-failure"
+captured = []
+def fail_after_open(directory_fd):
+    captured.append(directory_fd)
+    raise RuntimeError("injected validation failure")
+
+try:
+    rp.generate(root, "v0.5.1", evidence, failure_output,
+                after_output_open=fail_after_open)
+except RuntimeError as exc:
+    assert str(exc) == "injected validation failure"
+else:
+    raise AssertionError("injected post-open failure was ignored")
+assert len(captured) == 1
+try:
+    os.fstat(captured[0])
+except OSError as exc:
+    assert exc.errno == errno.EBADF
+else:
+    raise AssertionError("directory fd leaked after post-open failure")
+print("directory-fd race and cleanup boundaries hold")
 PY
-expect_rc "parent-directory swap cannot redirect asset writes into repo" 0
+expect_rc "component-walk races and post-open cleanup are fail-safe" 0
 run test -z "$(git -C "$RACE_REPO" status --porcelain=v1 --untracked-files=all)"
 expect_rc "parent-directory race leaves repository status unchanged" 0
 

@@ -417,6 +417,10 @@ def _is_semver_tag(tag: str) -> bool:
 def _outside_repo(root: Path, output_dir: Path) -> Path:
     root = root.resolve()
     output_dir = output_dir.resolve()
+    return _require_outside_repo(root, output_dir)
+
+
+def _require_outside_repo(root: Path, output_dir: Path) -> Path:
     if output_dir == root or root in output_dir.parents:
         raise ValueError("output directory must be outside repository root")
     return output_dir
@@ -430,23 +434,48 @@ def _safe_directory_flags() -> int:
             "safe directory-fd writes unsupported: missing "
             + ", ".join(missing)
         )
+    if os.open not in os.supports_dir_fd:
+        raise OSError("safe directory-fd writes unsupported: open has no dir_fd")
     return os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW
 
 
+def _open_canonical_directory(
+    resolved: Path, before_component_open=None
+) -> int:
+    if not resolved.is_absolute() or not resolved.anchor:
+        raise ValueError("output directory must resolve to an absolute path")
+    flags = _safe_directory_flags()
+    current_fd = os.open(resolved.anchor, flags)
+    try:
+        for index, component in enumerate(resolved.parts[1:]):
+            if before_component_open is not None:
+                before_component_open(index, component)
+            next_fd = os.open(component, flags, dir_fd=current_fd)
+            previous_fd = current_fd
+            current_fd = next_fd
+            try:
+                os.close(previous_fd)
+            except BaseException:
+                os.close(current_fd)
+                current_fd = None
+                raise
+        result = current_fd
+        current_fd = None
+        return result
+    finally:
+        if current_fd is not None:
+            os.close(current_fd)
+
+
 def _pin_output_directory(
-    root: Path, output_dir: Path, before_open=None
+    root: Path, output_dir: Path, before_component_open=None
 ) -> tuple[Path, int]:
     output_dir.mkdir(parents=True, exist_ok=True)
-    resolved = _outside_repo(root, output_dir)
-    expected = os.stat(resolved, follow_symlinks=False)
-    if before_open is not None:
-        before_open()
-    directory_fd = os.open(resolved, _safe_directory_flags())
-    actual = os.fstat(directory_fd)
-    if (actual.st_dev, actual.st_ino) != (expected.st_dev, expected.st_ino):
-        os.close(directory_fd)
-        raise ValueError("output directory changed during validation")
-    return resolved, directory_fd
+    resolved = output_dir.resolve()
+    _require_outside_repo(root, resolved)
+    return resolved, _open_canonical_directory(
+        resolved, before_component_open
+    )
 
 
 def _validate_asset_target_at(directory_fd: int, name: str) -> None:
@@ -529,7 +558,8 @@ def generate(
     tag: str,
     evidence_path: Path,
     output_dir: Path,
-    before_output_open=None,
+    before_component_open=None,
+    after_output_open=None,
 ) -> tuple[Path, Path]:
     root = root.resolve()
     output_dir = _outside_repo(root, Path(output_dir))
@@ -542,9 +572,11 @@ def generate(
     digest = hashlib.sha256(payload).hexdigest()
     checksum = f"{digest}  {ARTIFACT_NAME}\n".encode("ascii")
     output_dir, directory_fd = _pin_output_directory(
-        root, output_dir, before_output_open
+        root, output_dir, before_component_open
     )
     try:
+        if after_output_open is not None:
+            after_output_open(directory_fd)
         _validate_asset_target_at(directory_fd, ARTIFACT_NAME)
         _validate_asset_target_at(directory_fd, CHECKSUM_NAME)
         _atomic_write_at(directory_fd, ARTIFACT_NAME, payload)
