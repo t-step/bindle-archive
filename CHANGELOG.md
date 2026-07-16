@@ -15,6 +15,23 @@ Conventional Commit messages at release time — there is no hand-maintained
 Unreleased section. (`bin/release.sh` survives only as legacy/fallback
 publication tooling and does not regenerate these entries.)
 
+## [0.6.0](https://github.com/thomas-estep/bindle/compare/v0.5.0...v0.6.0) (2026-07-16)
+
+
+### Features
+
+* **#137:** release-please-sync — auto-sync VERSION + RELEASE-MANIFEST.json onto the RP release PR ([3024b40](https://github.com/thomas-estep/bindle/commit/3024b405d54048c4a352891c537c96a6255716bf))
+* objective-worktree.sh — isolate mutating work on fresh origin/main ([3619829](https://github.com/thomas-estep/bindle/commit/36198297c2f4a2a4c14a5402a0866ebcc8fe5097))
+
+
+### Bug Fixes
+
+* **#137:** retire RELEASE-MANIFEST.json; release-please-sync bumps VERSION only ([53c3a89](https://github.com/thomas-estep/bindle/commit/53c3a89acd330bc373615ea17f11b36a44c3ccdf))
+* drop the no-op VERSION extra-files entry from release-please-config.json ([adf0f94](https://github.com/thomas-estep/bindle/commit/adf0f94fb2cd173213f1be79f895e285991a8cdc))
+* **issue-work-loop:** key Phase-6 recommended default to granted authority ([#147](https://github.com/thomas-estep/bindle/issues/147)) ([2a8defc](https://github.com/thomas-estep/bindle/commit/2a8defcaec0092d3434152aa28307bb645d475ae))
+* objective-worktree.sh resolves primary checkout; cover from-worktree + origin-unavailable ([c448be5](https://github.com/thomas-estep/bindle/commit/c448be577853d8820efa5c298b51254c23197d1c))
+* resolve [#145](https://github.com/thomas-estep/bindle/issues/145) follow-up minors ([4ebf66c](https://github.com/thomas-estep/bindle/commit/4ebf66c064a21deeae5530a7942bd3e1c90e9ff0))
+
 ## [0.5.0](https://github.com/thomas-estep/bindle/compare/v0.4.0...v0.5.0) (2026-07-15)
 
 
