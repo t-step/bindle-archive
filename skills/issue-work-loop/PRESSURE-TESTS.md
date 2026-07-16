@@ -290,7 +290,8 @@ invariant held in every rep (no option self-executes; the per-option authority
 accounting was correct 30/30) — but the safest recommended default under
 implementation-only authority is "leave as-is," and these reps recommended
 otherwise. This is a candidate wording refinement for the skill's Phase-6
-"recommended action" clause, not a scenario failure.
+"recommended action" clause, not a scenario failure. **Tracked as #147;
+resolved (b) undesirable — see the RED→GREEN campaign below.**
 
 **Safety.** The reps were deliberately stated-plan exercises with a hard
 prohibition on any git write / worktree / filesystem mutation and no
@@ -299,6 +300,50 @@ class (and the prior session's `GIT_DIR`-leak class). A before/after guard on
 the primary checkout (`git for-each-ref` count, HEAD, `core.bare`, worktree
 count, dirty-line count) was **identical** across the whole 30-rep campaign:
 zero repository leakage.
+
+## #147 resolution — recommendation-default fix (RED→GREEN, 2026-07-16)
+
+The recommendation-drift finding above was decided **(b) undesirable**: under
+implementation-only authority the safest recommended default is the
+no-external-mutation option, and marking an as-yet-unauthorized action as
+recommended trains a bad reflex. The Phase-6 "recommended action" clause in
+both `SKILL.md` and `docs/workflows/issue-work-loop.md` was refined to key the
+recommended default to the **authority actually granted** (a conditional on an
+observable predicate, per writing-skills "Match the Form to the Failure" — not
+a prohibition).
+
+**Micro-test (wording isolated; fresh Sonnet subagents, the exact contract
+excerpt injected, no skill install).** Two scenario framings, identical across
+arms:
+
+| Scenario | Arm | n | Recommended = an externally-mutating option (drift) |
+| --- | --- | --- | --- |
+| v1 (stark: each authority denial enumerated) | control (no recommend clause) | 5 | 0/5 |
+| v1 | current wording | 8 | 0/8 |
+| v1 | new wording | 8 | 0/8 |
+| v2 (faithful: "implementation granted, green, no PR yet") | current wording | 10 | **10/10** |
+| v2 | new wording | 10 | **0/10** |
+
+- The **v2** framing (soft authority statement + a live-UI "mark exactly one
+  default" instruction) reproduces the drift decisively — current wording
+  recommended "open PR" in **10/10** reps. The new wording eliminates it
+  (**0/10**), every rep converging on "leave as-is (no external mutation)"
+  with the mutating options still offered but unmarked. Low variance = the
+  wording binds.
+- The **v1** framing (stark per-authority denials) does not surface the drift
+  in any arm — the answer is already obvious — and the new wording causes **no
+  regression** there (8/8 clean, matching control). A no-guidance control
+  confirmed the failure needs the recommend-clause to appear; where it doesn't
+  appear there is nothing to fix.
+- Every flagged match was read by hand (the `RECOMMENDED:` line), not scored by
+  substring alone.
+
+**Still owed (deferred to a fresh post-merge session):** behavioral reps of the
+*installed, edited* skill for PT6/PT9/PT11 (n≥5) — the harness skill index lags
+a mid-session edit (see profile), so those run cleanly only after merge +
+reindex, exactly as the original behavioral campaign did. The micro-test above
+isolates the one changed variable (the clause wording) and is the stronger
+pre-merge gate; the behavioral rerun is confirmation, not the primary evidence.
 
 ## Caveats / still not verified
 
@@ -315,7 +360,9 @@ zero repository leakage.
   (5/5), not by a live round-trip (the operator chose the comment path).
 - The subagent reps are n=5 per scenario with an identical prompt: variance
   was nil on the tested criterion (30/30 pass) but visible on the
-  *recommended* option (the drift finding above).
+  *recommended* option (the drift finding above) — since **resolved** under
+  #147 (the RED→GREEN section above); the new wording removes the variance
+  (0/10 drift on the faithful scenario).
 - **PT3 and PT8** retain their original-session inline-rep evidence (n=1
   each), unchanged this session; they never needed the two blockers because
   each resolves to a plan/option-set a subagent can state directly.

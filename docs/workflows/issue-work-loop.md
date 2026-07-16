@@ -224,9 +224,16 @@ actions actually valid for this deliverable and state — not the full universe
 of git/GitHub actions — derived from: the deliverable named in Phase 2, the
 real implementation and verification state, existing PR/issue state, the
 explicit mutation authority already granted (Section 2), and repository
-instructions. Mark the recommended action when there is a clear one; ask a
-follow-up only when the chosen action genuinely needs one (draft vs. ready
-PR; close with or without a comment).
+instructions. Mark a recommended action only when it is safe under the
+authority actually granted (Section 2): when only implementation authority was
+granted, the recommended default is the option that performs no external
+mutation — leave the deliverable in its current state — while every
+externally-mutating option (push, PR creation/update, issue comment, close,
+merge, release) stays offered but unmarked. Mark such an option recommended
+only when its specific external grant is already in hand; selecting it in the
+decision is itself what supplies the grant, so it need not be pre-marked to be
+chosen. Ask a follow-up only when the chosen action genuinely needs one (draft
+vs. ready PR; close with or without a comment).
 
 **No answer means:** leave the deliverable in its current state; perform no
 push, PR creation, issue mutation, merge, close, release, or publication; and
