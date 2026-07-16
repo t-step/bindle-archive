@@ -430,6 +430,46 @@ for asset in bindle-release-provenance.json bindle-release-provenance.json.sha25
   expect_rc "$asset symlink rejection leaves Git status unchanged" 0
 done
 
+RACE_REPO="$TMP/parent-swap-repo"
+RACE_EVIDENCE="$TMP/parent-swap-evidence.json"
+mkfixture "$RACE_REPO"
+race_commit="$(git -C "$RACE_REPO" rev-parse 'v0.5.1^{commit}')"
+sed "s/$expected_commit/$race_commit/g" "$EVIDENCE" >"$RACE_EVIDENCE"
+run "$PY" - "$HELPER" "$RACE_REPO" "$RACE_EVIDENCE" "$TMP" <<'PY'
+import importlib.util
+from pathlib import Path
+import sys
+
+helper, root, evidence, tmp = map(Path, sys.argv[1:])
+spec = importlib.util.spec_from_file_location("rp", helper)
+rp = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(rp)
+parent = tmp / "race-parent"
+output = parent / "out"
+output.mkdir(parents=True)
+saved_parent = tmp / "race-parent-saved"
+redirect = root / "race-target"
+(redirect / "out").mkdir(parents=True)
+
+def swap_parent():
+    parent.rename(saved_parent)
+    parent.symlink_to(redirect, target_is_directory=True)
+
+try:
+    rp.generate(root, "v0.5.1", evidence, output,
+                before_output_open=swap_parent)
+except (OSError, ValueError):
+    pass
+else:
+    raise AssertionError("parent-directory swap was accepted")
+for name in (rp.ARTIFACT_NAME, rp.CHECKSUM_NAME):
+    assert not (redirect / "out" / name).exists(), name
+print("parent swap rejected")
+PY
+expect_rc "parent-directory swap cannot redirect asset writes into repo" 0
+run test -z "$(git -C "$RACE_REPO" status --porcelain=v1 --untracked-files=all)"
+expect_rc "parent-directory race leaves repository status unchanged" 0
+
 cp "$ARTIFACT" "$TMP/corrupt.json"
 printf 'x' >>"$TMP/corrupt.json"
 run "$PY" "$HELPER" verify --root "$VALID" --tag v0.5.1 \
@@ -481,6 +521,27 @@ expect_rc "duplicate-member evidence fixture is created" 0
 run "$PY" "$HELPER" generate --root "$VALID" --tag v0.5.1 \
   --evidence "$TMP/duplicate-evidence.json" --output-dir "$TMP/duplicate-out"
 expect_rc "generation rejects duplicate evidence members" 1
+
+run "$PY" - "$EVIDENCE" "$TMP" <<'PY'
+import json, pathlib, sys
+source, directory = map(pathlib.Path, sys.argv[1:])
+document = json.loads(source.read_text())
+cases = {
+    "compact": json.dumps(document, sort_keys=True, separators=(",", ":")).encode(),
+    "no-lf": source.read_bytes()[:-1],
+    "reordered": (json.dumps(dict(reversed(list(document.items()))),
+                               indent=2) + "\n").encode(),
+}
+for name, payload in cases.items():
+    (directory / f"evidence-{name}.json").write_bytes(payload)
+PY
+expect_rc "noncanonical evidence fixtures are created" 0
+for case in compact no-lf reordered; do
+  run "$PY" "$HELPER" generate --root "$VALID" --tag v0.5.1 \
+    --evidence "$TMP/evidence-$case.json" \
+    --output-dir "$TMP/evidence-$case-out"
+  expect_rc "generation rejects $case evidence bytes" 1
+done
 
 run "$PY" - "$ARTIFACT" "$TMP" <<'PY'
 import hashlib, json, pathlib, sys

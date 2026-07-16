@@ -6,6 +6,8 @@ import hashlib
 import json
 import os
 import re
+import secrets
+import stat
 import subprocess
 import sys
 import tempfile
@@ -420,13 +422,89 @@ def _outside_repo(root: Path, output_dir: Path) -> Path:
     return output_dir
 
 
-def _validate_asset_target(root: Path, target: Path) -> None:
-    if not target.is_symlink():
+def _safe_directory_flags() -> int:
+    required = ("O_DIRECTORY", "O_NOFOLLOW")
+    missing = [name for name in required if not hasattr(os, name)]
+    if missing:
+        raise OSError(
+            "safe directory-fd writes unsupported: missing "
+            + ", ".join(missing)
+        )
+    return os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW
+
+
+def _pin_output_directory(
+    root: Path, output_dir: Path, before_open=None
+) -> tuple[Path, int]:
+    output_dir.mkdir(parents=True, exist_ok=True)
+    resolved = _outside_repo(root, output_dir)
+    expected = os.stat(resolved, follow_symlinks=False)
+    if before_open is not None:
+        before_open()
+    directory_fd = os.open(resolved, _safe_directory_flags())
+    actual = os.fstat(directory_fd)
+    if (actual.st_dev, actual.st_ino) != (expected.st_dev, expected.st_ino):
+        os.close(directory_fd)
+        raise ValueError("output directory changed during validation")
+    return resolved, directory_fd
+
+
+def _validate_asset_target_at(directory_fd: int, name: str) -> None:
+    try:
+        target = os.stat(name, dir_fd=directory_fd, follow_symlinks=False)
+    except FileNotFoundError:
         return
-    resolved = target.resolve()
-    if resolved == root or root in resolved.parents:
-        raise ValueError(f"{target.name}: symlink target resolves inside repository")
-    raise ValueError(f"{target.name}: asset target must not be a symlink")
+    if stat.S_ISLNK(target.st_mode):
+        raise ValueError(f"{name}: asset target must not be a symlink")
+
+
+def _write_all(descriptor: int, content: bytes) -> None:
+    remaining = memoryview(content)
+    while remaining:
+        written = os.write(descriptor, remaining)
+        if written == 0:
+            raise OSError("short write while creating release asset")
+        remaining = remaining[written:]
+
+
+def _atomic_write_at(directory_fd: int, name: str, content: bytes) -> None:
+    if not hasattr(os, "O_NOFOLLOW"):
+        raise OSError("safe directory-fd writes unsupported: missing O_NOFOLLOW")
+    flags = os.O_CREAT | os.O_EXCL | os.O_WRONLY | os.O_NOFOLLOW
+    temporary = None
+    descriptor = None
+    for _ in range(100):
+        candidate = f".{name}.{secrets.token_hex(12)}.tmp"
+        try:
+            descriptor = os.open(
+                candidate, flags, 0o600, dir_fd=directory_fd
+            )
+            temporary = candidate
+            break
+        except FileExistsError:
+            continue
+    if descriptor is None or temporary is None:
+        raise OSError(f"{name}: could not create unique temporary file")
+    try:
+        _write_all(descriptor, content)
+        os.fsync(descriptor)
+        os.close(descriptor)
+        descriptor = None
+        os.replace(
+            temporary,
+            name,
+            src_dir_fd=directory_fd,
+            dst_dir_fd=directory_fd,
+        )
+        temporary = None
+    finally:
+        if descriptor is not None:
+            os.close(descriptor)
+        if temporary is not None:
+            try:
+                os.unlink(temporary, dir_fd=directory_fd)
+            except FileNotFoundError:
+                pass
 
 
 def build_provenance(root: Path, tag: str, evidence: dict) -> dict:
@@ -447,24 +525,35 @@ def build_provenance(root: Path, tag: str, evidence: dict) -> dict:
 
 
 def generate(
-    root: Path, tag: str, evidence_path: Path, output_dir: Path
+    root: Path,
+    tag: str,
+    evidence_path: Path,
+    output_dir: Path,
+    before_output_open=None,
 ) -> tuple[Path, Path]:
     root = root.resolve()
     output_dir = _outside_repo(root, Path(output_dir))
-    evidence = _parse_json(
-        Path(evidence_path).read_text(encoding="utf-8"), "evidence"
-    )
+    evidence_payload = Path(evidence_path).read_bytes()
+    evidence = _parse_json(evidence_payload.decode("utf-8"), "evidence")
+    if evidence_payload != _json_bytes(evidence):
+        raise ValueError("evidence: non-canonical JSON bytes")
     document = build_provenance(root, tag, evidence)
     payload = _json_bytes(document)
     digest = hashlib.sha256(payload).hexdigest()
     checksum = f"{digest}  {ARTIFACT_NAME}\n".encode("ascii")
-    output_dir.mkdir(parents=True, exist_ok=True)
+    output_dir, directory_fd = _pin_output_directory(
+        root, output_dir, before_output_open
+    )
+    try:
+        _validate_asset_target_at(directory_fd, ARTIFACT_NAME)
+        _validate_asset_target_at(directory_fd, CHECKSUM_NAME)
+        _atomic_write_at(directory_fd, ARTIFACT_NAME, payload)
+        _atomic_write_at(directory_fd, CHECKSUM_NAME, checksum)
+        os.fsync(directory_fd)
+    finally:
+        os.close(directory_fd)
     artifact_path = output_dir / ARTIFACT_NAME
     checksum_path = output_dir / CHECKSUM_NAME
-    _validate_asset_target(root, artifact_path)
-    _validate_asset_target(root, checksum_path)
-    _atomic_write(artifact_path, payload)
-    _atomic_write(checksum_path, checksum)
     return artifact_path, checksum_path
 
 
