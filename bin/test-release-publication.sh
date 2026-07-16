@@ -35,41 +35,313 @@ asset_names = {
     "bindle-release-provenance.json.sha256",
 }
 
+class BlockScalar(str):
+    def __new__(cls, value, style):
+        scalar = super().__new__(cls, value)
+        scalar.style = style
+        return scalar
+
+
+def _line(lines, index):
+    raw = lines[index]
+    prefix = raw[:len(raw) - len(raw.lstrip(" \t"))]
+    assert "\t" not in prefix, "tabs in YAML indentation are unsupported"
+    return len(prefix), raw[len(prefix):]
+
+
+def _next_content(lines, index):
+    while index < len(lines):
+        _, content = _line(lines, index)
+        if content and not content.startswith("#"):
+            return index
+        index += 1
+    return index
+
+
+def _strip_inline_comment(value):
+    quote = None
+    escaped = False
+    for index, char in enumerate(value):
+        if quote == '"':
+            if escaped:
+                escaped = False
+            elif char == "\\":
+                escaped = True
+            elif char == quote:
+                quote = None
+        elif quote == "'":
+            if char == quote:
+                if index + 1 < len(value) and value[index + 1] == quote:
+                    continue
+                quote = None
+        elif char in "'\"":
+            quote = char
+        elif char == "#" and (index == 0 or value[index - 1].isspace()):
+            return value[:index].rstrip()
+    assert quote is None, "unterminated quoted YAML scalar"
+    return value.rstrip()
+
+
+def _scalar(value):
+    value = _strip_inline_comment(value.strip())
+    assert value, "empty inline YAML scalar"
+    assert not value.startswith(("[", "{", "&", "*", "!")), (
+        f"unsupported YAML scalar: {value!r}"
+    )
+    if value.startswith('"'):
+        decoded = json.loads(value)
+        assert isinstance(decoded, str), "quoted YAML scalar must be a string"
+        return decoded
+    if value.startswith("'"):
+        assert value.endswith("'") and len(value) >= 2, (
+            "unterminated single-quoted YAML scalar"
+        )
+        return value[1:-1].replace("''", "'")
+    return value
+
+
+def _key_value(content):
+    key, separator, value = content.partition(":")
+    assert separator and key and key.strip() == key, (
+        f"unsupported YAML mapping entry: {content!r}"
+    )
+    assert all(char.isalnum() or char in "_.-" for char in key), (
+        f"unsupported YAML key: {key!r}"
+    )
+    return key, value.lstrip()
+
+
+def _value(lines, index, indent, text):
+    if text in (">", ">-", ">+", "|", "|-", "|+"):
+        cursor = index + 1
+        raw_block = []
+        while cursor < len(lines):
+            child_indent, child = _line(lines, cursor)
+            if child and child_indent <= indent:
+                break
+            raw_block.append(lines[cursor])
+            cursor += 1
+        nonblank = [line for line in raw_block if line.strip()]
+        assert nonblank, "empty YAML block scalar"
+        block_indent = min(len(line) - len(line.lstrip(" "))
+                           for line in nonblank)
+        assert block_indent > indent, "invalid YAML block indentation"
+        parts = [line[block_indent:].strip() for line in raw_block
+                 if line.strip()]
+        return BlockScalar(" ".join(parts), text), cursor
+    if text:
+        return _scalar(text), index + 1
+    cursor = _next_content(lines, index + 1)
+    assert cursor < len(lines), "missing nested YAML value"
+    child_indent, _ = _line(lines, cursor)
+    assert child_indent > indent, "nested YAML value is not indented"
+    return _node(lines, cursor, child_indent)
+
+
+def _mapping(lines, index, indent):
+    result = {}
+    cursor = index
+    while True:
+        cursor = _next_content(lines, cursor)
+        if cursor >= len(lines):
+            return result, cursor
+        current_indent, content = _line(lines, cursor)
+        if current_indent < indent:
+            return result, cursor
+        assert current_indent == indent and not content.startswith("-"), (
+            f"unsupported YAML mapping structure on line {cursor + 1}"
+        )
+        key, text = _key_value(content)
+        assert key not in result, f"duplicate YAML key: {key}"
+        result[key], cursor = _value(lines, cursor, indent, text)
+
+
+def _sequence(lines, index, indent):
+    result = []
+    cursor = index
+    while True:
+        cursor = _next_content(lines, cursor)
+        if cursor >= len(lines):
+            return result, cursor
+        current_indent, content = _line(lines, cursor)
+        if current_indent < indent:
+            return result, cursor
+        assert current_indent == indent and content.startswith("- "), (
+            f"unsupported YAML sequence structure on line {cursor + 1}"
+        )
+        item = content[2:].strip()
+        if ":" not in item:
+            result.append(_scalar(item))
+            cursor += 1
+            continue
+        key, text = _key_value(item)
+        value, cursor = _value(lines, cursor, indent + 2, text)
+        mapping = {key: value}
+        continuation = _next_content(lines, cursor)
+        if continuation < len(lines):
+            continuation_indent, _ = _line(lines, continuation)
+            if continuation_indent > indent:
+                assert continuation_indent == indent + 2, (
+                    "unsupported YAML sequence-item indentation"
+                )
+                extra, cursor = _mapping(lines, continuation, indent + 2)
+                assert not mapping.keys() & extra.keys(), (
+                    "duplicate YAML sequence-item key"
+                )
+                mapping.update(extra)
+        result.append(mapping)
+
+
+def _node(lines, index, indent):
+    _, content = _line(lines, index)
+    if content.startswith("- "):
+        return _sequence(lines, index, indent)
+    return _mapping(lines, index, indent)
+
+
+def _parse_workflow(workflow):
+    lines = workflow.splitlines()
+    first = _next_content(lines, 0)
+    assert first < len(lines), "empty release workflow"
+    indent, _ = _line(lines, first)
+    assert indent == 0, "top-level YAML must begin at column zero"
+    document, cursor = _node(lines, first, indent)
+    assert _next_content(lines, cursor) == len(lines), (
+        "unsupported trailing YAML document content"
+    )
+    assert isinstance(document, dict), "workflow must be a YAML mapping"
+    return document
+
+
+def _exact_mapping(value, keys, path):
+    assert isinstance(value, dict), f"{path} must be a mapping"
+    assert set(value) == set(keys), (
+        f"{path} keys must be exactly {sorted(keys)!r}; got {sorted(value)!r}"
+    )
+    return value
+
+
+def assert_release_workflow(workflow):
+    document = _parse_workflow(workflow)
+    trigger = _exact_mapping(document.get("on"), {"push"}, "on")
+    push = _exact_mapping(trigger["push"], {"tags"}, "on.push")
+    assert push["tags"] == ["v*"], "on.push.tags must be exactly ['v*']"
+    assert _exact_mapping(document.get("permissions"), {"contents"},
+                          "permissions") == {"contents": "write"}
+    jobs = _exact_mapping(document.get("jobs"), {"release"}, "jobs")
+    release = _exact_mapping(jobs["release"], {"runs-on", "steps"},
+                             "jobs.release")
+    assert release["runs-on"] == "ubuntu-latest"
+    steps = release["steps"]
+    assert isinstance(steps, list) and len(steps) == 2, (
+        "jobs.release.steps must contain exactly checkout and publication"
+    )
+
+    forbidden = (
+        "gh release create", "gh release edit", "gh release upload",
+        "gh release download", "RELEASE-MANIFEST.json",
+        "bin/release-provenance.py", "bin/release-evidence.py", "awk -v",
+        "sha256sum", "shasum", "openssl dgst",
+    )
+    executable = []
+    for step in steps:
+        if isinstance(step, dict):
+            executable.extend(step[key] for key in ("uses", "run")
+                              if isinstance(step.get(key), str))
+    found = [fragment for fragment in forbidden
+             if any(fragment in value for value in executable)]
+    assert not found, f"forbidden executable release fragments: {found!r}"
+
+    checkout = _exact_mapping(steps[0], {"uses", "with"},
+                              "jobs.release.steps[0]")
+    assert checkout["uses"] == "actions/checkout@v7"
+    assert _exact_mapping(checkout["with"], {"fetch-depth"},
+                          "jobs.release.steps[0].with") == {"fetch-depth": "0"}
+
+    publish = _exact_mapping(steps[1], {"name", "env", "run"},
+                             "jobs.release.steps[1]")
+    assert publish["name"] == "Verify and publish tagged release provenance"
+    assert _exact_mapping(publish["env"], {"GH_TOKEN"},
+                          "jobs.release.steps[1].env") == {
+                              "GH_TOKEN": "${{ github.token }}"}
+    assert isinstance(publish["run"], BlockScalar)
+    assert publish["run"].style.startswith(">"), (
+        "publication command must use a folded YAML scalar"
+    )
+    expected = ('python3 bin/release-publication.py '
+                '--repo "$GITHUB_REPOSITORY" --tag "$GITHUB_REF_NAME"')
+    assert " ".join(publish["run"].split()) == expected, (
+        "publication command must be the exact orchestrator argv"
+    )
+
+
 workflow = (repo_root / ".github/workflows/release.yml").read_text()
-required_workflow_fragments = (
-    "  push:\n    tags:\n      - 'v*'",
-    "permissions:\n  contents: write",
+assert_release_workflow(workflow)
+
+
+workflow_regression_failures = []
+
+
+def expect_invalid(label, candidate):
+    try:
+        assert_release_workflow(candidate)
+    except AssertionError:
+        return
+    workflow_regression_failures.append(f"{label}: invalid workflow accepted")
+
+
+unrelated_checkout = workflow.replace(
+    "jobs:\n", "x-documentation: |-\n"
+    "  - uses: actions/checkout@v7\n"
+    "jobs:\n",
+).replace(
     "      - uses: actions/checkout@v7",
+    "      - uses: actions/checkout@v6",
+)
+expect_invalid("unrelated checkout text", unrelated_checkout)
+
+commented_fetch_depth = workflow.replace(
     "          fetch-depth: 0",
-    "          GH_TOKEN: ${{ github.token }}",
-    "          python3 bin/release-publication.py",
-    '          --repo "$GITHUB_REPOSITORY"',
-    '          --tag "$GITHUB_REF_NAME"',
+    "          fetch-depth: 1 #          fetch-depth: 0",
 )
-forbidden_workflow_fragments = (
-    "gh release create",
-    "gh release edit",
-    "gh release upload",
-    "gh release download",
-    "RELEASE-MANIFEST.json",
-    "bin/release-provenance.py",
-    "bin/release-evidence.py",
-    "awk -v",
-    "sha256sum",
-    "shasum",
+expect_invalid("commented fetch depth", commented_fetch_depth)
+
+extra_publisher = workflow.replace(
+    "      - name: Verify and publish tagged release provenance",
+    "      - uses: softprops/action-gh-release@v2\n"
+    "      - name: Verify and publish tagged release provenance",
 )
-missing = [item for item in required_workflow_fragments if item not in workflow]
-forbidden = [item for item in forbidden_workflow_fragments if item in workflow]
-assert not missing and not forbidden, (
-    f"release workflow contract failed: missing={missing!r}; "
-    f"forbidden={forbidden!r}"
+expect_invalid("extra uses publisher", extra_publisher)
+
+equivalent_formatting = workflow.replace("- 'v*'", '- "v*"').replace(
+    "fetch-depth: 0", 'fetch-depth: "0"'
+).replace(
+    "          python3 bin/release-publication.py\n"
+    '          --repo "$GITHUB_REPOSITORY"\n',
+    "          python3 bin/release-publication.py --repo\n"
+    '          "$GITHUB_REPOSITORY"\n',
 )
-assert workflow.count("\n  release:\n") == 1, (
-    "release workflow must contain exactly one release job"
+equivalent_formatting = equivalent_formatting.replace(
+    "name: Release", "# gh release create in prose is harmless\nname: Release"
 )
-assert workflow.count("run:") == 1, (
-    "release workflow must contain only the orchestrator publication command"
+try:
+    assert_release_workflow(equivalent_formatting)
+except AssertionError as error:
+    workflow_regression_failures.append(
+        f"equivalent formatting rejected: {error}"
+    )
+
+unrelated_prose = workflow.replace(
+    "name: Release",
+    "x-documentation: >-\n"
+    "  Historical prose mentions gh release create and RELEASE-MANIFEST.json.\n"
+    "name: Release",
 )
+try:
+    assert_release_workflow(unrelated_prose)
+except AssertionError as error:
+    workflow_regression_failures.append(f"unrelated prose rejected: {error}")
+assert not workflow_regression_failures, workflow_regression_failures
 
 
 def run(argv, **kwargs):
