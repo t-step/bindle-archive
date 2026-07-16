@@ -50,21 +50,24 @@ def _repository(root: Path) -> str:
     return repository
 
 
-def _version(root: Path) -> str:
-    path = root / "version.txt"
-    if not path.is_file():
-        raise ValueError("version.txt: missing at repo root")
-    version = path.read_text(encoding="utf-8").strip()
+def _tagged_file(root: Path, commit: str, path: str) -> str:
+    try:
+        return git(root, "show", f"{commit}:{path}")
+    except subprocess.CalledProcessError:
+        raise ValueError(f"{path}: missing from tagged commit") from None
+
+
+def _version(root: Path, commit: str) -> str:
+    version = _tagged_file(root, commit, "version.txt").strip()
     if not version:
         raise ValueError("version.txt: empty")
     return version
 
 
-def _release_please_version(root: Path) -> str:
-    path = root / ".release-please-manifest.json"
-    if not path.is_file():
-        raise ValueError(".release-please-manifest.json: missing at repo root")
-    data = json.loads(path.read_text(encoding="utf-8"))
+def _release_please_version(root: Path, commit: str) -> str:
+    data = json.loads(
+        _tagged_file(root, commit, ".release-please-manifest.json")
+    )
     version = data.get(".") if isinstance(data, dict) else None
     if not isinstance(version, str):
         raise ValueError(
@@ -73,12 +76,11 @@ def _release_please_version(root: Path) -> str:
     return version
 
 
-def _require_changelog_section(root: Path, version: str) -> None:
-    path = root / "CHANGELOG.md"
-    if not path.is_file():
-        raise ValueError("CHANGELOG.md: missing at repo root")
+def _require_changelog_section(
+    root: Path, commit: str, version: str
+) -> None:
     header = f"## [{version}]"
-    lines = path.read_text(encoding="utf-8").splitlines()
+    lines = _tagged_file(root, commit, "CHANGELOG.md").splitlines()
     if not any(line == header or line.startswith(f"{header} ") for line in lines):
         raise ValueError(f"CHANGELOG.md: missing exact '{header}' section")
 
@@ -92,18 +94,18 @@ def verify_source(root: Path, tag: str) -> dict:
     if recorded_commit != git(root, "rev-parse", "HEAD"):
         raise ValueError(f"{tag}: tagged commit does not match HEAD")
 
-    version = _version(root)
+    version = _version(root, recorded_commit)
     expected_tag = f"v{version}"
     if tag != expected_tag:
         raise ValueError(f"{tag}: expected tag {expected_tag} from version.txt")
 
-    release_please_version = _release_please_version(root)
+    release_please_version = _release_please_version(root, recorded_commit)
     if release_please_version != version:
         raise ValueError(
             ".release-please-manifest.json: root version "
             f"{release_please_version} does not match version.txt {version}"
         )
-    _require_changelog_section(root, version)
+    _require_changelog_section(root, recorded_commit, version)
 
     tagger_timestamp = git(
         root,

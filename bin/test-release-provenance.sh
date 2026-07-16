@@ -98,7 +98,7 @@ mkfixture() {
   printf '%s\n' '{".": "0.5.0"}' >"$repo/.release-please-manifest.json"
   printf '%s\n' '# Changelog' '' '## [0.5.0] - 2026-07-01' '' '- Previous.' >"$repo/CHANGELOG.md"
   commit "$repo" previous
-  annotate "$repo" v0.5.0
+  git -C "$repo" tag v0.5.0
 
   printf '%s\n' '0.5.1' >"$repo/version.txt"
   printf '{".": "%s"}\n' "$manifest_version" >"$repo/.release-please-manifest.json"
@@ -120,6 +120,26 @@ run "$PY" "$HELPER" verify-source --root "$VALID" --tag v0.5.1 --json
 expect_rc "valid annotated tag exits zero" 0
 expect_json "valid annotated tag reports exact source state" \
   "$expected_commit" "$expected_tag_object" "$expected_timestamp"
+
+run "$PY" "$HELPER" verify-source --root "$VALID" --tag v0.5.0 --json
+expect_rc "historical lightweight v0.5.0 exits nonzero" 1
+expect_exact "historical lightweight v0.5.0 has stable reason" \
+  "v0.5.0: annotated tag required"
+
+DIRTY="$TMP/dirty-authorities"
+mkfixture "$DIRTY"
+dirty_commit="$(git -C "$DIRTY" rev-parse 'v0.5.1^{commit}')"
+dirty_tag_object="$(git -C "$DIRTY" rev-parse v0.5.1)"
+dirty_timestamp="$(git -C "$DIRTY" for-each-ref \
+  '--format=%(taggerdate:iso-strict)' refs/tags/v0.5.1)"
+printf '%s\n' '9.9.9' >"$DIRTY/version.txt"
+printf '%s\n' '{".": "9.9.9"}' >"$DIRTY/.release-please-manifest.json"
+printf '%s\n' '# Changelog' '' '## [9.9.9] - 2099-09-09' '' \
+  '- Dirty working tree only.' >"$DIRTY/CHANGELOG.md"
+run "$PY" "$HELPER" verify-source --root "$DIRTY" --tag v0.5.1 --json
+expect_rc "dirty authority files do not alter tagged verification" 0
+expect_json "dirty authority files report committed tagged source state" \
+  "$dirty_commit" "$dirty_tag_object" "$dirty_timestamp"
 
 git -C "$VALID" tag v0.5.1-lightweight
 run "$PY" "$HELPER" verify-source --root "$VALID" --tag v0.5.1-lightweight --json
