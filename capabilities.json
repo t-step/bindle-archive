@@ -672,6 +672,22 @@
       "version_introduced": "0.6.0"
     },
     {
+      "name": "release-publish",
+      "type": "script",
+      "path": "bin/release-publish.sh",
+      "description": "Manual GitHub Release publish + autorelease relabel (issue #152, problem 1). While GitHub Actions stays billing-blocked, release.yml never fires on a pushed v* tag, so publishing is done by hand; this wrapper replicates release.yml's `gh release create` step exactly (same CHANGELOG-section extraction) and then closes the gap a manual publish otherwise leaves: it ensures the `autorelease: tagged` label exists and moves the just-published merged release PR off `autorelease: pending`, so the next `release-please release-pr` does not abort on an outstanding untagged PR. dry-run previews read-only; apply requires an ephemeral --approval-token (no token => hard stop). Never merges, tags, or opens a PR.",
+      "provider": {
+        "claude": "manual",
+        "codex": "manual"
+      },
+      "maturity": "tested",
+      "mutation": [
+        "network",
+        "external"
+      ],
+      "version_introduced": "0.7.0"
+    },
+    {
       "name": "issue-work-loop",
       "type": "skill",
       "path": "skills/issue-work-loop",

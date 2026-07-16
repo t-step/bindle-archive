@@ -34,6 +34,7 @@ test:
 	bin/test-objective-worktree.sh
 	bin/test-release-strategy.sh
 	bin/test-release-please-sync.sh
+	bin/test-release-publish.sh
 
 install:
 	bin/install.sh

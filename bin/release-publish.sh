@@ -1,0 +1,144 @@
+#!/usr/bin/env bash
+#
+# release-publish.sh — manual GitHub Release publish + autorelease relabel
+# (issue #152, problem 1). While GitHub Actions stays billing-blocked,
+# `.github/workflows/release.yml` never fires on a pushed `v*` tag, so
+# publishing is done by hand. That manual path replicates the workflow's
+# `gh release create` step exactly (same changelog-section extraction) but
+# skips a step the real release-please GitHub Action would otherwise do:
+# relabeling the merged release PR from `autorelease: pending` to
+# `autorelease: tagged`. Left undone, the next `release-please release-pr`
+# aborts with "untagged, merged release PRs outstanding". This script closes
+# that gap: publish, then ensure the label exists and move the merged PR.
+#
+# It never merges, tags, or opens a PR — the tag is expected to already exist
+# locally/pushed (see bin/release.sh); this only publishes the GitHub Release
+# for that tag and reconciles the label Release Please tracks state with.
+#
+# Verbs:
+#   dry-run <tag>  read-only preview; proves zero mutation.
+#   apply <tag>    publish the release + relabel; requires
+#                  --approval-token <ephemeral> passed by the orchestrator for
+#                  this one invocation. No token => hard stop, no invocation.
+#
+# Usage:
+#   bin/release-publish.sh dry-run v0.6.0
+#   bin/release-publish.sh apply v0.6.0 --approval-token <ephemeral>
+#
+set -euo pipefail
+
+TAGGED_LABEL="autorelease: tagged"
+PENDING_LABEL="autorelease: pending"
+TAGGED_COLOR="ededed"
+TAGGED_DESC="Release PR whose release has been tagged/published"
+
+die() {
+  echo "release-publish: $1" >&2
+  exit "${2:-1}"
+}
+
+verb="${1:-}"
+shift || true
+
+case "$verb" in
+  dry-run | apply) ;;
+  *) die "unknown verb '${verb:-<none>}' (want: dry-run|apply)" 2 ;;
+esac
+
+tag=""
+token=""
+while [ "$#" -gt 0 ]; do
+  case "$1" in
+    --approval-token)
+      token="${2:-}"
+      shift 2
+      ;;
+    --approval-token=*)
+      token="${1#*=}"
+      shift
+      ;;
+    -*)
+      die "unknown flag '$1'" 64
+      ;;
+    *)
+      [ -z "$tag" ] || die "unexpected extra argument '$1'" 64
+      tag="$1"
+      shift
+      ;;
+  esac
+done
+
+[ -n "$tag" ] || die "missing <tag> argument" 64
+[[ "$tag" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]] || die "tag '$tag' is not vMAJOR.MINOR.PATCH" 5
+
+if [ "$verb" = "apply" ]; then
+  [ -n "$token" ] || die "apply refused — no approval token" 3
+fi
+
+command -v gh >/dev/null 2>&1 || die "gh CLI not found on PATH" 4
+
+repo_root="$(git rev-parse --show-toplevel)"
+ver="${tag#v}"
+
+# --- extract the changelog section for this tag (mirrors release.yml) ------
+notes_file="$(mktemp)"
+trap 'rm -f "$notes_file"' EXIT
+awk -v ver="$ver" '
+  $0 ~ "^## \\[" ver "\\]" { grab = 1; next }
+  grab && /^## \[/ { exit }
+  grab { print }
+' "$repo_root/CHANGELOG.md" >"$notes_file"
+if [ ! -s "$notes_file" ]; then
+  echo "Release ${tag}" >"$notes_file"
+fi
+
+# --- find the merged release PR still labeled autorelease: pending ---------
+prs_json="$(gh pr list --state merged --label "$PENDING_LABEL" \
+  --json number,headRefName,mergedAt)"
+pr_count="$(printf '%s' "$prs_json" | python3 -c 'import json,sys; print(len(json.load(sys.stdin)))')"
+if [ "$pr_count" -gt 1 ]; then
+  die "found $pr_count merged PRs labeled '$PENDING_LABEL' — expected 0 or 1, refusing to guess" 11
+fi
+pr_number=""
+if [ "$pr_count" -eq 1 ]; then
+  pr_number="$(printf '%s' "$prs_json" | python3 -c 'import json,sys; print(json.load(sys.stdin)[0]["number"])')"
+fi
+
+label_exists() {
+  gh label list --json name -q '.[].name' 2>/dev/null | grep -qxF "$TAGGED_LABEL"
+}
+
+if [ "$verb" = "dry-run" ]; then
+  echo "release-publish: would run: gh release create $tag --title $tag --notes-file <extracted CHANGELOG section>"
+  echo "release-publish: notes preview:"
+  sed 's/^/  /' "$notes_file"
+  if label_exists; then
+    echo "release-publish: label '$TAGGED_LABEL' already exists"
+  else
+    echo "release-publish: would create label '$TAGGED_LABEL'"
+  fi
+  if [ -n "$pr_number" ]; then
+    echo "release-publish: would relabel PR #$pr_number: '$PENDING_LABEL' -> '$TAGGED_LABEL'"
+  else
+    echo "release-publish: no merged PR labeled '$PENDING_LABEL' — nothing to relabel"
+  fi
+  exit 0
+fi
+
+# --- apply -------------------------------------------------------------------
+gh release create "$tag" --title "$tag" --notes-file "$notes_file"
+echo "release-publish: published $tag"
+
+if label_exists; then
+  echo "release-publish: label '$TAGGED_LABEL' already exists"
+else
+  gh label create "$TAGGED_LABEL" --color "$TAGGED_COLOR" --description "$TAGGED_DESC"
+  echo "release-publish: created label '$TAGGED_LABEL'"
+fi
+
+if [ -n "$pr_number" ]; then
+  gh pr edit "$pr_number" --add-label "$TAGGED_LABEL" --remove-label "$PENDING_LABEL"
+  echo "release-publish: relabeled PR #$pr_number: '$PENDING_LABEL' -> '$TAGGED_LABEL'"
+else
+  echo "release-publish: no merged PR labeled '$PENDING_LABEL' — nothing to relabel"
+fi
