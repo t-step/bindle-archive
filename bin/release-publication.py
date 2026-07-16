@@ -242,6 +242,40 @@ def _parser() -> argparse.ArgumentParser:
     return parser
 
 
+def _inside(root: Path, candidate: Path) -> bool:
+    return candidate == root or root in candidate.parents
+
+
+def _temporary_directory(root: Path) -> Path:
+    try:
+        base = Path(tempfile.gettempdir()).resolve(strict=True)
+    except OSError as exc:
+        raise PublicationError(f"temporary base: {exc}") from None
+    if not base.is_dir():
+        raise PublicationError("temporary base must be a directory")
+    if _inside(root, base):
+        raise PublicationError("temporary base must be outside repository root")
+    try:
+        created = Path(tempfile.mkdtemp(
+            prefix="bindle-publication.", dir=base
+        ))
+    except OSError as exc:
+        raise PublicationError(f"temporary directory: {exc}") from None
+    try:
+        resolved = created.resolve(strict=True)
+        if not resolved.is_dir() or _inside(root, resolved):
+            raise PublicationError(
+                "temporary directory must be outside repository root"
+            )
+    except (OSError, PublicationError):
+        if created.is_symlink():
+            created.unlink(missing_ok=True)
+        elif created.exists():
+            shutil.rmtree(created)
+        raise
+    return resolved
+
+
 def main(argv=None) -> int:
     args = _parser().parse_args(argv)
     root = args.root.resolve()
@@ -249,14 +283,12 @@ def main(argv=None) -> int:
         print("--repo must be OWNER/REPO", file=sys.stderr)
         return 1
     try:
-        temporary = Path(tempfile.mkdtemp(prefix="bindle-publication."))
-    except OSError as exc:
+        temporary = _temporary_directory(root)
+    except (PublicationError, OSError) as exc:
         print(str(exc), file=sys.stderr)
         return 1
-    if temporary == root or root in temporary.parents:
-        shutil.rmtree(temporary)
-        print("temporary directory must be outside repository root", file=sys.stderr)
-        return 1
+    # Ordinary failures clean up explicitly. An external terminating signal can
+    # leave temporary evidence, but cannot advance the still-draft release.
     try:
         _prepare(root, args.repo, args.tag, temporary)
     except (PublicationError, OSError) as exc:
