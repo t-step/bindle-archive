@@ -205,7 +205,6 @@ promoted automatically. See [docs/sharing-skills.md](docs/sharing-skills.md).
 ## Versioning
 
 Bindle is versioned as a whole with Semantic Versioning. The current version
-lives in `VERSION`, and `bin/release.sh` cuts an annotated local tag. It never
-pushes. Every release also produces a deterministic, provenance-rich
-manifest recording exactly what shipped — see
-[docs/release-manifest.md](docs/release-manifest.md).
+lives in `VERSION`. Releases are cut through Release Please (which owns the
+changelog and the version bump on the release PR); `bin/release.sh` remains a
+legacy/fallback local cutter that tags without pushing.

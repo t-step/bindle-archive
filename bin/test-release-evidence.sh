@@ -4,9 +4,9 @@
 # here. Disabled file-wide rather than tagging each of ~20 assertion lines.
 #
 # test-release-evidence.sh — exercise bin/release-evidence.py against the
-# checked-in dry-run fixtures and its pure classification logic. Mirrors
-# bin/test-release-manifest.sh's shape. Offline by construction: the fixture
-# path performs no git/gh calls, which one case proves by stripping PATH.
+# checked-in dry-run fixtures and its pure classification logic. Offline by
+# construction: the fixture path performs no git/gh calls, which one case
+# proves by stripping PATH.
 #
 set -uo pipefail
 

@@ -93,8 +93,8 @@ fabricated recommendation.
 ### Steps 1–5 — produce the recommendation
 
 1. **Orient.** Identify the latest valid release tag and the version source of
-   truth (`VERSION`, cross-checked against `RELEASE-MANIFEST.json`); verify the
-   base branch and remote state; read the repository release policy (Bindle's
+   truth (`VERSION`); verify the base branch and remote state; read the
+   repository release policy (Bindle's
    `CHANGELOG.md` SemVer rule: breaking-install/structure → major, new
    capability → minor, fix → patch); detect whether Release Please is
    configured (`release-please-config.json`).

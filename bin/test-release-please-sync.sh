@@ -40,7 +40,6 @@ build_fixture() {
   git -C "$work" remote add origin "$bare"
 
   mkdir -p "$work/bin"
-  cp "$REPO_ROOT/bin/release-manifest.py" "$work/bin/release-manifest.py"
   cat >"$work/bin/check.sh" <<SH
 #!/usr/bin/env bash
 exit $check_exit
@@ -180,17 +179,15 @@ out="$(cd "$WORK1" && PATH="$GH1:$PATH" "$SCRIPT" apply 2>&1)"
 code=$?
 [ "$code" -eq 3 ] && ok "apply without token (real fixture) -> exit 3" || bad "apply-no-token ($code): $out"
 
-# --- apply, clean: VERSION + RELEASE-MANIFEST.json land on the head branch ---
+# --- apply, clean: VERSION lands on the head branch --------------------------
 out="$(cd "$WORK1" && PATH="$GH1:$PATH" "$SCRIPT" apply --approval-token eph-1 2>&1)"
 code=$?
 head_version="$(git -C "$WORK1.bare" show "release-please--branches--main:VERSION" 2>/dev/null || true)"
 {
   [ "$code" -eq 0 ] &&
-    [ "$head_version" = "0.2.0" ] &&
-    git -C "$WORK1.bare" show "release-please--branches--main:RELEASE-MANIFEST.json" 2>/dev/null |
-    grep -q '"version": "0.2.0"'
+    [ "$head_version" = "0.2.0" ]
 } &&
-  ok "apply syncs VERSION + RELEASE-MANIFEST.json onto the PR branch" ||
+  ok "apply syncs VERSION onto the PR branch" ||
   bad "apply ($code): $out; VERSION on branch = $head_version"
 
 [ ! -d "$WORK1/.worktrees/release-please-sync" ] &&

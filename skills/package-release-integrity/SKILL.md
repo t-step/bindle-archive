@@ -29,9 +29,6 @@ publish.
 When NOT to use:
 - To actually publish, tag, or bump a version — this skill has no mutation
   path; that stays with the repo's own release tooling.
-- In a repo where `docs/release-manifest.md`'s Bindle-release-manifest
-  concern applies — that's a different, narrower contract (what a Bindle
-  release itself shipped, after the fact), not this one.
 
 ## Steps
 
