@@ -692,6 +692,10 @@
       "reason": "the standalone release-manifest generator; it emits or verifies a deterministic provenance manifest only when explicitly invoked, and is internal machinery rather than a capability an agent invokes for its own sake (same precedent as bin/check-inventory.py)."
     },
     {
+      "path": "bin/release-publication.py",
+      "reason": "the fail-closed GitHub Release draft orchestrator; release publication machinery invoked by automation, not a standalone agent capability."
+    },
+    {
       "path": "bin/check-private-info.sh",
       "reason": "privacy scanner sourced by bin/check.sh and the pre-commit hook; internal machinery, not a standalone capability."
     },

@@ -28,6 +28,7 @@ test:
 	bin/test-session-hooks.sh
 	bin/test-install-session-hooks.sh
 	bin/test-release-provenance.sh
+	bin/test-release-publication.sh
 	bin/test-package-release-integrity.sh
 	bin/test-release-evidence.sh
 	bin/test-session-end-land.sh
