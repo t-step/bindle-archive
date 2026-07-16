@@ -115,16 +115,26 @@ def _value(lines, index, indent, text):
     if text in (">", ">-", ">+", "|", "|-", "|+"):
         cursor = index + 1
         raw_block = []
+        block_indent = None
         while cursor < len(lines):
             child_indent, child = _line(lines, cursor)
-            if child and child_indent <= indent:
+            if not child:
+                assert not text.startswith(">"), (
+                    "blank lines in folded YAML scalars are unsupported"
+                )
+            elif child_indent <= indent:
                 break
+            elif block_indent is None:
+                block_indent = child_indent
+            elif child_indent < block_indent:
+                break
+            elif text.startswith(">"):
+                assert child_indent == block_indent, (
+                    "folded YAML scalar lines must use consistent indentation"
+                )
             raw_block.append(lines[cursor])
             cursor += 1
-        nonblank = [line for line in raw_block if line.strip()]
-        assert nonblank, "empty YAML block scalar"
-        block_indent = min(len(line) - len(line.lstrip(" "))
-                           for line in nonblank)
+        assert block_indent is not None, "empty YAML block scalar"
         assert block_indent > indent, "invalid YAML block indentation"
         parts = [line[block_indent:].strip() for line in raw_block
                  if line.strip()]
@@ -312,6 +322,21 @@ extra_publisher = workflow.replace(
     "      - name: Verify and publish tagged release provenance",
 )
 expect_invalid("extra uses publisher", extra_publisher)
+
+blank_publication_line = workflow.replace(
+    "          python3 bin/release-publication.py\n"
+    '          --repo "$GITHUB_REPOSITORY"',
+    "          python3 bin/release-publication.py\n\n"
+    '          --repo "$GITHUB_REPOSITORY"',
+)
+expect_invalid("blank publication line", blank_publication_line)
+
+over_indented_publication_line = workflow.replace(
+    '          --repo "$GITHUB_REPOSITORY"',
+    '            --repo "$GITHUB_REPOSITORY"',
+)
+expect_invalid("over-indented publication line",
+               over_indented_publication_line)
 
 equivalent_formatting = workflow.replace("- 'v*'", '- "v*"').replace(
     "fetch-depth: 0", 'fetch-depth: "0"'
