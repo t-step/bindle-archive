@@ -35,6 +35,42 @@ asset_names = {
     "bindle-release-provenance.json.sha256",
 }
 
+workflow = (repo_root / ".github/workflows/release.yml").read_text()
+required_workflow_fragments = (
+    "  push:\n    tags:\n      - 'v*'",
+    "permissions:\n  contents: write",
+    "      - uses: actions/checkout@v7",
+    "          fetch-depth: 0",
+    "          GH_TOKEN: ${{ github.token }}",
+    "          python3 bin/release-publication.py",
+    '          --repo "$GITHUB_REPOSITORY"',
+    '          --tag "$GITHUB_REF_NAME"',
+)
+forbidden_workflow_fragments = (
+    "gh release create",
+    "gh release edit",
+    "gh release upload",
+    "gh release download",
+    "RELEASE-MANIFEST.json",
+    "bin/release-provenance.py",
+    "bin/release-evidence.py",
+    "awk -v",
+    "sha256sum",
+    "shasum",
+)
+missing = [item for item in required_workflow_fragments if item not in workflow]
+forbidden = [item for item in forbidden_workflow_fragments if item in workflow]
+assert not missing and not forbidden, (
+    f"release workflow contract failed: missing={missing!r}; "
+    f"forbidden={forbidden!r}"
+)
+assert workflow.count("\n  release:\n") == 1, (
+    "release workflow must contain exactly one release job"
+)
+assert workflow.count("run:") == 1, (
+    "release workflow must contain only the orchestrator publication command"
+)
+
 
 def run(argv, **kwargs):
     return subprocess.run(argv, check=True, **kwargs)

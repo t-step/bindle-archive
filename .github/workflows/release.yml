@@ -13,20 +13,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
-
-      - name: Extract changelog section for this tag
-        run: |
-          ver="${GITHUB_REF_NAME#v}"
-          awk -v ver="$ver" '
-            $0 ~ "^## \\[" ver "\\]" { grab = 1; next }
-            grab && /^## \[/ { exit }
-            grab { print }
-          ' CHANGELOG.md > notes.md
-          if [ ! -s notes.md ]; then
-            echo "Release ${GITHUB_REF_NAME}" > notes.md
-          fi
-
-      - name: Create GitHub release
+        with:
+          fetch-depth: 0
+      - name: Verify and publish tagged release provenance
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release create "$GITHUB_REF_NAME" --title "$GITHUB_REF_NAME" --notes-file notes.md
+        run: >-
+          python3 bin/release-publication.py
+          --repo "$GITHUB_REPOSITORY"
+          --tag "$GITHUB_REF_NAME"
