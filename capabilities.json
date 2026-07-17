@@ -902,6 +902,14 @@
     {
       "path": "bin/context_graph/tests/test_canonical.py",
       "reason": "unit tests for context_graph.canonical; test infrastructure, not a capability an agent invokes."
+    },
+    {
+      "path": "bin/context_graph/validation.py",
+      "reason": "library module for object-kind validation and creation-authority checks in the context_graph contract; composes ids/relationships/canonical into validate_bundle/validate_config, not a standalone capability."
+    },
+    {
+      "path": "bin/context_graph/tests/test_validation.py",
+      "reason": "unit tests for context_graph.validation; test infrastructure, not a capability an agent invokes."
     }
   ],
   "external_upstreams": [
