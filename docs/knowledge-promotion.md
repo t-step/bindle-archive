@@ -116,7 +116,7 @@ Decisions and Learnings (Decisions are settled — do not relitigate unless
 the stated condition is met):
 
 ```markdown
-### <one-line claim> (YYYY-MM, settled)
+### <one-line claim> (YYYY-MM, settled) <!-- bindle:context-id: context-node:<slug>:<32-hex> -->
 why: <1–2 lines>
 so: <concrete answer to at least one implication question>
 revisit-when: <the evidence that would reopen this>
@@ -127,30 +127,107 @@ evidence: <ptr>[, <ptr>…]
 - `revisit-when:` is mandatory for Decisions, recommended for Learnings.
 - Optional tags at the end of a Learning claim line: `` `transfer?` ``
   (name the other project in parentheses) or `` `inquiry?` ``.
-- Five lines maximum per entry: the claim line plus the four field lines.
+- Five lines maximum per entry: the claim line plus the four field lines
+  (the identity marker rides on the claim line and doesn't count against it).
+- The identity marker (see "Stable identities" below) is present on every
+  *newly* confirmed entry. An existing entry promoted before #179 has no
+  marker and stays that way until the separate #183→#184→#185 anchoring
+  workflow explicitly reaches it — this contract never adds one as a side
+  effect of an unrelated update.
 
 Assumptions & tensions:
 
 ```markdown
-- <assumption or tension> — confidence: high|medium|low — evidence: <ptr>
+- <assumption or tension> — confidence: high|medium|low — evidence: <ptr> <!-- bindle:context-id: context-node:<slug>:<32-hex> -->
 ```
 
 A conflict is one bullet with two indented sub-bullets, one per side, each
 carrying its own evidence. Conflicts are represented, never silently
-resolved.
+resolved. The identity marker goes on the parent bullet only — the two
+sides are structured content of that one entry and never carry a marker of
+their own.
 
 Open questions (general-interest questions are welcome here — the bar is a
 concrete inquiry implication, not immediate actionability):
 
 ```markdown
-- <question> (open|parked) — so: <inquiry implication> — evidence: <ptr> [`inquiry?`]
+- <question> (open|parked) — so: <inquiry implication> — evidence: <ptr> [`inquiry?`] <!-- bindle:context-id: context-node:<slug>:<32-hex> -->
 ```
 
-Superseded (the audit trail — nothing is deleted silently):
+Superseded (the audit trail — nothing is deleted silently). A tombstone is
+**typed**: it names the retired entry's kind and preserves that entry's
+identity, plus an optional identity-based pointer at whatever replaced it:
 
 ```markdown
-- <claim> (retired YYYY-MM) → <what replaced it, or why>
+- <kind>: <claim> (retired YYYY-MM) → <human-readable replacement or reason> <!-- bindle:context-id: <retired-id> --> [<!-- bindle:superseded-by: <replacement-id> -->]
 ```
+
+- `<kind>` is `decision`, `learning`, `assumption`, `tension`, or `question`.
+- The tombstone's `bindle:context-id` is the **retired** entry's own id,
+  copied unchanged — never a new allocation. For a Decision or Learning this
+  duplicates the id already sitting on that entry's still-present, now
+  `superseded`-flagged heading (see Supersession below); that pairing is
+  expected, not a duplicate-id conflict.
+- `bindle:superseded-by` is present **only** when a specific replacement
+  entry exists, and names that replacement's own (newly allocated) id — never
+  the retired id, never a heading or claim string. Its human-readable prose
+  (`→ …`) is presentation only and never substitutes for this identity
+  pointer; the deterministic direction later consumed by #183/#184 is
+  `replacement --supersedes--> retired entry`.
+- A tombstone with no `<kind>:` prefix, or with a `bindle:context-id` that
+  doesn't resolve to any entry's own marker, is reported by
+  `bin/map-entry-id.py validate` as an untyped/incomplete tombstone — never
+  auto-repaired. Every map written before #179 has untyped tombstones; that
+  is expected and not an error on its own.
+
+### Stable identities
+
+**Contract, from #179.** Every newly confirmed top-level entry above
+receives one opaque, durable identity, in the exact form:
+
+```text
+context-node:<creation-project-slug>:<32-lowercase-hex>
+```
+
+stored as an inline HTML comment (`<!-- bindle:context-id: ... -->`) on the
+entry's own anchor line — the claim heading for a Decision/Learning, the
+top-level bullet for a single Assumption, a tension's parent bullet, or an
+Open question. Indented field lines and tension sides are structured content
+of their parent entry and never receive one.
+
+- **Allocation is command-owned, not model-owned.** `bin/map-entry-id.py
+  allocate --project <slug>` prints one new id, using
+  `secrets.token_hex(16)` for the hex suffix. The slug is the project slug
+  in effect at the moment of allocation — an opaque historical label,
+  independent of claim text, section, status, date, or evidence, and never
+  rewritten if the project is later renamed. No assistant, model, or
+  provider ever invents or edits the entropy or the final id.
+- **Two authorized callers only.** This knowledge-promotion contract, for
+  newly promoted entries (this document); and #184 anchor acceptance, for
+  existing unanchored entries reaching that issue's explicit
+  preview-and-confirm lifecycle. No other surface — labels, content hashes,
+  heading text, GitHub, Git — ever chooses a semantic id.
+- **Durable once written.** An id is preserved across every later update,
+  tag, section move, and supersession. Editing an entry's heading, evidence,
+  status, date, or field lines never recomputes or replaces its id. A valid
+  existing id is never silently replaced; a malformed or duplicate one is
+  reported by `bin/map-entry-id.py validate`, never repaired automatically.
+- **Distinct entries, distinct ids.** Two allocations are always distinct
+  (cryptographically). A replacement entry — even one whose claim text and
+  section exactly match the entry it replaces — always gets a freshly
+  allocated id; it never reuses the retired entry's id.
+- **Existing maps are untouched.** This contract's scope is newly promoted
+  entries only. An entry promoted before #179 has no marker and stays
+  byte-identical; anchoring it is the separate #183→#184→#185 workflow, out
+  of scope here.
+- **Validation is read-only.** `bin/map-entry-id.py validate --map
+  <path>` deterministically discovers every anchored/unanchored entry and
+  reports malformed ids, duplicate ids, markers on an unsupported location
+  (a field line, a tension side, anywhere outside the six defined entry
+  shapes), multiple markers on one entry, untyped retirement tombstones, and
+  malformed/duplicate/self-referential/unresolved `bindle:superseded-by`
+  metadata. It never writes to the map under any circumstance, success or
+  failure.
 
 ### Size budget
 
@@ -238,10 +315,22 @@ is a valid and common outcome.**
   outside a named entry are never touched. A proposal that would alter an
   owner-edited entry must say so explicitly.
 - **Supersession.** A superseded decision or learning gets its status
-  flipped and a one-line tombstone in Superseded pointing at what replaced
-  it. The status-token flip is the only edit the retired entry receives —
-  its claim text and field lines stay byte-intact; any replacement enters
-  as a *new* entry.
+  flipped and a one-line typed tombstone in Superseded pointing at what
+  replaced it. The status-token flip is the only edit the retired entry
+  receives — its claim text, field lines, and identity marker stay
+  byte-intact; any replacement enters as a *new* entry with a freshly
+  allocated identity (see "Stable identities" above). The tombstone carries
+  the retired entry's existing id (copied, never reallocated) and, when a
+  specific replacement exists, that replacement's id as
+  `bindle:superseded-by` — never invented, never the retired id repeated.
+  Superseding an entry that predates #179 and was never anchored carries no
+  id to copy — its tombstone gets the `<kind>:` prefix and the human-
+  readable reason like any other, but no `bindle:context-id`. That never
+  retroactively anchors the retired entry itself; anchoring existing
+  entries stays out of scope here (the #183→#184→#185 workflow). The new
+  *replacement* entry still gets a freshly allocated id like any other
+  confirmed `add` — supersession's identity rules are about the retired
+  side, not the replacement side.
 - **Relitigation.** New evidence that *meets* a decision's `revisit-when:`
   condition produces a proposed revision, applied as a supersession —
   never a rewrite of the settled entry in place, and never deferred to
@@ -291,6 +380,10 @@ Proposal rendering at the confirm step: each numbered proposal shows the
 complete entry text as it would appear in the map, plus its anchor — the
 target section and, for `update`/`supersede`, the existing claim line
 being modified. The rendered entry *is* what gets written on confirmation.
+The rendered preview never shows an identity marker: an `add` or a
+`supersede`'s replacement entry has no id yet at proposal time (see "Stable
+identities" — allocation happens only during the confirmed write, never
+speculatively for a candidate that might be rejected).
 
 ## Manual procedure
 
@@ -312,7 +405,18 @@ automates the same steps as `/promote-knowledge`):
 7. Take the owner's confirmation: `all`, `none`, or a list of proposal
    numbers. Anything else: re-ask once, then treat as `none`.
 8. Apply exactly the confirmed subset as minimal edits. On bootstrap with
-   `none`, still create the skeleton.
+   `none`, still create the skeleton. For each confirmed `add`, and for the
+   replacement side of each confirmed `supersede`, allocate one identity —
+   `bin/map-entry-id.py allocate --project <slug>` — and write its marker
+   as part of the same edit that writes the entry; never ask a model to
+   invent one, never persist a marker separately from its entry. A
+   confirmed `update` or `tag` leaves any existing marker untouched. A
+   confirmed `supersede` also writes the typed tombstone, copying the
+   retired entry's existing id and (only when a specific replacement
+   exists) the replacement's newly allocated id as `bindle:superseded-by`.
+   `none`, a rejected/deferred candidate, or a run interrupted before this
+   step completes allocates and persists no identity at all — no pending-id
+   side file exists anywhere in this contract.
 9. Advance the cursor and `updated:` date; announce it.
 10. Summarize: promoted / rejected / deferred counts and the new cursor.
 

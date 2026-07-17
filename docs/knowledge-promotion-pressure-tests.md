@@ -688,3 +688,94 @@ All eleven scenarios pass at their stated rep counts (48 executor reps,
 0 discarded), retrieval passes for both projects, real notes home
 provably untouched → `promote-knowledge` and `knowledge-scout` graduate
 `draft` → `tested`.
+
+## Stable identities (issue #179)
+
+Two layers, per the split the contract itself draws: the identity *helper*
+(`bin/map-entry-id.py`) is deterministic code, pressure-tested directly and
+fast; the *integration* into `/promote-knowledge` (allocating on confirmed
+writes, preserving ids through updates and supersession, never allocating on
+`none`/rejected/deferred) is prompt-driven workflow behavior, pressure-tested
+the same way as the campaign above — fresh subagent executors against
+throwaway fixture homes, filesystem/JSON as ground truth.
+
+### Layer 1 — the helper: `bin/test-map-entry-id.sh`
+
+Deterministic, offline, no subagents. Covers the issue's 28 listed
+scenarios wherever they're a property of the helper itself (allocation
+format/uniqueness/no-side-file, marker placement per entry shape,
+duplicate/malformed-id detection, typed tombstone + `bindle:superseded-by`
+validation including unresolved/self-referential/duplicate/empty-value,
+byte preservation, zero-mutation validation, determinism after
+persistence, real-notes-home isolation via a mtime-marker check). Every
+fixture is a throwaway file under `mktemp -d`; `$BINDLE_NOTES_DIR` is
+pointed at that same tree.
+
+**Result (2026-07-16): PASS 39/39 checks**, 0 failures, run via
+`bin/test-map-entry-id.sh` (also wired into `make test`). The one issue-list
+item this layer cannot cover — "confirm-none allocates and writes no
+IDs" (scenario 10) — is a workflow property with nothing for the helper
+alone to exercise (no code path in `bin/map-entry-id.py` ever gets called
+unless something explicitly calls `allocate`); it's covered by Layer 2's
+scenario X1 below instead.
+
+### Layer 2 — workflow integration: 3 new scenarios, subagent-executed
+
+**Method**: identical to the Method section above — fresh general-purpose
+subagent per rep, inline mode (the `knowledge-scout` fallback path;
+mode-equivalence was already established for the base workflow by
+scenarios 1 and 9 above and isn't re-litigated here), scripted owner reply,
+read-only toward every repository including Bindle itself. Reuses this
+doc's existing `harborlight` fixture builder and homes (`H3`'s single
+disposition-rights session note for the add-path scenarios; `H6`'s seeded
+`map-b.md` + 3 new session notes for the supersede-path scenario). Scoring:
+the returned `map.md` bytes plus `bin/map-entry-id.py validate --format
+json` run against the result (`ok`, `anchored_count`, exact id values).
+
+| # | Scenario | Home | Reply | Pass condition | Reps |
+|---|---|---|---|---|---|
+| X1 | Confirm-none allocates nothing (contract scenario 10) | H3 | `none` | bootstrap skeleton only, zero `##` entries, zero `bindle:context-id` anywhere in the file | 3 |
+| X2 | A confirmed `add` gets exactly one valid, freshly allocated id, written atomically with the entry | H3 | `all` | `map-entry-id.py validate` reports `ok: true`; every confirmed entry is `anchored: true` with an id matching `context-node:harborlight:[0-9a-f]{32}`; distinct ids across multiple confirmed adds in one run | 3 |
+| X3 | Supersession: legacy (pre-#179, unanchored) retired entry gets no retroactive id; its tombstone carries no `bindle:context-id` (nothing to copy) but the confirmed replacement/new entry gets a freshly allocated one | H6 | `all` | retired heading byte-intact except the status-token flip, no id added to it; tombstone has the `<kind>:` typed prefix; `validate` reports `ok: true` with only the expected `info`-level `untyped-tombstone` finding (never an error) | 3 |
+
+**Results (2026-07-16): PASS 9/9 reps, 0 discarded.**
+
+- **X1 (3/3 PASS).** Every rep: bootstrap created the six-section skeleton
+  only, `Decisions`/`Open questions` stayed empty, no `bindle:context-id`
+  marker anywhere in the file — `allocate` was never invoked (no confirmed
+  candidates to allocate for). Byte-identical outcome across all 3 reps.
+- **X2 (3/3 PASS).** Every rep produced 1–2 freshly anchored entries (a
+  Decision, and in 2/3 reps an Open question too — candidate count is not
+  scripted, only the reply is); `validate --format json` returned `ok:
+  true`, `anchored_count` matching the confirmed-entry count, and every id
+  matched the exact `context-node:<slug>:<32-hex>` format. Ids were
+  distinct within and across reps.
+- **X3 (3/3 PASS).** All 3 reps correctly declined to add an id to the
+  legacy retired entry (status-token flip only, claim/fields byte-intact)
+  and correctly omitted `bindle:context-id` from its tombstone. The reps
+  diverged on a legitimate contract branch not specific to identities —
+  one proposed an immediate replacement Decision (getting it a fresh id,
+  `bindle:superseded-by` on the tombstone pointing at it), two deferred the
+  actual policy revision to a new Open question instead (no
+  `bindle:superseded-by`, since no specific replacement exists yet) — both
+  are valid per the existing Relitigation rule ("the tombstone points at
+  the triggering evidence or an Open question" when no replacement exists
+  yet), and both applied the identity rules correctly for the branch they
+  took. `validate` returned `ok: true` in all 3, with only the expected
+  informational `untyped-tombstone` finding (a marker-less legacy retirement
+  is not an error).
+
+### Real-notes-home check (this campaign)
+
+A marker created immediately before dispatching the 9 Layer-2 subagents,
+checked against both `~/.bindle` and the operator's actual configured
+`$BINDLE_NOTES_DIR` after all 9 completed: `find <home> -newer <marker>`
+printed nothing for either — the real notes home was never touched. Layer
+1's own real-notes-home check (inside `bin/test-map-entry-id.sh`) passed
+independently as part of its 39/39.
+
+### Verdict
+
+`bin/map-entry-id.py` and the `/promote-knowledge` identity integration
+graduate `draft` → `tested`: Layer 1 39/39, Layer 2 9/9, 0 discarded, real
+notes home provably untouched in both layers.

@@ -608,6 +608,19 @@
       "version_introduced": "0.5.0"
     },
     {
+      "name": "map-entry-id",
+      "type": "script",
+      "path": "bin/map-entry-id.py",
+      "description": "Stable opaque identity helper for project-map entries (issue #179, epic #140): `allocate --project SLUG` prints one new context-node:<slug>:<32-lowercase-hex> id using command-owned cryptographic entropy (secrets.token_hex(16)) and writes nothing; `validate --map PATH` is read-only structural validation — deterministic discovery of anchored/unanchored entries, marker-placement rules per supported entry shape (decision/learning heading, single-assumption bullet, tension-parent bullet, open-question bullet, typed retirement tombstone), duplicate and malformed identity detection, and bindle:superseded-by validation (missing value, duplicate marker, self-referential, unresolved). Never recomputes an id from mutable entry content; never repairs anything it flags. The two authorized callers are the knowledge-promotion confirmed write (this issue, newly promoted entries only) and #184 anchor acceptance (existing entries) — no other surface allocates a semantic id.",
+      "provider": {
+        "claude": "manual",
+        "codex": "manual"
+      },
+      "maturity": "tested",
+      "mutation": [],
+      "version_introduced": "0.7.0"
+    },
+    {
       "name": "release-captain",
       "type": "skill",
       "path": "skills/release-captain",
