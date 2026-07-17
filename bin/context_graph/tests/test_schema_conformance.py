@@ -37,11 +37,57 @@ class TestSchemaConformance(unittest.TestCase):
     native validator (bin/context_graph/validation.py, already exercised by
     every fixture-manifest run) and a real off-the-shelf JSON Schema
     validator over the same fixture corpus — never a hand-rolled schema
-    engine (design section 11)."""
+    engine (design section 11).
+
+    This test only asserts schema conformance for fixtures the manifest
+    marks `expect_valid: true`. Many fixtures are intentionally INVALID via
+    native-only invariants (cross-object checks, hashing, uniqueness — see
+    schemas/context-graph/v1/invariant-coverage.json's `native-only`
+    classifications) that JSON Schema literally cannot express: an
+    individual object drawn from one of those bundles can still be
+    perfectly schema-valid on its own even though the bundle as a whole is
+    native-invalid. Blanket-checking every fixture (valid and invalid
+    alike) therefore produces false failures on those bundles — that is a
+    bug in this test's design, not a real corpus defect. The useful
+    direction to test here is "does the schema wrongly reject something the
+    native validator considers fully valid," not "does the schema also
+    reject everything native rejects" — fully testing schema-and-native
+    agreement per schema-representable invariant (asserting the schema also
+    rejects the specific `schema-and-native`-classified invalid fixtures) is
+    a reasonable follow-up for a later task, not something this test
+    attempts.
+    """
 
     @classmethod
     def setUpClass(cls):
         cls.schemas = {key: _load_schema(name) for key, name in OBJECT_SCHEMA_MAP.items()}
+        cls.expect_valid_by_path = cls._load_expect_valid_map()
+
+    @classmethod
+    def _load_expect_valid_map(cls):
+        """Build path -> expect_valid from manifest.json, restricted to
+        entries that represent a single bundle's overall valid/invalid
+        status (assertion == "validate", each with its own "path"). Entries
+        with other assertion kinds (candidate_key_distinct,
+        candidate_key_equals, dependency_fingerprint_equals,
+        dependency_fingerprint_distinct, canonicalization) reference
+        multiple bundles via "with" and don't map one path to one
+        valid/invalid verdict, so they're deliberately excluded here — any
+        bundle file not found in the resulting lookup is skipped by the
+        test, not assumed valid."""
+        manifest_path = os.path.join(TESTDATA_DIR, "manifest.json")
+        with open(manifest_path, encoding="utf-8") as fh:
+            manifest = json.load(fh)
+        mapping = {}
+        for entry in manifest["fixtures"]:
+            if entry.get("assertion") != "validate":
+                continue
+            path = entry.get("path")
+            if path is None:
+                continue
+            full_path = os.path.normpath(os.path.join(TESTDATA_DIR, path))
+            mapping[full_path] = entry["expect_valid"]
+        return mapping
 
     def _bundles(self):
         for path in glob.glob(os.path.join(TESTDATA_DIR, "*", "*.json")):
@@ -57,7 +103,17 @@ class TestSchemaConformance(unittest.TestCase):
 
     def test_every_object_in_every_bundle_matches_its_schema(self):
         checked = 0
+        skipped = 0
         for path, bundle in self._bundles():
+            expect_valid = self.expect_valid_by_path.get(os.path.normpath(path))
+            if expect_valid is not True:
+                # expect_valid is False (intentionally-invalid bundle, often
+                # invalid only via a native-only invariant) or None (no
+                # simple valid/invalid manifest entry for this path) — skip
+                # schema-conformance assertion rather than failing or
+                # silently assuming valid.
+                skipped += 1
+                continue
             for key, schema in self.schemas.items():
                 value = bundle.get(key)
                 if value is None:
@@ -70,6 +126,7 @@ class TestSchemaConformance(unittest.TestCase):
                     except jsonschema.ValidationError as exc:
                         self.fail("%s: %s object failed schema conformance: %s" % (path, key, exc))
         self.assertGreater(checked, 0, "no objects were checked — fixture corpus is empty")
+        self.assertGreater(skipped, 0, "expected at least one non-expect_valid:true bundle to be skipped")
 
 
 @unittest.skipUnless(HAVE_JSONSCHEMA, "jsonschema not installed (test-only dependency; skipped locally)")

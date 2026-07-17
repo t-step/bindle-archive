@@ -29,6 +29,7 @@
   ],
   "judgments": [
     {
+      "schema_version": 1,
       "decision": "accepted",
       "subject_key": "context-node:bindle:ada340a4580fd1bc9d523b9ba1d09509|implemented_by|github-pr:thomas-estep/bindle#46",
       "subject_type": "edge",

@@ -29,6 +29,7 @@
   ],
   "judgments": [
     {
+      "schema_version": 1,
       "decision": "accepted",
       "subject_key": "context-node:bindle:335c14efb5d09c98cee37fa2b13391e4|validated_by|document:project:5f56c9b95c41c298f70d6dd4e5db8c2a:project-local:docs/design/example-47.md",
       "subject_type": "edge",

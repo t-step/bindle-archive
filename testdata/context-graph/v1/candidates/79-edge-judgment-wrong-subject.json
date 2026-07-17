@@ -16,6 +16,7 @@
   ],
   "judgments": [
     {
+      "schema_version": 1,
       "decision": "accepted",
       "subject_key": "anchor-candidate:sha256:88e2b6dd5021c7c6dd24b1c6cc6f0597486e3d9dd61268998b6b93113735d1c5",
       "subject_type": "edge",

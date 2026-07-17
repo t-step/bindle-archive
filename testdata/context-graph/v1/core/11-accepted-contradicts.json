@@ -29,6 +29,7 @@
   ],
   "judgments": [
     {
+      "schema_version": 1,
       "decision": "accepted",
       "subject_key": "context-node:bindle:e202e360d16351de967b4292c3a300ba|contradicts|context-node:bindle:371be9e028e6d8d53460ebc07653420f",
       "subject_type": "edge",

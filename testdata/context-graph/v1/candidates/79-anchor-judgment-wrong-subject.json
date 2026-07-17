@@ -18,6 +18,7 @@
   ],
   "judgments": [
     {
+      "schema_version": 1,
       "decision": "accepted",
       "subject_key": "candidate:sha256:7781df9e8895eb16721169527e69f22259044550188d36647a86b18e576cc269",
       "subject_type": "identity_anchor",
