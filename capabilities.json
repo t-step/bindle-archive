@@ -872,6 +872,10 @@
       "reason": "a point-in-time implementation plan for the #180 context-graph schema/fixture implementation; planning artifact, not itself a capability."
     },
     {
+      "path": "bin/check-context-graph-fixtures.py",
+      "reason": "fixture validator invoked by the test harness / make check machinery, exactly like bin/check-inventory.py; not itself a capability an agent invokes for its own sake."
+    },
+    {
       "path": "bin/context_graph/__init__.py",
       "reason": "package marker and module docstring for the context_graph library; internal machinery, not a capability invoked directly."
     },
