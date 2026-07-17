@@ -910,6 +910,10 @@
       "reason": "library module for atomic-write primitives (write_atomic, write_json_atomic, read_json, append_line_atomic) in the context_graph contract; foundation module consumed by context_graph state management, not a standalone capability."
     },
     {
+      "path": "bin/context_graph/lock.py",
+      "reason": "library module for single-writer project lock (atomic create-exclusive, bounded exponential backoff, contention timeouts) in the context_graph contract; foundation module consumed by init/config/confirm/apply operations, not a standalone capability."
+    },
+    {
       "path": "bin/context_graph/ids.py",
       "reason": "library module for typed-ID parsing/formatting in the context_graph contract; foundation module consumed by other contract modules, not a standalone capability."
     },
@@ -924,6 +928,10 @@
     {
       "path": "bin/context_graph/tests/test_atomic_io.py",
       "reason": "unit tests for context_graph.atomic_io; test infrastructure, not a capability an agent invokes."
+    },
+    {
+      "path": "bin/context_graph/tests/test_lock.py",
+      "reason": "unit tests for context_graph.lock; test infrastructure, not a capability an agent invokes."
     },
     {
       "path": "bin/context_graph/tests/test_ids.py",
