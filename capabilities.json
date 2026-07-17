@@ -894,6 +894,14 @@
     {
       "path": "bin/context_graph/tests/test_relationships.py",
       "reason": "unit tests for context_graph.relationships; test infrastructure, not a capability an agent invokes."
+    },
+    {
+      "path": "bin/context_graph/canonical.py",
+      "reason": "library module for byte-exact candidate-key and fingerprint hashing primitives in the context_graph contract; foundation module consumed by context_graph.validation and fixtures, not a standalone capability."
+    },
+    {
+      "path": "bin/context_graph/tests/test_canonical.py",
+      "reason": "unit tests for context_graph.canonical; test infrastructure, not a capability an agent invokes."
     }
   ],
   "external_upstreams": [
