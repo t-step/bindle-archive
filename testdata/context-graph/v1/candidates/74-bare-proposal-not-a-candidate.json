@@ -1,0 +1,18 @@
+{
+  "proposals": [
+    {
+      "source": "context-node:bindle:11111111111111111111111111111111",
+      "relationship": "depends_on",
+      "target": "context-node:bindle:22222222222222222222222222222222",
+      "basis": [
+        {
+          "kind": "evidence_pointer",
+          "location": "entry_evidence",
+          "pointer": "#9"
+        }
+      ],
+      "explanation": "these look related",
+      "producer": "human"
+    }
+  ]
+}

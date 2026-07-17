@@ -1,0 +1,28 @@
+{
+  "candidates": [
+    {
+      "subject_type": "edge",
+      "candidate_key": "candidate:sha256:7781df9e8895eb16721169527e69f22259044550188d36647a86b18e576cc269",
+      "candidate_origin": "validated_proposal",
+      "dependency_fingerprint": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+      "validation_status": "valid",
+      "source": "context-node:bindle:79797979797979797979797979797979",
+      "relationship": "depends_on",
+      "target": "context-node:bindle:97979797979797979797979797979797",
+      "source_class": "semantic",
+      "source_kind": "decision",
+      "target_class": "semantic",
+      "target_kind": "learning",
+      "basis": []
+    }
+  ],
+  "judgments": [
+    {
+      "decision": "accepted",
+      "subject_key": "candidate:sha256:7781df9e8895eb16721169527e69f22259044550188d36647a86b18e576cc269",
+      "subject_type": "identity_anchor",
+      "candidate_key": "candidate:sha256:7781df9e8895eb16721169527e69f22259044550188d36647a86b18e576cc269",
+      "decided_at": "2026-07-16T00:00:00Z"
+    }
+  ]
+}

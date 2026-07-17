@@ -1137,6 +1137,158 @@
         "identity-config"
       ],
       "invariant_ids": []
+    },
+    {
+      "id": "71",
+      "path": "candidates/71-deterministic-edge-no-judgment.json",
+      "assertion": "validate",
+      "expect_valid": true,
+      "expect_codes": [],
+      "match_mode": "exact",
+      "coverage_tags": [
+        "candidates"
+      ],
+      "invariant_ids": []
+    },
+    {
+      "id": "72",
+      "path": "candidates/72-identity-anchor-candidate.json",
+      "assertion": "validate",
+      "expect_valid": true,
+      "expect_codes": [],
+      "match_mode": "exact",
+      "coverage_tags": [
+        "candidates"
+      ],
+      "invariant_ids": []
+    },
+    {
+      "id": "73",
+      "path": "candidates/73-anchor-synthesis-forbidden.json",
+      "assertion": "validate",
+      "expect_valid": false,
+      "expect_codes": [
+        "E_CANDIDATE_ANCHOR_SYNTHESIS_FORBIDDEN"
+      ],
+      "match_mode": "exact",
+      "coverage_tags": [
+        "candidates"
+      ],
+      "invariant_ids": []
+    },
+    {
+      "id": "74",
+      "path": "candidates/74-bare-proposal-not-a-candidate.json",
+      "assertion": "validate",
+      "expect_valid": true,
+      "expect_codes": [],
+      "match_mode": "exact",
+      "coverage_tags": [
+        "candidates"
+      ],
+      "invariant_ids": []
+    },
+    {
+      "id": "75",
+      "assertion": "candidate_key_equals",
+      "with": [
+        "candidates/75-human.json",
+        "candidates/75-skill.json",
+        "candidates/75-fixture.json"
+      ],
+      "coverage_tags": [
+        "candidates"
+      ]
+    },
+    {
+      "id": "76",
+      "path": "candidates/76-candidate-key-conflict.json",
+      "assertion": "validate",
+      "expect_valid": false,
+      "expect_codes": [
+        "E_CANDIDATE_KEY_CONFLICT"
+      ],
+      "match_mode": "exact",
+      "coverage_tags": [
+        "candidates"
+      ],
+      "invariant_ids": []
+    },
+    {
+      "id": "77",
+      "path": "candidates/77-invalid-endpoint-not-a-candidate.json",
+      "assertion": "validate",
+      "expect_valid": false,
+      "expect_codes": [
+        "E_CANDIDATE_INVALID_ENDPOINT"
+      ],
+      "match_mode": "exact",
+      "coverage_tags": [
+        "candidates"
+      ],
+      "invariant_ids": []
+    },
+    {
+      "id": "78",
+      "path": "candidates/78-accepted-judgment-creates-edge.json",
+      "assertion": "validate",
+      "expect_valid": true,
+      "expect_codes": [],
+      "match_mode": "exact",
+      "coverage_tags": [
+        "candidates"
+      ],
+      "invariant_ids": []
+    },
+    {
+      "id": "79-1",
+      "path": "candidates/79-edge-judgment-wrong-subject.json",
+      "assertion": "validate",
+      "expect_valid": false,
+      "expect_codes": [
+        "E_JUDGMENT_SUBJECT_TYPE_MISMATCH"
+      ],
+      "match_mode": "exact",
+      "coverage_tags": [
+        "candidates"
+      ],
+      "invariant_ids": []
+    },
+    {
+      "id": "79-2",
+      "path": "candidates/79-anchor-judgment-wrong-subject.json",
+      "assertion": "validate",
+      "expect_valid": false,
+      "expect_codes": [
+        "E_JUDGMENT_SUBJECT_TYPE_MISMATCH"
+      ],
+      "match_mode": "exact",
+      "coverage_tags": [
+        "candidates"
+      ],
+      "invariant_ids": []
+    },
+    {
+      "id": "80",
+      "assertion": "dependency_fingerprint_equals",
+      "with": [
+        "candidates/80-a.json",
+        "candidates/80-b.json"
+      ],
+      "coverage_tags": [
+        "candidates"
+      ]
+    },
+    {
+      "id": "81",
+      "assertion": "dependency_fingerprint_distinct",
+      "with": [
+        "candidates/81-a.json",
+        "candidates/81-b.json"
+      ],
+      "coverage_tags": [
+        "candidates"
+      ]
     }
   ]
 }

@@ -1,0 +1,26 @@
+{
+  "candidates": [
+    {
+      "subject_type": "identity_anchor",
+      "candidate_key": "anchor-candidate:sha256:88e2b6dd5021c7c6dd24b1c6cc6f0597486e3d9dd61268998b6b93113735d1c5",
+      "candidate_origin": "deterministic_compiler",
+      "dependency_fingerprint": "sha256:70ccaedd9d0c7356af15cf817c6704fd8ffb61a3a49ce616308c883ae6e64e6c",
+      "validation_status": "valid",
+      "project_id": "project:5f56c9b95c41c298f70d6dd4e5db8c2a",
+      "map_path": "projects/bindle/map.md",
+      "section": "decisions",
+      "entry_kind": "decision",
+      "entry_fingerprint": "sha256:b7a4eb36ce772ef111761baec0729e8f5815e2820e2f06d6af66cf47b169118d",
+      "display_claim": "Separate release intent, artifact, and publication authority (79a)"
+    }
+  ],
+  "judgments": [
+    {
+      "decision": "accepted",
+      "subject_key": "anchor-candidate:sha256:88e2b6dd5021c7c6dd24b1c6cc6f0597486e3d9dd61268998b6b93113735d1c5",
+      "subject_type": "edge",
+      "candidate_key": "anchor-candidate:sha256:88e2b6dd5021c7c6dd24b1c6cc6f0597486e3d9dd61268998b6b93113735d1c5",
+      "decided_at": "2026-07-16T00:00:00Z"
+    }
+  ]
+}

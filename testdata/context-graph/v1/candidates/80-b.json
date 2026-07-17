@@ -1,0 +1,18 @@
+{
+  "candidates": [
+    {
+      "subject_type": "identity_anchor",
+      "candidate_key": "anchor-candidate:sha256:de5f2e3ead19bcb905dfd0ac06898c12c71bb1a7d112de386363490e54197933",
+      "candidate_origin": "deterministic_compiler",
+      "dependency_fingerprint": "sha256:f579dbeb232f6f18724ea3322132105aed41dc8b799d98dc79ab495133224e5f",
+      "whole_graph_fingerprint": "sha256:2222222222222222222222222222222222222222222222222222222222222222",
+      "validation_status": "valid",
+      "project_id": "project:5f56c9b95c41c298f70d6dd4e5db8c2a",
+      "map_path": "projects/bindle/map.md",
+      "section": "decisions",
+      "entry_kind": "decision",
+      "entry_fingerprint": "sha256:37730a28d9968e38cb25da0b1a98b7c4e13c43a2b661ca2b6cd3daf884b8e681",
+      "display_claim": "Separate release intent, artifact, and publication authority"
+    }
+  ]
+}

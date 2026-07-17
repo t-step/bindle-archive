@@ -1,0 +1,17 @@
+{
+  "candidates": [
+    {
+      "subject_type": "identity_anchor",
+      "candidate_key": "anchor-candidate:sha256:86f995333fef0457cf1aa0ef63be6870a29e12e8779b5d892805100a3085115d",
+      "candidate_origin": "deterministic_compiler",
+      "dependency_fingerprint": "sha256:e99e847006142c26b607af7d8d008cfa4925fe8933a99cbc732d58d45a092b43",
+      "validation_status": "valid",
+      "project_id": "project:5f56c9b95c41c298f70d6dd4e5db8c2a",
+      "map_path": "projects/bindle/map.md",
+      "section": "decisions",
+      "entry_kind": "decision",
+      "entry_fingerprint": "sha256:42ec41bb3347f63f8477d40bdc2bffe75ab96ecf25fc503566366b58c9a49e5a",
+      "display_claim": "Separate release intent, artifact, and publication authority (revised: two failure modes)"
+    }
+  ]
+}

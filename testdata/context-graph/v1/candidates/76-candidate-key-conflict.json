@@ -1,0 +1,26 @@
+{
+  "candidates": [
+    {
+      "subject_type": "edge",
+      "candidate_key": "candidate:sha256:98132730a2270857d13887fef72c3a3460de3d8623f6427a611ba818b964f7bf",
+      "candidate_origin": "validated_proposal",
+      "dependency_fingerprint": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+      "validation_status": "invalid",
+      "source": "context-node:bindle:55555555555555555555555555555555",
+      "relationship": "depends_on",
+      "target": "context-node:bindle:66666666666666666666666666666666",
+      "source_class": "semantic",
+      "source_kind": "decision",
+      "target_class": "semantic",
+      "target_kind": "learning",
+      "basis": [
+        {
+          "kind": "evidence_pointer",
+          "location": "entry_evidence",
+          "pointer": "#12"
+        }
+      ],
+      "producer": "fixture"
+    }
+  ]
+}
