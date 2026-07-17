@@ -11,6 +11,8 @@ import os
 import socket
 import time
 
+from . import atomic_io
+
 VALID_OPERATIONS = ("init", "config", "confirm", "apply")
 
 LOCK_FILENAME = ".lock"
@@ -69,8 +71,6 @@ def pid_is_running(pid):
 
 
 def _try_acquire(path, operation):
-    if operation not in VALID_OPERATIONS:
-        raise ValueError("invalid lock operation %r" % (operation,))
     try:
         fd = os.open(path, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
     except FileExistsError:
@@ -81,10 +81,21 @@ def _try_acquire(path, operation):
         "operation": operation,
         "acquired_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
     }
-    with os.fdopen(fd, "w", encoding="utf-8") as f:
-        f.write(json.dumps(owner, sort_keys=True))
-        f.flush()
-        os.fsync(f.fileno())
+    try:
+        with os.fdopen(fd, "w", encoding="utf-8") as f:
+            f.write(json.dumps(owner, sort_keys=True))
+            f.flush()
+            os.fsync(f.fileno())
+    except BaseException:
+        # If metadata write fails, remove the just-created lock file to avoid
+        # orphaning it, then re-raise the original exception.
+        try:
+            os.unlink(path)
+        except OSError:
+            pass
+        raise
+    # Fsync the containing directory for durability (following atomic_io pattern).
+    atomic_io._fsync_dir(os.path.dirname(path) or ".")
     return True
 
 

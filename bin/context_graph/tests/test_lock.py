@@ -1,8 +1,10 @@
+import json
 import os
 import sys
 import tempfile
 import threading
 import unittest
+from unittest import mock
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", ".."))
 
@@ -71,7 +73,6 @@ class TestProjectLock(unittest.TestCase):
             owner_while_held = lock.read_owner(path)
         # re-create manually to simulate a stale lock left by a crash
         with open(path, "w", encoding="utf-8") as f:
-            import json
             f.write(json.dumps(owner_while_held))
         returned = lock.break_lock(self.tmp)
         self.assertEqual(returned["operation"], "init")
@@ -107,6 +108,54 @@ class TestProjectLock(unittest.TestCase):
         for t in threads:
             t.join()
         self.assertEqual(holder["max_concurrent"], 1)
+
+    def test_write_failure_does_not_orphan_lock_file(self):
+        """Verify that if metadata write fails, the lock file is removed."""
+        path = lock.lock_path(self.tmp)
+
+        # Patch the fdopen to raise an exception during write
+        original_fdopen = os.fdopen
+
+        def failing_fdopen(fd, *args, **kwargs):
+            f = original_fdopen(fd, *args, **kwargs)
+            original_write = f.write
+
+            def failing_write(data):
+                # Simulate write failure (e.g., disk full, EIO)
+                raise OSError("Simulated write failure")
+
+            f.write = failing_write
+            return f
+
+        # Try to acquire with the failing write
+        with mock.patch("os.fdopen", side_effect=failing_fdopen):
+            with self.assertRaises(OSError):
+                lock._try_acquire(path, "init")
+
+        # Verify the lock file does not exist (not orphaned)
+        self.assertFalse(os.path.exists(path))
+
+    def test_directory_fsync_is_called_on_acquisition(self):
+        """Verify that directory fsync is called after lock file creation."""
+        path = lock.lock_path(self.tmp)
+
+        fsync_calls = []
+
+        original_fsync_dir = lock.atomic_io._fsync_dir
+
+        def tracking_fsync_dir(directory):
+            fsync_calls.append(directory)
+            return original_fsync_dir(directory)
+
+        # Acquire lock with mocked _fsync_dir
+        with mock.patch.object(lock.atomic_io, "_fsync_dir", side_effect=tracking_fsync_dir):
+            lock._try_acquire(path, "init")
+            try:
+                # Verify _fsync_dir was called with the lock file's directory
+                self.assertEqual(len(fsync_calls), 1)
+                self.assertEqual(fsync_calls[0], os.path.dirname(path))
+            finally:
+                os.unlink(path)
 
 
 if __name__ == "__main__":
