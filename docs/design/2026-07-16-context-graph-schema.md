@@ -278,12 +278,13 @@ Seven `*.schema.json` files, each a documentation/interchange contract; the
 native validator is authoritative (§11).
 
 - **`config.schema.json`** — immutable `project_id`; mutable `project_slug`;
-  optional `display_name`; a `repositories` map of alias → binding; each binding
-  carries a stable `binding_id`, `provider`, optional `coordinates`, optional
-  local checkout path, and optional `default_for_bare_references`; explicit
-  `schema_version`. Rejects: malformed/missing `project_id`, duplicate aliases,
-  duplicate `binding_id`s, more than one default, and repository-shaped project
-  IDs. It does **not** allocate identity (that is #191).
+  optional `display_name`; a `repositories` list, each entry carrying an
+  explicit `alias` field alongside a stable `binding_id`, `provider`, optional
+  `coordinates`, optional local checkout path, and optional
+  `default_for_bare_references`; explicit `schema_version`. Rejects:
+  malformed/missing `project_id`, duplicate aliases, duplicate `binding_id`s,
+  more than one default, and repository-shaped project IDs. It does **not**
+  allocate identity (that is #191).
 - **`node.schema.json`** — `id`, `class` ∈ {project, semantic, evidence},
   `kind`, `label`, `status`, `source`, optional `confidence` (valid only for
   `assumption`/`tension`). Semantic kinds: decision, learning, assumption,
