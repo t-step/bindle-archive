@@ -927,6 +927,10 @@
     {
       "path": "bin/context_graph/tests/test_validation.py",
       "reason": "unit tests for context_graph.validation; test infrastructure, not a capability an agent invokes."
+    },
+    {
+      "path": "bin/context_graph/tests/test_schema_conformance.py",
+      "reason": "unit tests validating fixture objects against the JSON Schemas and invariant-coverage.json completeness; test infrastructure, not a capability an agent invokes."
     }
   ],
   "external_upstreams": [

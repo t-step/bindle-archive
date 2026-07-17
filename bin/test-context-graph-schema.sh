@@ -76,6 +76,13 @@ PYEOF
 check "no relationship is missing coverage (missing: '${covered:-none}')" \
   bash -c '[ -z "$1" ]' _ "$covered"
 
+echo "== JSON Schema / native conformance (skip-if-absent locally) =="
+conformance_output="$(cd "$REPO_ROOT" && "$PY" -m unittest bin.context_graph.tests.test_schema_conformance -v 2>&1)"
+conformance_status=$?
+echo "$conformance_output"
+check "schema conformance module completes (skips cleanly if jsonschema absent)" \
+  bash -c "exit $conformance_status"
+
 echo
 echo "test-context-graph-schema: $pass passed, $fail failed"
 [ "$fail" -eq 0 ]
