@@ -4,10 +4,17 @@ bin/context_graph/ (issue #180, epic #140).
 
 Drives the manifest-registered fixture corpus under
 testdata/context-graph/v1/ through context_graph.validation.validate_bundle
-(for validate-kind fixtures) or context_graph.canonical (for
-candidate_key_relation-kind fixtures), and reports pass/fail per fixture
-plus a summary. Contains no independent copy of ID parsing, endpoint rules,
-candidate-key logic, or canonicalization — every check calls the package.
+(for "validate"-kind fixtures), or compares precomputed candidate_key and
+dependency_fingerprint values for relation-kind fixtures (candidate_key_equals,
+candidate_key_distinct, dependency_fingerprint_equals,
+dependency_fingerprint_distinct). Those precomputed values are expected to have
+been computed at fixture-authoring time and are already embedded in each
+fixture bundle's candidates list; they are independently cross-checked at
+validation time by context_graph.validation._check_candidates for edge-subject
+candidates, and pinned byte-exactly by dedicated canonicalization/ fixtures in
+the corpus. Reports pass/fail per fixture plus a summary. Contains no
+independent copy of ID parsing, endpoint rules, candidate-key logic, or
+canonicalization — every check calls the package.
 
 Manifest contract (testdata/context-graph/v1/manifest.json):
 
@@ -52,7 +59,6 @@ import os
 import sys
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__))))
-from context_graph import canonical
 from context_graph import validation
 
 
