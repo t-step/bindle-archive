@@ -36,6 +36,7 @@ test:
 	bin/test-release-please-sync.sh
 	bin/test-release-publish.sh
 	bin/test-map-entry-id.sh
+	bin/test-context-graph-schema.sh
 
 install:
 	bin/install.sh
