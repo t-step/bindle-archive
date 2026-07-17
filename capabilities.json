@@ -870,6 +870,22 @@
     {
       "path": "docs/superpowers/plans/2026-07-16-context-graph-schema-implementation.md",
       "reason": "a point-in-time implementation plan for the #180 context-graph schema/fixture implementation; planning artifact, not itself a capability."
+    },
+    {
+      "path": "bin/context_graph/__init__.py",
+      "reason": "package marker and module docstring for the context_graph library; internal machinery, not a capability invoked directly."
+    },
+    {
+      "path": "bin/context_graph/ids.py",
+      "reason": "library module for typed-ID parsing/formatting in the context_graph contract; foundation module consumed by other contract modules, not a standalone capability."
+    },
+    {
+      "path": "bin/context_graph/tests/__init__.py",
+      "reason": "test package marker; test infrastructure, not a capability."
+    },
+    {
+      "path": "bin/context_graph/tests/test_ids.py",
+      "reason": "unit tests for context_graph.ids; test infrastructure, not a capability an agent invokes."
     }
   ],
   "external_upstreams": [
