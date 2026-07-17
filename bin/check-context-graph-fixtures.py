@@ -59,7 +59,7 @@ import os
 import sys
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__))))
-from context_graph import validation
+from context_graph import canonical, validation
 
 
 def _load_bundle(manifest_dir, relative_path):
@@ -117,6 +117,47 @@ def _run_relation_fixture(manifest_dir, entry):
     }
 
 
+def _run_canonicalization_fixture(manifest_dir, entry):
+    input_path = os.path.join(manifest_dir, entry["input"])
+    with open(input_path, encoding="utf-8") as fh:
+        data = json.load(fh)
+    expected_txt_path = os.path.join(manifest_dir, entry["expected_txt"])
+    with open(expected_txt_path, encoding="utf-8") as fh:
+        expected_lines = [line.strip() for line in fh if line.strip()]
+
+    if "entry_lines" in data:
+        entry_bytes = "\n".join(data["entry_lines"]).encode("utf-8")
+        fp = canonical.entry_fingerprint(
+            data["project_id"], data["map_path"], data["section"],
+            data["entry_kind"], entry_bytes,
+        )
+        key = canonical.anchor_candidate_key(
+            data["project_id"], data["map_path"], data["section"],
+            data["entry_kind"], fp,
+        )
+        dep = canonical.anchor_dependency_fingerprint(
+            data["project_id"], data["map_path"], data["section"],
+            data["entry_kind"], fp,
+        )
+        actual_lines = [fp, key, dep]
+        ok = actual_lines == expected_lines
+        return {"id": entry["id"], "path": entry["input"], "ok": ok,
+                "actual_valid": None, "actual_codes": actual_lines,
+                "expect_valid": None, "expect_codes": expected_lines}
+
+    key = canonical.candidate_key(data["source"], data["relationship"], data["target"], data["basis"])
+    ok = [key] == expected_lines
+    if "expected_json" in entry:
+        expected_json_path = os.path.join(manifest_dir, entry["expected_json"])
+        with open(expected_json_path, encoding="utf-8") as fh:
+            expected_basis = json.load(fh)
+        actual_basis = json.loads(canonical.canonical_basis_bytes(data["basis"]))
+        ok = ok and actual_basis == expected_basis
+    return {"id": entry["id"], "path": entry["input"], "ok": ok,
+            "actual_valid": None, "actual_codes": [key],
+            "expect_valid": None, "expect_codes": expected_lines}
+
+
 def run_manifest(manifest_path):
     manifest_dir = os.path.dirname(os.path.abspath(manifest_path))
     with open(manifest_path, encoding="utf-8") as fh:
@@ -135,6 +176,8 @@ def run_manifest(manifest_path):
         try:
             if entry["assertion"] == "validate":
                 results.append(_run_validate_fixture(manifest_dir, entry))
+            elif entry["assertion"] == "canonicalization":
+                results.append(_run_canonicalization_fixture(manifest_dir, entry))
             else:
                 results.append(_run_relation_fixture(manifest_dir, entry))
         except (FileNotFoundError, ValueError, KeyError) as exc:

@@ -1289,6 +1289,25 @@
       "coverage_tags": [
         "candidates"
       ]
+    },
+    {
+      "id": "anchor-01",
+      "assertion": "canonicalization",
+      "input": "canonicalization/anchor-01.input.json",
+      "expected_txt": "canonicalization/anchor-01.expected.txt",
+      "coverage_tags": [
+        "canonicalization"
+      ]
+    },
+    {
+      "id": "edge-01",
+      "assertion": "canonicalization",
+      "input": "canonicalization/edge-01.input.json",
+      "expected_txt": "canonicalization/edge-01.expected.txt",
+      "expected_json": "canonicalization/edge-01.expected.json",
+      "coverage_tags": [
+        "canonicalization"
+      ]
     }
   ]
 }

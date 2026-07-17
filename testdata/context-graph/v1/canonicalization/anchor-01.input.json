@@ -1,0 +1,13 @@
+{
+  "project_id": "project:5f56c9b95c41c298f70d6dd4e5db8c2a",
+  "map_path": "projects/bindle/map.md",
+  "section": "decisions",
+  "entry_kind": "decision",
+  "entry_lines": [
+    "### Separate release intent, artifact, and publication authority (2026-07, settled)",
+    "why: three failure modes were collapsing into one review step.",
+    "so: release-captain recommends, package-release-integrity gates, a human publishes.",
+    "revisit-when: a provider ships one safe end-to-end release action.",
+    "evidence: sessions/2026-07-15-release-captain.md"
+  ]
+}
