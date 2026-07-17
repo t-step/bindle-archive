@@ -918,6 +918,10 @@
       "reason": "library module for typed-ID parsing/formatting in the context_graph contract; foundation module consumed by other contract modules, not a standalone capability."
     },
     {
+      "path": "bin/context_graph/config.py",
+      "reason": "library module for project identity allocation and the config.json init lifecycle (allocate_project_id, allocate_binding_id, load_config, init_project) in the context_graph contract; consumed by a future CLI task (init/config status/config validate), not a standalone capability itself."
+    },
+    {
       "path": "bin/context_graph/evidence.py",
       "reason": "library module for typed evidence-reference normalization (grammar, tokenization, GitHub/local-path/commit classification) in the context_graph contract; consumed by bin/context-evidence.py (the capability row) and by #183's future compiler, not a standalone capability itself."
     },
@@ -936,6 +940,10 @@
     {
       "path": "bin/context_graph/tests/test_ids.py",
       "reason": "unit tests for context_graph.ids; test infrastructure, not a capability an agent invokes."
+    },
+    {
+      "path": "bin/context_graph/tests/test_config.py",
+      "reason": "unit tests for context_graph.config; test infrastructure, not a capability an agent invokes."
     },
     {
       "path": "bin/context_graph/tests/test_evidence.py",
