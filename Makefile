@@ -37,6 +37,7 @@ test:
 	bin/test-release-publish.sh
 	bin/test-map-entry-id.sh
 	bin/test-context-graph-schema.sh
+	bin/test-context-evidence.sh
 
 install:
 	bin/install.sh

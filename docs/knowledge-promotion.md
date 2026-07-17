@@ -377,9 +377,24 @@ a removal. Deletion is promotion too.
   `sessions/<date>-<slug>.md` or `handoffs/…` — the map lives beside those
   directories), or bare relative paths where a link would be noise. Both
   render in editors and Obsidian and stay greppable.
-- Issues and PRs: bare `#NNN` where the project's tracker is unambiguous;
-  `owner/repo#NNN` otherwise.
+- Issues and PRs: prefer the typed forms `Issue #NNN` / `PR #NNN`, or
+  `Issue owner/repo#NNN` / `PR owner/repo#NNN` when repository context isn't
+  obvious — a machine normalizer (#181) can't tell an issue from a PR by
+  number alone, and a typed reference resolves unambiguously without
+  guessing. The legacy bare forms `#NNN` and `owner/repo#NNN` remain valid
+  and human-readable, but are machine-ambiguous (they normalize to an
+  unresolved artifact-type pending a hint or a resolver) — prefer typed
+  forms for new entries; do not rewrite existing map entries merely to
+  adopt them.
 - Commits: short hashes in backticks.
+- A bare pointer and the same destination wrapped in an inline Markdown
+  link — a `[label]` immediately followed by `(destination)` — carry
+  identical evidence identity: the label is presentation only and never
+  affects it. Existing relative Markdown links for notes-home artifacts
+  remain valid as written.
+- Commas separate list members only at the top level of an `evidence:`
+  field — a comma inside a Markdown link's label or destination, or inside
+  a backtick commit pointer, is part of that pointer, not a separator.
 - Quoting evidence: one line maximum. Understanding artifacts never absorb
   evidence bodies.
 
