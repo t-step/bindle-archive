@@ -27,8 +27,29 @@
     {
       "if": { "properties": { "subject_type": { "const": "edge" } } },
       "then": {
-        "required": ["source", "relationship", "target", "basis"],
-        "properties": { "candidate_key": { "pattern": "^candidate:sha256:[0-9a-f]{64}$" } }
+        "required": [
+          "source", "relationship", "target", "basis",
+          "source_class", "source_kind", "target_class", "target_kind"
+        ],
+        "properties": {
+          "candidate_key": { "pattern": "^candidate:sha256:[0-9a-f]{64}$" },
+          "source_class": { "enum": ["project", "semantic", "evidence"] },
+          "source_kind": {
+            "enum": [
+              "decision", "learning", "assumption", "tension", "question",
+              "session", "handoff", "design_document", "github_issue", "github_pr",
+              null
+            ]
+          },
+          "target_class": { "enum": ["project", "semantic", "evidence"] },
+          "target_kind": {
+            "enum": [
+              "decision", "learning", "assumption", "tension", "question",
+              "session", "handoff", "design_document", "github_issue", "github_pr",
+              null
+            ]
+          }
+        }
       }
     },
     {
