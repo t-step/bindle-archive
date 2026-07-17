@@ -2566,7 +2566,6 @@ ordering). `schema-only-documentation` must stay empty unless justified.
     { "code": "E_EDGE_RELATIONSHIP_REJECTED", "classification": "schema-and-native" },
     { "code": "E_EDGE_ENDPOINT_ILLEGAL", "classification": "native-only" },
     { "code": "E_EDGE_SELF_EDGE_FORBIDDEN", "classification": "native-only" },
-    { "code": "E_EDGE_SUPERSEDES_KIND_MISMATCH", "classification": "native-only" },
     { "code": "E_EDGE_MISSING_NODE_REF", "classification": "native-only" },
     { "code": "E_EDGE_DUPLICATE_KEY", "classification": "native-only" },
     { "code": "E_EDGE_REVIEW_TRIGGER_MISMATCH", "classification": "native-only" },
@@ -3369,7 +3368,7 @@ bundle file and manifest entry:**
 | 48 | Decision `resolves` question succeeds; question `resolves` decision fails | decision→question | question→decision (`E_EDGE_ENDPOINT_ILLEGAL`) |
 | 49 | Decision `resolves` tension succeeds | decision→tension | — |
 | 50 | Tension `constrains` decision succeeds | tension→decision | — |
-| 51 | Same-kind `supersedes` succeeds; cross-kind and self-supersession fail | decision→decision | decision→learning (`E_EDGE_SUPERSEDES_KIND_MISMATCH`); decision→itself (`E_EDGE_SELF_EDGE_FORBIDDEN`) |
+| 51 | Same-kind `supersedes` succeeds; cross-kind and self-supersession fail | decision→decision | decision→learning (`E_EDGE_ENDPOINT_ILLEGAL`); decision→itself (`E_EDGE_SELF_EDGE_FORBIDDEN`) |
 | 52 | Reversed `contradicts` proposals produce one canonical candidate and edge | — | `assertion: candidate_key_equals` over two candidate bundles with source/target swapped |
 | 53 | Semantic `implements` is rejected as reserved in v1 | — | decision→github_pr `implements` (`E_EDGE_RELATIONSHIP_REJECTED`) |
 | 54 | Reserved future node kinds cannot enter a v1 endpoint group | — | `architecture_component`→decision `contains`-shaped edge (`E_EDGE_ENDPOINT_ILLEGAL`, since the reserved kind matches no group even before the `E_NODE_RESERVED_KIND` node-level check fires) |
@@ -3396,7 +3395,12 @@ and `tension --constrains--> decision`.
 
 `51-supersedes-same-kind.json` (valid, both `decision`),
 `51-supersedes-cross-kind.json` (both `decision`/`learning`, expect
-`E_EDGE_SUPERSEDES_KIND_MISMATCH`), `51-supersedes-self.json` (source ==
+`E_EDGE_ENDPOINT_ILLEGAL` — Task 4's implementer found that
+`relationships.validate_endpoint_pair` already folds `same_kind_required`
+into its `ok` result, so a dedicated `E_EDGE_SUPERSEDES_KIND_MISMATCH` code
+would be redundant; that code was dropped from `validation.py` and
+`invariant-coverage.json` post-Task-4, see the progress ledger),
+`51-supersedes-self.json` (source ==
 target, expect `E_EDGE_SELF_EDGE_FORBIDDEN`).
 
 - [ ] **Step 4: Write fixture 52 (contradicts canonical ordering)**

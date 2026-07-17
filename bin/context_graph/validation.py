@@ -29,7 +29,6 @@ FINDING_CODES = (
     "E_EDGE_RELATIONSHIP_REJECTED",
     "E_EDGE_ENDPOINT_ILLEGAL",
     "E_EDGE_SELF_EDGE_FORBIDDEN",
-    "E_EDGE_SUPERSEDES_KIND_MISMATCH",
     "E_EDGE_MISSING_NODE_REF",
     "E_EDGE_DUPLICATE_KEY",
     "E_EDGE_REVIEW_TRIGGER_MISMATCH",
@@ -266,20 +265,6 @@ def _check_edges(edges, nodes_by_id, judgments):
                                 result.get("allowed_target_class"),
                                 result.get("allowed_target_kinds"),
                             ),
-                            index=i, field="relationship",
-                        )
-                    )
-                if (
-                    spec["same_kind_required"]
-                    and src_kind is not None
-                    and tgt_kind is not None
-                    and src_kind != tgt_kind
-                ):
-                    findings.append(
-                        _finding(
-                            "E_EDGE_SUPERSEDES_KIND_MISMATCH",
-                            "%r requires source and target of the same kind: "
-                            "%r vs %r" % (relationship, src_kind, tgt_kind),
                             index=i, field="relationship",
                         )
                     )

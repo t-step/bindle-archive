@@ -212,7 +212,7 @@ class TestEdgeChecks(unittest.TestCase):
                            deterministic_source={"kind": "map_tombstone"})
         bundle = {"nodes": [DECISION_A, LEARNING_B], "edges": [edge]}
         self.assertIn(
-            "E_EDGE_SUPERSEDES_KIND_MISMATCH", codes(v.validate_bundle(bundle))
+            "E_EDGE_ENDPOINT_ILLEGAL", codes(v.validate_bundle(bundle))
         )
 
     def test_missing_node_ref(self):
