@@ -634,6 +634,19 @@
       "version_introduced": "0.7.0"
     },
     {
+      "name": "context-evidence",
+      "type": "script",
+      "path": "bin/context-evidence.py",
+      "description": "Pure, network-free normalizer for typed evidence references (issue #181, epic #140): `normalize` resolves one evidence atom, `normalize-field` tokenizes a complete comma-separated evidence field (respecting Markdown-link and backtick spans as non-separator regions) and normalizes each atom, `normalize-batch` runs a JSONL file of atoms in order. Recognizes typed and bare GitHub issue/PR references (local, repository-qualified, canonical URL), session/handoff/repository-document paths (with traversal/absolute/query rejection and stable repository-binding-qualified identity), commit pointers (recognized but deliberately unresolved), and a narrow whole-value Markdown link wrapper around any of the above — a bare value and its Markdown-linked equivalent always converge on the same canonical id via context_graph.ids. Ambiguous input (a bare GitHub number without a kind hint, a repository-document reference with more than one configured binding) is reported unresolved rather than guessed. Performs no network access and writes nothing.",
+      "provider": {
+        "claude": "manual",
+        "codex": "manual"
+      },
+      "maturity": "tested",
+      "mutation": [],
+      "version_introduced": "0.7.0"
+    },
+    {
       "name": "release-captain",
       "type": "skill",
       "path": "skills/release-captain",
@@ -897,12 +910,20 @@
       "reason": "library module for typed-ID parsing/formatting in the context_graph contract; foundation module consumed by other contract modules, not a standalone capability."
     },
     {
+      "path": "bin/context_graph/evidence.py",
+      "reason": "library module for typed evidence-reference normalization (grammar, tokenization, GitHub/local-path/commit classification) in the context_graph contract; consumed by bin/context-evidence.py (the capability row) and by #183's future compiler, not a standalone capability itself."
+    },
+    {
       "path": "bin/context_graph/tests/__init__.py",
       "reason": "test package marker; test infrastructure, not a capability."
     },
     {
       "path": "bin/context_graph/tests/test_ids.py",
       "reason": "unit tests for context_graph.ids; test infrastructure, not a capability an agent invokes."
+    },
+    {
+      "path": "bin/context_graph/tests/test_evidence.py",
+      "reason": "unit tests for context_graph.evidence; test infrastructure, not a capability an agent invokes."
     },
     {
       "path": "bin/context_graph/relationships.py",
