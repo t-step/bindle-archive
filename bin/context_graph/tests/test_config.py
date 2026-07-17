@@ -8,7 +8,6 @@ import unittest
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", ".."))
 
 from context_graph import config
-from context_graph import lock
 
 
 class TestProjectIdentity(unittest.TestCase):
@@ -119,6 +118,57 @@ class TestProjectIdentity(unittest.TestCase):
         path = config.config_path(self.notes_home, "myproj")
         self.assertTrue(path.startswith(self.notes_home + os.sep))
         self.assertIn(os.path.join(".bindle", "context"), path)
+
+    def test_finding_always_has_index_and_field_keys(self):
+        # a zero-index/field-arg finding (e.g. ConfigMissingError's shape)
+        # must still carry both keys, defaulting to None, matching
+        # validation._finding's shape exactly.
+        finding = config._finding("E_SOME_CODE", "some message")
+        self.assertIn("index", finding)
+        self.assertIn("field", finding)
+        self.assertIsNone(finding["index"])
+        self.assertIsNone(finding["field"])
+        # a field-only kwarg (e.g. E_CONFIG_SCHEMA_VERSION_UNSUPPORTED) still
+        # gets an index key defaulted to None.
+        finding2 = config._finding("E_OTHER", "msg", field="schema_version")
+        self.assertEqual(finding2["field"], "schema_version")
+        self.assertIsNone(finding2["index"])
+
+    def test_all_findings_rejects_non_dict_top_level_shape(self):
+        findings = config.all_findings([1, 2, 3])
+        self.assertTrue(findings)
+        codes = {f["code"] for f in findings}
+        self.assertIn("E_CONFIG_MALFORMED_SHAPE", codes)
+
+    def test_all_findings_rejects_non_list_repositories(self):
+        cfg = {"schema_version": 1, "project_id": "project:" + ("a" * 32),
+               "project_slug": "y", "repositories": "not-a-list"}
+        findings = config.all_findings(cfg)
+        self.assertTrue(findings)
+        codes = {f["code"] for f in findings}
+        self.assertIn("E_CONFIG_MALFORMED_SHAPE", codes)
+
+    def test_all_findings_rejects_non_dict_repository_entry(self):
+        cfg = {"schema_version": 1, "project_id": "project:" + ("a" * 32),
+               "project_slug": "y", "repositories": ["not-a-dict"]}
+        findings = config.all_findings(cfg)
+        self.assertTrue(findings)
+        codes = {f["code"] for f in findings}
+        self.assertIn("E_CONFIG_MALFORMED_SHAPE", codes)
+
+    def test_init_project_on_malformed_shape_raises_config_invalid_without_writing(self):
+        path = config.config_path(self.notes_home, "malformed")
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        with open(path, "w", encoding="utf-8") as f:
+            json.dump([1, 2, 3], f)
+        before = open(path, "r", encoding="utf-8").read()
+        with self.assertRaises(config.ConfigInvalidError) as ctx:
+            config.init_project(self.notes_home, "malformed")
+        codes = {f["code"] for f in ctx.exception.findings}
+        self.assertIn("E_CONFIG_MALFORMED_SHAPE", codes)
+        # the malformed original is untouched, not replaced or emptied
+        after = open(path, "r", encoding="utf-8").read()
+        self.assertEqual(before, after)
 
 
 if __name__ == "__main__":

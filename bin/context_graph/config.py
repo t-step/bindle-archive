@@ -39,7 +39,7 @@ _KNOWN_REPOSITORY_FIELDS = frozenset(
 
 
 def _finding(code, message, **extra):
-    d = {"code": code, "message": message}
+    d = {"code": code, "message": message, "index": None, "field": None}
     d.update(extra)
     return d
 
@@ -194,10 +194,44 @@ def local_origin_findings(cfg):
     return findings
 
 
+def _malformed_shape_findings(cfg):
+    """Defensive type-shape check: a syntactically valid JSON document can
+    still be the wrong *shape* (e.g. a list or string at the top level, or
+    a non-object repositories entry). validate_config/structural_findings/
+    local_origin_findings all assume cfg and each repositories[i] are
+    dicts and will raise AttributeError/TypeError on anything else. Catch
+    that here, before any .get/iteration, so malformed shape surfaces as
+    an E_CONFIG_MALFORMED_SHAPE finding (-> ConfigInvalidError) instead of
+    an unhandled Python exception."""
+    if not isinstance(cfg, dict):
+        return [_finding(
+            "E_CONFIG_MALFORMED_SHAPE",
+            "config is not a JSON object (got %s)" % (type(cfg).__name__,))]
+    repositories = cfg.get("repositories")
+    if repositories is not None:
+        if not isinstance(repositories, list):
+            return [_finding(
+                "E_CONFIG_MALFORMED_SHAPE",
+                "repositories is not a list (got %s)" % (type(repositories).__name__,),
+                field="repositories")]
+        for i, repo in enumerate(repositories):
+            if not isinstance(repo, dict):
+                return [_finding(
+                    "E_CONFIG_MALFORMED_SHAPE",
+                    "repository entry at index %d is not an object (got %s)"
+                    % (i, type(repo).__name__),
+                    index=i)]
+    return []
+
+
 def all_findings(cfg):
     """The union `config validate` reports: shared semantic checks
     (validate_config) plus this module's structural and local-origin
-    checks."""
+    checks. A malformed top-level/repositories shape short-circuits before
+    any of those run, since they all assume dict access."""
+    shape_findings = _malformed_shape_findings(cfg)
+    if shape_findings:
+        return shape_findings
     return (validation.validate_config(cfg)
             + structural_findings(cfg)
             + local_origin_findings(cfg))
