@@ -153,5 +153,104 @@ class TestInvariantCoverageCompleteness(unittest.TestCase):
             )
 
 
+_CODE_PREFIX_TO_KEY = {
+    "E_CONFIG": "config",
+    "E_NODE": "nodes",
+    "E_EDGE": "edges",
+    "E_CANDIDATE": "candidates",
+    "E_JUDGMENT": "judgments",
+}
+
+
+def _object_kind_for_code(code):
+    for prefix, key in _CODE_PREFIX_TO_KEY.items():
+        if code.startswith(prefix + "_"):
+            return key
+    raise AssertionError("no object-kind mapping for finding code %r" % (code,))
+
+
+@unittest.skipUnless(HAVE_JSONSCHEMA, "jsonschema not installed (test-only dependency; skipped locally)")
+class TestBidirectionalSchemaNativeConformance(unittest.TestCase):
+    """The reverse direction TestSchemaConformance's docstring calls out as a
+    follow-up (issue #200): for every finding code classified
+    `schema-and-native` in invariant-coverage.json, JSON Schema validation
+    must also REJECT the specific object the native validator flags for it
+    -- not just fail to over-reject valid fixtures (that's the other test).
+
+    This targets the *specific object* a finding's `index` and code prefix
+    point at (e.g. `bundle["nodes"][index]` for an `E_NODE_*` code), never
+    the whole bundle -- a bundle can carry both the offending object and
+    other, unrelated valid objects (see fixture 54: a reserved-kind node
+    coexists with an edge that's only native-invalid via a cross-object,
+    non-schema-representable invariant). Blanket bundle-level rejection
+    would conflate the two and defeat the point of "the *responsible*
+    object genuinely fails schema validation."
+    """
+
+    @classmethod
+    def setUpClass(cls):
+        cls.schemas = {key: _load_schema(name) for key, name in OBJECT_SCHEMA_MAP.items()}
+        with open(os.path.join(SCHEMA_DIR, "invariant-coverage.json"), encoding="utf-8") as fh:
+            coverage = json.load(fh)
+        cls.schema_and_native_codes = {
+            entry["code"] for entry in coverage["invariants"]
+            if entry["classification"] == "schema-and-native"
+        }
+        with open(os.path.join(TESTDATA_DIR, "manifest.json"), encoding="utf-8") as fh:
+            cls.manifest = json.load(fh)
+
+    def test_schema_rejects_the_responsible_object_for_every_schema_and_native_code(self):
+        from context_graph.validation import validate_bundle
+
+        covered = set()
+        for entry in self.manifest["fixtures"]:
+            if entry.get("assertion") != "validate":
+                # Only "validate" entries point at a single standalone bundle
+                # file meant for validate_bundle(); other assertion kinds
+                # (candidate_key_equals, canonicalization, ...) point at
+                # partial fixtures that aren't full bundles.
+                continue
+            path = entry.get("path")
+            if path is None:
+                continue
+            full_path = os.path.normpath(os.path.join(TESTDATA_DIR, path))
+            with open(full_path, encoding="utf-8") as fh:
+                bundle = json.load(fh)
+
+            for finding in validate_bundle(bundle):
+                code = finding["code"]
+                if code not in self.schema_and_native_codes:
+                    continue
+                key = _object_kind_for_code(code)
+                if key == "config":
+                    obj = bundle.get("config")
+                else:
+                    index = finding["index"]
+                    items = bundle.get(key) or []
+                    if index is None or index >= len(items):
+                        continue
+                    obj = items[index]
+                if obj is None:
+                    continue
+
+                with self.assertRaises(
+                    jsonschema.ValidationError,
+                    msg=(
+                        "%s: expected JSON Schema to reject the %s object "
+                        "(index=%r) responsible for %s, but it validated"
+                        % (full_path, key, finding.get("index"), code)
+                    ),
+                ):
+                    jsonschema.validate(obj, self.schemas[key])
+                covered.add(code)
+
+        missing = self.schema_and_native_codes - covered
+        self.assertFalse(
+            missing,
+            "no fixture exercised a JSON Schema rejection for "
+            "schema-and-native code(s): %s" % (sorted(missing),),
+        )
+
+
 if __name__ == "__main__":
     unittest.main()
