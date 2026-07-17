@@ -1,7 +1,7 @@
 ---
 description: Promote project evidence into the living project map — propose, confirm, write
 argument-hint: [project slug; default = current repo's project]
-allowed-tools: Bash(ls:*), Bash(date:*), Bash(wc:*), Bash(mkdir -p:*), Bash(git rev-parse:*), Bash(gh issue view:*), Bash(gh pr view:*)
+allowed-tools: Bash(ls:*), Bash(date:*), Bash(wc:*), Bash(mkdir -p:*), Bash(git rev-parse:*), Bash(gh issue view:*), Bash(gh pr view:*), Bash(python3 bin/map-entry-id.py allocate:*), Bash(python3 bin/map-entry-id.py validate:*)
 ---
 
 <!-- The contract (ladder, map format, rules, report shape):
@@ -58,7 +58,23 @@ Steps:
    the confirmed entries (if any) in place. On later runs, apply exactly
    the confirmed subset as minimal Edit operations — never regenerate an
    existing file, never touch lines outside the named entries; re-add a
-   missing `##` section header if the confirmed write needs it.
+   missing `##` section header if the confirmed write needs it. For each
+   confirmed `add`, and for the replacement side of each confirmed
+   `supersede`, run `python3 bin/map-entry-id.py allocate --project
+   <slug>` and embed the printed id as the entry's `<!-- bindle:context-id:
+   ... -->` marker in the *same* edit that writes the entry (contract:
+   "Stable identities") — never invent, guess, or reuse an id, and never
+   allocate for a candidate before it is actually confirmed. A confirmed
+   `update` or `tag` leaves any existing marker byte-unchanged. A confirmed
+   `supersede` **moves** the retired entry (contract: "Retirement") — delete
+   it from its active section and write it as one typed tombstone under
+   `## Superseded`: `- <kind>: <claim> (retired YYYY-MM) → <reason>` plus
+   its existing `bindle:context-id` and its own field lines / tension sides
+   carried down verbatim, indented. Add `bindle:superseded-by: <id>` only
+   when a specific replacement entry exists. Never leave the retired entry
+   behind status-flipped in place, and never allocate an id for a retired
+   entry that never had one. `none`, and every rejected or deferred
+   candidate, gets no id at all.
 9. Advance the cursor line to the newest processed session note and update
    `updated:` — announce it, don't ask (contract rule). If the run was
    interrupted before step 8 completed, write nothing at all, cursor
