@@ -265,3 +265,96 @@ def init_project(notes_home, project_slug, display_name=None):
             raise ConfigInvalidError(findings)
         atomic_io.write_json_atomic(path, cfg)
         return cfg, True
+
+
+def _load_valid_or_raise(notes_home, project_slug, cdir):
+    path = os.path.join(cdir, CONFIG_FILENAME)
+    cfg = load_config(path)
+    if cfg is None:
+        raise ConfigMissingError(path)
+    findings = all_findings(cfg)
+    if findings:
+        raise ConfigInvalidError(findings)
+    return path, cfg
+
+
+def _find_repository(repositories, binding_id):
+    for i, repo in enumerate(repositories):
+        if repo.get("binding_id") == binding_id:
+            return i
+    return None
+
+
+def add_repository(notes_home, project_slug, alias, provider, coordinates=None,
+                    local_checkout_path=None, is_default=False):
+    cdir = context_dir(notes_home, project_slug)
+    with lock.ProjectLock(cdir, "config"):
+        path, cfg = _load_valid_or_raise(notes_home, project_slug, cdir)
+        entry = {"alias": alias, "binding_id": allocate_binding_id(), "provider": provider}
+        if coordinates:
+            entry["coordinates"] = coordinates
+        if local_checkout_path:
+            entry["local_checkout_path"] = local_checkout_path
+        repositories = list(cfg["repositories"])
+        if is_default:
+            repositories = [dict(r, default_for_bare_references=False) for r in repositories]
+            entry["default_for_bare_references"] = True
+        repositories.append(entry)
+        new_cfg = dict(cfg, repositories=repositories)
+        findings = all_findings(new_cfg)
+        if findings:
+            raise ConfigInvalidError(findings)
+        atomic_io.write_json_atomic(path, new_cfg)
+        return new_cfg, entry
+
+
+def update_repository(notes_home, project_slug, binding_id, alias=None,
+                       coordinates=None, local_checkout_path=None, default=None):
+    """`default=True` sets this binding default (unsetting any other);
+    `default=False` explicitly unsets it; `default=None` leaves it
+    unchanged. Only supplied (non-None) fields change."""
+    cdir = context_dir(notes_home, project_slug)
+    with lock.ProjectLock(cdir, "config"):
+        path, cfg = _load_valid_or_raise(notes_home, project_slug, cdir)
+        repositories = [dict(r) for r in cfg["repositories"]]
+        idx = _find_repository(repositories, binding_id)
+        if idx is None:
+            raise BindingNotFoundError(binding_id)
+        if alias is not None:
+            repositories[idx]["alias"] = alias
+        if coordinates is not None:
+            repositories[idx]["coordinates"] = coordinates
+        if local_checkout_path is not None:
+            repositories[idx]["local_checkout_path"] = local_checkout_path
+        if default is True:
+            for i, r in enumerate(repositories):
+                r["default_for_bare_references"] = (i == idx)
+        elif default is False:
+            repositories[idx]["default_for_bare_references"] = False
+        new_cfg = dict(cfg, repositories=repositories)
+        findings = all_findings(new_cfg)
+        if findings:
+            raise ConfigInvalidError(findings)
+        atomic_io.write_json_atomic(path, new_cfg)
+        return new_cfg, repositories[idx]
+
+
+def remove_repository(notes_home, project_slug, binding_id):
+    cdir = context_dir(notes_home, project_slug)
+    with lock.ProjectLock(cdir, "config"):
+        path, cfg = _load_valid_or_raise(notes_home, project_slug, cdir)
+        repositories = list(cfg["repositories"])
+        idx = _find_repository(repositories, binding_id)
+        if idx is None:
+            raise BindingNotFoundError(binding_id)
+        removed = repositories.pop(idx)
+        new_cfg = dict(cfg, repositories=repositories)
+        findings = all_findings(new_cfg)
+        if findings:
+            raise ConfigInvalidError(findings)
+        atomic_io.write_json_atomic(path, new_cfg)
+        return new_cfg, removed
+
+
+def set_default(notes_home, project_slug, binding_id):
+    return update_repository(notes_home, project_slug, binding_id, default=True)

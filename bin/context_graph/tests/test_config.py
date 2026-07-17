@@ -171,5 +171,140 @@ class TestProjectIdentity(unittest.TestCase):
         self.assertEqual(before, after)
 
 
+class TestRepositoryBindingCrud(unittest.TestCase):
+    def setUp(self):
+        self.notes_home = tempfile.mkdtemp()
+        config.init_project(self.notes_home, "proj")
+
+    def test_add_repository_creates_binding(self):
+        cfg, entry = config.add_repository(
+            self.notes_home, "proj", alias="main", provider="github",
+            coordinates="thomas-estep/bindle")
+        self.assertEqual(len(cfg["repositories"]), 1)
+        self.assertRegex(entry["binding_id"], r"^repository-binding:[0-9a-f]{32}$")
+        self.assertEqual(entry["alias"], "main")
+
+    def test_add_multiple_repositories(self):
+        config.add_repository(self.notes_home, "proj", alias="a", provider="github")
+        cfg, _ = config.add_repository(self.notes_home, "proj", alias="b", provider="github")
+        self.assertEqual([r["alias"] for r in cfg["repositories"]], ["a", "b"])
+
+    def test_add_repository_with_default_flag(self):
+        cfg, entry = config.add_repository(
+            self.notes_home, "proj", alias="a", provider="github", is_default=True)
+        self.assertTrue(entry["default_for_bare_references"])
+        defaults = [r for r in cfg["repositories"] if r.get("default_for_bare_references")]
+        self.assertEqual(len(defaults), 1)
+
+    def test_second_default_via_add_unsets_first(self):
+        config.add_repository(self.notes_home, "proj", alias="a", provider="github", is_default=True)
+        cfg, _ = config.add_repository(
+            self.notes_home, "proj", alias="b", provider="github", is_default=True)
+        defaults = [r["alias"] for r in cfg["repositories"] if r.get("default_for_bare_references")]
+        self.assertEqual(defaults, ["b"])
+
+    def test_two_defaults_rejected_by_validation(self):
+        cfg = {
+            "schema_version": 1, "project_id": config.allocate_project_id(),
+            "project_slug": "x", "repositories": [
+                {"alias": "a", "binding_id": config.allocate_binding_id(),
+                 "provider": "github", "default_for_bare_references": True},
+                {"alias": "b", "binding_id": config.allocate_binding_id(),
+                 "provider": "github", "default_for_bare_references": True},
+            ]}
+        codes = {f["code"] for f in config.all_findings(cfg)}
+        self.assertIn("E_CONFIG_MULTIPLE_DEFAULT", codes)
+
+    def test_zero_defaults_is_valid(self):
+        cfg, _ = config.add_repository(self.notes_home, "proj", alias="a", provider="github")
+        self.assertEqual(config.all_findings(cfg), [])
+
+    def test_update_repository_coordinates_preserves_binding_id(self):
+        _, entry = config.add_repository(
+            self.notes_home, "proj", alias="a", provider="github",
+            coordinates="old-owner/old-repo")
+        binding_id = entry["binding_id"]
+        cfg, updated = config.update_repository(
+            self.notes_home, "proj", binding_id, coordinates="new-owner/new-repo")
+        self.assertEqual(updated["binding_id"], binding_id)
+        self.assertEqual(updated["coordinates"], "new-owner/new-repo")
+
+    def test_update_repository_local_checkout_path_preserves_binding_id(self):
+        _, entry = config.add_repository(self.notes_home, "proj", alias="a", provider="github")
+        binding_id = entry["binding_id"]
+        cfg, updated = config.update_repository(
+            self.notes_home, "proj", binding_id, local_checkout_path="/new/path")
+        self.assertEqual(updated["binding_id"], binding_id)
+        self.assertEqual(updated["local_checkout_path"], "/new/path")
+
+    def test_update_repository_default_true_unsets_others(self):
+        _, a = config.add_repository(self.notes_home, "proj", alias="a", provider="github",
+                                      is_default=True)
+        _, b = config.add_repository(self.notes_home, "proj", alias="b", provider="github")
+        cfg, _ = config.update_repository(self.notes_home, "proj", b["binding_id"], default=True)
+        defaults = [r["alias"] for r in cfg["repositories"] if r.get("default_for_bare_references")]
+        self.assertEqual(defaults, ["b"])
+
+    def test_update_repository_default_false_unsets_only_that_one(self):
+        _, a = config.add_repository(self.notes_home, "proj", alias="a", provider="github",
+                                      is_default=True)
+        cfg, _ = config.update_repository(self.notes_home, "proj", a["binding_id"], default=False)
+        defaults = [r for r in cfg["repositories"] if r.get("default_for_bare_references")]
+        self.assertEqual(defaults, [])
+
+    def test_update_repository_unknown_binding_raises(self):
+        with self.assertRaises(config.BindingNotFoundError):
+            config.update_repository(self.notes_home, "proj",
+                                      "repository-binding:" + "0" * 32, alias="x")
+
+    def test_remove_repository_preserves_project_id(self):
+        before = config.load_config(config.config_path(self.notes_home, "proj"))
+        _, entry = config.add_repository(self.notes_home, "proj", alias="a", provider="github")
+        cfg, removed = config.remove_repository(self.notes_home, "proj", entry["binding_id"])
+        self.assertEqual(cfg["project_id"], before["project_id"])
+        self.assertEqual(cfg["repositories"], [])
+        self.assertEqual(removed["binding_id"], entry["binding_id"])
+
+    def test_remove_repository_unknown_binding_raises(self):
+        with self.assertRaises(config.BindingNotFoundError):
+            config.remove_repository(self.notes_home, "proj", "repository-binding:" + "1" * 32)
+
+    def test_set_default_sets_unique_default(self):
+        _, a = config.add_repository(self.notes_home, "proj", alias="a", provider="github")
+        cfg, _ = config.set_default(self.notes_home, "proj", a["binding_id"])
+        defaults = [r["alias"] for r in cfg["repositories"] if r.get("default_for_bare_references")]
+        self.assertEqual(defaults, ["a"])
+
+    def test_duplicate_alias_rejected_on_add(self):
+        config.add_repository(self.notes_home, "proj", alias="dup", provider="github")
+        with self.assertRaises(config.ConfigInvalidError) as ctx:
+            config.add_repository(self.notes_home, "proj", alias="dup", provider="github")
+        codes = {f["code"] for f in ctx.exception.findings}
+        self.assertIn("E_CONFIG_DUPLICATE_ALIAS", codes)
+
+    def test_duplicate_binding_id_rejected_by_validation(self):
+        dup = config.allocate_binding_id()
+        cfg = {
+            "schema_version": 1, "project_id": config.allocate_project_id(),
+            "project_slug": "x", "repositories": [
+                {"alias": "a", "binding_id": dup, "provider": "github"},
+                {"alias": "b", "binding_id": dup, "provider": "github"},
+            ]}
+        codes = {f["code"] for f in config.all_findings(cfg)}
+        self.assertIn("E_CONFIG_DUPLICATE_BINDING_ID", codes)
+
+    def test_mutating_on_invalid_existing_config_raises_without_mutating(self):
+        path = config.config_path(self.notes_home, "proj")
+        cfg = config.load_config(path)
+        cfg["project_id"] = "project:not-hex"
+        with open(path, "w", encoding="utf-8") as f:
+            json.dump(cfg, f)
+        before = open(path, "r", encoding="utf-8").read()
+        with self.assertRaises(config.ConfigInvalidError):
+            config.add_repository(self.notes_home, "proj", alias="a", provider="github")
+        after = open(path, "r", encoding="utf-8").read()
+        self.assertEqual(before, after)
+
+
 if __name__ == "__main__":
     unittest.main()
