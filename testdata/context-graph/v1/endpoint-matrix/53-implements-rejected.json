@@ -1,0 +1,30 @@
+{
+  "nodes": [
+    {
+      "id": "context-node:bindle:0368c3d02725e4ad90ac484c9bdd922b",
+      "class": "semantic",
+      "kind": "decision",
+      "label": "Decision 53",
+      "status": "current"
+    },
+    {
+      "id": "github-pr:thomas-estep/bindle#53",
+      "class": "evidence",
+      "kind": "github_pr",
+      "label": "pr 53",
+      "status": "current"
+    }
+  ],
+  "edges": [
+    {
+      "key": "context-node:bindle:0368c3d02725e4ad90ac484c9bdd922b|implements|github-pr:thomas-estep/bindle#53",
+      "source": "context-node:bindle:0368c3d02725e4ad90ac484c9bdd922b",
+      "relationship": "implements",
+      "target": "github-pr:thomas-estep/bindle#53",
+      "status": "confirmed",
+      "origin": "human_judgment",
+      "review_trigger": false,
+      "basis": []
+    }
+  ]
+}

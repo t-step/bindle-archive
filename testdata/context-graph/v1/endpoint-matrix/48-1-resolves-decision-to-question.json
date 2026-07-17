@@ -1,0 +1,39 @@
+{
+  "nodes": [
+    {
+      "id": "context-node:bindle:f08ebaed6441d5ef4dab51e5407984be",
+      "class": "semantic",
+      "kind": "decision",
+      "label": "Decision 48",
+      "status": "current"
+    },
+    {
+      "id": "context-node:bindle:46cb92078bb97b887fcaf74592237316",
+      "class": "semantic",
+      "kind": "question",
+      "label": "Question 48",
+      "status": "current"
+    }
+  ],
+  "edges": [
+    {
+      "key": "context-node:bindle:f08ebaed6441d5ef4dab51e5407984be|resolves|context-node:bindle:46cb92078bb97b887fcaf74592237316",
+      "source": "context-node:bindle:f08ebaed6441d5ef4dab51e5407984be",
+      "relationship": "resolves",
+      "target": "context-node:bindle:46cb92078bb97b887fcaf74592237316",
+      "status": "confirmed",
+      "origin": "human_judgment",
+      "review_trigger": false,
+      "basis": []
+    }
+  ],
+  "judgments": [
+    {
+      "decision": "accepted",
+      "subject_key": "context-node:bindle:f08ebaed6441d5ef4dab51e5407984be|resolves|context-node:bindle:46cb92078bb97b887fcaf74592237316",
+      "subject_type": "edge",
+      "candidate_key": "candidate:sha256:0000000000000000000000000000000000000000000000000000000000000000",
+      "decided_at": "2026-07-16T00:00:00Z"
+    }
+  ]
+}

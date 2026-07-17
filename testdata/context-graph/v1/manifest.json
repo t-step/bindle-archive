@@ -600,6 +600,286 @@
         "map-shape"
       ],
       "invariant_ids": []
+    },
+    {
+      "id": "43-1",
+      "path": "endpoint-matrix/43-1-contains-project-to-decision.json",
+      "assertion": "validate",
+      "expect_valid": true,
+      "expect_codes": [],
+      "match_mode": "exact",
+      "coverage_tags": [
+        "endpoint-matrix",
+        "contains"
+      ],
+      "invariant_ids": []
+    },
+    {
+      "id": "43-2",
+      "path": "endpoint-matrix/43-2-contains-project-to-issue.json",
+      "assertion": "validate",
+      "expect_valid": false,
+      "expect_codes": [
+        "E_EDGE_ENDPOINT_ILLEGAL"
+      ],
+      "match_mode": "exact",
+      "coverage_tags": [
+        "endpoint-matrix",
+        "contains"
+      ],
+      "invariant_ids": []
+    },
+    {
+      "id": "44-1",
+      "path": "endpoint-matrix/44-1-supported-by-decision-to-session.json",
+      "assertion": "validate",
+      "expect_valid": true,
+      "expect_codes": [],
+      "match_mode": "exact",
+      "coverage_tags": [
+        "endpoint-matrix",
+        "supported_by"
+      ],
+      "invariant_ids": []
+    },
+    {
+      "id": "44-2",
+      "path": "endpoint-matrix/44-2-supported-by-session-to-decision.json",
+      "assertion": "validate",
+      "expect_valid": false,
+      "expect_codes": [
+        "E_EDGE_ENDPOINT_ILLEGAL"
+      ],
+      "match_mode": "exact",
+      "coverage_tags": [
+        "endpoint-matrix",
+        "supported_by"
+      ],
+      "invariant_ids": []
+    },
+    {
+      "id": "45-1",
+      "path": "endpoint-matrix/45-1-closes-pr-to-issue.json",
+      "assertion": "validate",
+      "expect_valid": true,
+      "expect_codes": [],
+      "match_mode": "exact",
+      "coverage_tags": [
+        "endpoint-matrix",
+        "closes"
+      ],
+      "invariant_ids": []
+    },
+    {
+      "id": "45-2",
+      "path": "endpoint-matrix/45-2-closes-issue-to-pr.json",
+      "assertion": "validate",
+      "expect_valid": false,
+      "expect_codes": [
+        "E_EDGE_ENDPOINT_ILLEGAL"
+      ],
+      "match_mode": "exact",
+      "coverage_tags": [
+        "endpoint-matrix",
+        "closes"
+      ],
+      "invariant_ids": []
+    },
+    {
+      "id": "46-1",
+      "path": "endpoint-matrix/46-1-implemented-by-decision-to-pr.json",
+      "assertion": "validate",
+      "expect_valid": true,
+      "expect_codes": [],
+      "match_mode": "exact",
+      "coverage_tags": [
+        "endpoint-matrix",
+        "implemented_by"
+      ],
+      "invariant_ids": []
+    },
+    {
+      "id": "46-2",
+      "path": "endpoint-matrix/46-2-implemented-by-learning-to-pr.json",
+      "assertion": "validate",
+      "expect_valid": false,
+      "expect_codes": [
+        "E_EDGE_ENDPOINT_ILLEGAL"
+      ],
+      "match_mode": "exact",
+      "coverage_tags": [
+        "endpoint-matrix",
+        "implemented_by"
+      ],
+      "invariant_ids": []
+    },
+    {
+      "id": "47-1",
+      "path": "endpoint-matrix/47-1-validated-by-learning-to-design-document.json",
+      "assertion": "validate",
+      "expect_valid": true,
+      "expect_codes": [],
+      "match_mode": "exact",
+      "coverage_tags": [
+        "endpoint-matrix",
+        "validated_by"
+      ],
+      "invariant_ids": []
+    },
+    {
+      "id": "47-2",
+      "path": "endpoint-matrix/47-2-validated-by-question-to-issue.json",
+      "assertion": "validate",
+      "expect_valid": false,
+      "expect_codes": [
+        "E_EDGE_ENDPOINT_ILLEGAL"
+      ],
+      "match_mode": "exact",
+      "coverage_tags": [
+        "endpoint-matrix",
+        "validated_by"
+      ],
+      "invariant_ids": []
+    },
+    {
+      "id": "48-1",
+      "path": "endpoint-matrix/48-1-resolves-decision-to-question.json",
+      "assertion": "validate",
+      "expect_valid": true,
+      "expect_codes": [],
+      "match_mode": "exact",
+      "coverage_tags": [
+        "endpoint-matrix",
+        "resolves"
+      ],
+      "invariant_ids": []
+    },
+    {
+      "id": "48-2",
+      "path": "endpoint-matrix/48-2-resolves-question-to-decision.json",
+      "assertion": "validate",
+      "expect_valid": false,
+      "expect_codes": [
+        "E_EDGE_ENDPOINT_ILLEGAL"
+      ],
+      "match_mode": "exact",
+      "coverage_tags": [
+        "endpoint-matrix",
+        "resolves"
+      ],
+      "invariant_ids": []
+    },
+    {
+      "id": "49",
+      "path": "endpoint-matrix/49-resolves-decision-to-tension.json",
+      "assertion": "validate",
+      "expect_valid": true,
+      "expect_codes": [],
+      "match_mode": "exact",
+      "coverage_tags": [
+        "endpoint-matrix",
+        "resolves"
+      ],
+      "invariant_ids": []
+    },
+    {
+      "id": "50",
+      "path": "endpoint-matrix/50-constrains-tension-to-decision.json",
+      "assertion": "validate",
+      "expect_valid": true,
+      "expect_codes": [],
+      "match_mode": "exact",
+      "coverage_tags": [
+        "endpoint-matrix",
+        "constrains"
+      ],
+      "invariant_ids": []
+    },
+    {
+      "id": "51-1",
+      "path": "endpoint-matrix/51-supersedes-same-kind.json",
+      "assertion": "validate",
+      "expect_valid": true,
+      "expect_codes": [],
+      "match_mode": "exact",
+      "coverage_tags": [
+        "endpoint-matrix",
+        "supersedes"
+      ],
+      "invariant_ids": []
+    },
+    {
+      "id": "51-2",
+      "path": "endpoint-matrix/51-supersedes-cross-kind.json",
+      "assertion": "validate",
+      "expect_valid": false,
+      "expect_codes": [
+        "E_EDGE_ENDPOINT_ILLEGAL"
+      ],
+      "match_mode": "exact",
+      "coverage_tags": [
+        "endpoint-matrix",
+        "supersedes"
+      ],
+      "invariant_ids": []
+    },
+    {
+      "id": "51-3",
+      "path": "endpoint-matrix/51-supersedes-self.json",
+      "assertion": "validate",
+      "expect_valid": false,
+      "expect_codes": [
+        "E_EDGE_SELF_EDGE_FORBIDDEN"
+      ],
+      "match_mode": "exact",
+      "coverage_tags": [
+        "endpoint-matrix",
+        "supersedes"
+      ],
+      "invariant_ids": []
+    },
+    {
+      "id": "52",
+      "assertion": "candidate_key_equals",
+      "with": [
+        "endpoint-matrix/52-contradicts-forward.json",
+        "endpoint-matrix/52-contradicts-reversed.json"
+      ],
+      "coverage_tags": [
+        "endpoint-matrix",
+        "contradicts"
+      ]
+    },
+    {
+      "id": "53",
+      "path": "endpoint-matrix/53-implements-rejected.json",
+      "assertion": "validate",
+      "expect_valid": false,
+      "expect_codes": [
+        "E_EDGE_RELATIONSHIP_REJECTED"
+      ],
+      "match_mode": "exact",
+      "coverage_tags": [
+        "endpoint-matrix",
+        "implements"
+      ],
+      "invariant_ids": []
+    },
+    {
+      "id": "54",
+      "path": "endpoint-matrix/54-reserved-kind-endpoint.json",
+      "assertion": "validate",
+      "expect_valid": false,
+      "expect_codes": [
+        "E_NODE_RESERVED_KIND",
+        "E_EDGE_ENDPOINT_ILLEGAL"
+      ],
+      "match_mode": "ordered_subset",
+      "coverage_tags": [
+        "endpoint-matrix",
+        "contains"
+      ],
+      "invariant_ids": []
     }
   ]
 }

@@ -1,0 +1,39 @@
+{
+  "nodes": [
+    {
+      "id": "context-node:bindle:335c14efb5d09c98cee37fa2b13391e4",
+      "class": "semantic",
+      "kind": "learning",
+      "label": "Learning 47",
+      "status": "current"
+    },
+    {
+      "id": "document:project:5f56c9b95c41c298f70d6dd4e5db8c2a:project-local:docs/design/example-47.md",
+      "class": "evidence",
+      "kind": "design_document",
+      "label": "design doc docs/design/example-47.md",
+      "status": "current"
+    }
+  ],
+  "edges": [
+    {
+      "key": "context-node:bindle:335c14efb5d09c98cee37fa2b13391e4|validated_by|document:project:5f56c9b95c41c298f70d6dd4e5db8c2a:project-local:docs/design/example-47.md",
+      "source": "context-node:bindle:335c14efb5d09c98cee37fa2b13391e4",
+      "relationship": "validated_by",
+      "target": "document:project:5f56c9b95c41c298f70d6dd4e5db8c2a:project-local:docs/design/example-47.md",
+      "status": "confirmed",
+      "origin": "human_judgment",
+      "review_trigger": false,
+      "basis": []
+    }
+  ],
+  "judgments": [
+    {
+      "decision": "accepted",
+      "subject_key": "context-node:bindle:335c14efb5d09c98cee37fa2b13391e4|validated_by|document:project:5f56c9b95c41c298f70d6dd4e5db8c2a:project-local:docs/design/example-47.md",
+      "subject_type": "edge",
+      "candidate_key": "candidate:sha256:0000000000000000000000000000000000000000000000000000000000000000",
+      "decided_at": "2026-07-16T00:00:00Z"
+    }
+  ]
+}

@@ -1,0 +1,54 @@
+{
+  "nodes": [
+    {
+      "id": "context-node:bindle:7eb12b57f0f6a7508469b5d2c5247ba4",
+      "class": "semantic",
+      "kind": "decision",
+      "label": "Decision 49",
+      "status": "current"
+    },
+    {
+      "id": "context-node:bindle:0e017bf9c14c0d28e0ce89aaafe5ad0d",
+      "class": "semantic",
+      "kind": "tension",
+      "label": "Tension 49",
+      "status": "current",
+      "confidence": "low",
+      "sides": [
+        {
+          "label": "a",
+          "evidence": [
+            "#1"
+          ]
+        },
+        {
+          "label": "b",
+          "evidence": [
+            "#2"
+          ]
+        }
+      ]
+    }
+  ],
+  "edges": [
+    {
+      "key": "context-node:bindle:7eb12b57f0f6a7508469b5d2c5247ba4|resolves|context-node:bindle:0e017bf9c14c0d28e0ce89aaafe5ad0d",
+      "source": "context-node:bindle:7eb12b57f0f6a7508469b5d2c5247ba4",
+      "relationship": "resolves",
+      "target": "context-node:bindle:0e017bf9c14c0d28e0ce89aaafe5ad0d",
+      "status": "confirmed",
+      "origin": "human_judgment",
+      "review_trigger": false,
+      "basis": []
+    }
+  ],
+  "judgments": [
+    {
+      "decision": "accepted",
+      "subject_key": "context-node:bindle:7eb12b57f0f6a7508469b5d2c5247ba4|resolves|context-node:bindle:0e017bf9c14c0d28e0ce89aaafe5ad0d",
+      "subject_type": "edge",
+      "candidate_key": "candidate:sha256:0000000000000000000000000000000000000000000000000000000000000000",
+      "decided_at": "2026-07-16T00:00:00Z"
+    }
+  ]
+}
