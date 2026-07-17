@@ -1,0 +1,46 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://bindle/schemas/context-graph/v1/candidate.schema.json",
+  "title": "context-graph v1 candidate (discriminated union)",
+  "type": "object",
+  "required": ["subject_type", "candidate_key", "candidate_origin", "dependency_fingerprint", "validation_status"],
+  "properties": {
+    "subject_type": { "enum": ["edge", "identity_anchor"] },
+    "candidate_key": { "type": "string" },
+    "candidate_origin": { "enum": ["deterministic_compiler", "validated_proposal"] },
+    "dependency_fingerprint": { "type": "string" },
+    "whole_graph_fingerprint": { "type": "string" },
+    "producer": { "enum": ["human", "skill", "fixture", "compiler"] },
+    "validation_status": { "enum": ["valid", "invalid"] },
+    "basis": { "type": "array" },
+    "source": { "type": "string" },
+    "relationship": { "type": "string" },
+    "target": { "type": "string" },
+    "project_id": { "type": "string" },
+    "map_path": { "type": "string" },
+    "section": { "type": "string" },
+    "entry_kind": { "type": "string" },
+    "entry_fingerprint": { "type": "string" },
+    "display_claim": { "type": "string" }
+  },
+  "allOf": [
+    {
+      "if": { "properties": { "subject_type": { "const": "edge" } } },
+      "then": {
+        "required": ["source", "relationship", "target", "basis"],
+        "properties": { "candidate_key": { "pattern": "^candidate:sha256:[0-9a-f]{64}$" } }
+      }
+    },
+    {
+      "if": { "properties": { "subject_type": { "const": "identity_anchor" } } },
+      "then": {
+        "required": ["project_id", "map_path", "section", "entry_kind", "entry_fingerprint"],
+        "not": { "required": ["basis"] },
+        "properties": {
+          "candidate_key": { "pattern": "^anchor-candidate:sha256:[0-9a-f]{64}$" },
+          "candidate_origin": { "const": "deterministic_compiler" }
+        }
+      }
+    }
+  ]
+}

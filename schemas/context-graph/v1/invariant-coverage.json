@@ -1,0 +1,30 @@
+{
+  "schema_version": 1,
+  "invariants": [
+    { "code": "E_CONFIG_MALFORMED_PROJECT_ID", "classification": "schema-and-native" },
+    { "code": "E_CONFIG_PROJECT_ID_REPO_SHAPED", "classification": "native-only" },
+    { "code": "E_CONFIG_DUPLICATE_ALIAS", "classification": "native-only" },
+    { "code": "E_CONFIG_DUPLICATE_BINDING_ID", "classification": "native-only" },
+    { "code": "E_CONFIG_MULTIPLE_DEFAULT", "classification": "native-only" },
+    { "code": "E_NODE_MALFORMED_ID", "classification": "native-only" },
+    { "code": "E_NODE_RESERVED_KIND", "classification": "schema-and-native" },
+    { "code": "E_NODE_PROJECT_ID_MISMATCH", "classification": "native-only" },
+    { "code": "E_NODE_CONFIDENCE_INVALID_KIND", "classification": "native-only" },
+    { "code": "E_NODE_TENSION_CARDINALITY", "classification": "schema-and-native" },
+    { "code": "E_NODE_TENSION_SIDE_IDENTITY", "classification": "schema-and-native" },
+    { "code": "E_NODE_DUPLICATE_ID", "classification": "native-only" },
+    { "code": "E_EDGE_UNKNOWN_RELATIONSHIP", "classification": "schema-and-native" },
+    { "code": "E_EDGE_RELATIONSHIP_REJECTED", "classification": "schema-and-native" },
+    { "code": "E_EDGE_ENDPOINT_ILLEGAL", "classification": "native-only" },
+    { "code": "E_EDGE_SELF_EDGE_FORBIDDEN", "classification": "native-only" },
+    { "code": "E_EDGE_MISSING_NODE_REF", "classification": "native-only" },
+    { "code": "E_EDGE_DUPLICATE_KEY", "classification": "native-only" },
+    { "code": "E_EDGE_REVIEW_TRIGGER_MISMATCH", "classification": "native-only" },
+    { "code": "E_EDGE_DETERMINISTIC_AUTHORITY_MISSING", "classification": "native-only" },
+    { "code": "E_EDGE_JUDGMENT_REQUIRED_MISSING", "classification": "native-only" },
+    { "code": "E_CANDIDATE_ANCHOR_SYNTHESIS_FORBIDDEN", "classification": "schema-and-native" },
+    { "code": "E_CANDIDATE_KEY_CONFLICT", "classification": "native-only" },
+    { "code": "E_CANDIDATE_INVALID_ENDPOINT", "classification": "native-only" },
+    { "code": "E_JUDGMENT_SUBJECT_TYPE_MISMATCH", "classification": "native-only" }
+  ]
+}

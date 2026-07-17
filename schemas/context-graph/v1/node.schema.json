@@ -1,0 +1,37 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://bindle/schemas/context-graph/v1/node.schema.json",
+  "title": "context-graph v1 node",
+  "type": "object",
+  "required": ["id", "class", "kind", "label", "status"],
+  "properties": {
+    "id": { "type": "string" },
+    "class": { "enum": ["project", "semantic", "evidence"] },
+    "kind": {
+      "enum": [
+        "decision", "learning", "assumption", "tension", "question",
+        "session", "handoff", "design_document", "github_issue", "github_pr",
+        null
+      ]
+    },
+    "label": { "type": "string" },
+    "status": { "enum": ["current", "open", "parked", "superseded"] },
+    "source": { "type": "object" },
+    "confidence": { "enum": ["high", "medium", "low"] },
+    "sides": {
+      "type": "array",
+      "minItems": 2,
+      "maxItems": 2,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["label", "evidence"],
+        "properties": {
+          "label": { "type": "string" },
+          "evidence": { "type": "array", "items": { "type": "string" } }
+        }
+      }
+    }
+  },
+  "additionalProperties": false
+}
