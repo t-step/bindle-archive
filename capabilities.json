@@ -886,6 +886,14 @@
     {
       "path": "bin/context_graph/tests/test_ids.py",
       "reason": "unit tests for context_graph.ids; test infrastructure, not a capability an agent invokes."
+    },
+    {
+      "path": "bin/context_graph/relationships.py",
+      "reason": "library module for relationship vocabulary, endpoint matrix, and review-trigger defaults in the context_graph contract; foundation module consumed by context_graph.validation, not a standalone capability."
+    },
+    {
+      "path": "bin/context_graph/tests/test_relationships.py",
+      "reason": "unit tests for context_graph.relationships; test infrastructure, not a capability an agent invokes."
     }
   ],
   "external_upstreams": [
