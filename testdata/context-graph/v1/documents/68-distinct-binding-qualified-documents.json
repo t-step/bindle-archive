@@ -1,0 +1,37 @@
+{
+  "config": {
+    "schema_version": 1,
+    "project_id": "project:88888888888888888888888888888888",
+    "project_slug": "bindle-two-bindings",
+    "repositories": [
+      {
+        "alias": "primary",
+        "binding_id": "repository-binding:11111111111111111111111111111111",
+        "provider": "github",
+        "coordinates": "thomas-estep/bindle"
+      },
+      {
+        "alias": "docs-mirror",
+        "binding_id": "repository-binding:22222222222222222222222222222222",
+        "provider": "github",
+        "coordinates": "thomas-estep/bindle-docs-mirror"
+      }
+    ]
+  },
+  "nodes": [
+    {
+      "id": "document:project:88888888888888888888888888888888:repository-binding:11111111111111111111111111111111:docs/README.md",
+      "class": "evidence",
+      "kind": "design_document",
+      "label": "README (primary binding)",
+      "status": "current"
+    },
+    {
+      "id": "document:project:88888888888888888888888888888888:repository-binding:22222222222222222222222222222222:docs/README.md",
+      "class": "evidence",
+      "kind": "design_document",
+      "label": "README (docs-mirror binding)",
+      "status": "current"
+    }
+  ]
+}

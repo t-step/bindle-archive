@@ -1,0 +1,25 @@
+{
+  "config": {
+    "schema_version": 1,
+    "project_id": "project:88888888888888888888888888888888",
+    "project_slug": "bindle-rename",
+    "repositories": [
+      {
+        "alias": "primary",
+        "binding_id": "repository-binding:11111111111111111111111111111111",
+        "provider": "github",
+        "coordinates": "thomas-estep/bindle-new-name",
+        "default_for_bare_references": true
+      }
+    ]
+  },
+  "nodes": [
+    {
+      "id": "project:88888888888888888888888888888888",
+      "class": "project",
+      "kind": null,
+      "label": "bindle-rename",
+      "status": "current"
+    }
+  ]
+}

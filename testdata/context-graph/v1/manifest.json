@@ -880,6 +880,263 @@
         "contains"
       ],
       "invariant_ids": []
+    },
+    {
+      "id": "55",
+      "path": "identity-config/55-repositoryless-project.json",
+      "assertion": "validate",
+      "expect_valid": true,
+      "expect_codes": [],
+      "match_mode": "exact",
+      "coverage_tags": [
+        "identity-config"
+      ],
+      "invariant_ids": []
+    },
+    {
+      "id": "56",
+      "path": "identity-config/56-one-repository-project.json",
+      "assertion": "validate",
+      "expect_valid": true,
+      "expect_codes": [],
+      "match_mode": "exact",
+      "coverage_tags": [
+        "identity-config"
+      ],
+      "invariant_ids": []
+    },
+    {
+      "id": "57",
+      "path": "identity-config/57-multi-repository-project.json",
+      "assertion": "validate",
+      "expect_valid": true,
+      "expect_codes": [],
+      "match_mode": "exact",
+      "coverage_tags": [
+        "identity-config"
+      ],
+      "invariant_ids": []
+    },
+    {
+      "id": "58-before",
+      "path": "identity-config/58-before-rename.json",
+      "assertion": "validate",
+      "expect_valid": true,
+      "expect_codes": [],
+      "match_mode": "exact",
+      "coverage_tags": [
+        "identity-config"
+      ],
+      "invariant_ids": []
+    },
+    {
+      "id": "58-after",
+      "path": "identity-config/58-after-rename.json",
+      "assertion": "validate",
+      "expect_valid": true,
+      "expect_codes": [],
+      "match_mode": "exact",
+      "coverage_tags": [
+        "identity-config"
+      ],
+      "invariant_ids": []
+    },
+    {
+      "id": "59-before",
+      "path": "identity-config/59-before-slug-rename.json",
+      "assertion": "validate",
+      "expect_valid": true,
+      "expect_codes": [],
+      "match_mode": "exact",
+      "coverage_tags": [
+        "identity-config"
+      ],
+      "invariant_ids": []
+    },
+    {
+      "id": "59-after",
+      "path": "identity-config/59-after-slug-rename.json",
+      "assertion": "validate",
+      "expect_valid": true,
+      "expect_codes": [],
+      "match_mode": "exact",
+      "coverage_tags": [
+        "identity-config"
+      ],
+      "invariant_ids": []
+    },
+    {
+      "id": "60",
+      "path": "identity-config/60-ambiguous-bare-github-reference.json",
+      "assertion": "validate",
+      "expect_valid": true,
+      "expect_codes": [],
+      "match_mode": "exact",
+      "coverage_tags": [
+        "identity-config",
+        "unresolved-evidence"
+      ],
+      "invariant_ids": []
+    },
+    {
+      "id": "61",
+      "path": "identity-config/61-duplicate-alias-rejected.json",
+      "assertion": "validate",
+      "expect_valid": false,
+      "expect_codes": [
+        "E_CONFIG_DUPLICATE_ALIAS"
+      ],
+      "match_mode": "exact",
+      "coverage_tags": [
+        "identity-config"
+      ],
+      "invariant_ids": []
+    },
+    {
+      "id": "62",
+      "path": "identity-config/62-duplicate-binding-id-rejected.json",
+      "assertion": "validate",
+      "expect_valid": false,
+      "expect_codes": [
+        "E_CONFIG_DUPLICATE_BINDING_ID"
+      ],
+      "match_mode": "exact",
+      "coverage_tags": [
+        "identity-config"
+      ],
+      "invariant_ids": []
+    },
+    {
+      "id": "63",
+      "path": "identity-config/63-multiple-default-rejected.json",
+      "assertion": "validate",
+      "expect_valid": false,
+      "expect_codes": [
+        "E_CONFIG_MULTIPLE_DEFAULT"
+      ],
+      "match_mode": "exact",
+      "coverage_tags": [
+        "identity-config"
+      ],
+      "invariant_ids": []
+    },
+    {
+      "id": "64",
+      "path": "identity-config/64-project-node-id-mismatch.json",
+      "assertion": "validate",
+      "expect_valid": false,
+      "expect_codes": [
+        "E_NODE_PROJECT_ID_MISMATCH"
+      ],
+      "match_mode": "exact",
+      "coverage_tags": [
+        "identity-config"
+      ],
+      "invariant_ids": []
+    },
+    {
+      "id": "65",
+      "path": "identity-config/65-repository-shaped-project-id.json",
+      "assertion": "validate",
+      "expect_valid": false,
+      "expect_codes": [
+        "E_CONFIG_PROJECT_ID_REPO_SHAPED"
+      ],
+      "match_mode": "exact",
+      "coverage_tags": [
+        "identity-config"
+      ],
+      "invariant_ids": []
+    },
+    {
+      "id": "66",
+      "path": "identity-config/66-malformed-project-id.json",
+      "assertion": "validate",
+      "expect_valid": false,
+      "expect_codes": [
+        "E_CONFIG_MALFORMED_PROJECT_ID"
+      ],
+      "match_mode": "exact",
+      "coverage_tags": [
+        "identity-config"
+      ],
+      "invariant_ids": []
+    },
+    {
+      "id": "67",
+      "path": "identity-config/67-derived-project-id-rejected.json",
+      "assertion": "validate",
+      "expect_valid": false,
+      "expect_codes": [
+        "E_CONFIG_MALFORMED_PROJECT_ID"
+      ],
+      "match_mode": "exact",
+      "coverage_tags": [
+        "identity-config"
+      ],
+      "invariant_ids": []
+    },
+    {
+      "id": "68",
+      "path": "identity-config/68-distinct-binding-qualified-documents.json",
+      "assertion": "validate",
+      "expect_valid": true,
+      "expect_codes": [],
+      "match_mode": "exact",
+      "coverage_tags": [
+        "identity-config"
+      ],
+      "invariant_ids": []
+    },
+    {
+      "id": "68-documents",
+      "path": "documents/68-distinct-binding-qualified-documents.json",
+      "assertion": "validate",
+      "expect_valid": true,
+      "expect_codes": [],
+      "match_mode": "exact",
+      "coverage_tags": [
+        "documents"
+      ],
+      "invariant_ids": []
+    },
+    {
+      "id": "69",
+      "path": "identity-config/69-project-local-document.json",
+      "assertion": "validate",
+      "expect_valid": true,
+      "expect_codes": [],
+      "match_mode": "exact",
+      "coverage_tags": [
+        "identity-config"
+      ],
+      "invariant_ids": []
+    },
+    {
+      "id": "69-documents",
+      "path": "documents/69-project-local-document.json",
+      "assertion": "validate",
+      "expect_valid": true,
+      "expect_codes": [],
+      "match_mode": "exact",
+      "coverage_tags": [
+        "documents"
+      ],
+      "invariant_ids": []
+    },
+    {
+      "id": "70",
+      "path": "identity-config/70-short-hex-malformed-id.json",
+      "assertion": "validate",
+      "expect_valid": false,
+      "expect_codes": [
+        "E_NODE_MALFORMED_ID"
+      ],
+      "match_mode": "exact",
+      "coverage_tags": [
+        "identity-config"
+      ],
+      "invariant_ids": []
     }
   ]
 }
