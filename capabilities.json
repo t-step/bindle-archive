@@ -514,6 +514,19 @@
       "version_introduced": "0.4.0"
     },
     {
+      "name": "context-graph-schema",
+      "type": "contract",
+      "path": "docs/context-graph-schema.md",
+      "description": "The shipped v1 context-graph interchange contract reference (typed IDs, node/relationship vocabulary, endpoint matrix, candidate-key canonicalization, validation model) implemented by bin/context_graph/ and schemas/context-graph/v1/ \u2014 issue #180, epic #140.",
+      "provider": {
+        "claude": "installed",
+        "codex": "manual"
+      },
+      "maturity": "tested",
+      "mutation": [],
+      "version_introduced": "0.7.0"
+    },
+    {
       "name": "package-release-integrity",
       "type": "skill",
       "path": "skills/package-release-integrity",
