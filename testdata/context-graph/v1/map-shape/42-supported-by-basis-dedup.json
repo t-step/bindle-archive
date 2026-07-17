@@ -1,0 +1,42 @@
+{
+  "nodes": [
+    {
+      "id": "context-node:bindle:bde20cfc7c1741c79824c2f180802e50",
+      "class": "semantic",
+      "kind": "tension",
+      "label": "Tension parent 42",
+      "status": "current",
+      "confidence": "low",
+      "sides": [
+        {"label": "a", "evidence": ["#4"]},
+        {"label": "b", "evidence": ["#4"]}
+      ]
+    },
+    {
+      "id": "github-issue:thomas-estep/bindle#42",
+      "class": "evidence",
+      "kind": "github_issue",
+      "label": "issue 42",
+      "status": "current"
+    }
+  ],
+  "edges": [
+    {
+      "key": "context-node:bindle:bde20cfc7c1741c79824c2f180802e50|supported_by|github-issue:thomas-estep/bindle#42",
+      "source": "context-node:bindle:bde20cfc7c1741c79824c2f180802e50",
+      "relationship": "supported_by",
+      "target": "github-issue:thomas-estep/bindle#42",
+      "status": "confirmed",
+      "origin": "deterministic",
+      "review_trigger": false,
+      "basis": [
+        {"kind": "evidence_pointer", "location": "entry_evidence", "pointer": "#4"},
+        {"kind": "evidence_pointer", "location": "tension_side", "pointer": "#4"},
+        {"kind": "evidence_pointer", "location": "tension_side", "pointer": "#4"}
+      ],
+      "deterministic_source": {
+        "kind": "map_evidence_pointer"
+      }
+    }
+  ]
+}

@@ -1,0 +1,14 @@
+{
+  "nodes": [
+    {
+      "id": "context-node:bindle:c58044f6e0994e8bb4d0490b8861df7e",
+      "class": "semantic",
+      "kind": "tension",
+      "label": "Malformed tension cardinality 34",
+      "status": "current",
+      "sides": [
+        {"label": "only-one-side", "evidence": ["#1"]}
+      ]
+    }
+  ]
+}

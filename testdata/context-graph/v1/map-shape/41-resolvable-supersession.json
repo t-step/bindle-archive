@@ -1,0 +1,33 @@
+{
+  "nodes": [
+    {
+      "id": "context-node:bindle:ec3503253d6749478e422f3c64130bbd",
+      "class": "semantic",
+      "kind": "decision",
+      "label": "Replacement 41",
+      "status": "current"
+    },
+    {
+      "id": "context-node:bindle:fde85ee6338c4b0db5b5de56c70460ed",
+      "class": "semantic",
+      "kind": "decision",
+      "label": "Retired 41",
+      "status": "superseded"
+    }
+  ],
+  "edges": [
+    {
+      "key": "context-node:bindle:ec3503253d6749478e422f3c64130bbd|supersedes|context-node:bindle:fde85ee6338c4b0db5b5de56c70460ed",
+      "source": "context-node:bindle:ec3503253d6749478e422f3c64130bbd",
+      "relationship": "supersedes",
+      "target": "context-node:bindle:fde85ee6338c4b0db5b5de56c70460ed",
+      "status": "confirmed",
+      "origin": "deterministic",
+      "review_trigger": true,
+      "basis": [],
+      "deterministic_source": {
+        "kind": "map_tombstone"
+      }
+    }
+  ]
+}

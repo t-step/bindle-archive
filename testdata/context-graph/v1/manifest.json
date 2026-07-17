@@ -396,6 +396,210 @@
         "core"
       ],
       "invariant_ids": []
+    },
+    {
+      "id": "33-1",
+      "path": "map-shape/33-1-decision-heading.json",
+      "assertion": "validate",
+      "expect_valid": true,
+      "expect_codes": [],
+      "match_mode": "exact",
+      "coverage_tags": [
+        "map-shape"
+      ],
+      "invariant_ids": []
+    },
+    {
+      "id": "33-2",
+      "path": "map-shape/33-2-learning-heading.json",
+      "assertion": "validate",
+      "expect_valid": true,
+      "expect_codes": [],
+      "match_mode": "exact",
+      "coverage_tags": [
+        "map-shape"
+      ],
+      "invariant_ids": []
+    },
+    {
+      "id": "33-3",
+      "path": "map-shape/33-3-assumption-bullet.json",
+      "assertion": "validate",
+      "expect_valid": true,
+      "expect_codes": [],
+      "match_mode": "exact",
+      "coverage_tags": [
+        "map-shape"
+      ],
+      "invariant_ids": []
+    },
+    {
+      "id": "33-4",
+      "path": "map-shape/33-4-tension-parent.json",
+      "assertion": "validate",
+      "expect_valid": true,
+      "expect_codes": [],
+      "match_mode": "exact",
+      "coverage_tags": [
+        "map-shape"
+      ],
+      "invariant_ids": []
+    },
+    {
+      "id": "33-5",
+      "path": "map-shape/33-5-open-question.json",
+      "assertion": "validate",
+      "expect_valid": true,
+      "expect_codes": [],
+      "match_mode": "exact",
+      "coverage_tags": [
+        "map-shape"
+      ],
+      "invariant_ids": []
+    },
+    {
+      "id": "33-6",
+      "path": "map-shape/33-6-parked-question.json",
+      "assertion": "validate",
+      "expect_valid": true,
+      "expect_codes": [],
+      "match_mode": "exact",
+      "coverage_tags": [
+        "map-shape"
+      ],
+      "invariant_ids": []
+    },
+    {
+      "id": "33-7",
+      "path": "map-shape/33-7-typed-tombstone.json",
+      "assertion": "validate",
+      "expect_valid": true,
+      "expect_codes": [],
+      "match_mode": "exact",
+      "coverage_tags": [
+        "map-shape"
+      ],
+      "invariant_ids": []
+    },
+    {
+      "id": "34",
+      "path": "map-shape/34-tension-cardinality.json",
+      "assertion": "validate",
+      "expect_valid": false,
+      "expect_codes": [
+        "E_NODE_TENSION_CARDINALITY"
+      ],
+      "match_mode": "exact",
+      "coverage_tags": [
+        "map-shape"
+      ],
+      "invariant_ids": []
+    },
+    {
+      "id": "35",
+      "path": "map-shape/35-tension-side-identity.json",
+      "assertion": "validate",
+      "expect_valid": false,
+      "expect_codes": [
+        "E_NODE_TENSION_SIDE_IDENTITY"
+      ],
+      "match_mode": "exact",
+      "coverage_tags": [
+        "map-shape"
+      ],
+      "invariant_ids": []
+    },
+    {
+      "id": "36",
+      "path": "map-shape/36-untyped-tombstone.json",
+      "assertion": "validate",
+      "expect_valid": false,
+      "expect_codes": [
+        "E_NODE_MALFORMED_ID"
+      ],
+      "match_mode": "exact",
+      "coverage_tags": [
+        "map-shape"
+      ],
+      "invariant_ids": []
+    },
+    {
+      "id": "37",
+      "path": "map-shape/37-unresolved-replacement-id.json",
+      "assertion": "validate",
+      "expect_valid": false,
+      "expect_codes": [
+        "E_EDGE_MISSING_NODE_REF"
+      ],
+      "match_mode": "exact",
+      "coverage_tags": [
+        "map-shape"
+      ],
+      "invariant_ids": []
+    },
+    {
+      "id": "38",
+      "path": "map-shape/38-self-referential-replacement-id.json",
+      "assertion": "validate",
+      "expect_valid": false,
+      "expect_codes": [
+        "E_EDGE_SELF_EDGE_FORBIDDEN"
+      ],
+      "match_mode": "exact",
+      "coverage_tags": [
+        "map-shape"
+      ],
+      "invariant_ids": []
+    },
+    {
+      "id": "39",
+      "path": "map-shape/39-duplicate-identity-current-superseded.json",
+      "assertion": "validate",
+      "expect_valid": false,
+      "expect_codes": [
+        "E_NODE_DUPLICATE_ID"
+      ],
+      "match_mode": "exact",
+      "coverage_tags": [
+        "map-shape"
+      ],
+      "invariant_ids": []
+    },
+    {
+      "id": "40",
+      "path": "map-shape/40-retirement-without-replacement.json",
+      "assertion": "validate",
+      "expect_valid": true,
+      "expect_codes": [],
+      "match_mode": "exact",
+      "coverage_tags": [
+        "map-shape"
+      ],
+      "invariant_ids": []
+    },
+    {
+      "id": "41",
+      "path": "map-shape/41-resolvable-supersession.json",
+      "assertion": "validate",
+      "expect_valid": true,
+      "expect_codes": [],
+      "match_mode": "exact",
+      "coverage_tags": [
+        "map-shape"
+      ],
+      "invariant_ids": []
+    },
+    {
+      "id": "42",
+      "path": "map-shape/42-supported-by-basis-dedup.json",
+      "assertion": "validate",
+      "expect_valid": true,
+      "expect_codes": [],
+      "match_mode": "exact",
+      "coverage_tags": [
+        "map-shape"
+      ],
+      "invariant_ids": []
     }
   ]
 }

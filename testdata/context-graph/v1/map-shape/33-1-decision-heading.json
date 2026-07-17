@@ -1,0 +1,11 @@
+{
+  "nodes": [
+    {
+      "id": "context-node:bindle:091f8de632b2490a89a7ed9fd01bf29b",
+      "class": "semantic",
+      "kind": "decision",
+      "label": "Decision heading 33-1",
+      "status": "current"
+    }
+  ]
+}

@@ -1,0 +1,11 @@
+{
+  "nodes": [
+    {
+      "id": "context-node:bindle:untyped",
+      "class": "semantic",
+      "kind": null,
+      "label": "Untyped tombstone 36",
+      "status": "superseded"
+    }
+  ]
+}

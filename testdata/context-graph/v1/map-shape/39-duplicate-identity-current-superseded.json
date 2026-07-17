@@ -1,0 +1,18 @@
+{
+  "nodes": [
+    {
+      "id": "context-node:bindle:ade74a88c53b42008a6bf01e56fd59bb",
+      "class": "semantic",
+      "kind": "decision",
+      "label": "Current 39",
+      "status": "current"
+    },
+    {
+      "id": "context-node:bindle:ade74a88c53b42008a6bf01e56fd59bb",
+      "class": "semantic",
+      "kind": "decision",
+      "label": "Superseded 39",
+      "status": "superseded"
+    }
+  ]
+}

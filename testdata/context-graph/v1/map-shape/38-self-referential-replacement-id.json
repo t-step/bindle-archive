@@ -1,0 +1,26 @@
+{
+  "nodes": [
+    {
+      "id": "context-node:bindle:9ebd97600cf8412a9aff096a1d44c13a",
+      "class": "semantic",
+      "kind": "decision",
+      "label": "Self-referential replacement 38",
+      "status": "current"
+    }
+  ],
+  "edges": [
+    {
+      "key": "context-node:bindle:9ebd97600cf8412a9aff096a1d44c13a|supersedes|context-node:bindle:9ebd97600cf8412a9aff096a1d44c13a",
+      "source": "context-node:bindle:9ebd97600cf8412a9aff096a1d44c13a",
+      "relationship": "supersedes",
+      "target": "context-node:bindle:9ebd97600cf8412a9aff096a1d44c13a",
+      "status": "confirmed",
+      "origin": "deterministic",
+      "review_trigger": true,
+      "basis": [],
+      "deterministic_source": {
+        "kind": "map_tombstone"
+      }
+    }
+  ]
+}
