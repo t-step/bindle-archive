@@ -866,6 +866,10 @@
     {
       "path": "docs/superpowers/plans/2026-07-15-release-please-sync.md",
       "reason": "a point-in-time implementation plan for the release-please-sync fix (#137), paired with its design spec; planning artifact, not itself a capability."
+    },
+    {
+      "path": "docs/superpowers/plans/2026-07-16-context-graph-schema-implementation.md",
+      "reason": "a point-in-time implementation plan for the #180 context-graph schema/fixture implementation; planning artifact, not itself a capability."
     }
   ],
   "external_upstreams": [
