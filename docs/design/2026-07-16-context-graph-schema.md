@@ -195,8 +195,9 @@ from context_graph.validation import validate_candidate
 - repository-binding ID `repository-binding:<32-lowercase-hex>`;
 - evidence IDs (`session:…`, `handoff:…`, `document:…`, `github-issue:…`,
   `github-pr:…`) per §5;
-- candidate key `candidate:sha256:<64-lowercase-hex>` and judgment
-  subject/candidate key shapes.
+- candidate keys — edge `candidate:sha256:<64-lowercase-hex>` and identity-anchor
+  `anchor-candidate:sha256:<64-lowercase-hex>` (distinct namespaces, §10) — and
+  judgment subject/candidate key shapes.
 - No filesystem or network access.
 
 **`relationships.py`** — the closed relationship vocabulary; per-relationship
@@ -208,9 +209,11 @@ canonical-ordering rule and the per-relationship default `review_trigger` value
 creation-authority rules do **not** live here (see `validation.py`).
 
 **`canonical.py`** — basis-entry normalization; canonical basis serialization;
-candidate-key domain separation and framing; SHA-256 candidate-key generation
-(§10); deterministic ordering and byte-exact deduplication. It performs no object
-validation beyond what is required to canonicalize inputs that were already
+candidate-key domain separation and framing; SHA-256 generation of **both** the
+edge candidate key and the identity-anchor candidate key, plus the anchor
+`entry_fingerprint` and anchor `dependency_fingerprint` (§10 freezes all four
+byte-exactly); deterministic ordering and byte-exact deduplication. It performs no
+object validation beyond what is required to canonicalize inputs that were already
 validated upstream.
 
 **`validation.py`** — validation of each object kind (config, node, edge,
@@ -296,12 +299,16 @@ native validator is authoritative (§11).
   `identity_anchor` targets, entry fingerprints, assigned IDs, and any
   authoritative candidate key.
 - **`candidate.schema.json`** — a discriminated union on `subject_type`:
-  validated `edge` candidates (#184) and deterministic `identity_anchor`
-  candidates (#183). Envelope: `subject_type`, `candidate_key`,
-  `candidate_origin` ∈ {deterministic_compiler, validated_proposal},
-  candidate-scoped `dependency_fingerprint`, optional diagnostic whole-graph
-  fingerprint, producer metadata (non-authoritative), material basis, validation
-  status. Rejects a proposal-supplied conflicting precomputed candidate key.
+  validated `edge` candidates (#184, `candidate_key` in the `candidate:sha256:`
+  namespace, with a material `basis` array) and deterministic `identity_anchor`
+  candidates (#183, `candidate_key` in the `anchor-candidate:sha256:` namespace,
+  with `project_id` / `map_path` / `section` / `entry_kind` / `entry_fingerprint`
+  / `display_claim` and **no** `basis` array). Shared envelope: `subject_type`,
+  `candidate_key`, `candidate_origin` ∈ {deterministic_compiler,
+  validated_proposal}, candidate-scoped `dependency_fingerprint`, optional
+  diagnostic whole-graph fingerprint, producer metadata (non-authoritative),
+  validation status. The per-subject key formats are frozen byte-exactly in §10.
+  Rejects a proposal-supplied conflicting precomputed candidate key.
 - **`judgment.schema.json`** — append-only event: `schema_version`,
   `subject_type`, `subject_key`, `candidate_key`, `decision` ∈ {accepted,
   rejected, retired}, `decided_at`; `identity_anchor` judgments add
@@ -429,19 +436,39 @@ subject/candidate vocabulary.
 never independently stale a candidate (fixtures 80, 81). For `identity_anchor`:
 project ID, stable map-source identity / project-relative path, normalized
 section, entry kind, exact owner-authored entry fingerprint excluding Bindle
-markers, and unique-current-match / unanchored state. For `edge`: canonical
-source/target IDs, current endpoint classes/kinds, relationship + endpoint-matrix
-validity, canonical material basis, and only source/target metadata explicitly
-declared material by that basis. Explanations, producer metadata, review
-ordering, timestamps, and whole-graph diagnostics never participate.
+markers, and unique-current-match / unanchored state — hashed byte-exactly as the
+anchor `dependency_fingerprint` in §10.2 (the unique-match / unanchored condition
+is an apply-time check, not a hashed input). For `edge`: canonical source/target
+IDs, current endpoint classes/kinds, relationship + endpoint-matrix validity,
+canonical material basis, and only source/target metadata explicitly declared
+material by that basis. Explanations, producer metadata, review ordering,
+timestamps, and whole-graph diagnostics never participate.
 
 ---
 
-## 10. Candidate-key canonicalization algorithm (`bindle-context-candidate-v1`)
+## 10. Candidate-key canonicalization algorithms
 
-A single versioned, byte-exact primitive in `canonical.py`, called by #183 (anchor
-keys) and #184 (edge keys and anchor-key recomputation). No issue maintains an
-independent implementation.
+`canonical.py` owns **two** versioned, byte-exact candidate-key primitives plus
+one entry-fingerprint primitive — the complete shared contract for both subject
+types. `edge` candidate keys use `bindle-context-candidate-v1` (§10.1);
+`identity_anchor` candidate keys use `bindle-context-anchor-candidate-v1` (§10.2).
+Both are fully frozen here so #183 emits and #184 recomputes byte-identical keys
+by calling the same module. No issue maintains an independent implementation, and
+nothing about either key is "defined later" — implementation-defined
+canonicalization is a rejected alternative (§20).
+
+Public entry points:
+
+```python
+from context_graph.canonical import (
+    candidate_key,         # edge candidate key (§10.1)
+    entry_fingerprint,     # identity-anchor entry fingerprint (§10.2)
+    anchor_candidate_key,  # identity-anchor candidate key (§10.2)
+    anchor_dependency_fingerprint,  # identity-anchor staleness fingerprint (§10.2)
+)
+```
+
+### 10.1. Edge candidate key (`bindle-context-candidate-v1`)
 
 **Basis normalization.** Each basis entry is normalized to a typed JSON object
 with a **fixed allowed field set for its basis kind**. Unknown fields, missing
@@ -483,17 +510,166 @@ For symmetric `contradicts`, `source_id` and `target_id` are the lexicographical
 ordered pair before framing. **Key format:** `candidate:sha256:<64-lowercase-hex>`
 = `"candidate:sha256:" + sha256(payload).hexdigest()`.
 
-Explicitly frozen: basis order is irrelevant; duplicates collapse; UTF-8 is
-exact; no Unicode normalization by default; omitted ≠ null; numbers/booleans/null
-forbidden by default; version string is `bindle-context-candidate-v1`. The
-identity-anchor candidate-key contract is defined by #184 under this same
-framing/domain-separation envelope.
+Explicitly frozen for edges: basis order is irrelevant; duplicates collapse;
+UTF-8 is exact; no Unicode normalization by default; omitted ≠ null;
+numbers/booleans/null forbidden by default; version string is
+`bindle-context-candidate-v1`; key namespace is `candidate:sha256:`.
 
-**Ownership.** #180 defines and implements the shared primitive. #183 computes
-deterministic anchor-candidate keys through it. #184 recomputes and verifies
-anchor keys, then computes semantic-candidate keys, through the same module. The
-`canonicalization/` fixtures carry exact expected `canonical_basis_bytes` and
-digests so any reimplementation drift is caught.
+### 10.2. Identity-anchor candidate key (`bindle-context-anchor-candidate-v1`)
+
+Identity anchors have no source ID, relationship, or target ID and carry no
+evidence `basis` array, so the edge framing does not apply to them. Their key is
+fully specified here, consolidating the inputs #184's body enumerates into the
+same null-byte-joined, domain-separated framing style #184 uses for the outer
+key. #183 must already emit these bytes, so they are frozen in this shared-primitive
+design rather than left to #184.
+
+**Frame fields (identity-anchor), in exact order.** All five are **direct frame
+fields**; an anchor has no `basis` array participating in its key — `entry_fingerprint`
+is the sole content dependency.
+
+| # | Field | Source | Normalization | Present/absent |
+|---|---|---|---|---|
+| 0 | domain literal `bindle-context-anchor-candidate-v1` | constant | none | always present |
+| 1 | `project_id` | configured opaque `project:<32hex>` | none (already canonical) | always present (missing/malformed `project_id` stops construction, routed to #191 — never an anchor) |
+| 2 | `map_path` | notes-home-relative POSIX path, e.g. `projects/<slug>/map.md` | none beyond POSIX-relative canonical form (forward slashes, no leading `./` or `/`, no `.`/`..` segments); no case-folding, no trimming | always present |
+| 3 | `section` | lowercase section token ∈ {`brief`,`decisions`,`learnings`,`assumptions`,`questions`,`superseded`} | none (already the lowercase canonical token; #183 produces it) | always present |
+| 4 | `entry_kind` | lowercase kind ∈ {`decision`,`learning`,`assumption`,`tension`,`question`} (a tombstone's declared original kind) | none | always present |
+| 5 | `entry_fingerprint` | the candidate's `sha256:<64hex>` field value (§ below), UTF-8, framed verbatim **including** the `sha256:` prefix | none | always present |
+
+Every anchor frame field is **mandatory** — none is optional, so there is no
+"silently omitted field changes the bytes" hazard: an anchor that cannot supply
+all five is not a valid anchor and is never emitted. There is no per-field
+absent-representation rule to define because absence is not a legal anchor state.
+
+**Entry fingerprint (`bindle-context-entry-fingerprint-v1`).** #184's body
+enumerates the fingerprint inputs (stable project identity, normalized
+repository-/project-relative map path, normalized section, entry kind, and the
+exact owner-authored entry bytes with any Bindle identity marker excised) and the
+outer anchor-key framing, but does not give the fingerprint's *own* inner
+byte-layout. This design fills that one gap by framing those inputs in #184's own
+`b"\0".join(...)` style under a distinct domain literal, so the derivation is
+unambiguous and consistent rather than implementation-defined:
+
+```python
+entry_fingerprint = "sha256:" + hashlib.sha256(
+    b"\0".join((
+        b"bindle-context-entry-fingerprint-v1",
+        project_id.encode("utf-8"),
+        map_path.encode("utf-8"),
+        section.encode("utf-8"),
+        entry_kind.encode("utf-8"),
+        entry_bytes,               # see below
+    ))
+).hexdigest()
+```
+
+`entry_bytes` are the owner-authored entry's exact UTF-8 bytes **as produced by
+#183's parser** per #184's contract: the entry's own lines (the anchor line plus
+its structured content — heading field lines, or a tension's two sides) joined by
+single `\n`, with any `<!-- bindle:context-id: … -->` and
+`<!-- bindle:superseded-by: … -->` comments and the single space that directly
+precedes an excised marker removed, and **no** other transformation — no case
+folding, no whitespace trimming, no newline-style change, no Unicode
+normalization (identical stance to the edge contract). For an unanchored entry no
+marker exists, so `entry_bytes` are the raw owner bytes. Extraction of the entry's
+line span belongs to #183's parsing contract; this primitive applies no further
+normalization to the bytes it receives. Moving the entry within its section
+without changing these bytes leaves the fingerprint unchanged; editing the claim,
+fields, status, evidence, kind, or section changes it — matching #184.
+
+**Anchor candidate key.**
+
+```python
+payload = b"\0".join((
+    b"bindle-context-anchor-candidate-v1",
+    project_id.encode("utf-8"),
+    map_path.encode("utf-8"),
+    section.encode("utf-8"),
+    entry_kind.encode("utf-8"),
+    entry_fingerprint.encode("utf-8"),   # the "sha256:<hex>" field value, verbatim
+))
+candidate_key = "anchor-candidate:sha256:" + hashlib.sha256(payload).hexdigest()
+```
+
+**Dependency fingerprint (staleness).** The anchor's candidate-scoped
+`dependency_fingerprint` is a **direct computed field**, not a basis entry, over
+the same material as the key but under its own domain literal so its bytes never
+equal the candidate key. It carries the §9/§ candidate-staleness inputs for an
+anchor (project ID, map path, section, entry kind, entry fingerprint); the
+"unique current match and current unanchored state" is a validation condition
+checked at apply time (#184/#185), not a hashed input.
+
+```python
+dependency_fingerprint = "sha256:" + hashlib.sha256(
+    b"\0".join((
+        b"bindle-context-anchor-dependency-v1",
+        project_id.encode("utf-8"),
+        map_path.encode("utf-8"),
+        section.encode("utf-8"),
+        entry_kind.encode("utf-8"),
+        entry_fingerprint.encode("utf-8"),
+    ))
+).hexdigest()
+```
+
+**Collision-proof against edge candidates — two independent separations.** (1)
+The first null-delimited frame segment differs: every edge payload begins
+`bindle-context-candidate-v1\0`, every anchor payload begins
+`bindle-context-anchor-candidate-v1\0`, and neither literal is the other followed
+by `\0`, so no edge payload can ever equal an anchor payload. (2) The output key
+namespaces differ: `candidate:sha256:` for edges, `anchor-candidate:sha256:` for
+anchors. `entry_fingerprint` and `dependency_fingerprint` likewise carry distinct
+domain literals, so none of the four digests can collide even on identical
+trailing bytes.
+
+**Worked byte-exact example (identity anchor).** Inputs:
+
+- `project_id` = `project:5f56c9b95c41c298f70d6dd4e5db8c2a`
+- `map_path` = `projects/bindle/map.md`
+- `section` = `decisions`
+- `entry_kind` = `decision`
+- `entry_bytes` (346 bytes, UTF-8, unanchored → no marker), the five lines
+  joined by single `\n`, no trailing newline:
+
+  ```text
+  ### Separate release intent, artifact, and publication authority (2026-07, settled)
+  why: three failure modes were collapsing into one review step.
+  so: release-captain recommends, package-release-integrity gates, a human publishes.
+  revisit-when: a provider ships one safe end-to-end release action.
+  evidence: sessions/2026-07-15-release-captain.md
+  ```
+
+Stage bytes and digests (reproducible; each `\0` is one 0x00 byte):
+
+- entry-fingerprint payload = `b"bindle-context-entry-fingerprint-v1\0project:5f56c9b95c41c298f70d6dd4e5db8c2a\0projects/bindle/map.md\0decisions\0decision\0" + entry_bytes` (465 bytes) →
+  `entry_fingerprint` = `sha256:37730a28d9968e38cb25da0b1a98b7c4e13c43a2b661ca2b6cd3daf884b8e681`
+- anchor-candidate-key payload = `b"bindle-context-anchor-candidate-v1\0…\0decisions\0decision\0sha256:3773…e681"` (189 bytes) →
+  `candidate_key` = `anchor-candidate:sha256:de5f2e3ead19bcb905dfd0ac06898c12c71bb1a7d112de386363490e54197933`
+- anchor-dependency payload = `b"bindle-context-anchor-dependency-v1\0…\0sha256:3773…e681"` (190 bytes) →
+  `dependency_fingerprint` = `sha256:f579dbeb232f6f18724ea3322132105aed41dc8b799d98dc79ab495133224e5f`
+
+These exact values become the seed vector for the `canonicalization/` fixtures (§13);
+the `.expected.txt` files pin the three digests so any consumer's drift is caught.
+
+**Explicitly frozen for anchors:** the domain literal `bindle-context-anchor-candidate-v1`
+and namespace `anchor-candidate:sha256:`; the five-field frame order above; all
+five fields are direct frame fields and mandatory; no `basis` array participates;
+`entry_fingerprint` is `bindle-context-entry-fingerprint-v1` framed;
+`dependency_fingerprint` is `bindle-context-anchor-dependency-v1` framed; UTF-8 is
+exact; no normalization on any field beyond the map-path POSIX-canonical rule; no
+Unicode normalization. This is byte-identical for the same unchanged entry across
+previews and providers, matching #184.
+
+### 10.3. Ownership
+
+**Ownership.** #180 defines and implements both shared primitives. #183 computes
+deterministic edge and anchor candidate keys through them. #184 recomputes and
+verifies anchor keys, then computes semantic-candidate keys, through the same
+module. The `canonicalization/` fixtures carry exact expected
+`canonical_basis_bytes` (edges), `entry_fingerprint`, `anchor` candidate keys, and
+`dependency_fingerprint` digests so any reimplementation drift in either subject
+type is caught.
 
 ---
 
@@ -607,9 +783,11 @@ This is `v1`, pinned by the `schemas/context-graph/v1/` path and
 `schema_version: 1` in every versioned record and in `SCHEMA_VERSION`. Reserved
 future node kinds and the deferred `implements` relationship are documented but
 rejected as emitted v1 output, so a later version can introduce them without a
-silent meaning shift. The candidate-key domain string is versioned
-(`bindle-context-candidate-v1`); any change to the canonicalization algorithm is
-a new version string and a new key namespace, never an in-place redefinition.
+silent meaning shift. All four candidate-key domain strings are versioned
+(`bindle-context-candidate-v1`, `bindle-context-anchor-candidate-v1`,
+`bindle-context-entry-fingerprint-v1`, `bindle-context-anchor-dependency-v1`); any
+change to a canonicalization algorithm is a new version string and a new key
+namespace, never an in-place redefinition.
 Accepted ledger history never grandfathers a record that is illegal under the
 active schema version (§7). A future `v2` is a new directory and new schema files
 beside `v1`, not an edit of these.
@@ -737,9 +915,12 @@ relationship.
 - **Free-form string basis hashing** — rejected; basis entries are typed JSON
   objects with fixed field sets and byte-exact canonical serialization (§10). No
   `str()`/tuple/`set`/locale/line-ending-dependent hashing.
-- **Implementation-defined canonicalization** — rejected; §10 fixes
-  serialization settings, dedup, ordering, encoding, and domain separation
-  exactly, with byte-exact fixtures.
+- **Implementation-defined canonicalization** — rejected for **both** subject
+  types; §10 fixes serialization settings, dedup, ordering, encoding, and domain
+  separation exactly for the edge key *and* the identity-anchor key
+  (`entry_fingerprint`, `anchor_candidate_key`, `dependency_fingerprint`), with
+  worked byte-exact digests. No anchor-key detail is left to a downstream issue's
+  implementation.
 - **No automated schema/native sync check** — rejected; §11 mandates the
   bidirectional conformance test and `invariant-coverage.json`.
 - **`matrix.py` as the module name** — rejected for `relationships.py`, which
@@ -791,9 +972,13 @@ Every stop condition is checked and clear:
   dependency: it has an established skip-if-absent-locally / enforce-in-CI pattern
   (shellcheck, shfmt) that `jsonschema` reuses, while the runtime validator stays
   stdlib-only (§11).
-- Candidate-key basis kinds are sufficiently defined to freeze canonicalization:
-  basis entries are typed JSON objects with fixed field sets, and §10 fixes the
-  whole algorithm byte-exactly.
+- Candidate-key basis kinds are sufficiently defined to freeze canonicalization
+  for **both** subject types: edge basis entries are typed JSON objects with fixed
+  field sets, and identity anchors carry no basis array — their five mandatory
+  frame fields plus `entry_fingerprint` are enumerated by #184's body. §10 fixes
+  both algorithms byte-exactly (edge, anchor candidate key, anchor
+  `entry_fingerprint`, and anchor `dependency_fingerprint`), with worked digests,
+  so nothing is "defined later."
 - Endpoint rules are unambiguous after reading the complete bodies — the closed
   matrix (§7) is total over the emitted node kinds.
 - The proposed package location (`bin/context_graph/`) is consistent with the
