@@ -719,6 +719,45 @@ alone to exercise (no code path in `bin/map-entry-id.py` ever gets called
 unless something explicitly calls `allocate`); it's covered by Layer 2's
 scenario X1 below instead.
 
+#### Follow-up: duplicate-id pairing invariant (adversarial review, 2026-07-16)
+
+A same-session adversarial review of commit `ae76f61` found a real gap in
+the *first* cut of duplicate-id detection: it kept independent
+"live-section" and "Superseded-section" occurrence buckets and never
+flagged a same-id collision that happened to straddle the two buckets — so
+an unrelated live entry and an unrelated tombstone could silently share an
+id as long as one landed in each bucket, not just the one legitimate
+retirement pair (a retired Decision's still-present heading + its own
+matching tombstone). `bin/map-entry-id.py` was rewritten to a flat
+occurrence list plus an explicit `_is_legitimate_retirement_pair()` check —
+exactly two occurrences, same claim (byte-for-byte), same kind, and the
+live side's status token literally `superseded` — with everything else
+reported as `duplicate-id`. The rewrite also surfaced, and required naming
+explicitly, a real limit already implied by the frozen grammar: Learnings
+carry no status token at all ("Learnings omit the status token") and
+Assumptions/tensions/Open questions carry no retirement status token
+either, so none of those kinds has a deterministic in-place-retirement
+signal to pair on — a same-id collision involving them is always a
+conflict, documented as a known contract gap rather than papered over with
+invented pairing logic.
+
+9 new focused checks were added to `bin/test-map-entry-id.sh` (all folded
+into the same 2026-07-16 run): a valid retirement pair (no conflict); a
+settled-never-retired entry sharing an id with an unrelated tombstone
+(conflict); kind mismatch; claim mismatch; two ordinary live entries
+sharing an id; two tombstones sharing an id; a valid pair plus a stray
+third occurrence; the documented Learning gap (a Learning + its own
+matching tombstone is still a conflict); a legacy retired entry paired with
+a correctly typed-but-markerless tombstone (informational only, `ok:
+true`); and zero-mutation across every one of those fixtures.
+
+**Result: PASS 53/53 checks** (39 original + 14 new — the count above also
+absorbed a fixture bug the rewrite's stricter matching caught: an existing
+supersession fixture had used differently-cased claim text between a
+retired heading and its tombstone, which the new byte-for-byte claim check
+correctly flagged; the fixture, not the validator, was wrong, and was
+fixed to use identical claim text). 0 failures.
+
 ### Layer 2 — workflow integration: 3 new scenarios, subagent-executed
 
 **Method**: identical to the Method section above — fresh general-purpose
@@ -777,5 +816,6 @@ independently as part of its 39/39.
 ### Verdict
 
 `bin/map-entry-id.py` and the `/promote-knowledge` identity integration
-graduate `draft` → `tested`: Layer 1 39/39, Layer 2 9/9, 0 discarded, real
-notes home provably untouched in both layers.
+graduate `draft` → `tested`: Layer 1 53/53 (39 original + 14 from the
+duplicate-id pairing follow-up), Layer 2 9/9, 0 discarded, real notes home
+provably untouched in both layers.

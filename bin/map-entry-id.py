@@ -76,8 +76,16 @@ INDENT_BULLET_RE = re.compile(r"^[ \t]+-\s")
 FIELD_RE = re.compile(r"^(why|so|revisit-when|evidence):")
 COMMENT_RE = re.compile(r"<!--\s*(.*?)\s*-->")
 TOMBSTONE_RE = re.compile(
-    r"^-\s*(decision|learning|assumption|tension|question):\s*.+?"
-    r"\s*\(retired\s+\d{4}-\d{2}\)\s*→\s*.+$"
+    r"^-\s*(?P<kind>decision|learning|assumption|tension|question):\s*"
+    r"(?P<claim>.+?)\s*\(retired\s+\d{4}-\d{2}\)\s*→\s*.+$"
+)
+# Decisions carry an explicit status token (`settled`/`superseded`);
+# Learnings freeze it out ("Learnings omit the status token" — the entry
+# grammar), so `status` is None for a Learning heading by construction, never
+# guessed. Matches both shapes with one pattern.
+HEADING_CLAIM_RE = re.compile(
+    r"^###\s*(?P<claim>.+?)\s*\((?P<date>\d{4}-\d{2})"
+    r"(?:,\s*(?P<status>settled|superseded))?\)\s*$"
 )
 
 SECTION_KEY = {
@@ -132,6 +140,12 @@ def _scan_comments(line):
         elif body.startswith("bindle:superseded-by:"):
             out.append(("superseded-by", body[len("bindle:superseded-by:"):].strip(), m.group(0)))
     return out
+
+
+def _strip_comments(line):
+    """Line with every HTML comment removed, for deterministic claim/status
+    extraction that never accidentally matches inside a marker's own text."""
+    return COMMENT_RE.sub("", line).strip()
 
 
 def _new_entry(section, role, line_no, text):
@@ -192,6 +206,38 @@ def parse_map(text):
 # validation
 # --------------------------------------------------------------------------
 
+def _is_legitimate_retirement_pair(a, b):
+    """True iff occurrences a and b are exactly the one case the frozen
+    knowledge-promotion grammar defines as a legitimate same-id duplicate:
+    a retired Decision's still-present, status-flipped heading, paired with
+    its own typed tombstone in Superseded.
+
+    Deliberately narrow. The base contract ("A superseded decision or
+    learning gets its status flipped...") only gives Decisions a
+    deterministic in-heading retirement signal — the entry grammar states
+    plainly that "Learnings omit the status token", so a Learning heading
+    never carries a machine-checkable settled/superseded marker, and
+    Assumptions & tensions / Open questions have no retirement status token
+    at all. Without that signal there is no deterministic way to confirm a
+    live entry of those kinds is "genuinely in the superseded state" the
+    invariant requires, so this function never treats them as pairable —
+    doing otherwise would mean inventing pairing logic the grammar doesn't
+    define. A same-id collision involving those kinds is always a conflict.
+    """
+    live, tomb = (a, b) if not a["is_tombstone"] else (b, a)
+    if live["is_tombstone"] or not tomb["is_tombstone"]:
+        return False
+    if not live["pairable"] or not tomb["pairable"]:
+        return False
+    if live["kind"] != "decision" or tomb["kind"] != "decision":
+        return False
+    if live["status"] != "superseded":
+        return False
+    if live["claim"] is None or tomb["claim"] is None:
+        return False
+    return live["claim"] == tomb["claim"]
+
+
 def validate_map(text):
     """Read-only structural validation of map.md text. Returns a dict with
     `entries` (deterministic discovery: anchored + unanchored) and `issues`
@@ -216,8 +262,14 @@ def validate_map(text):
                 if _key == "context-id" and ID_RE.match(value):
                     all_ids_found.add(value)
 
-    live_occurrences = {}
-    tombstone_occurrences = {}
+    # Every well-formed id occurrence, flat — no live/tombstone bucketing.
+    # Bucketing by section alone is what let an unrelated live entry and an
+    # unrelated tombstone silently share an id as long as they landed in
+    # different buckets; duplicate detection below instead asks, for every
+    # id with more than one occurrence, whether the occurrences form exactly
+    # one legitimate retirement pair — never a broader "different bucket"
+    # exemption.
+    occurrences = []
 
     for e in entries:
         section, role = e["section"], e["role"]
@@ -286,10 +338,13 @@ def validate_map(text):
                           "malformed identity %r on %r" % (value, anchor_text.strip()))
 
         entry_kind = kind
+        claim = None
+        status = None
         if section == "superseded":
-            tm = TOMBSTONE_RE.match(anchor_text.strip())
+            tm = TOMBSTONE_RE.match(_strip_comments(anchor_text))
             if tm:
-                entry_kind = tm.group(1)
+                entry_kind = tm.group("kind")
+                claim = tm.group("claim").strip()
             else:
                 issue("info", "untyped-tombstone", anchor_line,
                       "untyped retirement tombstone (missing '<kind>: ' prefix "
@@ -321,13 +376,27 @@ def validate_map(text):
                     issue("error", "superseded-by-unresolved", anchor_line,
                           "bindle:superseded-by %r matches no bindle:context-id "
                           "in this map: %r" % (sb_value, anchor_text.strip()))
+        elif role == "heading":
+            hm = HEADING_CLAIM_RE.match(_strip_comments(anchor_text))
+            if hm:
+                claim = hm.group("claim").strip()
+                status = hm.group("status")
 
-        bucket = tombstone_occurrences if section == "superseded" else live_occurrences
-        if resolved_id is not None:
-            bucket.setdefault(resolved_id, []).append(anchor_line)
-        for _key, value, _raw in anchor_cid:
-            if ID_RE.match(value) and value != resolved_id:
-                bucket.setdefault(value, []).append(anchor_line)
+        # `pairable` is true only for the clean single-well-formed-marker
+        # case — an entry already flagged multiple-markers/malformed never
+        # anchors a legitimate retirement pair, it only ever conflicts.
+        pairable = len(anchor_cid) == 1 and resolved_id is not None
+        is_tombstone = section == "superseded"
+        occ_ids = list(dict.fromkeys(
+            ([resolved_id] if resolved_id is not None else [])
+            + [value for _key, value, _raw in anchor_cid if ID_RE.match(value)]
+        ))
+        for occ_id in occ_ids:
+            occurrences.append({
+                "id": occ_id, "line": anchor_line, "kind": entry_kind,
+                "is_tombstone": is_tombstone, "pairable": pairable,
+                "claim": claim, "status": status,
+            })
 
         out_entries.append({
             "section": section,
@@ -338,12 +407,20 @@ def validate_map(text):
             "anchored": resolved_id is not None,
         })
 
-    for bucket, plural in ((live_occurrences, "entries"), (tombstone_occurrences, "tombstones")):
-        for id_, lines in bucket.items():
-            if len(lines) > 1:
-                issue("error", "duplicate-id", lines[0],
-                      "identity %s reused across %d %s (lines %s)"
-                      % (id_, len(lines), plural, ", ".join(str(n) for n in lines)))
+    by_id = {}
+    for occ in occurrences:
+        by_id.setdefault(occ["id"], []).append(occ)
+
+    for id_, occs in by_id.items():
+        if len(occs) < 2:
+            continue
+        if len(occs) == 2 and _is_legitimate_retirement_pair(occs[0], occs[1]):
+            continue
+        lines = sorted(o["line"] for o in occs)
+        issue("error", "duplicate-id", lines[0],
+              "identity %s reused across %d occurrences that do not form a "
+              "single valid retirement pair (lines %s)"
+              % (id_, len(occs), ", ".join(str(n) for n in lines)))
 
     ok = not any(i["severity"] == "error" for i in issues)
     return {

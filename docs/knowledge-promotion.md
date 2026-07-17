@@ -228,6 +228,31 @@ of their parent entry and never receive one.
   malformed/duplicate/self-referential/unresolved `bindle:superseded-by`
   metadata. It never writes to the map under any circumstance, success or
   failure.
+- **Exactly one legitimate same-id duplicate.** A retired Decision keeps its
+  id on its own still-present, status-flipped heading *and* on its typed
+  tombstone — one entry, two representations, by design (see Supersession
+  below). Every other reuse of an id is a conflict, including a live entry
+  and an *unrelated* tombstone that happen to share one. The validator never
+  grants a blanket exemption to "a live-bucket id also seen in the
+  Superseded section" — it recognizes only the one pair the grammar
+  actually defines: same id, exactly two occurrences, one is a Decision
+  heading whose status token literally reads `superseded`, the other is a
+  typed tombstone whose `<kind>:` is `decision` and whose `<claim>` is the
+  same string (byte-for-byte — never fuzzy, never model-assisted) as that
+  heading's claim. Anything short of that full match — a settled-not-
+  superseded original, a kind mismatch, a claim mismatch, a third occurrence
+  anywhere — is reported as `duplicate-id`, not silently paired.
+- **Learnings, Assumptions & tensions, and Open questions have no
+  deterministic retirement signal to pair on.** The entry grammar states
+  plainly that "Learnings omit the status token", and Assumptions/tensions/
+  Open questions carry no status token at all — so there is no
+  machine-checkable way to confirm one of those live entries is "genuinely
+  superseded" the way a Decision's heading can be. The validator therefore
+  never treats a Learning/Assumption/Tension/Question sharing an id with a
+  tombstone as a legitimate pair; it always reports the collision as a
+  conflict. This is a known, deliberate gap in the frozen grammar, not an
+  oversight — closing it would mean inventing a retirement signal for those
+  kinds that #179 doesn't define, which is out of scope here.
 
 ### Size budget
 
