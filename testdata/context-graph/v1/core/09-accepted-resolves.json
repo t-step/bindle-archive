@@ -1,0 +1,39 @@
+{
+  "nodes": [
+    {
+      "id": "context-node:bindle:019d7181f689622d9fd7a4eca26a6114",
+      "class": "semantic",
+      "kind": "learning",
+      "label": "Source 9",
+      "status": "current"
+    },
+    {
+      "id": "context-node:bindle:aacba1fb2d394f523ce57da214a59ebe",
+      "class": "semantic",
+      "kind": "question",
+      "label": "Target 9",
+      "status": "current"
+    }
+  ],
+  "edges": [
+    {
+      "key": "context-node:bindle:019d7181f689622d9fd7a4eca26a6114|resolves|context-node:bindle:aacba1fb2d394f523ce57da214a59ebe",
+      "source": "context-node:bindle:019d7181f689622d9fd7a4eca26a6114",
+      "relationship": "resolves",
+      "target": "context-node:bindle:aacba1fb2d394f523ce57da214a59ebe",
+      "status": "confirmed",
+      "origin": "human_judgment",
+      "review_trigger": false,
+      "basis": []
+    }
+  ],
+  "judgments": [
+    {
+      "decision": "accepted",
+      "subject_key": "context-node:bindle:019d7181f689622d9fd7a4eca26a6114|resolves|context-node:bindle:aacba1fb2d394f523ce57da214a59ebe",
+      "subject_type": "edge",
+      "candidate_key": "candidate:sha256:0000000000000000000000000000000000000000000000000000000000000000",
+      "decided_at": "2026-07-16T00:00:00Z"
+    }
+  ]
+}

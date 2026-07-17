@@ -1,0 +1,30 @@
+{
+  "nodes": [
+    {
+      "id": "context-node:bindle:024e9e7952d78dd6cb39d492b914c0aa",
+      "class": "semantic",
+      "kind": "decision",
+      "label": "Source 25",
+      "status": "current"
+    },
+    {
+      "id": "github-issue:thomas-estep/bindle#25",
+      "class": "evidence",
+      "kind": "github_issue",
+      "label": "issue 25",
+      "status": "current"
+    }
+  ],
+  "edges": [
+    {
+      "key": "context-node:bindle:024e9e7952d78dd6cb39d492b914c0aa|discussed_in|github-issue:thomas-estep/bindle#25",
+      "source": "context-node:bindle:024e9e7952d78dd6cb39d492b914c0aa",
+      "relationship": "discussed_in",
+      "target": "github-issue:thomas-estep/bindle#25",
+      "status": "confirmed",
+      "origin": "human_judgment",
+      "review_trigger": false,
+      "basis": []
+    }
+  ]
+}

@@ -1,0 +1,53 @@
+{
+  "nodes": [
+    {
+      "id": "github-issue:thomas-estep/bindle#3",
+      "class": "evidence",
+      "kind": "github_issue",
+      "label": "issue 3",
+      "status": "current"
+    },
+    {
+      "id": "context-node:bindle:bb3d8f3af9757f6aeb4bf39bf4a662df",
+      "class": "semantic",
+      "kind": "decision",
+      "label": "Decision A",
+      "status": "current"
+    },
+    {
+      "id": "context-node:bindle:6f168fb3be1f144dc7dde2f1ddf853c1",
+      "class": "semantic",
+      "kind": "learning",
+      "label": "Learning B",
+      "status": "current"
+    }
+  ],
+  "edges": [
+    {
+      "key": "context-node:bindle:bb3d8f3af9757f6aeb4bf39bf4a662df|supported_by|github-issue:thomas-estep/bindle#3",
+      "source": "context-node:bindle:bb3d8f3af9757f6aeb4bf39bf4a662df",
+      "relationship": "supported_by",
+      "target": "github-issue:thomas-estep/bindle#3",
+      "status": "confirmed",
+      "origin": "deterministic",
+      "review_trigger": false,
+      "basis": [],
+      "deterministic_source": {
+        "kind": "map_evidence_pointer"
+      }
+    },
+    {
+      "key": "context-node:bindle:6f168fb3be1f144dc7dde2f1ddf853c1|supported_by|github-issue:thomas-estep/bindle#3",
+      "source": "context-node:bindle:6f168fb3be1f144dc7dde2f1ddf853c1",
+      "relationship": "supported_by",
+      "target": "github-issue:thomas-estep/bindle#3",
+      "status": "confirmed",
+      "origin": "deterministic",
+      "review_trigger": false,
+      "basis": [],
+      "deterministic_source": {
+        "kind": "map_evidence_pointer"
+      }
+    }
+  ]
+}

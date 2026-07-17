@@ -1,0 +1,401 @@
+{
+  "schema_version": 1,
+  "fixtures": [
+    {
+      "id": "1",
+      "path": "core/01-minimal-project-decision-issue.json",
+      "assertion": "validate",
+      "expect_valid": true,
+      "expect_codes": [],
+      "match_mode": "exact",
+      "coverage_tags": [
+        "core"
+      ],
+      "invariant_ids": []
+    },
+    {
+      "id": "2",
+      "path": "core/02-two-evidence-same-number.json",
+      "assertion": "validate",
+      "expect_valid": true,
+      "expect_codes": [],
+      "match_mode": "exact",
+      "coverage_tags": [
+        "core"
+      ],
+      "invariant_ids": []
+    },
+    {
+      "id": "3",
+      "path": "core/03-multiple-semantic-citing-evidence.json",
+      "assertion": "validate",
+      "expect_valid": true,
+      "expect_codes": [],
+      "match_mode": "exact",
+      "coverage_tags": [
+        "core",
+        "supported_by"
+      ],
+      "invariant_ids": []
+    },
+    {
+      "id": "4",
+      "path": "core/04-deterministic-supported-by.json",
+      "assertion": "validate",
+      "expect_valid": true,
+      "expect_codes": [],
+      "match_mode": "exact",
+      "coverage_tags": [
+        "core",
+        "supported_by"
+      ],
+      "invariant_ids": []
+    },
+    {
+      "id": "5",
+      "path": "core/05-deterministic-pr-closes-issue.json",
+      "assertion": "validate",
+      "expect_valid": true,
+      "expect_codes": [],
+      "match_mode": "exact",
+      "coverage_tags": [
+        "core",
+        "closes"
+      ],
+      "invariant_ids": []
+    },
+    {
+      "id": "6",
+      "path": "core/06-accepted-depends-on.json",
+      "assertion": "validate",
+      "expect_valid": true,
+      "expect_codes": [],
+      "match_mode": "exact",
+      "coverage_tags": [
+        "core",
+        "depends_on"
+      ],
+      "invariant_ids": []
+    },
+    {
+      "id": "7",
+      "path": "core/07-accepted-motivates.json",
+      "assertion": "validate",
+      "expect_valid": true,
+      "expect_codes": [],
+      "match_mode": "exact",
+      "coverage_tags": [
+        "core",
+        "motivates"
+      ],
+      "invariant_ids": []
+    },
+    {
+      "id": "8",
+      "path": "core/08-accepted-constrains.json",
+      "assertion": "validate",
+      "expect_valid": true,
+      "expect_codes": [],
+      "match_mode": "exact",
+      "coverage_tags": [
+        "core",
+        "constrains"
+      ],
+      "invariant_ids": []
+    },
+    {
+      "id": "9",
+      "path": "core/09-accepted-resolves.json",
+      "assertion": "validate",
+      "expect_valid": true,
+      "expect_codes": [],
+      "match_mode": "exact",
+      "coverage_tags": [
+        "core",
+        "resolves"
+      ],
+      "invariant_ids": []
+    },
+    {
+      "id": "10",
+      "path": "core/10-accepted-supports.json",
+      "assertion": "validate",
+      "expect_valid": true,
+      "expect_codes": [],
+      "match_mode": "exact",
+      "coverage_tags": [
+        "core",
+        "supports"
+      ],
+      "invariant_ids": []
+    },
+    {
+      "id": "11",
+      "path": "core/11-accepted-contradicts.json",
+      "assertion": "validate",
+      "expect_valid": true,
+      "expect_codes": [],
+      "match_mode": "exact",
+      "coverage_tags": [
+        "core",
+        "contradicts"
+      ],
+      "invariant_ids": []
+    },
+    {
+      "id": "12",
+      "path": "core/12-deterministic-supersedes.json",
+      "assertion": "validate",
+      "expect_valid": true,
+      "expect_codes": [],
+      "match_mode": "exact",
+      "coverage_tags": [
+        "core",
+        "supersedes"
+      ],
+      "invariant_ids": []
+    },
+    {
+      "id": "13",
+      "path": "core/13-accepted-supersedes.json",
+      "assertion": "validate",
+      "expect_valid": true,
+      "expect_codes": [],
+      "match_mode": "exact",
+      "coverage_tags": [
+        "core",
+        "supersedes"
+      ],
+      "invariant_ids": []
+    },
+    {
+      "id": "14",
+      "path": "core/14-accepted-revisits.json",
+      "assertion": "validate",
+      "expect_valid": true,
+      "expect_codes": [],
+      "match_mode": "exact",
+      "coverage_tags": [
+        "core",
+        "revisits"
+      ],
+      "invariant_ids": []
+    },
+    {
+      "id": "15",
+      "path": "core/15-accepted-discussed-in.json",
+      "assertion": "validate",
+      "expect_valid": true,
+      "expect_codes": [],
+      "match_mode": "exact",
+      "coverage_tags": [
+        "core",
+        "discussed_in"
+      ],
+      "invariant_ids": []
+    },
+    {
+      "id": "16",
+      "path": "core/16-accepted-implemented-by.json",
+      "assertion": "validate",
+      "expect_valid": true,
+      "expect_codes": [],
+      "match_mode": "exact",
+      "coverage_tags": [
+        "core",
+        "implemented_by"
+      ],
+      "invariant_ids": []
+    },
+    {
+      "id": "17",
+      "path": "core/17-accepted-validated-by.json",
+      "assertion": "validate",
+      "expect_valid": true,
+      "expect_codes": [],
+      "match_mode": "exact",
+      "coverage_tags": [
+        "core",
+        "validated_by"
+      ],
+      "invariant_ids": []
+    },
+    {
+      "id": "18",
+      "path": "core/18-rejected-edge-candidate.json",
+      "assertion": "validate",
+      "expect_valid": true,
+      "expect_codes": [],
+      "match_mode": "exact",
+      "coverage_tags": [
+        "core",
+        "candidates"
+      ],
+      "invariant_ids": []
+    },
+    {
+      "id": "19",
+      "assertion": "candidate_key_distinct",
+      "with": [
+        "core/19-basis-a.json",
+        "core/19-basis-b.json"
+      ],
+      "coverage_tags": [
+        "core",
+        "canonicalization"
+      ]
+    },
+    {
+      "id": "20",
+      "path": "core/20-duplicate-node-id.json",
+      "assertion": "validate",
+      "expect_valid": false,
+      "expect_codes": [
+        "E_NODE_DUPLICATE_ID"
+      ],
+      "match_mode": "exact",
+      "coverage_tags": [
+        "core"
+      ],
+      "invariant_ids": []
+    },
+    {
+      "id": "21",
+      "path": "core/21-duplicate-edge-key.json",
+      "assertion": "validate",
+      "expect_valid": false,
+      "expect_codes": [
+        "E_EDGE_DUPLICATE_KEY"
+      ],
+      "match_mode": "exact",
+      "coverage_tags": [
+        "core"
+      ],
+      "invariant_ids": []
+    },
+    {
+      "id": "22",
+      "path": "core/22-edge-missing-node-ref.json",
+      "assertion": "validate",
+      "expect_valid": false,
+      "expect_codes": [
+        "E_EDGE_MISSING_NODE_REF"
+      ],
+      "match_mode": "exact",
+      "coverage_tags": [
+        "core"
+      ],
+      "invariant_ids": []
+    },
+    {
+      "id": "23",
+      "path": "core/23-unknown-relationship.json",
+      "assertion": "validate",
+      "expect_valid": false,
+      "expect_codes": [
+        "E_EDGE_UNKNOWN_RELATIONSHIP"
+      ],
+      "match_mode": "exact",
+      "coverage_tags": [
+        "core"
+      ],
+      "invariant_ids": []
+    },
+    {
+      "id": "24",
+      "path": "core/24-implements-rejected.json",
+      "assertion": "validate",
+      "expect_valid": false,
+      "expect_codes": [
+        "E_EDGE_RELATIONSHIP_REJECTED"
+      ],
+      "match_mode": "exact",
+      "coverage_tags": [
+        "core"
+      ],
+      "invariant_ids": []
+    },
+    {
+      "id": "25",
+      "path": "core/25-judgment-required-missing.json",
+      "assertion": "validate",
+      "expect_valid": false,
+      "expect_codes": [
+        "E_EDGE_JUDGMENT_REQUIRED_MISSING"
+      ],
+      "match_mode": "exact",
+      "coverage_tags": [
+        "core"
+      ],
+      "invariant_ids": []
+    },
+    {
+      "id": "26",
+      "path": "core/26-deterministic-authority-missing.json",
+      "assertion": "validate",
+      "expect_valid": false,
+      "expect_codes": [
+        "E_EDGE_DETERMINISTIC_AUTHORITY_MISSING"
+      ],
+      "match_mode": "exact",
+      "coverage_tags": [
+        "core"
+      ],
+      "invariant_ids": []
+    },
+    {
+      "id": "27",
+      "path": "core/27-review-trigger-mismatch.json",
+      "assertion": "validate",
+      "expect_valid": false,
+      "expect_codes": [
+        "E_EDGE_REVIEW_TRIGGER_MISMATCH"
+      ],
+      "match_mode": "exact",
+      "coverage_tags": [
+        "core"
+      ],
+      "invariant_ids": []
+    },
+    {
+      "id": "28",
+      "path": "core/28-uncertain-github-coverage.json",
+      "assertion": "validate",
+      "expect_valid": true,
+      "expect_codes": [],
+      "match_mode": "exact",
+      "coverage_tags": [
+        "core",
+        "coverage"
+      ],
+      "invariant_ids": []
+    },
+    {
+      "id": "29",
+      "path": "core/29-unsupported-commit-coverage.json",
+      "assertion": "validate",
+      "expect_valid": true,
+      "expect_codes": [],
+      "match_mode": "exact",
+      "coverage_tags": [
+        "core",
+        "coverage"
+      ],
+      "invariant_ids": []
+    },
+    {
+      "id": "30",
+      "path": "core/30-reserved-future-kind.json",
+      "assertion": "validate",
+      "expect_valid": false,
+      "expect_codes": [
+        "E_NODE_RESERVED_KIND"
+      ],
+      "match_mode": "exact",
+      "coverage_tags": [
+        "core"
+      ],
+      "invariant_ids": []
+    }
+  ]
+}

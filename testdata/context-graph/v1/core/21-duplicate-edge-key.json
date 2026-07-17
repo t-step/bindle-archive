@@ -1,0 +1,49 @@
+{
+  "nodes": [
+    {
+      "id": "context-node:bindle:c1f185c54a72c1344934974018058d2b",
+      "class": "semantic",
+      "kind": "assumption",
+      "label": "Source 6",
+      "status": "current"
+    },
+    {
+      "id": "context-node:bindle:29becc04baff1c9cf83792db255b8879",
+      "class": "semantic",
+      "kind": "question",
+      "label": "Target 6",
+      "status": "current"
+    }
+  ],
+  "edges": [
+    {
+      "key": "context-node:bindle:c1f185c54a72c1344934974018058d2b|depends_on|context-node:bindle:29becc04baff1c9cf83792db255b8879",
+      "source": "context-node:bindle:c1f185c54a72c1344934974018058d2b",
+      "relationship": "depends_on",
+      "target": "context-node:bindle:29becc04baff1c9cf83792db255b8879",
+      "status": "confirmed",
+      "origin": "human_judgment",
+      "review_trigger": true,
+      "basis": []
+    },
+    {
+      "key": "context-node:bindle:c1f185c54a72c1344934974018058d2b|depends_on|context-node:bindle:29becc04baff1c9cf83792db255b8879",
+      "source": "context-node:bindle:c1f185c54a72c1344934974018058d2b",
+      "relationship": "depends_on",
+      "target": "context-node:bindle:29becc04baff1c9cf83792db255b8879",
+      "status": "confirmed",
+      "origin": "human_judgment",
+      "review_trigger": true,
+      "basis": []
+    }
+  ],
+  "judgments": [
+    {
+      "decision": "accepted",
+      "subject_key": "context-node:bindle:c1f185c54a72c1344934974018058d2b|depends_on|context-node:bindle:29becc04baff1c9cf83792db255b8879",
+      "subject_type": "edge",
+      "candidate_key": "candidate:sha256:0000000000000000000000000000000000000000000000000000000000000000",
+      "decided_at": "2026-07-16T00:00:00Z"
+    }
+  ]
+}

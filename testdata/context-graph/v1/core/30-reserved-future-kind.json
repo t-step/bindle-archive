@@ -1,0 +1,11 @@
+{
+  "nodes": [
+    {
+      "id": "context-node:bindle:5c55e3d5b59734a0b43c261c4a86d3a4",
+      "class": "semantic",
+      "kind": "architecture_component",
+      "label": "Reserved kind node",
+      "status": "current"
+    }
+  ]
+}

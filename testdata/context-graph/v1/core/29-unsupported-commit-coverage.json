@@ -1,0 +1,11 @@
+{
+  "coverage": {
+    "project_map": "complete",
+    "sessions": "complete",
+    "handoffs": "complete",
+    "documents": "complete",
+    "github_issues": "complete",
+    "github_prs": "complete",
+    "commits": "unsupported"
+  }
+}

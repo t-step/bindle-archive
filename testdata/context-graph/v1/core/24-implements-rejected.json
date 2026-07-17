@@ -1,0 +1,30 @@
+{
+  "nodes": [
+    {
+      "id": "context-node:bindle:46bea99b63b19c1474c22b0338c2c72a",
+      "class": "semantic",
+      "kind": "decision",
+      "label": "Source 24",
+      "status": "current"
+    },
+    {
+      "id": "context-node:bindle:e39ccd612ab8e62670d802ab1dd6bd27",
+      "class": "semantic",
+      "kind": "decision",
+      "label": "Target 24",
+      "status": "current"
+    }
+  ],
+  "edges": [
+    {
+      "key": "context-node:bindle:46bea99b63b19c1474c22b0338c2c72a|implements|context-node:bindle:e39ccd612ab8e62670d802ab1dd6bd27",
+      "source": "context-node:bindle:46bea99b63b19c1474c22b0338c2c72a",
+      "relationship": "implements",
+      "target": "context-node:bindle:e39ccd612ab8e62670d802ab1dd6bd27",
+      "status": "confirmed",
+      "origin": "human_judgment",
+      "review_trigger": false,
+      "basis": []
+    }
+  ]
+}
