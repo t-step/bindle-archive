@@ -111,7 +111,10 @@ worked byte-exact example (reproduced as a `canonicalization/` fixture).
 ## Validation model and finding codes
 
 `context_graph.validation.validate_bundle(bundle)` is the entry point: a
-bundle is `{config?, nodes?, edges?, candidates?, judgments?}`.
+bundle is `{config?, nodes?, edges?, candidates?, judgments?}`. A bundle may
+also carry a `proposals` key (untrusted semantic proposals), but
+`validate_bundle` does not read or validate it — proposal validation is
+#184's future responsibility, not #180's.
 Findings are returned in a fixed, deterministic order (registration order
 of the invariant category, then object index) and never stop at the first
 error. The full closed set of finding codes lives in
