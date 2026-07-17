@@ -563,6 +563,97 @@ check "superseded-by: self-referential reported" \
 check "superseded-by: none of these are repaired (still ok=False, never auto-fixed)" \
   bash -c '[ "$(jget "r[\"ok\"]" "$1")" = False ]' _ "$out"
 
+echo "== bindle:superseded-by rejected on every active (non-tombstone) anchor =="
+
+# The contract permits bindle:superseded-by only on a typed Superseded
+# tombstone. A marker placed directly on an active Decision/Learning/
+# Assumption/tension-parent/Open-question anchor must be reported as
+# misplaced, never interpreted or silently dropped — regardless of whether
+# its value is a real, resolvable id elsewhere in the map (proving rejection
+# is about PLACEMENT, not resolution).
+id_active_dec="$("$PY" "$HELPER" allocate --project demo)"
+id_active_learn="$("$PY" "$HELPER" allocate --project demo)"
+id_active_assum="$("$PY" "$HELPER" allocate --project demo)"
+id_active_tension="$("$PY" "$HELPER" allocate --project demo)"
+id_active_question="$("$PY" "$HELPER" allocate --project demo)"
+id_valid_target="$("$PY" "$HELPER" allocate --project demo)"
+id_valid_tombstone="$("$PY" "$HELPER" allocate --project demo)"
+
+cat >"$TMP/active-sb.md" <<EOF
+# demo — map
+
+updated: 2026-07-16 · evidence through: none
+
+## Brief
+
+## Decisions
+
+### A valid target decision, referenced only as a superseded-by pointer (2026-07, settled) <!-- bindle:context-id: $id_valid_target -->
+why: w
+so: s
+revisit-when: r
+evidence: #1
+
+### An active decision wrongly carrying superseded-by on its anchor (2026-07, settled) <!-- bindle:context-id: $id_active_dec --> <!-- bindle:superseded-by: $id_valid_target -->
+why: w
+so: s
+revisit-when: r
+evidence: #2
+
+## Learnings
+
+### An active learning wrongly carrying superseded-by on its anchor <!-- bindle:context-id: $id_active_learn --> <!-- bindle:superseded-by: $id_valid_target -->
+why: w
+so: s
+evidence: #3
+
+## Assumptions & tensions
+
+- an active assumption wrongly carrying superseded-by — confidence: high — evidence: #4 <!-- bindle:context-id: $id_active_assum --> <!-- bindle:superseded-by: $id_valid_target -->
+- an active tension parent wrongly carrying superseded-by — confidence: low — evidence: #5 <!-- bindle:context-id: $id_active_tension --> <!-- bindle:superseded-by: $id_valid_target -->
+  - side a — evidence: #5a
+  - side b — evidence: #5b
+
+## Open questions
+
+- an active open question wrongly carrying superseded-by, twice over? (open) — so: implication — evidence: #6 <!-- bindle:context-id: $id_active_question --> <!-- bindle:superseded-by: $id_valid_target --> <!-- bindle:superseded-by: $id_valid_target -->
+
+## Superseded
+
+- decision: a valid typed tombstone still accepts one resolvable superseded-by (retired 2026-07) → replaced by the valid target decision <!-- bindle:context-id: $id_valid_tombstone --> <!-- bindle:superseded-by: $id_valid_target -->
+EOF
+
+before_asb="$(sha "$TMP/active-sb.md")"
+out_asb="$("$PY" "$HELPER" validate --map "$TMP/active-sb.md" --format json)"
+after_asb="$(sha "$TMP/active-sb.md")"
+
+placed_msgs() { jget "[i[\"message\"] for i in r[\"issues\"] if i[\"code\"]==\"misplaced-marker\" and \"valid only on a typed Superseded tombstone\" in i[\"message\"]]" "$1"; }
+export -f placed_msgs
+
+check "active decision: anchor-line superseded-by is rejected as misplaced" \
+  bash -c 'contains "$2" "$(placed_msgs "$1")"' _ "$out_asb" "$id_active_dec"
+check "active learning: anchor-line superseded-by is rejected as misplaced" \
+  bash -c 'contains "$2" "$(placed_msgs "$1")"' _ "$out_asb" "$id_active_learn"
+check "active assumption: anchor-line superseded-by is rejected as misplaced" \
+  bash -c 'contains "$2" "$(placed_msgs "$1")"' _ "$out_asb" "$id_active_assum"
+check "active structured-tension parent: anchor-line superseded-by is rejected as misplaced" \
+  bash -c 'contains "$2" "$(placed_msgs "$1")"' _ "$out_asb" "$id_active_tension"
+check "active open question: anchor-line superseded-by is rejected as misplaced" \
+  bash -c 'contains "$2" "$(placed_msgs "$1")"' _ "$out_asb" "$id_active_question"
+check "case 6: TWO superseded-by markers on one active (open-question) anchor still yield an error, not silently ignored" \
+  bash -c 'contains "$2" "$(placed_msgs "$1")"' _ "$out_asb" "$id_active_question"
+check "exactly 5 active anchors (decision/learning/assumption/tension/question) are rejected, one finding each" \
+  bash -c '[ "$(jget "sum(1 for i in r[\"issues\"] if i[\"code\"]==\"misplaced-marker\" and \"valid only on a typed Superseded tombstone\" in i[\"message\"])" "$1")" = 5 ]' _ "$out_asb"
+check "the marker is rejected by PLACEMENT, not resolution: no superseded-by-unresolved finding anywhere, despite a real, resolvable target id" \
+  bash -c '[ "$(jget "sum(1 for i in r[\"issues\"] if i[\"code\"] in (\"superseded-by-unresolved\",\"superseded-by-malformed\",\"superseded-by-missing-value\",\"superseded-by-self-referential\",\"superseded-by-duplicate\"))" "$1")" = 0 ]' _ "$out_asb"
+tombstone_line="$(jget "[e[\"line\"] for e in r[\"entries\"] if e[\"id\"]==\"$id_valid_tombstone\"][0]" "$out_asb")"
+check "case 7: a valid typed tombstone still accepts its own resolvable superseded-by (no error on it)" \
+  bash -c '[ "$(jget "sum(1 for i in r[\"issues\"] if i[\"line\"]==$2)" "$1")" = 0 ]' _ "$out_asb" "$tombstone_line"
+check "active anchors: the map is not ok (misplaced superseded-by is an error)" \
+  bash -c '[ "$(jget "r[\"ok\"]" "$1")" = False ]' _ "$out_asb"
+check "case 8: validation performs zero writes even with misplaced superseded-by findings (byte-identical)" \
+  bash -c '[ "$1" = "$2" ]' _ "$before_asb" "$after_asb"
+
 echo "== existing unanchored maps: byte preservation + legacy tombstone (scenario 12, 16) =="
 
 cat >"$TMP/legacy.md" <<'EOF'

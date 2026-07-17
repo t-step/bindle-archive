@@ -292,6 +292,10 @@ def validate_map(text):
                 issue("error", "misplaced-marker", anchor_line,
                       "identity marker on an unsupported entry shape/section: %r"
                       % anchor_text.strip())
+            if anchor_sb:
+                issue("error", "misplaced-marker", anchor_line,
+                      "bindle:superseded-by is valid only on a typed "
+                      "Superseded tombstone: %r" % anchor_text.strip())
             for ln, mtext, _mrole, _v, _raw in member_cid:
                 issue("error", "misplaced-marker", ln,
                       "identity marker on an unsupported location: %r" % mtext.strip())
@@ -332,6 +336,15 @@ def validate_map(text):
                 if not ID_RE.match(value):
                     issue("error", "malformed-marker", anchor_line,
                           "malformed identity %r on %r" % (value, anchor_text.strip()))
+
+        # An active entry (any kind other than a Superseded tombstone) never
+        # legitimately carries bindle:superseded-by — that metadata is valid
+        # only on a typed retirement tombstone. Reject it by placement; never
+        # attempt to interpret or resolve it here.
+        if section != "superseded" and anchor_sb:
+            issue("error", "misplaced-marker", anchor_line,
+                  "bindle:superseded-by is valid only on a typed Superseded "
+                  "tombstone: %r" % anchor_text.strip())
 
         entry_kind = kind
         claim = None
