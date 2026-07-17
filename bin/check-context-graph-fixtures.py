@@ -49,6 +49,17 @@ finding-code list, matched per `match_mode` ("exact" or
 fixtures point at multiple bundle files via `with` and compare a computed
 value across them (fixtures 19, 75, 76, 80, 81 — see Tasks 8/12).
 
+`assertion: "canonicalization"` fixtures point at an `input` JSON file
+containing either an identity-anchor vector (with `project_id`, `map_path`,
+`section`, `entry_kind`, `entry_lines`) or an edge vector (with `source`,
+`relationship`, `target`, `basis`). They are checked against an `expected_txt`
+file (one digest per line: `entry_fingerprint`, `candidate_key`,
+`dependency_fingerprint` for anchors; `candidate_key` for edges) and, for edge
+vectors, an optional `expected_json` file pinning the `canonical_basis_bytes`
+array. These fixtures independently re-derive digests via
+`context_graph.canonical`'s real functions rather than trusting precomputed
+values — they are the corpus's byte-exact canonicalization drift check.
+
 Exit codes: 0 all fixtures pass; 1 any fixture's actual result diverges
 from its manifest expectation, a fixture has no manifest entry, or a
 manifest path does not exist.
