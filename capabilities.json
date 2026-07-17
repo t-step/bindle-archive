@@ -522,7 +522,7 @@
         "claude": "installed",
         "codex": "manual"
       },
-      "maturity": "tested",
+      "maturity": "documented",
       "mutation": [],
       "version_introduced": "0.7.0"
     },
