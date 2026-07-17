@@ -154,31 +154,32 @@ concrete inquiry implication, not immediate actionability):
 - <question> (open|parked) — so: <inquiry implication> — evidence: <ptr> [`inquiry?`] <!-- bindle:context-id: context-node:<slug>:<32-hex> -->
 ```
 
-Superseded (the audit trail — nothing is deleted silently). A tombstone is
-**typed**: it names the retired entry's kind and preserves that entry's
-identity, plus an optional identity-based pointer at whatever replaced it:
+Superseded (the audit trail — nothing is deleted silently). See
+**Retirement** below for the full model; the shape is one **typed** tombstone
+naming the retired entry's kind, carrying that entry's identity, its original
+field lines / tension sides verbatim, and an optional identity pointer at
+whatever replaced it:
 
 ```markdown
 - <kind>: <claim> (retired YYYY-MM) → <human-readable replacement or reason> <!-- bindle:context-id: <retired-id> --> [<!-- bindle:superseded-by: <replacement-id> -->]
+  <the retired entry's own field lines / tension sides, verbatim, indented>
 ```
 
 - `<kind>` is `decision`, `learning`, `assumption`, `tension`, or `question`.
 - The tombstone's `bindle:context-id` is the **retired** entry's own id,
-  copied unchanged — never a new allocation. For a Decision or Learning this
-  duplicates the id already sitting on that entry's still-present, now
-  `superseded`-flagged heading (see Supersession below); that pairing is
-  expected, not a duplicate-id conflict.
+  moved here unchanged — never a new allocation, and never a second copy: the
+  entry no longer exists in its active section, so the id still occurs exactly
+  once in the map (see Retirement).
 - `bindle:superseded-by` is present **only** when a specific replacement
   entry exists, and names that replacement's own (newly allocated) id — never
   the retired id, never a heading or claim string. Its human-readable prose
   (`→ …`) is presentation only and never substitutes for this identity
   pointer; the deterministic direction later consumed by #183/#184 is
   `replacement --supersedes--> retired entry`.
-- A tombstone with no `<kind>:` prefix, or with a `bindle:context-id` that
-  doesn't resolve to any entry's own marker, is reported by
-  `bin/map-entry-id.py validate` as an untyped/incomplete tombstone — never
-  auto-repaired. Every map written before #179 has untyped tombstones; that
-  is expected and not an error on its own.
+- A tombstone with no `<kind>:` prefix is reported by `bin/map-entry-id.py
+  validate` as an untyped tombstone — never auto-repaired. Every map written
+  before #179 has untyped tombstones; that is expected and not an error on
+  its own.
 
 ### Stable identities
 
@@ -228,31 +229,117 @@ of their parent entry and never receive one.
   malformed/duplicate/self-referential/unresolved `bindle:superseded-by`
   metadata. It never writes to the map under any circumstance, success or
   failure.
-- **Exactly one legitimate same-id duplicate.** A retired Decision keeps its
-  id on its own still-present, status-flipped heading *and* on its typed
-  tombstone — one entry, two representations, by design (see Supersession
-  below). Every other reuse of an id is a conflict, including a live entry
-  and an *unrelated* tombstone that happen to share one. The validator never
-  grants a blanket exemption to "a live-bucket id also seen in the
-  Superseded section" — it recognizes only the one pair the grammar
-  actually defines: same id, exactly two occurrences, one is a Decision
-  heading whose status token literally reads `superseded`, the other is a
-  typed tombstone whose `<kind>:` is `decision` and whose `<claim>` is the
-  same string (byte-for-byte — never fuzzy, never model-assisted) as that
-  heading's claim. Anything short of that full match — a settled-not-
-  superseded original, a kind mismatch, a claim mismatch, a third occurrence
-  anywhere — is reported as `duplicate-id`, not silently paired.
-- **Learnings, Assumptions & tensions, and Open questions have no
-  deterministic retirement signal to pair on.** The entry grammar states
-  plainly that "Learnings omit the status token", and Assumptions/tensions/
-  Open questions carry no status token at all — so there is no
-  machine-checkable way to confirm one of those live entries is "genuinely
-  superseded" the way a Decision's heading can be. The validator therefore
-  never treats a Learning/Assumption/Tension/Question sharing an id with a
-  tombstone as a legitimate pair; it always reports the collision as a
-  conflict. This is a known, deliberate gap in the frozen grammar, not an
-  oversight — closing it would mean inventing a retirement signal for those
-  kinds that #179 doesn't define, which is out of scope here.
+- **One identity, one occurrence, for life.** An id appears exactly once in
+  the map at every point in an entry's life, including after retirement —
+  because retirement *moves* the entry rather than copying it (see
+  Retirement). There is no legitimate duplicate and no pair to carve out: an
+  id occurring twice anywhere, in any section, in any combination, is
+  reported as `duplicate-id`. This is what makes duplicate detection
+  trivially decidable and keeps #183's rule — "duplicate identities across
+  current and superseded sections are conflicts" — literally true.
+
+### Retirement
+
+**Contract, from #179 reconciled with #180/#182/#183.** Retiring an entry
+**moves** it: the entry leaves its active section and becomes one typed
+tombstone under `## Superseded`, carrying its existing identity and its own
+field lines / tension sides verbatim, indented beneath the tombstone line.
+Nothing is left behind in Decisions / Learnings / Assumptions & tensions /
+Open questions.
+
+One logical entry therefore has exactly **one physical record** for its whole
+life. Before retirement it is an entry in an active section; after
+retirement it is a tombstone in Superseded. Same id, same claim, same
+evidence, one record, one semantic node — which is precisely what the
+context graph needs (#140: "exactly one semantic node per durable entry, not
+one node per physical representation").
+
+This model is **universal across all five kinds** — decision, learning,
+assumption, tension, question. It needs no per-kind retirement signal on the
+original entry, which matters because the grammar never gave most kinds one
+("Learnings omit the status token"; Assumptions & tensions and Open
+questions have no status token at all). The section a record sits in *is*
+the status, deterministically, for every kind:
+
+The move is mechanical, and identical for every kind:
+
+1. the retired entry's **own claim line content** goes into the tombstone's
+   `<claim>` slot, verbatim. For the bullet kinds (assumption, tension,
+   question) that means the **whole bullet body including its inline tail** —
+   `— confidence: …`, `— so: …`, `— evidence: …`, `` `inquiry?` `` and all.
+   For the heading kinds (decision, learning) it is the heading's claim text.
+2. the entry's **indented/attached content** — a heading entry's `why:` /
+   `so:` / `revisit-when:` / `evidence:` field lines, a tension's two sides —
+   moves down verbatim, indented under the tombstone bullet.
+3. the tombstone line gains only the `<kind>:` prefix, the `(retired
+   YYYY-MM)` stamp, the confirmed `→ <reason>`, and the markers.
+
+```markdown
+## Superseded
+
+- decision: <heading claim, verbatim> (retired YYYY-MM) → <reason or replacement prose> <!-- bindle:context-id: <id> --> <!-- bindle:superseded-by: <replacement-id> -->
+  why: <verbatim from the retired entry>
+  so: <verbatim>
+  revisit-when: <verbatim>
+  evidence: <verbatim>
+
+- learning: <heading claim, verbatim> (retired YYYY-MM) → <reason> <!-- bindle:context-id: <id> -->
+  why: <verbatim>
+  so: <verbatim>
+  evidence: <verbatim>
+
+- assumption: <the whole original bullet body, verbatim, including its — confidence: … — evidence: … tail> (retired YYYY-MM) → <reason> <!-- bindle:context-id: <id> -->
+
+- tension: <the whole original parent bullet body, verbatim, including its tail> (retired YYYY-MM) → <reason> <!-- bindle:context-id: <id> -->
+  - <first side, verbatim>
+  - <second side, verbatim>
+
+- question: <the whole original bullet body, verbatim, including its (open|parked) status and its — so: … — evidence: … tail> (retired YYYY-MM) → <reason> <!-- bindle:context-id: <id> -->
+```
+
+Rules, uniform across kinds:
+
+- **The identity moves; it is never reallocated and never duplicated.** The
+  tombstone carries the entry's existing id. Nothing else in the map carries
+  it.
+- **A replacement is a separate new entry** in the appropriate active
+  section, with its own freshly allocated id — even when its claim text and
+  section match the retired entry's exactly. The retired entry keeps its own
+  id; the two are never merged or swapped. When one confirmed proposal is
+  *both* an `add` and the replacement side of a `supersede`, it is still one
+  entry and takes exactly **one** id: the same value is written on the new
+  entry and referenced by the tombstone's `bindle:superseded-by`. "Distinct
+  entries, distinct ids" counts entries, not roles.
+- **Retirement without a replacement is normal and complete.** Plenty of
+  entries are retired because they turned out to be wrong or moot, with
+  nothing taking their place. Then `bindle:superseded-by` is simply absent,
+  and the `→ <reason>` prose points at the triggering evidence or an Open
+  question (the same rule Relitigation states) — never at an invented
+  successor. A missing `superseded-by` is not an incomplete retirement.
+- **Retiring an unanchored (pre-#179) entry allocates nothing.** It moves to
+  Superseded as a typed tombstone with no `bindle:context-id`, because there
+  was no id to move. This is not an anchoring event: retirement never
+  retroactively allocates an identity, and never invokes #184's anchor
+  authority. `bin/map-entry-id.py validate` reports it as an informational
+  untyped/unanchored tombstone, never an error.
+- **Retirement recorded in place is wrong.** An entry marked `superseded`
+  that still sits in an active section is the pre-#179 shape. Where that
+  entry is anchored, `validate` reports `retirement-in-place` as an **error**
+  — a compiler reading that map would emit a second node with status
+  `current`. Where it is unanchored, `validate` reports
+  `legacy-retirement-in-place` as **info** only: maps written before #179
+  legitimately carry that shape, and this contract never rewrites them (see
+  "Existing maps are untouched" above). Migrating a legacy map is the
+  owner's call, through an ordinary confirmed proposal — never a side effect.
+- **Prose is preserved, not summarized.** The move copies the retired
+  entry's own field lines and tension sides verbatim. Retirement is not an
+  invitation to rewrite the owner's words; the only new text is the
+  `<kind>:` prefix, the `(retired YYYY-MM)` stamp, and the `→ <reason>`
+  line the owner confirmed.
+- **Size.** Retirement is roughly size-neutral (the record moves rather than
+  being copied), and the active sections shrink — which is the point of the
+  size budget's "retired to Superseded". A reader doing the five-minute pass
+  reads only current understanding; Superseded is the audit trail they skip.
 
 ### Size budget
 
@@ -339,23 +426,18 @@ is a valid and common outcome.**
 - **Minimal diffs.** Proposals target named entries; owner-authored lines
   outside a named entry are never touched. A proposal that would alter an
   owner-edited entry must say so explicitly.
-- **Supersession.** A superseded decision or learning gets its status
-  flipped and a one-line typed tombstone in Superseded pointing at what
-  replaced it. The status-token flip is the only edit the retired entry
-  receives — its claim text, field lines, and identity marker stay
-  byte-intact; any replacement enters as a *new* entry with a freshly
-  allocated identity (see "Stable identities" above). The tombstone carries
-  the retired entry's existing id (copied, never reallocated) and, when a
-  specific replacement exists, that replacement's id as
-  `bindle:superseded-by` — never invented, never the retired id repeated.
-  Superseding an entry that predates #179 and was never anchored carries no
-  id to copy — its tombstone gets the `<kind>:` prefix and the human-
-  readable reason like any other, but no `bindle:context-id`. That never
-  retroactively anchors the retired entry itself; anchoring existing
-  entries stays out of scope here (the #183→#184→#185 workflow). The new
-  *replacement* entry still gets a freshly allocated id like any other
-  confirmed `add` — supersession's identity rules are about the retired
-  side, not the replacement side.
+- **Supersession.** Retiring an entry **moves** it into Superseded as one
+  typed tombstone — see **Retirement** above for the full contract and the
+  per-kind grammar. In short: the entry leaves its active section; its claim,
+  field lines, tension sides, evidence, and identity marker move with it
+  verbatim; the tombstone gains only the `<kind>:` prefix, the `(retired
+  YYYY-MM)` stamp, and the confirmed `→ <reason>`. The retired entry is
+  *never* rewritten, summarized, or left behind status-flipped in place. Any
+  replacement enters as a *new* entry in the active section with its own
+  freshly allocated identity, and the tombstone points at it with
+  `bindle:superseded-by` when one exists. A pre-#179 unanchored entry has no
+  id to move — its tombstone simply carries none, which is not an anchoring
+  event and never invokes #184's anchor authority.
 - **Relitigation.** New evidence that *meets* a decision's `revisit-when:`
   condition produces a proposed revision, applied as a supersession —
   never a rewrite of the settled entry in place, and never deferred to
@@ -436,9 +518,11 @@ automates the same steps as `/promote-knowledge`):
    as part of the same edit that writes the entry; never ask a model to
    invent one, never persist a marker separately from its entry. A
    confirmed `update` or `tag` leaves any existing marker untouched. A
-   confirmed `supersede` also writes the typed tombstone, copying the
-   retired entry's existing id and (only when a specific replacement
-   exists) the replacement's newly allocated id as `bindle:superseded-by`.
+   confirmed `supersede` **moves** the retired entry into Superseded as one
+   typed tombstone (Retirement above): remove it from its active section,
+   carry its id and body verbatim, and add the replacement's newly
+   allocated id as `bindle:superseded-by` only when a specific replacement
+   exists. Never leave the retired entry behind status-flipped in place.
    `none`, a rejected/deferred candidate, or a run interrupted before this
    step completes allocates and persists no identity at all — no pending-id
    side file exists anywhere in this contract.

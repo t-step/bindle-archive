@@ -719,44 +719,94 @@ alone to exercise (no code path in `bin/map-entry-id.py` ever gets called
 unless something explicitly calls `allocate`); it's covered by Layer 2's
 scenario X1 below instead.
 
-#### Follow-up: duplicate-id pairing invariant (adversarial review, 2026-07-16)
+#### Follow-up 1: duplicate-id detection was too loose (adversarial review, 2026-07-16)
 
 A same-session adversarial review of commit `ae76f61` found a real gap in
 the *first* cut of duplicate-id detection: it kept independent
 "live-section" and "Superseded-section" occurrence buckets and never
-flagged a same-id collision that happened to straddle the two buckets — so
-an unrelated live entry and an unrelated tombstone could silently share an
-id as long as one landed in each bucket, not just the one legitimate
-retirement pair (a retired Decision's still-present heading + its own
-matching tombstone). `bin/map-entry-id.py` was rewritten to a flat
-occurrence list plus an explicit `_is_legitimate_retirement_pair()` check —
-exactly two occurrences, same claim (byte-for-byte), same kind, and the
-live side's status token literally `superseded` — with everything else
-reported as `duplicate-id`. The rewrite also surfaced, and required naming
-explicitly, a real limit already implied by the frozen grammar: Learnings
-carry no status token at all ("Learnings omit the status token") and
-Assumptions/tensions/Open questions carry no retirement status token
-either, so none of those kinds has a deterministic in-place-retirement
-signal to pair on — a same-id collision involving them is always a
-conflict, documented as a known contract gap rather than papered over with
-invented pairing logic.
+flagged a same-id collision that straddled the two — so an unrelated live
+entry and an unrelated tombstone could silently share an id as long as one
+landed in each bucket. Commit `100ff1f` replaced the buckets with a flat
+occurrence list plus an explicit legitimate-retirement-pair check (exactly
+two occurrences, same kind, byte-identical claim, live side's status token
+literally `superseded`).
 
-9 new focused checks were added to `bin/test-map-entry-id.sh` (all folded
-into the same 2026-07-16 run): a valid retirement pair (no conflict); a
-settled-never-retired entry sharing an id with an unrelated tombstone
-(conflict); kind mismatch; claim mismatch; two ordinary live entries
-sharing an id; two tombstones sharing an id; a valid pair plus a stray
-third occurrence; the documented Learning gap (a Learning + its own
-matching tombstone is still a conflict); a legacy retired entry paired with
-a correctly typed-but-markerless tombstone (informational only, `ok:
-true`); and zero-mutation across every one of those fixtures.
+That fix was correct about the *leak* and wrong about the *model* — see
+follow-up 2, which retired the pair concept entirely. Recorded here because
+the leak it found is real and must never regress: the occurrence-invariant
+tests below still cover it (a live entry and an unrelated tombstone sharing
+an id is a conflict).
 
-**Result: PASS 53/53 checks** (39 original + 14 new — the count above also
-absorbed a fixture bug the rewrite's stricter matching caught: an existing
-supersession fixture had used differently-cased claim text between a
-retired heading and its tombstone, which the new byte-for-byte claim check
-correctly flagged; the fixture, not the validator, was wrong, and was
-fixed to use identical claim text). 0 failures.
+#### Follow-up 2: the retirement-identity contract contradiction (2026-07-16)
+
+Follow-up 1's pair check was a symptom, not a fix. Building it forced the
+question it was working around: *why does one logical entry have two
+physical representations at all?*
+
+The contradiction, in full:
+
+- the base knowledge-promotion contract retired an entry **in place** — flip
+  its status token to `superseded`, leave it in Decisions, add a one-line
+  prose pointer under Superseded (written when the tombstone had no
+  identity and was purely an audit pointer);
+- #179 then put the entry's **identity** on that tombstone ("An ID is
+  preserved through retirement *onto* the typed tombstone");
+- so an anchored retirement produced the same id in two places, and the
+  first cut of #179 blessed that as a "legitimate pair";
+- but #180/#182/#183 had already frozen the opposite: "typed Superseded
+  tombstone → its declared original kind", "retirement tombstones that
+  **retain** the original ID and kind", status mapping "**active**
+  Decision/Learning/Assumption/tension → `current`", and — decisively —
+  #183/#180 fixture "duplicate identities across current and superseded
+  sections are conflicts";
+- and #140 requires "exactly one semantic node per durable entry, not one
+  node per physical representation".
+
+The pair model also could not be made universal. Only Decisions carry a
+status token ("Learnings omit the status token"; Assumptions & tensions and
+Open questions have none), so only Decisions had an in-place retirement
+signal to pair on — leaving learnings/assumptions/tensions/questions with a
+documented gap in a contract that claims to support retiring all five kinds.
+
+**Resolution: retirement moves the entry** (Model B; see
+`docs/knowledge-promotion.md` §Retirement). The entry leaves its active
+section and becomes one typed tombstone under Superseded carrying its
+existing id and its own body verbatim. One logical entry, one physical
+record, one id occurrence, for life — retired or not. Consequences:
+
+- duplicate detection needs no exception at all: any id occurring twice,
+  anywhere, is a conflict, which makes #183's frozen rule literally true;
+- the model is universal across all five kinds with no per-kind retirement
+  signal, because *the section a record sits in is its status*;
+- #180, #182, and #183 need **no amendment** — the rewrite made the code
+  match what they already said. Only #179's own body needs a clarifying
+  amendment (it never explicitly said the original is removed, which is the
+  gap that permitted the pair);
+- the shape follow-up 1 blessed as a valid pair is now reported twice over:
+  `retirement-in-place` (error, when anchored) **and** `duplicate-id`.
+
+Legacy behavior is unchanged and explicitly preserved: a pre-#179 map whose
+entries were retired in place stays byte-identical and validates `ok`, with
+`legacy-retirement-in-place` reported as **info** only. Retiring an
+unanchored entry allocates nothing — it moves to Superseded with no
+`bindle:context-id`, which is not an anchoring event and never invokes
+#184's anchor authority.
+
+Tests were rewritten around the universal model, covering all five kinds
+plus the required failure matrix: anchored retirement of each of decision /
+learning / assumption / structured tension / question (one node each, id
+preserved, tension sides absorbed rather than becoming nodes); retirement
+without a replacement; retirement with a distinct replacement id; legacy
+unanchored retirement; anchored tombstone with an unrecoverable kind
+(error); prose/field edits never changing id, kind, or replacement target;
+two originals sharing an id; two tombstones sharing an id; a live entry and
+an unrelated tombstone sharing an id; a third occurrence; cross-kind
+collision; malformed/self-referential/unresolved `superseded-by`;
+retirement-in-place (anchored → error, unanchored → info); failed promotion
+persisting no identity state; unknown owner HTML comments untouched;
+zero-write validation across every fixture; and byte-identical repeat runs.
+
+**Result: PASS 63/63 checks**, 0 failures.
 
 ### Layer 2 — workflow integration: 3 new scenarios, subagent-executed
 
@@ -804,18 +854,77 @@ json` run against the result (`ok`, `anchored_count`, exact id values).
   informational `untyped-tombstone` finding (a marker-less legacy retirement
   is not an error).
 
+### Layer 2b — the universal retirement model, one rep per kind (2026-07-16)
+
+Follow-up 2 changed what a confirmed `supersede` physically does, so the
+workflow was re-tested behaviorally, not just at the helper level. Method as
+above: one fresh general-purpose subagent per rep, inline mode, scripted
+owner reply `all`, read-only toward every repository, throwaway home per rep.
+
+Each rep's fixture is a `demo` map holding exactly one **anchored** entry of
+the kind under test, plus one session note whose evidence retires it
+(four weeks of measurement falsifying a cache-warming claim). Scoring is the
+returned `map.md` bytes plus `bin/map-entry-id.py validate --format json`.
+
+| # | Kind under test | Pass condition | Reps |
+|---|---|---|---|
+| R1 | anchored **decision** | entry gone from Decisions; one typed `decision:` tombstone carrying the same id + fields verbatim; `validate ok: true` | 1 |
+| R2 | anchored **learning** | same, `learning:` | 1 |
+| R3 | anchored **assumption** | same, `assumption:`, inline `— confidence: … — evidence: …` tail preserved in the claim slot | 1 |
+| R4 | anchored **structured tension** | same, `tension:`, both sides carried down verbatim, still exactly ONE node | 1 |
+| R5 | anchored **question** | same, `question:` | 1 |
+
+**Results: PASS 5/5, 0 discarded.** Every rep moved the entry out of its
+active section (no status-flip left behind), carried the existing id down
+unchanged, never called `allocate` for the retired entry, and produced
+`validate ok: true` with the id occurring exactly once — no `duplicate-id`,
+no `retirement-in-place`, no untyped tombstone. R4 confirmed a tension
+retires as one node with its two sides absorbed as structured content.
+`bindle:superseded-by` behavior split correctly on the evidence rather than
+on habit: R1/R2/R3 read the note's "nothing replaces it" and wrote a bare
+tombstone; R4/R5 promoted a replacement Decision in the same run and pointed
+at its newly allocated id.
+
+Three doc gaps the reps found, all fixed in this commit rather than waved
+off:
+
+1. **R1** — neither doc said what `→ <reason>` should point at when there is
+   no replacement; only the Relitigation rule said it, far from Retirement.
+   Retirement now states it directly, and that a missing `superseded-by` is
+   a complete retirement, not a broken one.
+2. **R4** — nothing addressed the case where one confirmed proposal is both
+   an `add` and a `supersede`'s replacement side; "distinct entries, distinct
+   ids" could be misread as licensing two allocations. Retirement now says
+   it takes exactly one id, and that the rule counts entries, not roles.
+3. **R5** — the per-kind template rendered a retired question's `so:` /
+   `evidence:` on indented lines, but a live Open question carries them
+   inline in its bullet tail; the assumption/tension templates said
+   "including its tail" and question did not. The move is now stated once,
+   mechanically, for all five kinds: claim-line content (whole bullet body
+   including any inline tail, for the bullet kinds) goes in the claim slot;
+   indented/attached content moves down verbatim.
+
+One rep (R3) self-reported a mild process deviation — it called `allocate`
+moments before rendering the confirmation prompt rather than strictly after
+the reply. The reply was `all`, so nothing was persisted for an unconfirmed
+candidate and the written map is contract-correct, but it is recorded here
+rather than silently dropped.
+
 ### Real-notes-home check (this campaign)
 
 A marker created immediately before dispatching the 9 Layer-2 subagents,
 checked against both `~/.bindle` and the operator's actual configured
 `$BINDLE_NOTES_DIR` after all 9 completed: `find <home> -newer <marker>`
-printed nothing for either — the real notes home was never touched. Layer
-1's own real-notes-home check (inside `bin/test-map-entry-id.sh`) passed
-independently as part of its 39/39.
+printed nothing for either — the real notes home was never touched. The
+Layer-2b retirement campaign repeated the same check against both homes
+after its 5 reps: also nothing. Layer 1's own real-notes-home check (inside
+`bin/test-map-entry-id.sh`) passes independently as part of its 63/63.
 
 ### Verdict
 
 `bin/map-entry-id.py` and the `/promote-knowledge` identity integration
-graduate `draft` → `tested`: Layer 1 53/53 (39 original + 14 from the
-duplicate-id pairing follow-up), Layer 2 9/9, 0 discarded, real notes home
-provably untouched in both layers.
+graduate `draft` → `tested`: Layer 1 63/63 (39 original, then rewritten and
+extended by the two follow-ups above), Layer 2 9/9 on the identity
+integration plus 5/5 on the universal retirement model (one rep per
+supported kind — see below), 0 discarded, real notes home provably
+untouched in every layer.

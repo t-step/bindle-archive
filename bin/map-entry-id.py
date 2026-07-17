@@ -18,12 +18,13 @@ Two commands:
       (deterministic discovery of persisted identities), unanchored
       entries, malformed markers, duplicate IDs, markers attached to an
       unsupported location (field lines, tension sides, prose), multiple
-      identity markers on one entry, untyped retirement tombstones, and
+      identity markers on one entry, untyped retirement tombstones,
+      retirement recorded in place, and
       malformed/duplicate/self-referential/unresolved
       `bindle:superseded-by` metadata. Never writes; exits 1 if any
       error-severity finding is present, 0 otherwise (informational
-      findings — unanchored entries, untyped legacy tombstones — never
-      fail the run on their own).
+      findings — unanchored entries, untyped legacy tombstones, legacy
+      in-place retirements — never fail the run on their own).
 
 Identity contract (frozen by #179):
 
@@ -54,6 +55,31 @@ sides are structured content of the parent entry and never carry an
 independent identity — a marker found there is malformed placement, reported
 and never moved automatically.
 
+Retirement model (universal across all five kinds; see
+docs/knowledge-promotion.md "Retirement"):
+
+  Retiring an entry MOVES it out of its active section and into
+  `## Superseded` as one typed tombstone that carries the entry's existing
+  identity and its original field lines/tension sides verbatim, indented
+  beneath it. The retired entry does not remain in Decisions / Learnings /
+  Assumptions & tensions / Open questions. There is therefore exactly ONE
+  physical record — and exactly one identity occurrence — per logical entry
+  at every point in its life, retired or not.
+
+  Consequence: an identity occurring more than once anywhere in the map is
+  always a conflict. There is no legitimate "retirement pair" to carve out,
+  which is what #180/#182/#183 already assume ("typed Superseded tombstone
+  -> its declared original kind", "duplicate identities across current and
+  superseded sections are conflicts").
+
+  A retired entry left sitting in an active section — the pre-#179 shape,
+  where a Decision's status token was flipped to `superseded` in place — is
+  reported: `retirement-in-place` (error) when that entry is anchored, since
+  a compiler would emit it as a second, `current`-status node; or
+  `legacy-retirement-in-place` (info) when it is unanchored, since maps
+  predating #179 legitimately carry that shape and this helper never
+  rewrites them.
+
 Stdlib-only. No network, no subprocess, no writes of any kind.
 
 Exit codes: 0 ok, 1 validation/read error, 64 usage error (bad --project).
@@ -73,7 +99,11 @@ SECTION_RE = re.compile(r"^##\s+(.+?)\s*$")
 HEADING_RE = re.compile(r"^###\s")
 TOP_BULLET_RE = re.compile(r"^-\s")
 INDENT_BULLET_RE = re.compile(r"^[ \t]+-\s")
-FIELD_RE = re.compile(r"^(why|so|revisit-when|evidence):")
+# Field lines sit flush-left under a `###` heading entry, and indented under a
+# typed tombstone (where a retired entry's fields are preserved verbatim), so
+# leading whitespace is optional. `confidence:` is an inline tail on
+# assumption/tension bullets rather than its own line, and is not listed here.
+FIELD_RE = re.compile(r"^[ \t]*(why|so|revisit-when|evidence):")
 COMMENT_RE = re.compile(r"<!--\s*(.*?)\s*-->")
 TOMBSTONE_RE = re.compile(
     r"^-\s*(?P<kind>decision|learning|assumption|tension|question):\s*"
@@ -206,38 +236,6 @@ def parse_map(text):
 # validation
 # --------------------------------------------------------------------------
 
-def _is_legitimate_retirement_pair(a, b):
-    """True iff occurrences a and b are exactly the one case the frozen
-    knowledge-promotion grammar defines as a legitimate same-id duplicate:
-    a retired Decision's still-present, status-flipped heading, paired with
-    its own typed tombstone in Superseded.
-
-    Deliberately narrow. The base contract ("A superseded decision or
-    learning gets its status flipped...") only gives Decisions a
-    deterministic in-heading retirement signal — the entry grammar states
-    plainly that "Learnings omit the status token", so a Learning heading
-    never carries a machine-checkable settled/superseded marker, and
-    Assumptions & tensions / Open questions have no retirement status token
-    at all. Without that signal there is no deterministic way to confirm a
-    live entry of those kinds is "genuinely in the superseded state" the
-    invariant requires, so this function never treats them as pairable —
-    doing otherwise would mean inventing pairing logic the grammar doesn't
-    define. A same-id collision involving those kinds is always a conflict.
-    """
-    live, tomb = (a, b) if not a["is_tombstone"] else (b, a)
-    if live["is_tombstone"] or not tomb["is_tombstone"]:
-        return False
-    if not live["pairable"] or not tomb["pairable"]:
-        return False
-    if live["kind"] != "decision" or tomb["kind"] != "decision":
-        return False
-    if live["status"] != "superseded":
-        return False
-    if live["claim"] is None or tomb["claim"] is None:
-        return False
-    return live["claim"] == tomb["claim"]
-
-
 def validate_map(text):
     """Read-only structural validation of map.md text. Returns a dict with
     `entries` (deterministic discovery: anchored + unanchored) and `issues`
@@ -262,13 +260,11 @@ def validate_map(text):
                 if _key == "context-id" and ID_RE.match(value):
                     all_ids_found.add(value)
 
-    # Every well-formed id occurrence, flat — no live/tombstone bucketing.
-    # Bucketing by section alone is what let an unrelated live entry and an
-    # unrelated tombstone silently share an id as long as they landed in
-    # different buckets; duplicate detection below instead asks, for every
-    # id with more than one occurrence, whether the occurrences form exactly
-    # one legitimate retirement pair — never a broader "different bucket"
-    # exemption.
+    # Every well-formed id occurrence, flat. Retirement moves an entry rather
+    # than copying it (see the module docstring), so one logical entry has one
+    # physical record and one identity occurrence for its whole life — which
+    # makes "an id occurring twice" unconditionally a conflict, with no pair
+    # to carve out and no section-based exemption.
     occurrences = []
 
     for e in entries:
@@ -345,10 +341,22 @@ def validate_map(text):
             if tm:
                 entry_kind = tm.group("kind")
                 claim = tm.group("claim").strip()
+            elif resolved_id is not None:
+                # An anchored tombstone whose kind cannot be recovered from its
+                # own typed prefix is unusable downstream: kind is never
+                # inferred from prose, section proximity, or a prior index, so
+                # a compiler has no way to type this node.
+                issue("error", "untyped-tombstone", anchor_line,
+                      "anchored retirement tombstone has no recoverable "
+                      "'<kind>: ' prefix (one of decision, learning, "
+                      "assumption, tension, question) or malformed retirement "
+                      "grammar; kind is never inferred from prose: %r"
+                      % anchor_text.strip())
             else:
                 issue("info", "untyped-tombstone", anchor_line,
                       "untyped retirement tombstone (missing '<kind>: ' prefix "
-                      "or malformed retirement grammar): %r" % anchor_text.strip())
+                      "or malformed retirement grammar); expected on maps "
+                      "predating #179: %r" % anchor_text.strip())
             if resolved_id is None and not anchor_cid:
                 issue("info", "untyped-tombstone", anchor_line,
                       "retirement tombstone has no bindle:context-id marker: %r"
@@ -381,11 +389,27 @@ def validate_map(text):
             if hm:
                 claim = hm.group("claim").strip()
                 status = hm.group("status")
+            # Retirement moves an entry to ## Superseded; it is never recorded
+            # in place. A `superseded` status token still sitting in an active
+            # section is the pre-#179 shape. The status token is the only
+            # in-place retirement signal the old grammar ever had (only
+            # Decisions carry one) — this is legacy detection, not a
+            # kind-specific retirement rule.
+            if status == "superseded":
+                if resolved_id is not None:
+                    issue("error", "retirement-in-place", anchor_line,
+                          "anchored entry is marked superseded but still sits "
+                          "in an active section — retirement must move it to "
+                          "## Superseded as a typed tombstone; left here a "
+                          "compiler emits a second node with status "
+                          "'current': %r" % anchor_text.strip())
+                else:
+                    issue("info", "legacy-retirement-in-place", anchor_line,
+                          "unanchored entry marked superseded in place (the "
+                          "pre-#179 shape); retirement now moves the entry to "
+                          "## Superseded. Left byte-identical — migrating it "
+                          "is the owner's call: %r" % anchor_text.strip())
 
-        # `pairable` is true only for the clean single-well-formed-marker
-        # case — an entry already flagged multiple-markers/malformed never
-        # anchors a legitimate retirement pair, it only ever conflicts.
-        pairable = len(anchor_cid) == 1 and resolved_id is not None
         is_tombstone = section == "superseded"
         occ_ids = list(dict.fromkeys(
             ([resolved_id] if resolved_id is not None else [])
@@ -394,8 +418,7 @@ def validate_map(text):
         for occ_id in occ_ids:
             occurrences.append({
                 "id": occ_id, "line": anchor_line, "kind": entry_kind,
-                "is_tombstone": is_tombstone, "pairable": pairable,
-                "claim": claim, "status": status,
+                "is_tombstone": is_tombstone, "claim": claim, "status": status,
             })
 
         out_entries.append({
@@ -414,12 +437,10 @@ def validate_map(text):
     for id_, occs in by_id.items():
         if len(occs) < 2:
             continue
-        if len(occs) == 2 and _is_legitimate_retirement_pair(occs[0], occs[1]):
-            continue
         lines = sorted(o["line"] for o in occs)
         issue("error", "duplicate-id", lines[0],
-              "identity %s reused across %d occurrences that do not form a "
-              "single valid retirement pair (lines %s)"
+              "identity %s occurs %d times; every identity must occur exactly "
+              "once, including after retirement (lines %s)"
               % (id_, len(occs), ", ".join(str(n) for n in lines)))
 
     ok = not any(i["severity"] == "error" for i in issues)

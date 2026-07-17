@@ -68,8 +68,6 @@ id_learn="$("$PY" "$HELPER" allocate --project demo)"
 id_assum="$("$PY" "$HELPER" allocate --project demo)"
 id_tension="$("$PY" "$HELPER" allocate --project demo)"
 id_question="$("$PY" "$HELPER" allocate --project demo)"
-id_old="$("$PY" "$HELPER" allocate --project demo)"
-id_new="$("$PY" "$HELPER" allocate --project demo)"
 
 check "allocate: format matches context-node:<slug>:<32-hex> exactly" \
   bash -c '[[ "$1" =~ ^context-node:demo:[0-9a-f]{32}$ ]]' _ "$id1"
@@ -146,9 +144,23 @@ check "scenario 3/4/21: open-question bullet is anchored with its id" \
 check "shapes: validation performs zero writes (byte-identical)" \
   bash -c '[ "$1" = "$2" ]' _ "$before" "$after"
 
-echo "== typed retirement + supersession (scenarios 6, 7, 8, 9, 24, 25, 26) =="
+echo "== universal retirement: all five kinds (cases 1-8) =="
 
-cat >"$TMP/supersede.md" <<EOF
+# Retirement MOVES an entry into ## Superseded as one typed tombstone that
+# carries the entry's existing id and its own body verbatim. Nothing is left
+# behind in the active section, so one logical entry always has exactly one
+# physical record and one id occurrence — retired or not. This block proves
+# the model holds identically for decision / learning / assumption / tension /
+# question, with no per-kind exception.
+id_r_dec="$("$PY" "$HELPER" allocate --project demo)"
+id_r_learn="$("$PY" "$HELPER" allocate --project demo)"
+id_r_assum="$("$PY" "$HELPER" allocate --project demo)"
+id_r_tension="$("$PY" "$HELPER" allocate --project demo)"
+id_r_question="$("$PY" "$HELPER" allocate --project demo)"
+id_replacement="$("$PY" "$HELPER" allocate --project demo)"
+id_no_repl="$("$PY" "$HELPER" allocate --project demo)"
+
+cat >"$TMP/retire-all-kinds.md" <<EOF
 # demo — map
 
 updated: 2026-07-16 · evidence through: none
@@ -157,134 +169,13 @@ updated: 2026-07-16 · evidence through: none
 
 ## Decisions
 
-### Old decision, now superseded (2026-07, superseded) <!-- bindle:context-id: $id_old -->
-why: original why
-so: original so
-revisit-when: met
-evidence: #1
-
-### New replacement decision (2026-07, settled) <!-- bindle:context-id: $id_new -->
+### The replacement decision, freshly added (2026-07, settled) <!-- bindle:context-id: $id_replacement -->
 why: new why
 so: new so
 revisit-when: never
-evidence: #2, #1
-
-## Learnings
-
-## Assumptions & tensions
-
-## Open questions
-
-## Superseded
-
-- decision: Old decision, now superseded (retired 2026-07) → replaced by new replacement decision <!-- bindle:context-id: $id_old --> <!-- bindle:superseded-by: $id_new -->
-- decision: clean retirement, no replacement yet (retired 2026-07) → no replacement decision exists <!-- bindle:context-id: $id1 -->
-EOF
-
-out="$("$PY" "$HELPER" validate --map "$TMP/supersede.md" --format json)"
-check "supersede: validation is ok (no duplicate-id false positive)" \
-  bash -c '[ "$(jget "r[\"ok\"]" "$1")" = True ]' _ "$out"
-check "scenario 24: tombstone retains the retired entry's original id" \
-  bash -c '[ "$(jget "[e for e in r[\"entries\"] if e[\"section\"]==\"superseded\"][0][\"id\"]" "$1")" = "$2" ]' _ "$out" "$id_old"
-check "scenario 8/25: replacement entry gets a distinct newly allocated id" \
-  bash -c '[ "$1" != "$2" ]' _ "$id_old" "$id_new"
-check "scenario 7: the live (status-flipped) heading still carries its original id" \
-  bash -c '[ "$(jget "r[\"entries\"][0][\"id\"]" "$1")" = "$2" ]' _ "$out" "$id_old"
-check "scenario 26: retirement without a replacement omits superseded-by cleanly" \
-  bash -c '[ "$(jget "[e for e in r[\"entries\"] if e[\"section\"]==\"superseded\"][1][\"id\"]" "$1")" = "$2" ]' _ "$out" "$id1"
-
-# scenario 6/9: rewrite every field line (heading claim, why/so/revisit-when/
-# evidence, status token) while leaving the marker untouched — the id must
-# not move or change, proving discovery never recomputes from content.
-sed -e 's/^why: original why$/why: REVISED why text entirely/' \
-  -e 's/^so: original so$/so: REVISED so text entirely/' \
-  -e 's/^revisit-when: met$/revisit-when: REVISED condition/' \
-  -e 's/^evidence: #2, #1$/evidence: #99/' \
-  -e 's/(2026-07, settled)/(2026-08, settled)/' \
-  "$TMP/supersede.md" >"$TMP/supersede-edited.md"
-out_edited="$("$PY" "$HELPER" validate --map "$TMP/supersede-edited.md" --format json)"
-check "scenario 6/9: editing claim/why/so/revisit-when/evidence/date/status never recomputes the id" \
-  bash -c '[ "$(jget "r[\"entries\"][0][\"id\"]" "$1")" = "$2" ] && [ "$(jget "r[\"entries\"][1][\"id\"]" "$1")" = "$3" ]' \
-  _ "$out_edited" "$id_old" "$id_new"
-
-echo "== duplicate-id pairing invariant (adversarial review) =="
-
-# A context id may occur once on an ordinary entry, or exactly twice when
-# both occurrences form ONE legitimate retirement pair: a retired Decision's
-# still-present, status-flipped heading + its own matching typed tombstone
-# (same kind, same claim text, live status literally "superseded"). Every
-# other same-id collision — including one that happens to straddle a live
-# entry and an unrelated tombstone — is a conflict. This deliberately does
-# NOT recognize Learnings (or Assumptions/Tensions/Questions) as pairable:
-# the entry grammar states "Learnings omit the status token", so a Learning
-# heading never carries a machine-checkable superseded signal — a same-id
-# collision there is always reported as a conflict, never silently paired.
-id_pair="$("$PY" "$HELPER" allocate --project demo)"
-id_case2="$("$PY" "$HELPER" allocate --project demo)"
-id_case3="$("$PY" "$HELPER" allocate --project demo)"
-id_case4="$("$PY" "$HELPER" allocate --project demo)"
-id_case5="$("$PY" "$HELPER" allocate --project demo)"
-id_case6="$("$PY" "$HELPER" allocate --project demo)"
-id_case7="$("$PY" "$HELPER" allocate --project demo)"
-id_learning_gap="$("$PY" "$HELPER" allocate --project demo)"
-
-cat >"$TMP/pairing.md" <<EOF
-# demo — map
-
-updated: 2026-07-16 · evidence through: none
-
-## Brief
-
-## Decisions
-
-### Retired decision with a matching tombstone (2026-07, superseded) <!-- bindle:context-id: $id_pair -->
-why: w1
-so: s1
-revisit-when: r1
-evidence: #1
-
-### A settled decision, never retired (2026-07, settled) <!-- bindle:context-id: $id_case2 -->
-why: w2
-so: s2
-revisit-when: r2
 evidence: #2
 
-### Retired decision, tombstone kind mismatch (2026-07, superseded) <!-- bindle:context-id: $id_case3 -->
-why: w3
-so: s3
-revisit-when: r3
-evidence: #3
-
-### Retired decision, tombstone claim mismatch (2026-07, superseded) <!-- bindle:context-id: $id_case4 -->
-why: w4
-so: s4
-revisit-when: r4
-evidence: #4
-
-### Ordinary entry one (2026-07, settled) <!-- bindle:context-id: $id_case5 -->
-why: w5a
-so: s5a
-revisit-when: r5a
-evidence: #5
-
-### Ordinary entry two (2026-07, settled) <!-- bindle:context-id: $id_case5 -->
-why: w5b
-so: s5b
-revisit-when: r5b
-evidence: #5
-
-### Retired decision with a valid pair plus a stray third occurrence (2026-07, superseded) <!-- bindle:context-id: $id_case7 -->
-why: w7
-so: s7
-revisit-when: r7
-evidence: #7
-
 ## Learnings
-
-### Retired learning, no deterministic retirement signal (2026-07) <!-- bindle:context-id: $id_learning_gap -->
-why: w8
-so: s8
-evidence: #8
 
 ## Assumptions & tensions
 
@@ -292,56 +183,82 @@ evidence: #8
 
 ## Superseded
 
-- decision: Retired decision with a matching tombstone (retired 2026-07) → nothing specific <!-- bindle:context-id: $id_pair -->
-- decision: A settled decision, never retired (retired 2026-07) → unrelated tombstone reusing a live id <!-- bindle:context-id: $id_case2 -->
-- learning: Retired decision, tombstone kind mismatch (retired 2026-07) → wrong kind on purpose <!-- bindle:context-id: $id_case3 -->
-- decision: A completely different claim string (retired 2026-07) → claim text does not match the retired heading <!-- bindle:context-id: $id_case4 -->
-- decision: Some unrelated tombstone A (retired 2026-07) → nothing <!-- bindle:context-id: $id_case6 -->
-- decision: Some unrelated tombstone B (retired 2026-07) → nothing <!-- bindle:context-id: $id_case6 -->
-- decision: Retired decision with a valid pair plus a stray third occurrence (retired 2026-07) → nothing specific <!-- bindle:context-id: $id_case7 -->
-- decision: A stray extra tombstone reusing the same id (retired 2026-07) → nothing <!-- bindle:context-id: $id_case7 -->
-- learning: Retired learning, no deterministic retirement signal (retired 2026-07) → nothing <!-- bindle:context-id: $id_learning_gap -->
-- decision: Legacy retired entry predating #179, no id to copy (retired 2026-06) → replaced by something
+- decision: A retired decision (retired 2026-07) → replaced by the replacement decision <!-- bindle:context-id: $id_r_dec --> <!-- bindle:superseded-by: $id_replacement -->
+  why: original why, carried down verbatim
+  so: original so, carried down verbatim
+  revisit-when: met by the donor contract
+  evidence: sessions/2026-06-20-derivatives.md, #23
+- learning: A retired learning (retired 2026-07) → no longer holds <!-- bindle:context-id: $id_r_learn -->
+  why: original learning why
+  so: original learning so
+  evidence: #14
+- assumption: stale reads are clock skew — confidence: low — evidence: #18 (retired 2026-07) → disproved by TTL tracing <!-- bindle:context-id: $id_r_assum -->
+- tension: clock skew vs TTL rounding — confidence: low — evidence: #18, #19 (retired 2026-07) → resolved by the TTL fix <!-- bindle:context-id: $id_r_tension -->
+  - clock-skew reading: ~4s node drift — evidence: #18
+  - TTL reading: minute-rounding shortens TTLs — evidence: #19
+- question: is an embargo a rights state? (retired 2026-07) → answered by the donor agreements <!-- bindle:context-id: $id_r_question -->
+  so: the chosen axis constrains the tier model
+  evidence: #27
+- decision: A retirement with no replacement at all (retired 2026-07) → the whole approach was abandoned <!-- bindle:context-id: $id_no_repl -->
+  why: w
+  so: s
+  revisit-when: r
+  evidence: #30
 EOF
 
-before="$(sha "$TMP/pairing.md")"
-out="$("$PY" "$HELPER" validate --map "$TMP/pairing.md" --format json)"
-after="$(sha "$TMP/pairing.md")"
+before="$(sha "$TMP/retire-all-kinds.md")"
+out="$("$PY" "$HELPER" validate --map "$TMP/retire-all-kinds.md" --format json)"
+after="$(sha "$TMP/retire-all-kinds.md")"
 
-check "pairing test 1: one retired entry + its matching typed tombstone is valid (no conflict for that id)" \
-  bash -c 'not_contains "$2" "$(jget "[i[\"message\"] for i in r[\"issues\"] if i[\"code\"]==\"duplicate-id\"]" "$1")"' \
-  _ "$out" "$id_pair"
-check "pairing test 2: a settled (never-retired) entry + an unrelated tombstone sharing an id is a conflict" \
-  bash -c 'contains "$2" "$(jget "[i[\"message\"] for i in r[\"issues\"] if i[\"code\"]==\"duplicate-id\"]" "$1")"' \
-  _ "$out" "$id_case2"
-check "pairing test 3: retired entry + tombstone with a different kind is a conflict" \
-  bash -c 'contains "$2" "$(jget "[i[\"message\"] for i in r[\"issues\"] if i[\"code\"]==\"duplicate-id\"]" "$1")"' \
-  _ "$out" "$id_case3"
-check "pairing test 4: retired entry + tombstone naming a different claim is a conflict" \
-  bash -c 'contains "$2" "$(jget "[i[\"message\"] for i in r[\"issues\"] if i[\"code\"]==\"duplicate-id\"]" "$1")"' \
-  _ "$out" "$id_case4"
-check "pairing test 5: two ordinary (live) entries sharing an id is a conflict" \
-  bash -c 'contains "$2" "$(jget "[i[\"message\"] for i in r[\"issues\"] if i[\"code\"]==\"duplicate-id\"]" "$1")"' \
-  _ "$out" "$id_case5"
-check "pairing test 6: two tombstones sharing an id is a conflict" \
-  bash -c 'contains "$2" "$(jget "[i[\"message\"] for i in r[\"issues\"] if i[\"code\"]==\"duplicate-id\"]" "$1")"' \
-  _ "$out" "$id_case6"
-check "pairing test 7: a valid pair plus a third occurrence of the same id is a conflict" \
-  bash -c 'contains "$2" "$(jget "[i[\"message\"] for i in r[\"issues\"] if i[\"code\"]==\"duplicate-id\"]" "$1")"' \
-  _ "$out" "$id_case7"
-check "pairing: exactly 7 duplicate-id conflicts (cases 2,3,4,5,6,7 + the learning gap — never case 1)" \
-  bash -c '[ "$(jget "sum(1 for i in r[\"issues\"] if i[\"code\"]==\"duplicate-id\")" "$1")" = 7 ]' _ "$out"
-check "documented contract gap: a Learning (no status token) sharing an id with its own matching tombstone is STILL a conflict, never silently paired" \
-  bash -c 'contains "$2" "$(jget "[i[\"message\"] for i in r[\"issues\"] if i[\"code\"]==\"duplicate-id\"]" "$1")"' \
-  _ "$out" "$id_learning_gap"
-check "pairing: validation performs zero writes even with 7 distinct duplicate-id scenarios present" \
+check "retirement: the whole all-kinds map validates clean (ok, zero errors)" \
+  bash -c '[ "$(jget "r[\"ok\"]" "$1")" = True ]' _ "$out"
+check "retirement: exactly 7 entries, all anchored, one record per logical entry" \
+  bash -c '[ "$(jget "len(r[\"entries\"])" "$1")" = 7 ] && [ "$(jget "r[\"anchored_count\"]" "$1")" = 7 ]' _ "$out"
+check "case 1: anchored DECISION retirement -> one superseded/decision node keeping its id" \
+  bash -c '[ "$(jget "[e[\"id\"] for e in r[\"entries\"] if e[\"section\"]==\"superseded\" and e[\"kind\"]==\"decision\"][0]" "$1")" = "$2" ]' _ "$out" "$id_r_dec"
+check "case 2: anchored LEARNING retirement -> one superseded/learning node keeping its id" \
+  bash -c '[ "$(jget "[e[\"id\"] for e in r[\"entries\"] if e[\"kind\"]==\"learning\"][0]" "$1")" = "$2" ]' _ "$out" "$id_r_learn"
+check "case 3: anchored ASSUMPTION retirement -> one superseded/assumption node keeping its id" \
+  bash -c '[ "$(jget "[e[\"id\"] for e in r[\"entries\"] if e[\"kind\"]==\"assumption\"][0]" "$1")" = "$2" ]' _ "$out" "$id_r_assum"
+check "case 4: anchored TENSION retirement -> ONE superseded/tension node (sides absorbed, not nodes)" \
+  bash -c '[ "$(jget "[e[\"id\"] for e in r[\"entries\"] if e[\"kind\"]==\"tension\"][0]" "$1")" = "$2" ] && [ "$(jget "sum(1 for e in r[\"entries\"] if e[\"kind\"]==\"tension\")" "$1")" = 1 ]' _ "$out" "$id_r_tension"
+check "case 5: anchored QUESTION retirement -> one superseded/question node keeping its id" \
+  bash -c '[ "$(jget "[e[\"id\"] for e in r[\"entries\"] if e[\"kind\"]==\"question\"][0]" "$1")" = "$2" ]' _ "$out" "$id_r_question"
+check "case 6: retirement without a replacement is valid and omits superseded-by" \
+  bash -c '[ "$(jget "[e[\"anchored\"] for e in r[\"entries\"] if e[\"id\"]==\"$2\"][0]" "$1")" = True ]' _ "$out" "$id_no_repl"
+check "case 7: the replacement is a separate live entry with a DISTINCT id" \
+  bash -c '[ "$1" != "$2" ] && [ "$(jget "[e[\"section\"] for e in r[\"entries\"] if e[\"id\"]==\"$1\"][0]" "$3")" = decisions ]' \
+  _ "$id_replacement" "$id_r_dec" "$out"
+check "retirement: nothing is left behind — zero entries remain in Learnings/A&T/Open questions" \
+  bash -c '[ "$(jget "sum(1 for e in r[\"entries\"] if e[\"section\"] in (\"learnings\",\"assumptions\",\"questions\"))" "$1")" = 0 ]' _ "$out"
+check "retirement: validation performs zero writes across all five kinds" \
   bash -c '[ "$1" = "$2" ]' _ "$before" "$after"
 
-# pairing test 8: a legacy (pre-#179, unanchored) retired entry paired with a
-# correctly TYPED tombstone that itself carries no id — informational only
-# (untyped-tombstone), never an error, and never treated as a duplicate-id
-# case (there is no id at all to collide).
-cat >"$TMP/legacy-typed-tombstone.md" <<'EOF'
+# case 20: repeated validation is byte-identical after persistence.
+out_again="$("$PY" "$HELPER" validate --map "$TMP/retire-all-kinds.md" --format json)"
+check "case 20: repeated validation of the retired map is byte-identical" \
+  bash -c '[ "$1" = "$2" ]' _ "$out" "$out_again"
+
+# case 9/10 (wrong-kind / wrong-target): the retired kind and the replacement
+# target are read ONLY from the typed prefix and the id marker, never inferred
+# from prose — so a tombstone whose prose names a different kind or a different
+# replacement than its markers say is reported on its markers, not its words.
+sed -e 's/^  why: original why, carried down verbatim$/  why: EDITED after retirement/' \
+  -e 's/→ replaced by the replacement decision/→ prose now names a completely different successor/' \
+  "$TMP/retire-all-kinds.md" >"$TMP/retire-prose-edited.md"
+out_prose="$("$PY" "$HELPER" validate --map "$TMP/retire-prose-edited.md" --format json)"
+check "cases 9/10: editing a tombstone's prose/fields never changes its id, kind, or replacement target" \
+  bash -c '[ "$(jget "[e[\"id\"] for e in r[\"entries\"] if e[\"kind\"]==\"decision\" and e[\"section\"]==\"superseded\"][0]" "$1")" = "$2" ] && [ "$(jget "r[\"ok\"]" "$1")" = True ]' \
+  _ "$out_prose" "$id_r_dec"
+
+echo "== retirement recorded in place is not a valid representation (case 11) =="
+
+# The shape an earlier cut of #179 wrongly blessed as a "retirement pair": the
+# retired entry left behind, status-flipped, sharing its id with a tombstone.
+# Under the universal model this is two records for one logical entry — a
+# compiler would emit the leftover as a second node with status `current` —
+# so it is now reported twice over: retirement-in-place AND duplicate-id.
+cat >"$TMP/inplace.md" <<EOF
 # demo — map
 
 updated: 2026-07-16 · evidence through: none
@@ -350,11 +267,11 @@ updated: 2026-07-16 · evidence through: none
 
 ## Decisions
 
-### A legacy decision, retired before #179 shipped (2026-07, superseded)
-why: predates identity markers entirely
-so: nothing to preserve
-revisit-when: never
-evidence: #9
+### Retired but left in place (2026-07, superseded) <!-- bindle:context-id: $id_r_dec -->
+why: w
+so: s
+revisit-when: r
+evidence: #1
 
 ## Learnings
 
@@ -364,21 +281,181 @@ evidence: #9
 
 ## Superseded
 
-- decision: A legacy decision, retired before #179 shipped (retired 2026-07) → replaced by something, no id ever existed
+- decision: Retired but left in place (retired 2026-07) → gone <!-- bindle:context-id: $id_r_dec -->
 EOF
 
-before8="$(sha "$TMP/legacy-typed-tombstone.md")"
-out8="$("$PY" "$HELPER" validate --map "$TMP/legacy-typed-tombstone.md" --format json)"
-after8="$(sha "$TMP/legacy-typed-tombstone.md")"
+out_ip="$("$PY" "$HELPER" validate --map "$TMP/inplace.md" --format json)"
+check "case 11: an anchored entry retired in place is an ERROR (retirement-in-place)" \
+  bash -c '[ "$(jget "sum(1 for i in r[\"issues\"] if i[\"code\"]==\"retirement-in-place\" and i[\"severity\"]==\"error\")" "$1")" = 1 ]' _ "$out_ip"
+check "case 11: the same id in both places is ALSO a duplicate-id conflict (no pair exemption)" \
+  bash -c '[ "$(jget "sum(1 for i in r[\"issues\"] if i[\"code\"]==\"duplicate-id\")" "$1")" = 1 ]' _ "$out_ip"
+check "case 11: the map is not ok" \
+  bash -c '[ "$(jget "r[\"ok\"]" "$1")" = False ]' _ "$out_ip"
 
-check "pairing test 8: legacy retired entry + typed tombstone, no id on either side -> ok (informational only)" \
-  bash -c '[ "$(jget "r[\"ok\"]" "$1")" = True ]' _ "$out8"
-check "pairing test 8: the tombstone is flagged untyped-tombstone (missing id) as info, not error" \
-  bash -c '[ "$(jget "sum(1 for i in r[\"issues\"] if i[\"code\"]==\"untyped-tombstone\" and i[\"severity\"]==\"info\")" "$1")" -ge 1 ]' _ "$out8"
-check "pairing test 8: zero duplicate-id issues (nothing to collide — no ids at all)" \
-  bash -c '[ "$(jget "sum(1 for i in r[\"issues\"] if i[\"code\"]==\"duplicate-id\")" "$1")" = 0 ]' _ "$out8"
-check "pairing test 9 (this fixture): validation performs zero writes" \
-  bash -c '[ "$1" = "$2" ]' _ "$before8" "$after8"
+echo "== legacy unanchored retirement + wrong-kind representation (cases 8, 9, 18) =="
+
+# Case 8: retiring an entry that predates #179 and never had an id. It moves
+# to Superseded and gets the typed prefix like any other retirement, but no
+# identity is allocated — retirement is NOT an anchoring event and never
+# invokes #184's anchor authority. Informational only, never an error.
+cat >"$TMP/legacy-retire.md" <<'EOF'
+# demo — map
+
+updated: 2026-07-16 · evidence through: none
+
+## Brief
+
+## Decisions
+
+## Learnings
+
+## Assumptions & tensions
+
+## Open questions
+
+## Superseded
+
+- decision: A legacy decision retired after #179 shipped (retired 2026-07) → replaced by nothing yet
+  why: predates identity markers entirely
+  so: nothing to preserve
+  revisit-when: never
+  evidence: #9
+- A pre-#179 untyped tombstone left exactly as the owner wrote it (retired 2026-05) → superseded by something
+EOF
+
+before_leg="$(sha "$TMP/legacy-retire.md")"
+out_leg="$("$PY" "$HELPER" validate --map "$TMP/legacy-retire.md" --format json)"
+after_leg="$(sha "$TMP/legacy-retire.md")"
+
+check "case 8: legacy unanchored retirement validates ok (no error)" \
+  bash -c '[ "$(jget "r[\"ok\"]" "$1")" = True ]' _ "$out_leg"
+check "case 8: it is typed (kind recovered) yet carries NO id — retirement allocated nothing" \
+  bash -c '[ "$(jget "sum(1 for e in r[\"entries\"] if e[\"kind\"]==\"decision\" and e[\"section\"]==\"superseded\" and e[\"anchored\"] is False)" "$1")" = 1 ] && [ "$(jget "r[\"anchored_count\"]" "$1")" = 0 ]' _ "$out_leg"
+check "case 8: the missing id is reported as info, never an error" \
+  bash -c '[ "$(jget "sum(1 for i in r[\"issues\"] if i[\"severity\"]==\"error\")" "$1")" = 0 ]' _ "$out_leg"
+check "case 8/19: a pre-#179 untyped tombstone stays informational and is left byte-identical" \
+  bash -c '[ "$1" = "$2" ]' _ "$before_leg" "$after_leg"
+
+# Case 9: a tombstone whose kind cannot be recovered from its own typed
+# prefix. Anchored -> error (a compiler cannot type the node, and kind is
+# never inferred from prose). Unanchored -> info (legacy shape, above).
+id_wrongkind="$("$PY" "$HELPER" allocate --project demo)"
+cat >"$TMP/wrongkind.md" <<EOF
+# demo — map
+
+## Superseded
+
+- widget: not one of the five supported kinds (retired 2026-07) → x <!-- bindle:context-id: $id_wrongkind -->
+EOF
+out_wk="$("$PY" "$HELPER" validate --map "$TMP/wrongkind.md" --format json)"
+check "case 9: an ANCHORED tombstone with an unrecoverable kind is an ERROR" \
+  bash -c '[ "$(jget "sum(1 for i in r[\"issues\"] if i[\"code\"]==\"untyped-tombstone\" and i[\"severity\"]==\"error\")" "$1")" = 1 ] && [ "$(jget "r[\"ok\"]" "$1")" = False ]' _ "$out_wk"
+
+# Case 18: a failed or aborted promotion persists no identity state. The
+# allocator is the only thing that can mint an id, and it is pure stdout —
+# it opens no file, creates no pending-id record, and touches nothing on
+# disk, so a run that dies before its map write leaves nothing behind.
+FAILDIR="$TMP/failed-promotion"
+mkdir -p "$FAILDIR"
+(
+  cd "$FAILDIR" || exit 1
+  "$PY" "$HELPER" allocate --project demo >/dev/null
+  exit 1
+)
+check "case 18: an allocate whose caller then fails leaves zero files behind (no pending-id state)" \
+  bash -c '[ "$(find "$1" -mindepth 1 | wc -l | tr -d " ")" = 0 ]' _ "$FAILDIR"
+
+echo "== identity occurrence invariant: one id, one occurrence, for life (cases 12, 13) =="
+
+# Because retirement MOVES an entry rather than copying it, one identity has
+# exactly one occurrence for its whole life. There is no legitimate duplicate
+# and no pair to carve out: any id occurring more than once, anywhere, in any
+# section, in any combination of kinds, is a conflict. This is what makes
+# #183's rule ("duplicate identities across current and superseded sections
+# are conflicts") literally true with no exception attached.
+id_two_live="$("$PY" "$HELPER" allocate --project demo)"
+id_two_tombs="$("$PY" "$HELPER" allocate --project demo)"
+id_live_and_tomb="$("$PY" "$HELPER" allocate --project demo)"
+id_thrice="$("$PY" "$HELPER" allocate --project demo)"
+id_cross_kind="$("$PY" "$HELPER" allocate --project demo)"
+
+cat >"$TMP/occurrences.md" <<EOF
+# demo — map
+
+updated: 2026-07-16 · evidence through: none
+
+## Brief
+
+## Decisions
+
+### Two live entries share an id, A (2026-07, settled) <!-- bindle:context-id: $id_two_live -->
+why: a
+so: a
+revisit-when: a
+evidence: #1
+
+### Two live entries share an id, B (2026-07, settled) <!-- bindle:context-id: $id_two_live -->
+why: b
+so: b
+revisit-when: b
+evidence: #2
+
+### A settled live entry whose id also appears on a tombstone (2026-07, settled) <!-- bindle:context-id: $id_live_and_tomb -->
+why: c
+so: c
+revisit-when: c
+evidence: #3
+
+### An id used three times, occurrence one (2026-07, settled) <!-- bindle:context-id: $id_thrice -->
+why: d
+so: d
+revisit-when: d
+evidence: #4
+
+## Learnings
+
+### A learning sharing an id with a decision tombstone (2026-07) <!-- bindle:context-id: $id_cross_kind -->
+why: e
+so: e
+evidence: #5
+
+## Assumptions & tensions
+
+## Open questions
+
+## Superseded
+
+- decision: Two tombstones share an id, A (retired 2026-07) → x <!-- bindle:context-id: $id_two_tombs -->
+- decision: Two tombstones share an id, B (retired 2026-07) → x <!-- bindle:context-id: $id_two_tombs -->
+- decision: An unrelated tombstone reusing a live id (retired 2026-07) → x <!-- bindle:context-id: $id_live_and_tomb -->
+- decision: An id used three times, occurrence two (retired 2026-07) → x <!-- bindle:context-id: $id_thrice -->
+- decision: An id used three times, occurrence three (retired 2026-07) → x <!-- bindle:context-id: $id_thrice -->
+- decision: A decision tombstone sharing an id with a live learning (retired 2026-07) → x <!-- bindle:context-id: $id_cross_kind -->
+EOF
+
+before_occ="$(sha "$TMP/occurrences.md")"
+out_occ="$("$PY" "$HELPER" validate --map "$TMP/occurrences.md" --format json)"
+after_occ="$(sha "$TMP/occurrences.md")"
+
+dupmsgs() { jget "[i[\"message\"] for i in r[\"issues\"] if i[\"code\"]==\"duplicate-id\"]" "$1"; }
+export -f dupmsgs
+
+check "case 12: two ORIGINALS (live entries) sharing an id is a conflict" \
+  bash -c 'contains "$2" "$(dupmsgs "$1")"' _ "$out_occ" "$id_two_live"
+check "case 13: two TOMBSTONES sharing an id is a conflict" \
+  bash -c 'contains "$2" "$(dupmsgs "$1")"' _ "$out_occ" "$id_two_tombs"
+check "occurrence: a live entry and an unrelated tombstone sharing an id is a conflict (no cross-section exemption)" \
+  bash -c 'contains "$2" "$(dupmsgs "$1")"' _ "$out_occ" "$id_live_and_tomb"
+check "occurrence: a third occurrence of an id is a conflict" \
+  bash -c 'contains "$2" "$(dupmsgs "$1")"' _ "$out_occ" "$id_thrice"
+check "occurrence: a cross-kind collision (live learning + decision tombstone) is a conflict" \
+  bash -c 'contains "$2" "$(dupmsgs "$1")"' _ "$out_occ" "$id_cross_kind"
+check "occurrence: every one of the 5 colliding ids is reported — exactly 5 duplicate-id conflicts" \
+  bash -c '[ "$(jget "sum(1 for i in r[\"issues\"] if i[\"code\"]==\"duplicate-id\")" "$1")" = 5 ]' _ "$out_occ"
+check "occurrence: the map is not ok" \
+  bash -c '[ "$(jget "r[\"ok\"]" "$1")" = False ]' _ "$out_occ"
+check "case 17: validation performs zero writes across every duplicate scenario" \
+  bash -c '[ "$1" = "$2" ]' _ "$before_occ" "$after_occ"
 
 echo "== duplicate / malformed / misplaced markers (scenarios 13-15, 22, 23, 28) =="
 
