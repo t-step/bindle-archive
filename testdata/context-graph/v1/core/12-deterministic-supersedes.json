@@ -1,0 +1,33 @@
+{
+  "nodes": [
+    {
+      "id": "context-node:bindle:3a31f24a41a1c891b6562a7c8ba9b76b",
+      "class": "semantic",
+      "kind": "decision",
+      "label": "Decision 12a",
+      "status": "current"
+    },
+    {
+      "id": "context-node:bindle:7ea2b22e28e137bc98bf14df61cb003e",
+      "class": "semantic",
+      "kind": "decision",
+      "label": "Decision 12b",
+      "status": "current"
+    }
+  ],
+  "edges": [
+    {
+      "key": "context-node:bindle:3a31f24a41a1c891b6562a7c8ba9b76b|supersedes|context-node:bindle:7ea2b22e28e137bc98bf14df61cb003e",
+      "source": "context-node:bindle:3a31f24a41a1c891b6562a7c8ba9b76b",
+      "relationship": "supersedes",
+      "target": "context-node:bindle:7ea2b22e28e137bc98bf14df61cb003e",
+      "status": "confirmed",
+      "origin": "deterministic",
+      "review_trigger": true,
+      "basis": [],
+      "deterministic_source": {
+        "kind": "map_tombstone"
+      }
+    }
+  ]
+}

@@ -514,6 +514,19 @@
       "version_introduced": "0.4.0"
     },
     {
+      "name": "context-graph-schema",
+      "type": "contract",
+      "path": "docs/context-graph-schema.md",
+      "description": "The shipped v1 context-graph interchange contract reference (typed IDs, node/relationship vocabulary, endpoint matrix, candidate-key canonicalization, validation model) implemented by bin/context_graph/ and schemas/context-graph/v1/ \u2014 issue #180, epic #140.",
+      "provider": {
+        "claude": "installed",
+        "codex": "manual"
+      },
+      "maturity": "documented",
+      "mutation": [],
+      "version_introduced": "0.7.0"
+    },
+    {
       "name": "package-release-integrity",
       "type": "skill",
       "path": "skills/package-release-integrity",
@@ -866,6 +879,58 @@
     {
       "path": "docs/superpowers/plans/2026-07-15-release-please-sync.md",
       "reason": "a point-in-time implementation plan for the release-please-sync fix (#137), paired with its design spec; planning artifact, not itself a capability."
+    },
+    {
+      "path": "docs/superpowers/plans/2026-07-16-context-graph-schema-implementation.md",
+      "reason": "a point-in-time implementation plan for the #180 context-graph schema/fixture implementation; planning artifact, not itself a capability."
+    },
+    {
+      "path": "bin/check-context-graph-fixtures.py",
+      "reason": "fixture validator invoked by the test harness / make check machinery, exactly like bin/check-inventory.py; not itself a capability an agent invokes for its own sake."
+    },
+    {
+      "path": "bin/context_graph/__init__.py",
+      "reason": "package marker and module docstring for the context_graph library; internal machinery, not a capability invoked directly."
+    },
+    {
+      "path": "bin/context_graph/ids.py",
+      "reason": "library module for typed-ID parsing/formatting in the context_graph contract; foundation module consumed by other contract modules, not a standalone capability."
+    },
+    {
+      "path": "bin/context_graph/tests/__init__.py",
+      "reason": "test package marker; test infrastructure, not a capability."
+    },
+    {
+      "path": "bin/context_graph/tests/test_ids.py",
+      "reason": "unit tests for context_graph.ids; test infrastructure, not a capability an agent invokes."
+    },
+    {
+      "path": "bin/context_graph/relationships.py",
+      "reason": "library module for relationship vocabulary, endpoint matrix, and review-trigger defaults in the context_graph contract; foundation module consumed by context_graph.validation, not a standalone capability."
+    },
+    {
+      "path": "bin/context_graph/tests/test_relationships.py",
+      "reason": "unit tests for context_graph.relationships; test infrastructure, not a capability an agent invokes."
+    },
+    {
+      "path": "bin/context_graph/canonical.py",
+      "reason": "library module for byte-exact candidate-key and fingerprint hashing primitives in the context_graph contract; foundation module consumed by context_graph.validation and fixtures, not a standalone capability."
+    },
+    {
+      "path": "bin/context_graph/tests/test_canonical.py",
+      "reason": "unit tests for context_graph.canonical; test infrastructure, not a capability an agent invokes."
+    },
+    {
+      "path": "bin/context_graph/validation.py",
+      "reason": "library module for object-kind validation and creation-authority checks in the context_graph contract; composes ids/relationships/canonical into validate_bundle/validate_config, not a standalone capability."
+    },
+    {
+      "path": "bin/context_graph/tests/test_validation.py",
+      "reason": "unit tests for context_graph.validation; test infrastructure, not a capability an agent invokes."
+    },
+    {
+      "path": "bin/context_graph/tests/test_schema_conformance.py",
+      "reason": "unit tests validating fixture objects against the JSON Schemas and invariant-coverage.json completeness; test infrastructure, not a capability an agent invokes."
     }
   ],
   "external_upstreams": [

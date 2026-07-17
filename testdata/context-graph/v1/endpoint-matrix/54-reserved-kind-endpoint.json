@@ -1,0 +1,33 @@
+{
+  "nodes": [
+    {
+      "id": "project:5f56c9b95c41c298f70d6dd4e5db8c2a",
+      "class": "project",
+      "kind": null,
+      "label": "bindle",
+      "status": "current"
+    },
+    {
+      "id": "context-node:bindle:3453149203c1740e21b15669363f9aa0",
+      "class": "semantic",
+      "kind": "architecture_component",
+      "label": "Reserved kind node 54",
+      "status": "current"
+    }
+  ],
+  "edges": [
+    {
+      "key": "project:5f56c9b95c41c298f70d6dd4e5db8c2a|contains|context-node:bindle:3453149203c1740e21b15669363f9aa0",
+      "source": "project:5f56c9b95c41c298f70d6dd4e5db8c2a",
+      "relationship": "contains",
+      "target": "context-node:bindle:3453149203c1740e21b15669363f9aa0",
+      "status": "confirmed",
+      "origin": "deterministic",
+      "review_trigger": false,
+      "basis": [],
+      "deterministic_source": {
+        "kind": "project_membership"
+      }
+    }
+  ]
+}

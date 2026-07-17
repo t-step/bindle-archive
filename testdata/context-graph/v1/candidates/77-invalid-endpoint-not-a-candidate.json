@@ -1,0 +1,26 @@
+{
+  "candidates": [
+    {
+      "subject_type": "edge",
+      "candidate_key": "candidate:sha256:ea8630cea54d026488fe8db55db11ce91185081421f315a960f6cbef9672fec7",
+      "candidate_origin": "validated_proposal",
+      "dependency_fingerprint": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+      "validation_status": "invalid",
+      "source": "context-node:bindle:77777777777777777777777777777777",
+      "relationship": "implemented_by",
+      "target": "github-pr:thomas-estep/bindle#77",
+      "source_class": "semantic",
+      "source_kind": "learning",
+      "target_class": "evidence",
+      "target_kind": "github_pr",
+      "basis": [
+        {
+          "kind": "evidence_pointer",
+          "location": "entry_evidence",
+          "pointer": "#77"
+        }
+      ],
+      "producer": "fixture"
+    }
+  ]
+}

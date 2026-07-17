@@ -117,6 +117,13 @@ repos:
         language: script
         pass_filenames: false
         always_run: true
+      - id: bindle-test-context-graph-schema
+        name: context-graph schema/fixture/canonicalization tests
+        entry: bin/test-context-graph-schema.sh
+        language: python
+        additional_dependencies: ["jsonschema"]
+        pass_filenames: false
+        always_run: true
       - id: bindle-link
         name: link new items into ~/.claude (post-merge)
         entry: bin/install.sh

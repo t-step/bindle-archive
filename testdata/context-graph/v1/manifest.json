@@ -1,0 +1,1313 @@
+{
+  "schema_version": 1,
+  "fixtures": [
+    {
+      "id": "1",
+      "path": "core/01-minimal-project-decision-issue.json",
+      "assertion": "validate",
+      "expect_valid": true,
+      "expect_codes": [],
+      "match_mode": "exact",
+      "coverage_tags": [
+        "core"
+      ],
+      "invariant_ids": []
+    },
+    {
+      "id": "2",
+      "path": "core/02-two-evidence-same-number.json",
+      "assertion": "validate",
+      "expect_valid": true,
+      "expect_codes": [],
+      "match_mode": "exact",
+      "coverage_tags": [
+        "core"
+      ],
+      "invariant_ids": []
+    },
+    {
+      "id": "3",
+      "path": "core/03-multiple-semantic-citing-evidence.json",
+      "assertion": "validate",
+      "expect_valid": true,
+      "expect_codes": [],
+      "match_mode": "exact",
+      "coverage_tags": [
+        "core",
+        "supported_by"
+      ],
+      "invariant_ids": []
+    },
+    {
+      "id": "4",
+      "path": "core/04-deterministic-supported-by.json",
+      "assertion": "validate",
+      "expect_valid": true,
+      "expect_codes": [],
+      "match_mode": "exact",
+      "coverage_tags": [
+        "core",
+        "supported_by"
+      ],
+      "invariant_ids": []
+    },
+    {
+      "id": "5",
+      "path": "core/05-deterministic-pr-closes-issue.json",
+      "assertion": "validate",
+      "expect_valid": true,
+      "expect_codes": [],
+      "match_mode": "exact",
+      "coverage_tags": [
+        "core",
+        "closes"
+      ],
+      "invariant_ids": []
+    },
+    {
+      "id": "6",
+      "path": "core/06-accepted-depends-on.json",
+      "assertion": "validate",
+      "expect_valid": true,
+      "expect_codes": [],
+      "match_mode": "exact",
+      "coverage_tags": [
+        "core",
+        "depends_on"
+      ],
+      "invariant_ids": []
+    },
+    {
+      "id": "7",
+      "path": "core/07-accepted-motivates.json",
+      "assertion": "validate",
+      "expect_valid": true,
+      "expect_codes": [],
+      "match_mode": "exact",
+      "coverage_tags": [
+        "core",
+        "motivates"
+      ],
+      "invariant_ids": []
+    },
+    {
+      "id": "8",
+      "path": "core/08-accepted-constrains.json",
+      "assertion": "validate",
+      "expect_valid": true,
+      "expect_codes": [],
+      "match_mode": "exact",
+      "coverage_tags": [
+        "core",
+        "constrains"
+      ],
+      "invariant_ids": []
+    },
+    {
+      "id": "9",
+      "path": "core/09-accepted-resolves.json",
+      "assertion": "validate",
+      "expect_valid": true,
+      "expect_codes": [],
+      "match_mode": "exact",
+      "coverage_tags": [
+        "core",
+        "resolves"
+      ],
+      "invariant_ids": []
+    },
+    {
+      "id": "10",
+      "path": "core/10-accepted-supports.json",
+      "assertion": "validate",
+      "expect_valid": true,
+      "expect_codes": [],
+      "match_mode": "exact",
+      "coverage_tags": [
+        "core",
+        "supports"
+      ],
+      "invariant_ids": []
+    },
+    {
+      "id": "11",
+      "path": "core/11-accepted-contradicts.json",
+      "assertion": "validate",
+      "expect_valid": true,
+      "expect_codes": [],
+      "match_mode": "exact",
+      "coverage_tags": [
+        "core",
+        "contradicts"
+      ],
+      "invariant_ids": []
+    },
+    {
+      "id": "12",
+      "path": "core/12-deterministic-supersedes.json",
+      "assertion": "validate",
+      "expect_valid": true,
+      "expect_codes": [],
+      "match_mode": "exact",
+      "coverage_tags": [
+        "core",
+        "supersedes"
+      ],
+      "invariant_ids": []
+    },
+    {
+      "id": "13",
+      "path": "core/13-accepted-supersedes.json",
+      "assertion": "validate",
+      "expect_valid": true,
+      "expect_codes": [],
+      "match_mode": "exact",
+      "coverage_tags": [
+        "core",
+        "supersedes"
+      ],
+      "invariant_ids": []
+    },
+    {
+      "id": "14",
+      "path": "core/14-accepted-revisits.json",
+      "assertion": "validate",
+      "expect_valid": true,
+      "expect_codes": [],
+      "match_mode": "exact",
+      "coverage_tags": [
+        "core",
+        "revisits"
+      ],
+      "invariant_ids": []
+    },
+    {
+      "id": "15",
+      "path": "core/15-accepted-discussed-in.json",
+      "assertion": "validate",
+      "expect_valid": true,
+      "expect_codes": [],
+      "match_mode": "exact",
+      "coverage_tags": [
+        "core",
+        "discussed_in"
+      ],
+      "invariant_ids": []
+    },
+    {
+      "id": "16",
+      "path": "core/16-accepted-implemented-by.json",
+      "assertion": "validate",
+      "expect_valid": true,
+      "expect_codes": [],
+      "match_mode": "exact",
+      "coverage_tags": [
+        "core",
+        "implemented_by"
+      ],
+      "invariant_ids": []
+    },
+    {
+      "id": "17",
+      "path": "core/17-accepted-validated-by.json",
+      "assertion": "validate",
+      "expect_valid": true,
+      "expect_codes": [],
+      "match_mode": "exact",
+      "coverage_tags": [
+        "core",
+        "validated_by"
+      ],
+      "invariant_ids": []
+    },
+    {
+      "id": "18",
+      "path": "core/18-rejected-edge-candidate.json",
+      "assertion": "validate",
+      "expect_valid": true,
+      "expect_codes": [],
+      "match_mode": "exact",
+      "coverage_tags": [
+        "core",
+        "candidates"
+      ],
+      "invariant_ids": []
+    },
+    {
+      "id": "19",
+      "assertion": "candidate_key_distinct",
+      "with": [
+        "core/19-basis-a.json",
+        "core/19-basis-b.json"
+      ],
+      "coverage_tags": [
+        "core",
+        "canonicalization"
+      ]
+    },
+    {
+      "id": "20",
+      "path": "core/20-duplicate-node-id.json",
+      "assertion": "validate",
+      "expect_valid": false,
+      "expect_codes": [
+        "E_NODE_DUPLICATE_ID"
+      ],
+      "match_mode": "exact",
+      "coverage_tags": [
+        "core"
+      ],
+      "invariant_ids": []
+    },
+    {
+      "id": "21",
+      "path": "core/21-duplicate-edge-key.json",
+      "assertion": "validate",
+      "expect_valid": false,
+      "expect_codes": [
+        "E_EDGE_DUPLICATE_KEY"
+      ],
+      "match_mode": "exact",
+      "coverage_tags": [
+        "core"
+      ],
+      "invariant_ids": []
+    },
+    {
+      "id": "22",
+      "path": "core/22-edge-missing-node-ref.json",
+      "assertion": "validate",
+      "expect_valid": false,
+      "expect_codes": [
+        "E_EDGE_MISSING_NODE_REF"
+      ],
+      "match_mode": "exact",
+      "coverage_tags": [
+        "core"
+      ],
+      "invariant_ids": []
+    },
+    {
+      "id": "23",
+      "path": "core/23-unknown-relationship.json",
+      "assertion": "validate",
+      "expect_valid": false,
+      "expect_codes": [
+        "E_EDGE_UNKNOWN_RELATIONSHIP"
+      ],
+      "match_mode": "exact",
+      "coverage_tags": [
+        "core"
+      ],
+      "invariant_ids": []
+    },
+    {
+      "id": "24",
+      "path": "core/24-implements-rejected.json",
+      "assertion": "validate",
+      "expect_valid": false,
+      "expect_codes": [
+        "E_EDGE_RELATIONSHIP_REJECTED"
+      ],
+      "match_mode": "exact",
+      "coverage_tags": [
+        "core"
+      ],
+      "invariant_ids": []
+    },
+    {
+      "id": "25",
+      "path": "core/25-judgment-required-missing.json",
+      "assertion": "validate",
+      "expect_valid": false,
+      "expect_codes": [
+        "E_EDGE_JUDGMENT_REQUIRED_MISSING"
+      ],
+      "match_mode": "exact",
+      "coverage_tags": [
+        "core"
+      ],
+      "invariant_ids": []
+    },
+    {
+      "id": "26",
+      "path": "core/26-deterministic-authority-missing.json",
+      "assertion": "validate",
+      "expect_valid": false,
+      "expect_codes": [
+        "E_EDGE_DETERMINISTIC_AUTHORITY_MISSING"
+      ],
+      "match_mode": "exact",
+      "coverage_tags": [
+        "core"
+      ],
+      "invariant_ids": []
+    },
+    {
+      "id": "27",
+      "path": "core/27-review-trigger-mismatch.json",
+      "assertion": "validate",
+      "expect_valid": false,
+      "expect_codes": [
+        "E_EDGE_REVIEW_TRIGGER_MISMATCH"
+      ],
+      "match_mode": "exact",
+      "coverage_tags": [
+        "core"
+      ],
+      "invariant_ids": []
+    },
+    {
+      "id": "28",
+      "path": "core/28-uncertain-github-coverage.json",
+      "assertion": "validate",
+      "expect_valid": true,
+      "expect_codes": [],
+      "match_mode": "exact",
+      "coverage_tags": [
+        "core",
+        "coverage"
+      ],
+      "invariant_ids": []
+    },
+    {
+      "id": "29",
+      "path": "core/29-unsupported-commit-coverage.json",
+      "assertion": "validate",
+      "expect_valid": true,
+      "expect_codes": [],
+      "match_mode": "exact",
+      "coverage_tags": [
+        "core",
+        "coverage"
+      ],
+      "invariant_ids": []
+    },
+    {
+      "id": "30",
+      "path": "core/30-reserved-future-kind.json",
+      "assertion": "validate",
+      "expect_valid": false,
+      "expect_codes": [
+        "E_NODE_RESERVED_KIND"
+      ],
+      "match_mode": "exact",
+      "coverage_tags": [
+        "core"
+      ],
+      "invariant_ids": []
+    },
+    {
+      "id": "33-1",
+      "path": "map-shape/33-1-decision-heading.json",
+      "assertion": "validate",
+      "expect_valid": true,
+      "expect_codes": [],
+      "match_mode": "exact",
+      "coverage_tags": [
+        "map-shape"
+      ],
+      "invariant_ids": []
+    },
+    {
+      "id": "33-2",
+      "path": "map-shape/33-2-learning-heading.json",
+      "assertion": "validate",
+      "expect_valid": true,
+      "expect_codes": [],
+      "match_mode": "exact",
+      "coverage_tags": [
+        "map-shape"
+      ],
+      "invariant_ids": []
+    },
+    {
+      "id": "33-3",
+      "path": "map-shape/33-3-assumption-bullet.json",
+      "assertion": "validate",
+      "expect_valid": true,
+      "expect_codes": [],
+      "match_mode": "exact",
+      "coverage_tags": [
+        "map-shape"
+      ],
+      "invariant_ids": []
+    },
+    {
+      "id": "33-4",
+      "path": "map-shape/33-4-tension-parent.json",
+      "assertion": "validate",
+      "expect_valid": true,
+      "expect_codes": [],
+      "match_mode": "exact",
+      "coverage_tags": [
+        "map-shape"
+      ],
+      "invariant_ids": []
+    },
+    {
+      "id": "33-5",
+      "path": "map-shape/33-5-open-question.json",
+      "assertion": "validate",
+      "expect_valid": true,
+      "expect_codes": [],
+      "match_mode": "exact",
+      "coverage_tags": [
+        "map-shape"
+      ],
+      "invariant_ids": []
+    },
+    {
+      "id": "33-6",
+      "path": "map-shape/33-6-parked-question.json",
+      "assertion": "validate",
+      "expect_valid": true,
+      "expect_codes": [],
+      "match_mode": "exact",
+      "coverage_tags": [
+        "map-shape"
+      ],
+      "invariant_ids": []
+    },
+    {
+      "id": "33-7",
+      "path": "map-shape/33-7-typed-tombstone.json",
+      "assertion": "validate",
+      "expect_valid": true,
+      "expect_codes": [],
+      "match_mode": "exact",
+      "coverage_tags": [
+        "map-shape"
+      ],
+      "invariant_ids": []
+    },
+    {
+      "id": "34",
+      "path": "map-shape/34-tension-cardinality.json",
+      "assertion": "validate",
+      "expect_valid": false,
+      "expect_codes": [
+        "E_NODE_TENSION_CARDINALITY"
+      ],
+      "match_mode": "exact",
+      "coverage_tags": [
+        "map-shape"
+      ],
+      "invariant_ids": []
+    },
+    {
+      "id": "35",
+      "path": "map-shape/35-tension-side-identity.json",
+      "assertion": "validate",
+      "expect_valid": false,
+      "expect_codes": [
+        "E_NODE_TENSION_SIDE_IDENTITY"
+      ],
+      "match_mode": "exact",
+      "coverage_tags": [
+        "map-shape"
+      ],
+      "invariant_ids": []
+    },
+    {
+      "id": "36",
+      "path": "map-shape/36-untyped-tombstone.json",
+      "assertion": "validate",
+      "expect_valid": false,
+      "expect_codes": [
+        "E_NODE_MALFORMED_ID"
+      ],
+      "match_mode": "exact",
+      "coverage_tags": [
+        "map-shape"
+      ],
+      "invariant_ids": []
+    },
+    {
+      "id": "37",
+      "path": "map-shape/37-unresolved-replacement-id.json",
+      "assertion": "validate",
+      "expect_valid": false,
+      "expect_codes": [
+        "E_EDGE_MISSING_NODE_REF"
+      ],
+      "match_mode": "exact",
+      "coverage_tags": [
+        "map-shape"
+      ],
+      "invariant_ids": []
+    },
+    {
+      "id": "38",
+      "path": "map-shape/38-self-referential-replacement-id.json",
+      "assertion": "validate",
+      "expect_valid": false,
+      "expect_codes": [
+        "E_EDGE_SELF_EDGE_FORBIDDEN"
+      ],
+      "match_mode": "exact",
+      "coverage_tags": [
+        "map-shape"
+      ],
+      "invariant_ids": []
+    },
+    {
+      "id": "39",
+      "path": "map-shape/39-duplicate-identity-current-superseded.json",
+      "assertion": "validate",
+      "expect_valid": false,
+      "expect_codes": [
+        "E_NODE_DUPLICATE_ID"
+      ],
+      "match_mode": "exact",
+      "coverage_tags": [
+        "map-shape"
+      ],
+      "invariant_ids": []
+    },
+    {
+      "id": "40",
+      "path": "map-shape/40-retirement-without-replacement.json",
+      "assertion": "validate",
+      "expect_valid": true,
+      "expect_codes": [],
+      "match_mode": "exact",
+      "coverage_tags": [
+        "map-shape"
+      ],
+      "invariant_ids": []
+    },
+    {
+      "id": "41",
+      "path": "map-shape/41-resolvable-supersession.json",
+      "assertion": "validate",
+      "expect_valid": true,
+      "expect_codes": [],
+      "match_mode": "exact",
+      "coverage_tags": [
+        "map-shape"
+      ],
+      "invariant_ids": []
+    },
+    {
+      "id": "42",
+      "path": "map-shape/42-supported-by-basis-dedup.json",
+      "assertion": "validate",
+      "expect_valid": true,
+      "expect_codes": [],
+      "match_mode": "exact",
+      "coverage_tags": [
+        "map-shape"
+      ],
+      "invariant_ids": []
+    },
+    {
+      "id": "43-1",
+      "path": "endpoint-matrix/43-1-contains-project-to-decision.json",
+      "assertion": "validate",
+      "expect_valid": true,
+      "expect_codes": [],
+      "match_mode": "exact",
+      "coverage_tags": [
+        "endpoint-matrix",
+        "contains"
+      ],
+      "invariant_ids": []
+    },
+    {
+      "id": "43-2",
+      "path": "endpoint-matrix/43-2-contains-project-to-issue.json",
+      "assertion": "validate",
+      "expect_valid": false,
+      "expect_codes": [
+        "E_EDGE_ENDPOINT_ILLEGAL"
+      ],
+      "match_mode": "exact",
+      "coverage_tags": [
+        "endpoint-matrix",
+        "contains"
+      ],
+      "invariant_ids": []
+    },
+    {
+      "id": "44-1",
+      "path": "endpoint-matrix/44-1-supported-by-decision-to-session.json",
+      "assertion": "validate",
+      "expect_valid": true,
+      "expect_codes": [],
+      "match_mode": "exact",
+      "coverage_tags": [
+        "endpoint-matrix",
+        "supported_by"
+      ],
+      "invariant_ids": []
+    },
+    {
+      "id": "44-2",
+      "path": "endpoint-matrix/44-2-supported-by-session-to-decision.json",
+      "assertion": "validate",
+      "expect_valid": false,
+      "expect_codes": [
+        "E_EDGE_ENDPOINT_ILLEGAL"
+      ],
+      "match_mode": "exact",
+      "coverage_tags": [
+        "endpoint-matrix",
+        "supported_by"
+      ],
+      "invariant_ids": []
+    },
+    {
+      "id": "45-1",
+      "path": "endpoint-matrix/45-1-closes-pr-to-issue.json",
+      "assertion": "validate",
+      "expect_valid": true,
+      "expect_codes": [],
+      "match_mode": "exact",
+      "coverage_tags": [
+        "endpoint-matrix",
+        "closes"
+      ],
+      "invariant_ids": []
+    },
+    {
+      "id": "45-2",
+      "path": "endpoint-matrix/45-2-closes-issue-to-pr.json",
+      "assertion": "validate",
+      "expect_valid": false,
+      "expect_codes": [
+        "E_EDGE_ENDPOINT_ILLEGAL"
+      ],
+      "match_mode": "exact",
+      "coverage_tags": [
+        "endpoint-matrix",
+        "closes"
+      ],
+      "invariant_ids": []
+    },
+    {
+      "id": "46-1",
+      "path": "endpoint-matrix/46-1-implemented-by-decision-to-pr.json",
+      "assertion": "validate",
+      "expect_valid": true,
+      "expect_codes": [],
+      "match_mode": "exact",
+      "coverage_tags": [
+        "endpoint-matrix",
+        "implemented_by"
+      ],
+      "invariant_ids": []
+    },
+    {
+      "id": "46-2",
+      "path": "endpoint-matrix/46-2-implemented-by-learning-to-pr.json",
+      "assertion": "validate",
+      "expect_valid": false,
+      "expect_codes": [
+        "E_EDGE_ENDPOINT_ILLEGAL"
+      ],
+      "match_mode": "exact",
+      "coverage_tags": [
+        "endpoint-matrix",
+        "implemented_by"
+      ],
+      "invariant_ids": []
+    },
+    {
+      "id": "47-1",
+      "path": "endpoint-matrix/47-1-validated-by-learning-to-design-document.json",
+      "assertion": "validate",
+      "expect_valid": true,
+      "expect_codes": [],
+      "match_mode": "exact",
+      "coverage_tags": [
+        "endpoint-matrix",
+        "validated_by"
+      ],
+      "invariant_ids": []
+    },
+    {
+      "id": "47-2",
+      "path": "endpoint-matrix/47-2-validated-by-question-to-issue.json",
+      "assertion": "validate",
+      "expect_valid": false,
+      "expect_codes": [
+        "E_EDGE_ENDPOINT_ILLEGAL"
+      ],
+      "match_mode": "exact",
+      "coverage_tags": [
+        "endpoint-matrix",
+        "validated_by"
+      ],
+      "invariant_ids": []
+    },
+    {
+      "id": "48-1",
+      "path": "endpoint-matrix/48-1-resolves-decision-to-question.json",
+      "assertion": "validate",
+      "expect_valid": true,
+      "expect_codes": [],
+      "match_mode": "exact",
+      "coverage_tags": [
+        "endpoint-matrix",
+        "resolves"
+      ],
+      "invariant_ids": []
+    },
+    {
+      "id": "48-2",
+      "path": "endpoint-matrix/48-2-resolves-question-to-decision.json",
+      "assertion": "validate",
+      "expect_valid": false,
+      "expect_codes": [
+        "E_EDGE_ENDPOINT_ILLEGAL"
+      ],
+      "match_mode": "exact",
+      "coverage_tags": [
+        "endpoint-matrix",
+        "resolves"
+      ],
+      "invariant_ids": []
+    },
+    {
+      "id": "49",
+      "path": "endpoint-matrix/49-resolves-decision-to-tension.json",
+      "assertion": "validate",
+      "expect_valid": true,
+      "expect_codes": [],
+      "match_mode": "exact",
+      "coverage_tags": [
+        "endpoint-matrix",
+        "resolves"
+      ],
+      "invariant_ids": []
+    },
+    {
+      "id": "50",
+      "path": "endpoint-matrix/50-constrains-tension-to-decision.json",
+      "assertion": "validate",
+      "expect_valid": true,
+      "expect_codes": [],
+      "match_mode": "exact",
+      "coverage_tags": [
+        "endpoint-matrix",
+        "constrains"
+      ],
+      "invariant_ids": []
+    },
+    {
+      "id": "51-1",
+      "path": "endpoint-matrix/51-supersedes-same-kind.json",
+      "assertion": "validate",
+      "expect_valid": true,
+      "expect_codes": [],
+      "match_mode": "exact",
+      "coverage_tags": [
+        "endpoint-matrix",
+        "supersedes"
+      ],
+      "invariant_ids": []
+    },
+    {
+      "id": "51-2",
+      "path": "endpoint-matrix/51-supersedes-cross-kind.json",
+      "assertion": "validate",
+      "expect_valid": false,
+      "expect_codes": [
+        "E_EDGE_ENDPOINT_ILLEGAL"
+      ],
+      "match_mode": "exact",
+      "coverage_tags": [
+        "endpoint-matrix",
+        "supersedes"
+      ],
+      "invariant_ids": []
+    },
+    {
+      "id": "51-3",
+      "path": "endpoint-matrix/51-supersedes-self.json",
+      "assertion": "validate",
+      "expect_valid": false,
+      "expect_codes": [
+        "E_EDGE_SELF_EDGE_FORBIDDEN"
+      ],
+      "match_mode": "exact",
+      "coverage_tags": [
+        "endpoint-matrix",
+        "supersedes"
+      ],
+      "invariant_ids": []
+    },
+    {
+      "id": "52",
+      "assertion": "candidate_key_equals",
+      "with": [
+        "endpoint-matrix/52-contradicts-forward.json",
+        "endpoint-matrix/52-contradicts-reversed.json"
+      ],
+      "coverage_tags": [
+        "endpoint-matrix",
+        "contradicts"
+      ]
+    },
+    {
+      "id": "53",
+      "path": "endpoint-matrix/53-implements-rejected.json",
+      "assertion": "validate",
+      "expect_valid": false,
+      "expect_codes": [
+        "E_EDGE_RELATIONSHIP_REJECTED"
+      ],
+      "match_mode": "exact",
+      "coverage_tags": [
+        "endpoint-matrix",
+        "implements"
+      ],
+      "invariant_ids": []
+    },
+    {
+      "id": "54",
+      "path": "endpoint-matrix/54-reserved-kind-endpoint.json",
+      "assertion": "validate",
+      "expect_valid": false,
+      "expect_codes": [
+        "E_NODE_RESERVED_KIND",
+        "E_EDGE_ENDPOINT_ILLEGAL"
+      ],
+      "match_mode": "ordered_subset",
+      "coverage_tags": [
+        "endpoint-matrix",
+        "contains"
+      ],
+      "invariant_ids": []
+    },
+    {
+      "id": "55",
+      "path": "identity-config/55-repositoryless-project.json",
+      "assertion": "validate",
+      "expect_valid": true,
+      "expect_codes": [],
+      "match_mode": "exact",
+      "coverage_tags": [
+        "identity-config"
+      ],
+      "invariant_ids": []
+    },
+    {
+      "id": "56",
+      "path": "identity-config/56-one-repository-project.json",
+      "assertion": "validate",
+      "expect_valid": true,
+      "expect_codes": [],
+      "match_mode": "exact",
+      "coverage_tags": [
+        "identity-config"
+      ],
+      "invariant_ids": []
+    },
+    {
+      "id": "57",
+      "path": "identity-config/57-multi-repository-project.json",
+      "assertion": "validate",
+      "expect_valid": true,
+      "expect_codes": [],
+      "match_mode": "exact",
+      "coverage_tags": [
+        "identity-config"
+      ],
+      "invariant_ids": []
+    },
+    {
+      "id": "58-before",
+      "path": "identity-config/58-before-rename.json",
+      "assertion": "validate",
+      "expect_valid": true,
+      "expect_codes": [],
+      "match_mode": "exact",
+      "coverage_tags": [
+        "identity-config"
+      ],
+      "invariant_ids": []
+    },
+    {
+      "id": "58-after",
+      "path": "identity-config/58-after-rename.json",
+      "assertion": "validate",
+      "expect_valid": true,
+      "expect_codes": [],
+      "match_mode": "exact",
+      "coverage_tags": [
+        "identity-config"
+      ],
+      "invariant_ids": []
+    },
+    {
+      "id": "59-before",
+      "path": "identity-config/59-before-slug-rename.json",
+      "assertion": "validate",
+      "expect_valid": true,
+      "expect_codes": [],
+      "match_mode": "exact",
+      "coverage_tags": [
+        "identity-config"
+      ],
+      "invariant_ids": []
+    },
+    {
+      "id": "59-after",
+      "path": "identity-config/59-after-slug-rename.json",
+      "assertion": "validate",
+      "expect_valid": true,
+      "expect_codes": [],
+      "match_mode": "exact",
+      "coverage_tags": [
+        "identity-config"
+      ],
+      "invariant_ids": []
+    },
+    {
+      "id": "60",
+      "path": "identity-config/60-ambiguous-bare-github-reference.json",
+      "assertion": "validate",
+      "expect_valid": true,
+      "expect_codes": [],
+      "match_mode": "exact",
+      "coverage_tags": [
+        "identity-config",
+        "unresolved-evidence"
+      ],
+      "invariant_ids": []
+    },
+    {
+      "id": "61",
+      "path": "identity-config/61-duplicate-alias-rejected.json",
+      "assertion": "validate",
+      "expect_valid": false,
+      "expect_codes": [
+        "E_CONFIG_DUPLICATE_ALIAS"
+      ],
+      "match_mode": "exact",
+      "coverage_tags": [
+        "identity-config"
+      ],
+      "invariant_ids": []
+    },
+    {
+      "id": "62",
+      "path": "identity-config/62-duplicate-binding-id-rejected.json",
+      "assertion": "validate",
+      "expect_valid": false,
+      "expect_codes": [
+        "E_CONFIG_DUPLICATE_BINDING_ID"
+      ],
+      "match_mode": "exact",
+      "coverage_tags": [
+        "identity-config"
+      ],
+      "invariant_ids": []
+    },
+    {
+      "id": "63",
+      "path": "identity-config/63-multiple-default-rejected.json",
+      "assertion": "validate",
+      "expect_valid": false,
+      "expect_codes": [
+        "E_CONFIG_MULTIPLE_DEFAULT"
+      ],
+      "match_mode": "exact",
+      "coverage_tags": [
+        "identity-config"
+      ],
+      "invariant_ids": []
+    },
+    {
+      "id": "64",
+      "path": "identity-config/64-project-node-id-mismatch.json",
+      "assertion": "validate",
+      "expect_valid": false,
+      "expect_codes": [
+        "E_NODE_PROJECT_ID_MISMATCH"
+      ],
+      "match_mode": "exact",
+      "coverage_tags": [
+        "identity-config"
+      ],
+      "invariant_ids": []
+    },
+    {
+      "id": "65",
+      "path": "identity-config/65-repository-shaped-project-id.json",
+      "assertion": "validate",
+      "expect_valid": false,
+      "expect_codes": [
+        "E_CONFIG_PROJECT_ID_REPO_SHAPED"
+      ],
+      "match_mode": "exact",
+      "coverage_tags": [
+        "identity-config"
+      ],
+      "invariant_ids": []
+    },
+    {
+      "id": "66",
+      "path": "identity-config/66-malformed-project-id.json",
+      "assertion": "validate",
+      "expect_valid": false,
+      "expect_codes": [
+        "E_CONFIG_MALFORMED_PROJECT_ID"
+      ],
+      "match_mode": "exact",
+      "coverage_tags": [
+        "identity-config"
+      ],
+      "invariant_ids": []
+    },
+    {
+      "id": "67",
+      "path": "identity-config/67-derived-project-id-rejected.json",
+      "assertion": "validate",
+      "expect_valid": false,
+      "expect_codes": [
+        "E_CONFIG_MALFORMED_PROJECT_ID"
+      ],
+      "match_mode": "exact",
+      "coverage_tags": [
+        "identity-config"
+      ],
+      "invariant_ids": []
+    },
+    {
+      "id": "68",
+      "path": "identity-config/68-distinct-binding-qualified-documents.json",
+      "assertion": "validate",
+      "expect_valid": true,
+      "expect_codes": [],
+      "match_mode": "exact",
+      "coverage_tags": [
+        "identity-config"
+      ],
+      "invariant_ids": []
+    },
+    {
+      "id": "68-documents",
+      "path": "documents/68-distinct-binding-qualified-documents.json",
+      "assertion": "validate",
+      "expect_valid": true,
+      "expect_codes": [],
+      "match_mode": "exact",
+      "coverage_tags": [
+        "documents"
+      ],
+      "invariant_ids": []
+    },
+    {
+      "id": "69",
+      "path": "identity-config/69-project-local-document.json",
+      "assertion": "validate",
+      "expect_valid": true,
+      "expect_codes": [],
+      "match_mode": "exact",
+      "coverage_tags": [
+        "identity-config"
+      ],
+      "invariant_ids": []
+    },
+    {
+      "id": "69-documents",
+      "path": "documents/69-project-local-document.json",
+      "assertion": "validate",
+      "expect_valid": true,
+      "expect_codes": [],
+      "match_mode": "exact",
+      "coverage_tags": [
+        "documents"
+      ],
+      "invariant_ids": []
+    },
+    {
+      "id": "70",
+      "path": "identity-config/70-short-hex-malformed-id.json",
+      "assertion": "validate",
+      "expect_valid": false,
+      "expect_codes": [
+        "E_NODE_MALFORMED_ID"
+      ],
+      "match_mode": "exact",
+      "coverage_tags": [
+        "identity-config"
+      ],
+      "invariant_ids": []
+    },
+    {
+      "id": "71",
+      "path": "candidates/71-deterministic-edge-no-judgment.json",
+      "assertion": "validate",
+      "expect_valid": true,
+      "expect_codes": [],
+      "match_mode": "exact",
+      "coverage_tags": [
+        "candidates"
+      ],
+      "invariant_ids": []
+    },
+    {
+      "id": "72",
+      "path": "candidates/72-identity-anchor-candidate.json",
+      "assertion": "validate",
+      "expect_valid": true,
+      "expect_codes": [],
+      "match_mode": "exact",
+      "coverage_tags": [
+        "candidates"
+      ],
+      "invariant_ids": []
+    },
+    {
+      "id": "73",
+      "path": "candidates/73-anchor-synthesis-forbidden.json",
+      "assertion": "validate",
+      "expect_valid": false,
+      "expect_codes": [
+        "E_CANDIDATE_ANCHOR_SYNTHESIS_FORBIDDEN"
+      ],
+      "match_mode": "exact",
+      "coverage_tags": [
+        "candidates"
+      ],
+      "invariant_ids": []
+    },
+    {
+      "id": "74",
+      "path": "candidates/74-bare-proposal-not-a-candidate.json",
+      "assertion": "validate",
+      "expect_valid": true,
+      "expect_codes": [],
+      "match_mode": "exact",
+      "coverage_tags": [
+        "candidates"
+      ],
+      "invariant_ids": []
+    },
+    {
+      "id": "75",
+      "assertion": "candidate_key_equals",
+      "with": [
+        "candidates/75-human.json",
+        "candidates/75-skill.json",
+        "candidates/75-fixture.json"
+      ],
+      "coverage_tags": [
+        "candidates"
+      ]
+    },
+    {
+      "id": "76",
+      "path": "candidates/76-candidate-key-conflict.json",
+      "assertion": "validate",
+      "expect_valid": false,
+      "expect_codes": [
+        "E_CANDIDATE_KEY_CONFLICT"
+      ],
+      "match_mode": "exact",
+      "coverage_tags": [
+        "candidates"
+      ],
+      "invariant_ids": []
+    },
+    {
+      "id": "77",
+      "path": "candidates/77-invalid-endpoint-not-a-candidate.json",
+      "assertion": "validate",
+      "expect_valid": false,
+      "expect_codes": [
+        "E_CANDIDATE_INVALID_ENDPOINT"
+      ],
+      "match_mode": "exact",
+      "coverage_tags": [
+        "candidates"
+      ],
+      "invariant_ids": []
+    },
+    {
+      "id": "78",
+      "path": "candidates/78-accepted-judgment-creates-edge.json",
+      "assertion": "validate",
+      "expect_valid": true,
+      "expect_codes": [],
+      "match_mode": "exact",
+      "coverage_tags": [
+        "candidates"
+      ],
+      "invariant_ids": []
+    },
+    {
+      "id": "79-1",
+      "path": "candidates/79-edge-judgment-wrong-subject.json",
+      "assertion": "validate",
+      "expect_valid": false,
+      "expect_codes": [
+        "E_JUDGMENT_SUBJECT_TYPE_MISMATCH"
+      ],
+      "match_mode": "exact",
+      "coverage_tags": [
+        "candidates"
+      ],
+      "invariant_ids": []
+    },
+    {
+      "id": "79-2",
+      "path": "candidates/79-anchor-judgment-wrong-subject.json",
+      "assertion": "validate",
+      "expect_valid": false,
+      "expect_codes": [
+        "E_JUDGMENT_SUBJECT_TYPE_MISMATCH"
+      ],
+      "match_mode": "exact",
+      "coverage_tags": [
+        "candidates"
+      ],
+      "invariant_ids": []
+    },
+    {
+      "id": "80",
+      "assertion": "dependency_fingerprint_equals",
+      "with": [
+        "candidates/80-a.json",
+        "candidates/80-b.json"
+      ],
+      "coverage_tags": [
+        "candidates"
+      ]
+    },
+    {
+      "id": "81",
+      "assertion": "dependency_fingerprint_distinct",
+      "with": [
+        "candidates/81-a.json",
+        "candidates/81-b.json"
+      ],
+      "coverage_tags": [
+        "candidates"
+      ]
+    },
+    {
+      "id": "anchor-01",
+      "assertion": "canonicalization",
+      "input": "canonicalization/anchor-01.input.json",
+      "expected_txt": "canonicalization/anchor-01.expected.txt",
+      "coverage_tags": [
+        "canonicalization"
+      ]
+    },
+    {
+      "id": "edge-01",
+      "assertion": "canonicalization",
+      "input": "canonicalization/edge-01.input.json",
+      "expected_txt": "canonicalization/edge-01.expected.txt",
+      "expected_json": "canonicalization/edge-01.expected.json",
+      "coverage_tags": [
+        "canonicalization"
+      ]
+    }
+  ]
+}

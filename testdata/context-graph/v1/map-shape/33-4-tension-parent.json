@@ -1,0 +1,16 @@
+{
+  "nodes": [
+    {
+      "id": "context-node:bindle:d45838dbf14144149f6c02301849e094",
+      "class": "semantic",
+      "kind": "tension",
+      "label": "Tension parent 33-4",
+      "status": "current",
+      "confidence": "low",
+      "sides": [
+        {"label": "a", "evidence": ["#1"]},
+        {"label": "b", "evidence": ["#2"]}
+      ]
+    }
+  ]
+}

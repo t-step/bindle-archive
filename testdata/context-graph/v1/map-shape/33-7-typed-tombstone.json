@@ -1,0 +1,11 @@
+{
+  "nodes": [
+    {
+      "id": "context-node:bindle:c9b45dd1e31449f3910eebef11887b76",
+      "class": "semantic",
+      "kind": "decision",
+      "label": "Typed tombstone 33-7",
+      "status": "superseded"
+    }
+  ]
+}

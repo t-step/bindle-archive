@@ -1,0 +1,26 @@
+{
+  "config": {
+    "schema_version": 1,
+    "project_id": "project:66666666666666666666666666666666",
+    "project_slug": "bindle-one-repo",
+    "repositories": [
+      {
+        "alias": "primary",
+        "binding_id": "repository-binding:11111111111111111111111111111111",
+        "provider": "github",
+        "coordinates": "thomas-estep/bindle",
+        "local_checkout_path": "/home/dev/bindle",
+        "default_for_bare_references": true
+      }
+    ]
+  },
+  "nodes": [
+    {
+      "id": "project:66666666666666666666666666666666",
+      "class": "project",
+      "kind": null,
+      "label": "bindle-one-repo",
+      "status": "current"
+    }
+  ]
+}

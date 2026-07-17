@@ -1,0 +1,33 @@
+{
+  "nodes": [
+    {
+      "id": "context-node:bindle:cabe7627054e177157795c24ae8a90a2",
+      "class": "semantic",
+      "kind": "decision",
+      "label": "Decision 51 self",
+      "status": "current"
+    }
+  ],
+  "edges": [
+    {
+      "key": "context-node:bindle:cabe7627054e177157795c24ae8a90a2|supersedes|context-node:bindle:cabe7627054e177157795c24ae8a90a2",
+      "source": "context-node:bindle:cabe7627054e177157795c24ae8a90a2",
+      "relationship": "supersedes",
+      "target": "context-node:bindle:cabe7627054e177157795c24ae8a90a2",
+      "status": "confirmed",
+      "origin": "human_judgment",
+      "review_trigger": true,
+      "basis": []
+    }
+  ],
+  "judgments": [
+    {
+      "schema_version": 1,
+      "decision": "accepted",
+      "subject_key": "context-node:bindle:cabe7627054e177157795c24ae8a90a2|supersedes|context-node:bindle:cabe7627054e177157795c24ae8a90a2",
+      "subject_type": "edge",
+      "candidate_key": "candidate:sha256:0000000000000000000000000000000000000000000000000000000000000000",
+      "decided_at": "2026-07-16T00:00:00Z"
+    }
+  ]
+}

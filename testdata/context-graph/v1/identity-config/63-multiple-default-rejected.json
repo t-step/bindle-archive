@@ -1,0 +1,23 @@
+{
+  "config": {
+    "schema_version": 1,
+    "project_id": "project:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "project_slug": "bindle",
+    "repositories": [
+      {
+        "alias": "primary",
+        "binding_id": "repository-binding:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "provider": "github",
+        "coordinates": "x/y",
+        "default_for_bare_references": true
+      },
+      {
+        "alias": "secondary",
+        "binding_id": "repository-binding:cccccccccccccccccccccccccccccccc",
+        "provider": "github",
+        "coordinates": "x/z",
+        "default_for_bare_references": true
+      }
+    ]
+  }
+}

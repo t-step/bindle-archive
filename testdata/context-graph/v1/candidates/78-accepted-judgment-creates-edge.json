@@ -1,0 +1,57 @@
+{
+  "nodes": [
+    {
+      "id": "context-node:bindle:78787878787878787878787878787878",
+      "class": "semantic",
+      "kind": "decision",
+      "label": "Source 78",
+      "status": "current"
+    },
+    {
+      "id": "context-node:bindle:87878787878787878787878787878787",
+      "class": "semantic",
+      "kind": "learning",
+      "label": "Target 78",
+      "status": "current"
+    }
+  ],
+  "edges": [
+    {
+      "key": "context-node:bindle:78787878787878787878787878787878|depends_on|context-node:bindle:87878787878787878787878787878787",
+      "source": "context-node:bindle:78787878787878787878787878787878",
+      "relationship": "depends_on",
+      "target": "context-node:bindle:87878787878787878787878787878787",
+      "status": "confirmed",
+      "origin": "human_judgment",
+      "review_trigger": true,
+      "basis": []
+    }
+  ],
+  "candidates": [
+    {
+      "subject_type": "edge",
+      "candidate_key": "candidate:sha256:c600a8128efa4669a4ee936523c7c8cc94b2b12835957a90c84384706b1e6fdb",
+      "candidate_origin": "validated_proposal",
+      "dependency_fingerprint": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+      "validation_status": "valid",
+      "source": "context-node:bindle:78787878787878787878787878787878",
+      "relationship": "depends_on",
+      "target": "context-node:bindle:87878787878787878787878787878787",
+      "source_class": "semantic",
+      "source_kind": "decision",
+      "target_class": "semantic",
+      "target_kind": "learning",
+      "basis": []
+    }
+  ],
+  "judgments": [
+    {
+      "schema_version": 1,
+      "decision": "accepted",
+      "subject_key": "context-node:bindle:78787878787878787878787878787878|depends_on|context-node:bindle:87878787878787878787878787878787",
+      "subject_type": "edge",
+      "candidate_key": "candidate:sha256:c600a8128efa4669a4ee936523c7c8cc94b2b12835957a90c84384706b1e6fdb",
+      "decided_at": "2026-07-16T00:00:00Z"
+    }
+  ]
+}

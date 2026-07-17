@@ -1,0 +1,33 @@
+{
+  "nodes": [
+    {
+      "id": "project:5f56c9b95c41c298f70d6dd4e5db8c2a",
+      "class": "project",
+      "kind": null,
+      "label": "bindle",
+      "status": "current"
+    },
+    {
+      "id": "github-issue:thomas-estep/bindle#43",
+      "class": "evidence",
+      "kind": "github_issue",
+      "label": "issue 43",
+      "status": "current"
+    }
+  ],
+  "edges": [
+    {
+      "key": "project:5f56c9b95c41c298f70d6dd4e5db8c2a|contains|github-issue:thomas-estep/bindle#43",
+      "source": "project:5f56c9b95c41c298f70d6dd4e5db8c2a",
+      "relationship": "contains",
+      "target": "github-issue:thomas-estep/bindle#43",
+      "status": "confirmed",
+      "origin": "deterministic",
+      "review_trigger": false,
+      "basis": [],
+      "deterministic_source": {
+        "kind": "project_membership"
+      }
+    }
+  ]
+}

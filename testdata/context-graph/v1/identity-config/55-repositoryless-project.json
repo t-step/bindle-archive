@@ -1,0 +1,17 @@
+{
+  "config": {
+    "schema_version": 1,
+    "project_id": "project:55555555555555555555555555555555",
+    "project_slug": "bindle-solo",
+    "repositories": []
+  },
+  "nodes": [
+    {
+      "id": "project:55555555555555555555555555555555",
+      "class": "project",
+      "kind": null,
+      "label": "bindle-solo",
+      "status": "current"
+    }
+  ]
+}

@@ -1,0 +1,31 @@
+{
+  "config": {
+    "schema_version": 1,
+    "project_id": "project:77777777777777777777777777777777",
+    "project_slug": "bindle-multi-repo",
+    "repositories": [
+      {
+        "alias": "primary",
+        "binding_id": "repository-binding:11111111111111111111111111111111",
+        "provider": "github",
+        "coordinates": "thomas-estep/bindle",
+        "default_for_bare_references": true
+      },
+      {
+        "alias": "docs-site",
+        "binding_id": "repository-binding:22222222222222222222222222222222",
+        "provider": "github",
+        "coordinates": "thomas-estep/bindle-docs"
+      }
+    ]
+  },
+  "nodes": [
+    {
+      "id": "project:77777777777777777777777777777777",
+      "class": "project",
+      "kind": null,
+      "label": "bindle-multi-repo",
+      "status": "current"
+    }
+  ]
+}

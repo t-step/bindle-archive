@@ -1,0 +1,11 @@
+{
+  "nodes": [
+    {
+      "id": "context-node:bindle:579ba1c9288b42c190e1f4fbd37d78ba",
+      "class": "semantic",
+      "kind": "decision",
+      "label": "Retired without replacement 40",
+      "status": "superseded"
+    }
+  ]
+}

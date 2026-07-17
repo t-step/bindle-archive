@@ -1,0 +1,18 @@
+{
+  "nodes": [
+    {
+      "id": "github-issue:thomas-estep/bindle#7",
+      "class": "evidence",
+      "kind": "github_issue",
+      "label": "issue 7",
+      "status": "current"
+    },
+    {
+      "id": "github-pr:thomas-estep/bindle#7",
+      "class": "evidence",
+      "kind": "github_pr",
+      "label": "pr 7",
+      "status": "current"
+    }
+  ]
+}

@@ -1,0 +1,21 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://bindle/schemas/context-graph/v1/proposal.schema.json",
+  "title": "context-graph v1 untrusted semantic proposal",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["source", "relationship", "target", "basis", "explanation", "producer"],
+  "properties": {
+    "source": { "type": "string" },
+    "relationship": { "type": "string" },
+    "target": { "type": "string" },
+    "basis": { "type": "array" },
+    "explanation": { "type": "string" },
+    "uncertainty": { "type": "string" },
+    "producer": { "enum": ["human", "skill", "fixture"] },
+    "advisory_candidate_key": {
+      "type": "string",
+      "pattern": "^candidate:sha256:[0-9a-f]{64}$"
+    }
+  }
+}

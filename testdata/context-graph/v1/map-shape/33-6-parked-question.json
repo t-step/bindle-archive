@@ -1,0 +1,11 @@
+{
+  "nodes": [
+    {
+      "id": "context-node:bindle:56eef7ebf0344032b88c018ad0c2c35e",
+      "class": "semantic",
+      "kind": "question",
+      "label": "Parked question 33-6",
+      "status": "parked"
+    }
+  ]
+}

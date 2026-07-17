@@ -1,0 +1,33 @@
+{
+  "nodes": [
+    {
+      "id": "context-node:bindle:3a03e4821dd3682bccda428491b12791",
+      "class": "semantic",
+      "kind": "decision",
+      "label": "Decision 44",
+      "status": "current"
+    },
+    {
+      "id": "session:project:5f56c9b95c41c298f70d6dd4e5db8c2a:sessions/44-session.md",
+      "class": "evidence",
+      "kind": "session",
+      "label": "session 44-session",
+      "status": "current"
+    }
+  ],
+  "edges": [
+    {
+      "key": "context-node:bindle:3a03e4821dd3682bccda428491b12791|supported_by|session:project:5f56c9b95c41c298f70d6dd4e5db8c2a:sessions/44-session.md",
+      "source": "context-node:bindle:3a03e4821dd3682bccda428491b12791",
+      "relationship": "supported_by",
+      "target": "session:project:5f56c9b95c41c298f70d6dd4e5db8c2a:sessions/44-session.md",
+      "status": "confirmed",
+      "origin": "deterministic",
+      "review_trigger": false,
+      "basis": [],
+      "deterministic_source": {
+        "kind": "map_evidence_pointer"
+      }
+    }
+  ]
+}

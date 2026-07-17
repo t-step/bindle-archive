@@ -1,0 +1,17 @@
+{
+  "config": {
+    "schema_version": 1,
+    "project_id": "project:99999999999999999999999999999999",
+    "project_slug": "bindle-project-local",
+    "repositories": []
+  },
+  "nodes": [
+    {
+      "id": "document:project:99999999999999999999999999999999:project-local:notes/local-notes.md",
+      "class": "evidence",
+      "kind": "design_document",
+      "label": "Local working notes",
+      "status": "current"
+    }
+  ]
+}

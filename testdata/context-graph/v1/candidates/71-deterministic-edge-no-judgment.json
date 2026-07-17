@@ -1,0 +1,33 @@
+{
+  "nodes": [
+    {
+      "id": "github-pr:thomas-estep/bindle#71",
+      "class": "evidence",
+      "kind": "github_pr",
+      "label": "pr 71",
+      "status": "current"
+    },
+    {
+      "id": "github-issue:thomas-estep/bindle#71",
+      "class": "evidence",
+      "kind": "github_issue",
+      "label": "issue 71",
+      "status": "current"
+    }
+  ],
+  "edges": [
+    {
+      "key": "github-pr:thomas-estep/bindle#71|closes|github-issue:thomas-estep/bindle#71",
+      "source": "github-pr:thomas-estep/bindle#71",
+      "relationship": "closes",
+      "target": "github-issue:thomas-estep/bindle#71",
+      "status": "confirmed",
+      "origin": "deterministic",
+      "review_trigger": false,
+      "basis": [],
+      "deterministic_source": {
+        "kind": "github_closure"
+      }
+    }
+  ]
+}

@@ -1,0 +1,41 @@
+{
+  "nodes": [
+    {
+      "id": "context-node:bindle:05e49b4814e51ded4421f37cfa2f9318",
+      "class": "semantic",
+      "kind": "decision",
+      "label": "Decision 52a",
+      "status": "current"
+    },
+    {
+      "id": "context-node:bindle:df693985228fd993918da8ddbecf8d92",
+      "class": "semantic",
+      "kind": "learning",
+      "label": "Learning 52b",
+      "status": "current"
+    }
+  ],
+  "candidates": [
+    {
+      "subject_type": "edge",
+      "candidate_key": "candidate:sha256:bba90ff05ba3958610bea4cf4a02bbd2a1d7ef982e55e4eee3d40c9f505eb67b",
+      "candidate_origin": "validated_proposal",
+      "dependency_fingerprint": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+      "validation_status": "valid",
+      "source": "context-node:bindle:05e49b4814e51ded4421f37cfa2f9318",
+      "relationship": "contradicts",
+      "target": "context-node:bindle:df693985228fd993918da8ddbecf8d92",
+      "source_class": "semantic",
+      "source_kind": "decision",
+      "target_class": "semantic",
+      "target_kind": "learning",
+      "basis": [
+        {
+          "kind": "evidence_pointer",
+          "location": "entry_evidence",
+          "pointer": "#52"
+        }
+      ]
+    }
+  ]
+}

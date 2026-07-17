@@ -1,0 +1,12 @@
+{
+  "nodes": [
+    {
+      "id": "context-node:bindle:80f4ed1efce64d6e90cfe576075f3dc4",
+      "class": "semantic",
+      "kind": "assumption",
+      "label": "Assumption bullet 33-3",
+      "status": "current",
+      "confidence": "high"
+    }
+  ]
+}

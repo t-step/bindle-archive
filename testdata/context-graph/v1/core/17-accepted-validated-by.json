@@ -1,0 +1,40 @@
+{
+  "nodes": [
+    {
+      "id": "context-node:bindle:612db3133cef89ec53a18fbe973596bb",
+      "class": "semantic",
+      "kind": "decision",
+      "label": "Decision 17",
+      "status": "current"
+    },
+    {
+      "id": "github-pr:thomas-estep/bindle#17",
+      "class": "evidence",
+      "kind": "github_pr",
+      "label": "pr 17",
+      "status": "current"
+    }
+  ],
+  "edges": [
+    {
+      "key": "context-node:bindle:612db3133cef89ec53a18fbe973596bb|validated_by|github-pr:thomas-estep/bindle#17",
+      "source": "context-node:bindle:612db3133cef89ec53a18fbe973596bb",
+      "relationship": "validated_by",
+      "target": "github-pr:thomas-estep/bindle#17",
+      "status": "confirmed",
+      "origin": "human_judgment",
+      "review_trigger": false,
+      "basis": []
+    }
+  ],
+  "judgments": [
+    {
+      "schema_version": 1,
+      "decision": "accepted",
+      "subject_key": "context-node:bindle:612db3133cef89ec53a18fbe973596bb|validated_by|github-pr:thomas-estep/bindle#17",
+      "subject_type": "edge",
+      "candidate_key": "candidate:sha256:0000000000000000000000000000000000000000000000000000000000000000",
+      "decided_at": "2026-07-16T00:00:00Z"
+    }
+  ]
+}

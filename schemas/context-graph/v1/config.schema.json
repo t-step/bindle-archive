@@ -1,0 +1,33 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://bindle/schemas/context-graph/v1/config.schema.json",
+  "title": "context-graph v1 project configuration",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "project_id", "project_slug", "repositories"],
+  "properties": {
+    "schema_version": { "const": 1 },
+    "project_id": { "type": "string", "pattern": "^project:[0-9a-f]{32}$" },
+    "project_slug": { "type": "string", "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$" },
+    "display_name": { "type": "string" },
+    "repositories": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["alias", "binding_id", "provider"],
+        "properties": {
+          "alias": { "type": "string" },
+          "binding_id": {
+            "type": "string",
+            "pattern": "^repository-binding:[0-9a-f]{32}$"
+          },
+          "provider": { "type": "string" },
+          "coordinates": { "type": "string" },
+          "local_checkout_path": { "type": "string" },
+          "default_for_bare_references": { "type": "boolean" }
+        }
+      }
+    }
+  }
+}

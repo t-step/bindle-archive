@@ -1,0 +1,18 @@
+{
+  "nodes": [
+    {
+      "id": "context-node:bindle:49ac0592fcd113951ee273b6adef61a1",
+      "class": "semantic",
+      "kind": "decision",
+      "label": "First",
+      "status": "current"
+    },
+    {
+      "id": "context-node:bindle:49ac0592fcd113951ee273b6adef61a1",
+      "class": "semantic",
+      "kind": "decision",
+      "label": "Second",
+      "status": "current"
+    }
+  ]
+}

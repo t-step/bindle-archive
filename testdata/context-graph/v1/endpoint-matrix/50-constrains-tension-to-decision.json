@@ -1,0 +1,55 @@
+{
+  "nodes": [
+    {
+      "id": "context-node:bindle:85be5996bf3bde421489ccc4df182748",
+      "class": "semantic",
+      "kind": "tension",
+      "label": "Tension 50",
+      "status": "current",
+      "confidence": "low",
+      "sides": [
+        {
+          "label": "a",
+          "evidence": [
+            "#1"
+          ]
+        },
+        {
+          "label": "b",
+          "evidence": [
+            "#2"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "context-node:bindle:29b32a462795a83a9f9bc36c28341178",
+      "class": "semantic",
+      "kind": "decision",
+      "label": "Decision 50",
+      "status": "current"
+    }
+  ],
+  "edges": [
+    {
+      "key": "context-node:bindle:85be5996bf3bde421489ccc4df182748|constrains|context-node:bindle:29b32a462795a83a9f9bc36c28341178",
+      "source": "context-node:bindle:85be5996bf3bde421489ccc4df182748",
+      "relationship": "constrains",
+      "target": "context-node:bindle:29b32a462795a83a9f9bc36c28341178",
+      "status": "confirmed",
+      "origin": "human_judgment",
+      "review_trigger": true,
+      "basis": []
+    }
+  ],
+  "judgments": [
+    {
+      "schema_version": 1,
+      "decision": "accepted",
+      "subject_key": "context-node:bindle:85be5996bf3bde421489ccc4df182748|constrains|context-node:bindle:29b32a462795a83a9f9bc36c28341178",
+      "subject_type": "edge",
+      "candidate_key": "candidate:sha256:0000000000000000000000000000000000000000000000000000000000000000",
+      "decided_at": "2026-07-16T00:00:00Z"
+    }
+  ]
+}

@@ -1,0 +1,48 @@
+{
+  "config": {
+    "schema_version": 1,
+    "project_id": "project:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "project_slug": "bindle-ambiguous",
+    "repositories": [
+      {
+        "alias": "primary",
+        "binding_id": "repository-binding:11111111111111111111111111111111",
+        "provider": "github",
+        "coordinates": "thomas-estep/bindle"
+      },
+      {
+        "alias": "secondary",
+        "binding_id": "repository-binding:22222222222222222222222222222222",
+        "provider": "github",
+        "coordinates": "thomas-estep/bindle-secondary"
+      }
+    ]
+  },
+  "nodes": [
+    {
+      "id": "project:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "class": "project",
+      "kind": null,
+      "label": "bindle-ambiguous",
+      "status": "current"
+    },
+    {
+      "id": "context-node:bindle:66666666666666666666666666666666",
+      "class": "semantic",
+      "kind": "decision",
+      "label": "Decision 60",
+      "status": "current"
+    }
+  ],
+  "proposals": [
+    {
+      "source": "context-node:bindle:66666666666666666666666666666666",
+      "relationship": "closes",
+      "target": "#42",
+      "basis": [],
+      "explanation": "commit message references #42, but neither configured repository is marked default_for_bare_references, so the bare reference cannot be deterministically resolved to a binding-qualified github-issue/github-pr id",
+      "uncertainty": "unresolved",
+      "producer": "skill"
+    }
+  ]
+}

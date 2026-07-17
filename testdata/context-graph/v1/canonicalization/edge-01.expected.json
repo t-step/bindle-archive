@@ -1,0 +1,4 @@
+[
+  {"kind": "evidence_pointer", "location": "entry_evidence", "pointer": "#42"},
+  {"kind": "evidence_pointer", "location": "tension_side", "pointer": "#7"}
+]

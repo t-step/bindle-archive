@@ -1,0 +1,15 @@
+{
+  "nodes": [
+    {
+      "id": "context-node:bindle:d941fddd3ae544cb9c9fcca8a465a33d",
+      "class": "semantic",
+      "kind": "tension",
+      "label": "Tension side identity 35",
+      "status": "current",
+      "sides": [
+        {"label": "a", "evidence": ["#1"], "id": "context-node:bindle:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"},
+        {"label": "b", "evidence": ["#2"]}
+      ]
+    }
+  ]
+}

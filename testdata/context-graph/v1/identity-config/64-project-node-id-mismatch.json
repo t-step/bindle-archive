@@ -1,0 +1,17 @@
+{
+  "config": {
+    "schema_version": 1,
+    "project_id": "project:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "project_slug": "bindle",
+    "repositories": []
+  },
+  "nodes": [
+    {
+      "id": "project:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "class": "project",
+      "kind": null,
+      "label": "bindle",
+      "status": "current"
+    }
+  ]
+}

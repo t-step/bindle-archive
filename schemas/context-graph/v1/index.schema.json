@@ -1,0 +1,25 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://bindle/schemas/context-graph/v1/index.schema.json",
+  "title": "context-graph v1 derived materialized index (rebuildable, presentation only)",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "nodes", "edges", "coverage"],
+  "properties": {
+    "schema_version": { "const": 1 },
+    "nodes": { "type": "array" },
+    "edges": { "type": "array" },
+    "coverage": {
+      "type": "object",
+      "properties": {
+        "project_map": { "enum": ["complete", "partial", "uncertain", "unavailable", "unsupported"] },
+        "sessions": { "enum": ["complete", "partial", "uncertain", "unavailable", "unsupported"] },
+        "handoffs": { "enum": ["complete", "partial", "uncertain", "unavailable", "unsupported"] },
+        "documents": { "enum": ["complete", "partial", "uncertain", "unavailable", "unsupported"] },
+        "github_issues": { "enum": ["complete", "partial", "uncertain", "unavailable", "unsupported"] },
+        "github_prs": { "enum": ["complete", "partial", "uncertain", "unavailable", "unsupported"] },
+        "commits": { "enum": ["complete", "partial", "uncertain", "unavailable", "unsupported"] }
+      }
+    }
+  }
+}

@@ -1,0 +1,26 @@
+{
+  "nodes": [
+    {
+      "id": "context-node:bindle:9f72820dd2d846b73495e151b507d49a",
+      "class": "semantic",
+      "kind": "decision",
+      "label": "Source 22",
+      "status": "current"
+    }
+  ],
+  "edges": [
+    {
+      "key": "context-node:bindle:9f72820dd2d846b73495e151b507d49a|supported_by|github-issue:thomas-estep/bindle#2200",
+      "source": "context-node:bindle:9f72820dd2d846b73495e151b507d49a",
+      "relationship": "supported_by",
+      "target": "github-issue:thomas-estep/bindle#2200",
+      "status": "confirmed",
+      "origin": "deterministic",
+      "review_trigger": false,
+      "basis": [],
+      "deterministic_source": {
+        "kind": "map_evidence_pointer"
+      }
+    }
+  ]
+}

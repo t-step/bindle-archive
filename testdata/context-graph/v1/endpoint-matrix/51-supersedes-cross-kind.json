@@ -1,0 +1,40 @@
+{
+  "nodes": [
+    {
+      "id": "context-node:bindle:b6ac9f0f5478c07336e90a7fa61ade64",
+      "class": "semantic",
+      "kind": "decision",
+      "label": "Decision 51a",
+      "status": "current"
+    },
+    {
+      "id": "context-node:bindle:b333d5f641e63869811048dd9fa14563",
+      "class": "semantic",
+      "kind": "learning",
+      "label": "Learning 51",
+      "status": "current"
+    }
+  ],
+  "edges": [
+    {
+      "key": "context-node:bindle:b6ac9f0f5478c07336e90a7fa61ade64|supersedes|context-node:bindle:b333d5f641e63869811048dd9fa14563",
+      "source": "context-node:bindle:b6ac9f0f5478c07336e90a7fa61ade64",
+      "relationship": "supersedes",
+      "target": "context-node:bindle:b333d5f641e63869811048dd9fa14563",
+      "status": "confirmed",
+      "origin": "human_judgment",
+      "review_trigger": true,
+      "basis": []
+    }
+  ],
+  "judgments": [
+    {
+      "schema_version": 1,
+      "decision": "accepted",
+      "subject_key": "context-node:bindle:b6ac9f0f5478c07336e90a7fa61ade64|supersedes|context-node:bindle:b333d5f641e63869811048dd9fa14563",
+      "subject_type": "edge",
+      "candidate_key": "candidate:sha256:0000000000000000000000000000000000000000000000000000000000000000",
+      "decided_at": "2026-07-16T00:00:00Z"
+    }
+  ]
+}
