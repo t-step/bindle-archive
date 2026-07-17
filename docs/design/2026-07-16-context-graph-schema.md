@@ -449,13 +449,15 @@ timestamps, and whole-graph diagnostics never participate.
 ## 10. Candidate-key canonicalization algorithms
 
 `canonical.py` owns **two** versioned, byte-exact candidate-key primitives plus
-one entry-fingerprint primitive — the complete shared contract for both subject
+**two** fingerprint primitives — the complete shared contract for both subject
 types. `edge` candidate keys use `bindle-context-candidate-v1` (§10.1);
-`identity_anchor` candidate keys use `bindle-context-anchor-candidate-v1` (§10.2).
-Both are fully frozen here so #183 emits and #184 recomputes byte-identical keys
-by calling the same module. No issue maintains an independent implementation, and
-nothing about either key is "defined later" — implementation-defined
-canonicalization is a rejected alternative (§20).
+`identity_anchor` candidate keys use `bindle-context-anchor-candidate-v1` (§10.2),
+built from its own `entry_fingerprint` and `anchor_dependency_fingerprint`
+primitives (also §10.2). All four are fully frozen here so #183 emits and #184
+recomputes byte-identical keys by calling the same module. No issue maintains an
+independent implementation, and nothing about any of the four is "defined
+later" — implementation-defined canonicalization is a rejected alternative
+(§20).
 
 Public entry points:
 
