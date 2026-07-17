@@ -14,7 +14,7 @@ validation time by context_graph.validation._check_candidates for edge-subject
 candidates, and pinned byte-exactly by dedicated canonicalization/ fixtures in
 the corpus. Reports pass/fail per fixture plus a summary. Contains no
 independent copy of ID parsing, endpoint rules, candidate-key logic, or
-canonicalization — every check calls the package.
+canonicalization — `validate`-kind fixtures call `context_graph.validation.validate_bundle`; relation-kind fixtures compare package-precomputed values already embedded in the fixture bundles, as described above.
 
 Manifest contract (testdata/context-graph/v1/manifest.json):
 
