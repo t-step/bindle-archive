@@ -1,6 +1,7 @@
 import os, sys, unittest
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", ".."))
 from context_graph import projection
+from context_graph import projection as P
 
 
 def _graph():
@@ -68,6 +69,51 @@ class RenderManagedRegionTest(unittest.TestCase):
         section = section.split("\n## ", 1)[0]
         self.assertIn("Isolated decision", section)
         self.assertNotEqual(section.strip(), "(none)")
+
+
+SKELE_BODY = "## Decision and learning graph\n(none)\n"
+
+
+class PlanContextMdTest(unittest.TestCase):
+    def test_absent_creates_skeleton_with_markers(self):
+        out = P.plan_context_md(None, SKELE_BODY)
+        self.assertEqual(out["action"], "create")
+        self.assertIn(P.BEGIN, out["text"])
+        self.assertIn(P.END, out["text"])
+        self.assertIn(SKELE_BODY, out["text"])
+
+    def test_update_replaces_only_managed_region(self):
+        existing = ("# Demo — context\n" + P.BEGIN + "\nOLD\n" + P.END +
+                    "\n## Maintainer notes\nkeep me\n")
+        out = P.plan_context_md(existing, SKELE_BODY)
+        self.assertEqual(out["action"], "update")
+        self.assertIn("keep me", out["text"])
+        self.assertIn(SKELE_BODY, out["text"])
+        self.assertNotIn("OLD", out["text"])
+
+    def test_identical_region_is_noop(self):
+        existing = P.BEGIN + "\n" + SKELE_BODY + P.END + "\n"
+        out = P.plan_context_md(existing, SKELE_BODY)
+        self.assertEqual(out["action"], "noop")
+
+    def test_markerless_is_conflict(self):
+        out = P.plan_context_md("# hand written, no markers\n", SKELE_BODY)
+        self.assertEqual(out, {"action": "conflict", "code": "context_md_unmanaged"})
+
+    def test_duplicate_markers_is_conflict(self):
+        existing = P.BEGIN + "\nA\n" + P.END + "\n" + P.BEGIN + "\nB\n" + P.END + "\n"
+        out = P.plan_context_md(existing, SKELE_BODY)
+        self.assertEqual(out, {"action": "conflict", "code": "context_md_malformed_markers"})
+
+    def test_reversed_markers_is_conflict(self):
+        existing = P.END + "\nx\n" + P.BEGIN + "\n"
+        out = P.plan_context_md(existing, SKELE_BODY)
+        self.assertEqual(out, {"action": "conflict", "code": "context_md_malformed_markers"})
+
+    def test_partial_marker_is_conflict(self):
+        existing = P.BEGIN + "\nonly begin, no end\n"
+        out = P.plan_context_md(existing, SKELE_BODY)
+        self.assertEqual(out, {"action": "conflict", "code": "context_md_malformed_markers"})
 
 
 if __name__ == "__main__":
