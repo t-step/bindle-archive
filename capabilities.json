@@ -1065,6 +1065,14 @@
     {
       "path": "bin/context_graph/tests/test_index_writer.py",
       "reason": "unit tests for context_graph.index_writer; test infrastructure, not a capability an agent invokes."
+    },
+    {
+      "path": "bin/context_graph/map_writer.py",
+      "reason": "library module inserting authorized identity-anchor markers into map.md with a minimal diff (#185 apply); consumed by bin/context-graph.py's `apply` subcommand (the capability row), not a standalone capability itself."
+    },
+    {
+      "path": "bin/context_graph/tests/test_map_writer.py",
+      "reason": "unit tests for context_graph.map_writer; test infrastructure, not a capability an agent invokes."
     }
   ],
   "external_upstreams": [
