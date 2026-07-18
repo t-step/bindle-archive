@@ -13,6 +13,14 @@ docs/design/2026-07-17-context-graph-foundation.md section 4. The remaining
 verbs shown there (`preview`, `candidates`, `propose`, `confirm`, `apply`,
 bare `validate`/`status`) belong to #183/#184/#185/#186 and are not defined
 here.
+
+Exit codes: 0 success (including a `config validate` run that found zero
+findings); 1 a domain error's findings list was rendered instead of a
+traceback -- config.ConfigError (and subclasses, e.g. ConfigInvalidError,
+ConfigMissingError) from any config.py call, lock.LockContention on
+`init`, or a non-empty findings list from `config validate`; 2 argparse
+usage error (e.g. a missing required argument) -- unchanged stdlib
+behavior, not implemented by this CLI.
 """
 import argparse
 import json
@@ -50,7 +58,7 @@ def _emit_text(obj):
 
 
 def _error_findings(code, message):
-    return [{"code": code, "message": message}]
+    return [{"code": code, "message": message, "index": None, "field": None}]
 
 
 def _add_common_args(p):
@@ -74,7 +82,11 @@ def cmd_init(args):
 
 def cmd_config_status(args):
     path = config.config_path(args.notes_home, args.project)
-    cfg = config.load_config(path)
+    try:
+        cfg = config.load_config(path)
+    except config.ConfigError as e:
+        _emit({"findings": e.findings}, args.format)
+        return 1
     cdir = config.context_dir(args.notes_home, args.project)
     owner = lock.read_owner(lock.lock_path(cdir))
     owner_live = None
@@ -86,7 +98,11 @@ def cmd_config_status(args):
 
 def cmd_config_validate(args):
     path = config.config_path(args.notes_home, args.project)
-    cfg = config.load_config(path)
+    try:
+        cfg = config.load_config(path)
+    except config.ConfigError as e:
+        _emit({"findings": e.findings}, args.format)
+        return 1
     if cfg is None:
         findings = _error_findings("E_CONFIG_MISSING", "no configuration found at %r" % (path,))
     else:
