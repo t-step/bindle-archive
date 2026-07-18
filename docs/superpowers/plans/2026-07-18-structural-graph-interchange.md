@@ -878,7 +878,14 @@ def finding(code, message, index, field):
     return {"code": code, "message": message, "index": index, "field": field}
 
 
-def _version_findings(doc):
+def version_findings(doc):
+    """Return version-gate findings only. Public on purpose.
+
+    structural_graph.document needs this standalone: the version gate must
+    short-circuit before full validation runs, because a document from an
+    unknown schema version cannot be meaningfully checked against v1 rules.
+    validate_document calls it too, so the rule lives in exactly one place.
+    """
     out = []
     if "schema_version" not in doc:
         out.append(
@@ -1023,7 +1030,7 @@ def validate_document(doc):
             )
         ]
     out = []
-    out.extend(_version_findings(doc))
+    out.extend(version_findings(doc))
     out.extend(_shape_findings(doc))
     out.extend(_vocabulary_findings(doc))
     out.extend(_referential_findings(doc))
@@ -1475,6 +1482,34 @@ class TestRedactionIntegration(unittest.TestCase):
         )
         self.assertEqual(len(result["facts"]["files"]), 1)
 
+    def test_secret_in_a_symbol_name_anchor_is_malformed(self):
+        doc = minimal_document()
+        doc["symbols"][0]["name"] = "ghp_" + "A" * 36
+        result = document.load_object(doc, config())
+        self.assertEqual(result["status"], "malformed")
+        self.assertIn(
+            "E_SG_UNNORMALIZABLE_ANCHOR", [f["code"] for f in result["findings"]]
+        )
+
+    def test_secret_in_an_edge_endpoint_anchor_is_malformed(self):
+        doc = minimal_document()
+        doc["symbols"].append(
+            {
+                "id": "/Users" + "/jane/x",
+                "name": "other",
+                "kind": "function",
+                "path": "src/app.py",
+            }
+        )
+        doc["edges"] = [
+            {"type": "calls", "source": "sym-1", "target": "/Users" + "/jane/x"}
+        ]
+        result = document.load_object(doc, config())
+        self.assertEqual(result["status"], "malformed")
+        self.assertIn(
+            "E_SG_UNNORMALIZABLE_ANCHOR", [f["code"] for f in result["findings"]]
+        )
+
     def test_no_finding_carries_an_unredacted_secret(self):
         doc = minimal_document()
         doc["files"][0]["path"] = "/Users" + "/jane/repo/x.py"
@@ -1690,6 +1725,36 @@ def _anchor_findings(doc):
                     "coverage[].path_prefix",
                 )
             )
+    # Anchors are exempt from redaction -- rewriting a symbol id would break
+    # the edges that reference it. So a non-path anchor carrying a secret has
+    # no safe outcome and fails the document closed instead.
+    for collection, key, field in (
+        ("symbols", "id", "symbols[].id"),
+        ("symbols", "name", "symbols[].name"),
+    ):
+        for index, item in enumerate(doc.get(collection) or []):
+            scrubbed, names = redaction.redact(item.get(key))
+            if names:
+                out.append(
+                    validation.finding(
+                        "E_SG_UNNORMALIZABLE_ANCHOR",
+                        "anchor matches a secret pattern and cannot be redacted",
+                        index,
+                        field,
+                    )
+                )
+    for index, edge in enumerate(doc.get("edges") or []):
+        for key in ("source", "target"):
+            scrubbed, names = redaction.redact(edge.get(key))
+            if names:
+                out.append(
+                    validation.finding(
+                        "E_SG_UNNORMALIZABLE_ANCHOR",
+                        "anchor matches a secret pattern and cannot be redacted",
+                        index,
+                        "edges[]." + key,
+                    )
+                )
     return out
 
 
@@ -1713,8 +1778,8 @@ def _redact_incidental(doc):
 
 def load_object(doc, cfg):
     """Load an already-parsed document. Returns a result dict."""
-    version_findings = validation._version_findings(doc if isinstance(doc, dict) else {})
-    for found in version_findings:
+    gate = validation.version_findings(doc if isinstance(doc, dict) else {})
+    for found in gate:
         if found["code"] in (
             "E_SG_MISSING_SCHEMA_VERSION",
             "E_SG_UNSUPPORTED_SCHEMA_VERSION",
