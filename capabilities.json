@@ -1073,6 +1073,14 @@
     {
       "path": "bin/context_graph/tests/test_map_writer.py",
       "reason": "unit tests for context_graph.map_writer; test infrastructure, not a capability an agent invokes."
+    },
+    {
+      "path": "bin/context_graph/projection.py",
+      "reason": "library module rendering the context.md managed region and its file-lifecycle plan (create/update/adopt/conflict) from a final graph (#185 apply); consumed by bin/context-graph.py's `apply` subcommand (the capability row), not a standalone capability itself."
+    },
+    {
+      "path": "bin/context_graph/tests/test_projection.py",
+      "reason": "unit tests for context_graph.projection; test infrastructure, not a capability an agent invokes."
     }
   ],
   "external_upstreams": [
