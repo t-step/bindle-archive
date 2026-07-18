@@ -27,9 +27,10 @@ findings, a `preview` run whose conflicts list is non-empty, or a
 failures); 1 a domain error's findings list was rendered instead of a
 traceback -- config.ConfigError (and subclasses, e.g. ConfigInvalidError,
 ConfigMissingError) from any config.py call, context_graph.compiler.CompilerError
-from `preview`/`candidates`/`propose`/`confirm` (missing/malformed
-configuration, an unreadable map), review.ReviewError from
-`candidates`/`propose`/`confirm`, lock.LockContention on `init`, a
+from `preview` (missing/malformed configuration, an unreadable map),
+review.ReviewError from `candidates`/`propose`/`confirm` (review._preview()
+wraps the same underlying CompilerError before it reaches the CLI),
+lock.LockContention on `init`, a
 non-empty findings list from `config validate`, `propose` (no valid
 candidate), or `confirm` (rejected/stale/invalid); 2 argparse usage error
 (e.g. a missing required argument) -- unchanged stdlib behavior, not
