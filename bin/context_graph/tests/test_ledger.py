@@ -49,7 +49,7 @@ class ReduceJudgments(unittest.TestCase):
         got = state["effective"].get(subject)
         return got["candidate_key"] if got else None
 
-    def test_reject_a_accept_b_then_repropose_a(self):
+    def test_rejected_key_stays_suppressed_after_other_candidate_accepted(self):
         # A stays suppressed; B effective.
         events = [_ev("S", "candidate:sha256:" + "a" * 64, "rejected"),
                   _ev("S", "candidate:sha256:" + "b" * 64, "accepted")]
@@ -87,12 +87,24 @@ class ReduceJudgments(unittest.TestCase):
     def test_malformed_event_reported_not_guessed(self):
         events = [{"schema_version": 1, "decision": "accepted"}]  # no subject_key
         state = ledger.reduce_judgments(events)
-        self.assertIsNone(state["effective"].get("S"))
         self.assertIn("E_JUDGMENT_MALFORMED", [f["code"] for f in state["findings"]])
+        self.assertEqual(state["effective"], {})
+        self.assertEqual(state["rejected_keys"], set())
 
     def test_stale_illegal_accepted_event_not_effective(self):
         key = "candidate:sha256:" + "a" * 64
         events = [_ev("S", key, "accepted")]
         state = ledger.reduce_judgments(events, revalidate=lambda e: False)
         self.assertIsNone(self.eff_key(state, "S"))
+        self.assertIn("stale_illegal_judgment", [f["code"] for f in state["findings"]])
+
+    def test_stale_illegal_accept_clears_prior_effective_acceptance(self):
+        # A accepted+effective, then B (same subject) is stale/illegal:
+        # B is not installed AND it clears A's prior effective acceptance.
+        a_key = "candidate:sha256:" + "a" * 64
+        b_key = "candidate:sha256:" + "b" * 64
+        events = [_ev("S", a_key, "accepted"), _ev("S", b_key, "accepted")]
+        state = ledger.reduce_judgments(
+            events, revalidate=lambda e: e["candidate_key"] != b_key)
+        self.assertIsNone(state["effective"].get("S"))
         self.assertIn("stale_illegal_judgment", [f["code"] for f in state["findings"]])
