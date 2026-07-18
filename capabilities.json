@@ -911,6 +911,10 @@
       "reason": "a point-in-time implementation plan for the #180 context-graph schema/fixture implementation; planning artifact, not itself a capability."
     },
     {
+      "path": "docs/superpowers/plans/2026-07-17-context-graph-init-config-191.md",
+      "reason": "a point-in-time implementation plan for the #191 context-graph project-identity/repository-binding implementation; planning artifact, not itself a capability."
+    },
+    {
       "path": "bin/check-context-graph-fixtures.py",
       "reason": "fixture validator invoked by the test harness / make check machinery, exactly like bin/check-inventory.py; not itself a capability an agent invokes for its own sake."
     },
