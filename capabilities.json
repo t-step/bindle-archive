@@ -1041,6 +1041,14 @@
     {
       "path": "bin/context_graph/tests/test_ledger.py",
       "reason": "unit tests for context_graph.ledger; test infrastructure, not a capability an agent invokes."
+    },
+    {
+      "path": "bin/context_graph/review.py",
+      "reason": "library module for #184's propose/confirm/candidates orchestration (this task implements only `propose`: compiles a fresh #183 preview and delegates to context_graph.proposals.validate_edge_proposal, writing nothing and taking no lock); foundation module consumed by bin/context-graph.py's future review subcommands, not a standalone capability itself."
+    },
+    {
+      "path": "bin/context_graph/tests/test_review.py",
+      "reason": "unit tests for context_graph.review; test infrastructure, not a capability an agent invokes."
     }
   ],
   "external_upstreams": [
