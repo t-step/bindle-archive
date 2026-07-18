@@ -1,16 +1,20 @@
-# Candidate merged #141 parent body (NOT YET APPLIED)
+# APPLIED snapshot of the #141 parent body — IMMUTABLE
 
-> **What this file is.** A *generated candidate snapshot* of the proposed #141
-> issue body, built to recover the requirement sections deleted when the epic
-> reframe replaced rather than incorporated the original contract. It is staged
-> here for review and diffing. **It has not been written to GitHub.**
+> **STATUS: APPLIED.** Written to live #141 on **2026-07-18T22:00:07Z**
+> (body only). Everything below the rule is the **exact byte content submitted**,
+> verified byte-for-byte against the API read-back after normalizing the single
+> trailing newline GitHub appends (37,780 bytes submitted → 37,781 returned).
 >
-> **Authority note.** Once the operator applies it, **live #141 is the canonical
-> product contract** and this file becomes a historical snapshot. This file never
-> outranks the live issue. See the authority split in
-> `2026-07-18-141-architecture-projection-epic.md` §0.
+> **THIS FILE IS IMMUTABLE.** It is a historical record of what was applied, not a
+> working copy. **Live #141 is the canonical product contract.** If the contract
+> needs to change, change the live issue — never this file, and never this file
+> alone. Editing it would silently create a second, divergent "contract" and
+> reintroduce exactly the failure this recovery repaired.
+>
+> Authority split: `2026-07-18-141-architecture-projection-epic.md` §0.
+> Pre-reframe original contract: that document's Appendix A (also frozen).
 
-Everything below the rule is the proposed body verbatim.
+Everything below the rule is the applied body verbatim.
 
 ---
 

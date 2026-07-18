@@ -25,15 +25,20 @@ Two rules follow, and both are load-bearing:
 
 * **Where this record and the live issue body diverge, the live body wins and this
   record must be corrected.** This document never outranks #141.
-* **The contract is not maintained in three places.** §13 is a *generated candidate
-  snapshot*, not a third editable copy — the staged candidate lives in
-  `2026-07-18-141-candidate-parent-body.md`, and once applied, §13 is replaced by a
-  snapshot of the final live body. Appendix A is a frozen historical recovery
-  source and is never edited.
+* **The contract is not maintained in three places.** As of 2026-07-18T22:00:07Z
+  the recovered body is **applied to live #141**, §13 is reduced to an applied
+  *record* (it carries no copy of the contract), and
+  `2026-07-18-141-candidate-parent-body.md` is the **immutable applied snapshot**.
+  Appendix A is the frozen pre-reframe original. **Only live #141 is editable as
+  the contract.**
 
 ---
 
-> **Contract-provenance warning (fourth-round gate).** The §13 replacement body
+> **Contract-provenance warning — RESOLVED 2026-07-18T22:00:07Z.** The deleted
+> sections have been restored to live #141 and verified byte-for-byte; the history
+> below is retained because it explains why Appendix A exists and must stay frozen.
+>
+> **(Original warning.)** The §13 replacement body
 > **was applied** to live #141 at `2026-07-18T18:53:20Z` — after all three commits
 > on this branch, and contrary to §13's own "not yet applied" note (now corrected).
 > The replacement **dropped #141's `## Acceptance criteria` and `## Pressure tests`
@@ -49,7 +54,8 @@ Two rules follow, and both are load-bearing:
 > (recovered via `gh api graphql … userContentEdits`, revision index 1,
 > `2026-07-16T23:38:58Z`). **Appendix A is the contract this document is audited
 > against.** Restoring the AC/PT and requirement sections to live #141 is a
-> required operator action before any child issue is filed — see §15.
+> required operator action before any child issue is filed — **done
+> 2026-07-18T22:00:07Z**; see §15.
 
 **What #141 consumes from #140 (read-only, never reinvented):** opaque project
 identity `project:<32-lowercase-hex>` and stable repository-binding identity
@@ -2525,151 +2531,37 @@ Systematic pass over the current #141 body against the child DAG.
 
 ---
 
-## 13. Proposed rewritten #141 epic body
+## 13. Parent epic body — APPLIED (record only)
 
-> **THIS SECTION IS A GENERATED CANDIDATE SNAPSHOT, NOT AN AUTHORITY.** The
-> canonical product contract is the **live #141 body**. The current staged
-> candidate lives at `docs/design/2026-07-18-141-candidate-parent-body.md`; once the
-> operator applies it, **replace this section with a snapshot of the final live
-> body** so there are not three independently editable copies of the same contract
-> (§0). Do not edit this section as though it were the contract.
->
-> **STATUS — this was applied, and it destroyed contract text.** The
-> previous revision of this section claimed "Not yet applied — no GitHub mutation
-> performed." That was false: the body below was written to live #141 at
-> `2026-07-18T18:53:20Z`, after all three commits on this branch. Worse, it
-> **replaced** rather than extended the issue, dropping #141's `## Acceptance
-> criteria` (21 bullets) and `## Pressure tests` (15 items) along with its
-> *Intended user experience*, *Selection approach*, *Confirmation policy*, and
-> *Security and privacy* sections. Those are the sections §9 traces to and §12
-> audits against, and they now exist **only** in Appendix A and in GitHub's
-> `userContentEdits` history.
->
-> **This section is therefore no longer a drop-in replacement.** It is an *epic
-> reframe to be merged into the restored body* — the AC/PT and requirement sections
-> must be restored first (§15), and this reframe added around them, not instead of
-> them. Do not paste it over the current body.
+**Status: applied to live #141 on 2026-07-18T22:00:07Z (body only).**
 
-Preserves #141's authority split, identity model, and security/privacy while
-replacing the single-issue implementation shape with the child DAG.
+This section previously carried a full copy of the proposed epic body. It no longer
+does, deliberately. Per the authority split (§0), the contract is **not** maintained
+in three places; carrying the body here again would recreate a second editable copy
+and reintroduce the exact drift this recovery repaired.
 
-```markdown
-# Epic: provider-neutral architecture projection
+| Where | Role |
+|---|---|
+| **live #141** | the canonical product contract — change it here and nowhere else |
+| `2026-07-18-141-candidate-parent-body.md` | the **immutable applied snapshot**: the exact bytes submitted, kept for audit |
+| Appendix A (this document) | the **frozen** pre-reframe original contract, kept for provenance |
+| this document | rationale, decomposition, traceability, decisions, paste-ready children |
 
-> **Epic reframe.** #141 is now the parent epic for provider-neutral architecture
-> projection. Its acceptance criteria and pressure tests are distributed across
-> child issues A–I (see the decomposition design doc
-> docs/design/2026-07-18-141-architecture-projection-epic.md). This epic consumes
-> the completed #140 context-graph foundation without restating or weakening it,
-> and preserves the #142 historical boundary.
+**What was applied.** A merged body recovering the six requirement sections that the
+earlier epic reframe deleted (*Intended user experience*, *Selection approach*,
+*Confirmation policy*, *Security and privacy*, *Acceptance criteria*, *Pressure
+tests*), with the epic framing merged around them and the approved amendments
+reconciled into the canonical wording. 19 sections; AC1–AC21, R1–R5, PT1–PT32 each
+with exactly one primary owner and explicit supporting children.
 
-## Summary
-Create and safely maintain a bounded, human-readable architecture map (codebase
-map + components first; flows, boundaries, test surfaces, hotspots later) from a
-provider-neutral structural graph. The structural provider is authority only for
-observed structural facts; the context graph (#140) is authority for durable
-understanding, semantic identity, normalized evidence, and confirmed judgments;
-architecture projection is a downstream, rebuildable reading surface that
-references — never redefines — context-graph meaning and creates no context-graph
-judgments or ledger entries.
+**Verification at apply time.** Byte-for-byte match against the API read-back after
+normalizing the single trailing newline GitHub appends (37,780 → 37,781 bytes). All
+19 H2 sections, every identifier, the three amendments, the closure-blocking set
+`A, B, C, D, E, F1, F2, F3, F4, G, H`, and I's non-blocking status confirmed on the
+live body. Title, labels, milestone, state, assignees, and comments unchanged.
 
-## Frozen contracts
-- Authority separation: projection creates no context-graph edges/judgments;
-  references context-node + evidence identities read-only from index.json.
-- Identity: project-scoped opaque arch-node identity (embedding the full
-  project:<hex> token, matching #140's compound-ID convention); repository
-  participation is mutable provenance, not identity; never derived from
-  filename/title/owner-repo/path/provider-label/link-text; no binding id in
-  identity. Continuity is a confidence-gated MATCH over the judgments authority
-  (high → reuse id, ambiguous → confirmation), not a hash — so an ordinary edit
-  never mints a new node. Repository rename/transfer/rebind, adding/removing a
-  binding, AND provider/capability change never churn identity.
-- Provider seam: a versioned normalized structural-graph interchange of raw
-  structural facts sits between any provider and the engine; conclusions
-  (metrics, clustering, entry points) are engine-owned; the engine never imports
-  a provider; network is never required.
-- Source coherence: every graph is bound to a stable binding, exact commit,
-  provider name+version, and interchange schema version; missing/unavailable/
-  mismatched → explicit unavailable/stale; provider disappearance is never
-  deletion or blanket staleness; a partial multi-repo outage carries forward the
-  unavailable binding's content and never staled unaffected notes.
-- State authority: identity, confirmed decisions, AND observed provenance live in
-  an append-only judgments log under the notes home; generated Markdown and the
-  materialized index are rebuildable and are never authorities; recovery state is
-  metadata only. (Exact layout, record kinds, integrity contract: design doc §3 /
-  child B — the parent does not fix mechanism, so a child can refine it without
-  falsifying this body.)
-- Safe apply: reuse #185's generated-region / byte-preservation / semantic-no-op /
-  per-file-atomic utilities; extend for a variable multi-file manifest with
-  incomplete-apply detection, a preview→confirm fingerprint, and resume that
-  re-plans rather than replaying; zero writes on a no-op; no false cross-file
-  atomicity claim. (Mechanism: design doc §5 / children B, D.)
-- Bounded + private: note caps with a defined over-cap behavior, evidence
-  thresholds, exclusions (incl. gitignored + denylisted paths), repo-relative
-  normalized paths, redaction of every provider string before persistence or
-  logging, allowlisted+previewed external links, no wholesale source copy,
-  capped/disabled excerpts, no secrets in notes or logs, and ALL WRITES BELOW THE
-  CONFIGURED NOTES HOME.
-- Deterministic core; model assistance optional and non-blocking, entering only
-  through the reviewable proposal contract.
-
-## Child DAG
-- A structural-graph interchange + reference provider incl. multi-binding fixtures
-  and boundary redaction (blocks all)
-- B architecture identity + sole allocator, authority, provenance, state, static
-  confirmation policy, continuity matcher (contract-dep A)
-- C deterministic bounded candidate planning, engine-derived metrics/entry-points,
-  deterministic naming, cross-binding aggregation (dep A)
-- D safe projection loop — map + components + invocation surface (dep B, C)
-- E CodeGraph adapter + equivalence proof (contract-dep A, impl-dep C;
-  implementation-parallel to B and D)
-- F1 flows → F2 boundaries → F3 test surfaces → F4 hotspots (F1 dep D; each
-  subsequent dep its predecessor)
-- G reconciliation lifecycle (dep D)
-- H multi-repository projection (dep A, B, D — NOT E)
-- I optional model-assisted authoring — non-blocking (dep D)
-
-## Releases
-- Internal contract milestone: A+B+C+D on the reference provider (not user-facing).
-- First usable release (partial): A+B+C+D+E — the complete CodeGraph→map/component
-  loop; gated on a real-CodeGraph end-to-end test. Not yet ongoing-refactor
-  maintenance (rename/removal + complete reconciliation come with G).
-- Then G + H (may be separate releases).
-- Extended note types: F1 flows → F2 boundaries → F3 test surfaces → F4 hotspots
-  (F4 may render as bounded temporal status inside durable notes).
-- Optional, non-blocking: I model layer.
-
-## Closure
-Closure is gated by #141's full promised outcome — including its six enumerated
-initial note types — not the acceptance-criterion bullets read in isolation. The
-closure-blocking set is A, B, C, D, E, F1, F2, F3, F4, G, H. Non-blocking: I
-(optional model assistance). #142 (historical enrichment) is separate, blocked,
-conditional, and not part of this closure.
-
-All four extended-note phases block closure. F4 may model hotspots as bounded
-temporal status inside durable architecture notes rather than creating a durable
-standalone note per metric fluctuation; that rendering choice does not remove
-hotspots/risk seams from the epic's promised outcome.
-
-Two deliberate amendments of #141 are recorded by adopting this body:
-1. **Identity** — project-scoped only; binding participation is mutable provenance,
-   not identity, amending "scoped to project and, where relevant, stable
-   repository-binding identity."
-2. **Matcher signals** — provider structural IDs are provenance only and never
-   continuity-matching signals, amending the prior identity model's "existing
-   stable provider graph ID, where available."
-
-A third, smaller deviation is disclosed: the per-note "last projection timestamp"
-in #141's *Provenance* lives in state only, to keep an unchanged rerun byte-stable.
-
-## Out of scope
-Context-graph node/edge/judgment creation; activating reserved semantic kinds;
-durable local issue/PR/commit note trees; repository-shaped identity; wikilink-as-
-authority; wholesale source copying; historical inference / backward projection /
-bulk backfill (see #142); a custom Obsidian plugin; a local GitHub artifact mirror.
-```
-
----
+**If the contract must change from here:** edit live #141, then update this
+document's rationale and traceability to match. Do not edit the applied snapshot.
 
 ## 14. Unresolved questions (repository evidence cannot resolve)
 
@@ -2702,35 +2594,32 @@ in §11 and the contracts in §2–§5.
 
 ---
 
-## 15. Recovery state and remaining operator actions
+## 15. Recovery state and remaining actions
 
-**A candidate merged parent body has been built and is staged for review** at
-`docs/design/2026-07-18-141-candidate-parent-body.md`. It restores the six
-requirement sections the epic reframe deleted, merges the epic framing around them,
-and reconciles the approved amendments directly into the canonical wording. **It
-has not been written to GitHub.**
+**The contract recovery is complete.** Live #141 was repaired on
+2026-07-18T22:00:07Z: the six deleted requirement sections are restored, the epic
+framing is merged around them, and the parent is self-contained — every AC, R, and
+PT a child cites is stated on the issue itself, so no implementer needs this
+document to discover what a requirement means.
 
-Remaining operator actions, in order:
+Remaining, in order:
 
-1. **Review the candidate body** and its reconciliation table (reported alongside
-   it). It is self-contained: every AC, R, and PT identifier a child cites is
-   stated in the parent, so no implementer needs this design document to discover
-   what a requirement means.
-2. **Apply it to #141**, replacing the current body. Verify with
-   `gh issue view 141 | grep -c 'Acceptance criteria\|Pressure tests'` → expect `2`.
-3. **Replace §13 of this document** with a snapshot of the final live body (§13 is
-   marked as a generated candidate, not a third editable copy of the contract).
-4. **Then** file A, B, C, D, E, F1, F2, F3, F4, G, H, I — twelve issues, from §8.
+1. **File the twelve children** from §8 — A, B, C, D, E, F1, F2, F3, F4, G, H, I.
+   Each body now carries a *Parent requirements owned* block listing the parent
+   identifiers it is primary for and those it supports, so children do not depend on
+   §9's table. **Not yet done; not authorized in this pass.**
+2. **Child E opens with the mandatory E-1 feasibility phase** (§6-E) before adapter
+   implementation. If E-1 finds no automatable stable CodeGraph surface, it records
+   a **no-go** and the first usable release is re-planned rather than shipped behind
+   an unverifiable gate.
 
-**Explicitly *not* part of this recovery.** #141's labels (`status: ready`,
+**Explicitly not part of this recovery.** #141's labels (`status: ready`,
 `priority: now`) and milestone (`v0.8.0`) were set at `2026-07-18T17:14:03Z` and
-`17:09:49Z` respectively — **before** the body replacement at `18:53:19Z`, per the
-issue timeline. No GitHub event evidence ties them to the body-replacement
-operation, so they are left alone and require no ratification.
+`17:09:49Z` — **before** the body replacement at `18:53:19Z`, per the issue
+timeline. No GitHub event ties them to it, so they were left untouched and require
+no ratification. Confirmed unchanged after the repair.
 
 **#142** remains separate, conditional, and untouched.
-
-**Nothing in this document is authorization to perform any of the above.**
 
 ---
 
