@@ -1,0 +1,8 @@
+{
+  "source": "context-node:proj:11111111111111111111111111111111",
+  "relationship": "supersedes",
+  "target": "context-node:proj:22222222222222222222222222222222",
+  "basis": [],
+  "explanation": "supersedes requires same_kind_required=true; decision -> learning is cross-kind and must be rejected before any candidate_key is minted",
+  "producer": "human"
+}

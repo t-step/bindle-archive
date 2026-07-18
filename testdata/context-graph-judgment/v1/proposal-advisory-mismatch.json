@@ -1,0 +1,9 @@
+{
+  "source": "context-node:proj:11111111111111111111111111111111",
+  "relationship": "supports",
+  "target": "context-node:proj:22222222222222222222222222222222",
+  "basis": [],
+  "explanation": "endpoints are legal (decision -supports-> learning) but the caller-supplied advisory_candidate_key does not match the recomputed key, so this must fail with E_PROPOSAL_ADVISORY_KEY_MISMATCH and mint no candidate",
+  "producer": "human",
+  "advisory_candidate_key": "candidate:sha256:0000000000000000000000000000000000000000000000000000000000000000"
+}
