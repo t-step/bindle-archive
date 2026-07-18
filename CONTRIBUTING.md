@@ -55,6 +55,11 @@ Mechanics:
 - Build on existing skills by *referencing* them
   (`**REQUIRED BACKGROUND:** superpowers:test-driven-development`) — don't vendor
   copies. See the README's "Building on other sources".
+- Running pressure-test reps follows
+  [the pressure-testing protocol](docs/pressure-testing-protocol.md): declare
+  the intended arm before dispatch and discard reps a competing skill won as
+  **void**, run the pre-dispatch fixture checklist, and grade the transcript
+  rather than the agent's self-report.
 - Before running pressure-test reps (RED or REFACTOR) in an interactive
   session, ask how: **sequential** (recommended — one subagent rep at a
   time, bounded/predictable resource use), **parallel** (faster wall-clock,

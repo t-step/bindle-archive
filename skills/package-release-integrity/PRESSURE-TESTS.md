@@ -1,5 +1,9 @@
 # package-release-integrity — pressure tests
 
+> **Method of record:** [`docs/pressure-testing-protocol.md`](../../docs/pressure-testing-protocol.md)
+> — arm declaration, the pre-dispatch fixture checklist, environment controls,
+> and grading.
+
 **Status: VERIFIED (2026-07-14), with one OPEN FAILURE recorded 2026-07-18 —
 see "Defer-axis top-up attempt" below.** Campaign run per
 superpowers:writing-skills (RED → GREEN → REFACTOR). 9 agent-facing reps + 2

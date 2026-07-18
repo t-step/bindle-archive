@@ -1,5 +1,15 @@
 # release-captain — pressure tests
 
+> **Method of record:** [`docs/pressure-testing-protocol.md`](../../docs/pressure-testing-protocol.md)
+> — arm declaration, the pre-dispatch fixture checklist, environment controls,
+> and grading.
+>
+> **Caveat on the counts below (#223):** they predate the arm-declaration rule.
+> They were gathered without first verifying, per rep, which skill actually won
+> the trigger — so an unknown fraction may be **void** (a rep a competing skill
+> answered tests nothing about this skill). Treat them as a distribution, not an
+> arm, until re-attributed.
+
 **Status: VERIFIED (2026-07-15).** Full RED → GREEN(fail) → REFACTOR → GREEN(pass)
 campaign this session. The first GREEN arm **failed** (the skill under-triggered
 and, when it did fire, did not stop agents from bumping/committing/**tagging** the

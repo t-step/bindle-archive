@@ -1,5 +1,15 @@
 # verify-then-commit — pressure-test log
 
+> **Method of record:** [`docs/pressure-testing-protocol.md`](../../docs/pressure-testing-protocol.md)
+> — arm declaration, the pre-dispatch fixture checklist, environment controls,
+> and grading.
+>
+> **Caveat on the counts below (#223):** they predate the arm-declaration rule.
+> They were gathered without first verifying, per rep, which skill actually won
+> the trigger — so an unknown fraction may be **void** (a rep a competing skill
+> answered tests nothing about this skill). Treat them as a distribution, not an
+> arm, until re-attributed.
+
 Per CONTRIBUTING's RED → GREEN → REFACTOR loop (superpowers:writing-skills), a
 skill isn't done until an agent has been watched under pressure. This log records
 what was actually pressure-tested with subagents, so nobody has to guess which
