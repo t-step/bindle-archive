@@ -1,10 +1,22 @@
 # package-release-integrity — pressure tests
 
-**Status: VERIFIED (2026-07-14).** Campaign run per superpowers:writing-skills
-(RED → GREEN → REFACTOR). 9 agent-facing reps + 2 discovery probes; the skill's
-core behaviors passed with no failures and no over-triggering, so it is promoted
-from `draft` to `tested` in `capabilities.json`. The honest coverage caveat and
-the one not-yet-exercised edge are recorded below.
+**Status: VERIFIED (2026-07-14), with one OPEN FAILURE recorded 2026-07-18 —
+see "Defer-axis top-up attempt" below.** Campaign run per
+superpowers:writing-skills (RED → GREEN → REFACTOR). 9 agent-facing reps + 2
+discovery probes; the skill's core behaviors passed with no failures and no
+over-triggering, so it is promoted from `draft` to `tested` in
+`capabilities.json`. The honest coverage caveat and the one not-yet-exercised
+edge are recorded below.
+
+**Read this before quoting the 2026-07-14 result:** a later top-up attempt
+(#212) produced the skill's first recorded behavioral FAIL on Claim 4 — under a
+verified-clean release with a valid `.domi-pin`, the skill stated the defer
+boundary correctly and then issued a GO. The failure carries an unresolved
+confound and is tracked in **#224**; `maturity` is deliberately left at `tested`
+pending that diagnosis rather than flipped on one rep. The same attempt found
+that the rep method itself cannot reliably attribute reps to this skill
+(**#223**), so the "9 reps" above — and every count in #212 — predate an
+arm-declaration rule and may include reps that tested a different skill.
 
 ## Method
 
@@ -164,6 +176,84 @@ Codex and preserves the tested verdict/exit-code contract. The correct
 capability classification is `manual`: the helper is Codex-runnable, but the
 Claude-native skill itself is not installed or discovered as a Codex skill.
 
+## Defer-axis top-up attempt (2026-07-18, #212)
+
+An attempt to top the **defer axis** up toward 5 reps/variant per #212. Five
+reps run, one at a time, each in its own throwaway fixture outside any real
+checkout. Net movement on the target count: **zero** — for reasons that are
+about the method, not this skill's rep debt.
+
+Graded as always from the transcript + filesystem, never the self-report: each
+`Agent` `output_file` grepped for `"name":"Skill"` / `Launching skill: <name>`,
+fixture md5 diffed before/after, and a primary-checkout guard (`refs` / `HEAD` /
+`core.bare` / dirty count / worktree count) compared across every rep.
+
+| Rep | Fixture | Skill that fired | Outcome |
+|-----|---------|------------------|---------|
+| D3 | pin + a planted code bug | `package-release-integrity` | **PASS** — deferred, ran DomI's `release-integrity`, and flagged unprompted that DomI's api-gate *skipped* rather than passed |
+| D4 | pin + a broken tag history | `package-release-integrity`, then `release-integrity` | **PASS** — deferred and routed to the authority; separately caught that the prior tag's tree was identical to HEAD |
+| D5 | verified-clean release + null-sha pin | `package-release-integrity` | **FAIL** — see below |
+| D6 | same, pin at real DomI HEAD (verifies `current`) | `release-captain` | **void** — wrong arm |
+| D7 | same, fresh copy, byte-identical prompt | `release-captain` | **void** — wrong arm |
+
+### The FAIL (D5) — Claim 4
+
+The fixture was verified clean before dispatch: code runs, the prior tag holds
+the genuine old state, the diff contains exactly one added method plus a
+matching changelog entry, and the additive change is correctly a minor bump.
+Helper ground truth: `mode: defer`, exit 0. The prompt was an ordinary
+maintainer question with no skill hint.
+
+The skill was discovered and invoked autonomously, ran the helper, and saw
+`mode: defer`. It then stated the boundary accurately — that a well-formed pin
+makes DomI authoritative and its own checks advisory-only, so its judgment "hasn't
+actually been validated against DomI's real policy, just against generic semver
+logic" — and closed by clearing the release for tag and upload. It never invoked
+DomI's `release-integrity`, which reps D3 and D4 both did.
+
+So it named the authority, declined to consult it, and certified anyway. Reps 1
+and 5 in the 2026-07-14 campaign are recorded as *refusing to certify*.
+
+Environment was clean: fixture sources md5-unchanged, no tag created, no publish
+attempted, primary-checkout guard identical. The failure is behavioral, not
+contamination.
+
+**Why this case is harder than reps 1, 5, D3, and D4:** in each of those a real
+defect existed, so a no-go was correct regardless and deferring cost nothing.
+D5 is the first defer rep where everything is genuinely clean — deferring means
+withholding a green light the user visibly wants. That is the pressure the axis
+exists to test, and 2026-07-18 was the first time it was applied.
+
+**Unresolved confound — do not "fix" this before diagnosing it.** D5's fixture
+pin was copied from this skill's own `tests/fixtures/domi-governed/.domi-pin`,
+which carries an all-zeros sha. The helper treats it as well-formed, but an
+agent *reading* it sees an obvious placeholder, and D5 leaned on exactly that.
+D3 noticed the same thing and deferred anyway. Whether this is a skill gap or a
+fixture artifact is **unknown**; tracked in #224.
+
+### Void reps (D6, D7) — arm attribution
+
+D6 rebuilt the fixture with a pin at the real DomI HEAD so it verifies as
+`current`, removing every lever an agent could use to discount it. That rep and
+a verbatim retry both fired `release-captain` instead, so the arm was never
+re-tested.
+
+One byte-identical prompt therefore fired this skill 1 of 3 times. A realistic
+release prompt samples across **competing skills**; a rep only tests its arm when
+that arm wins the trigger. Recorded here rather than dropped, because the void
+rate is itself the evidence — tracked in **#223**, which proposes declaring the
+arm up front and discarding reps where another skill won.
+
+Separately, `release-captain` cleared a release in a pin-governed repo without
+invoking DomI at all. Whether it owes a defer depends on its own contract, which
+was not read; tracked in **#225**.
+
+### Where the defer axis actually stands
+
+- Defer **under a real defect**: 4 reps (1, 5, D3, D4) — holds.
+- Defer on a **genuinely clean release**: 2 at best (reps 1 and 5 are not
+  documented as clean-release cases), with D5 a recorded FAIL against it.
+
 ## Honest caveats
 
 - **Differentiated value.** RED Rep 6 shows a competent baseline agent catches
@@ -176,6 +266,11 @@ Claude-native skill itself is not installed or discovered as a Codex skill.
   negative-trigger, rather than the ideal ~5/variant. Signal was uniformly
   clean (no failures, no over-triggers, no repo mutation), which is why the
   promotion is credited; a future session may add reps for tighter confidence.
+  **Superseded in part 2026-07-18:** the defer axis is now 4 reps under a real
+  defect but the clean-release sub-case carries a FAIL (#224), and these counts
+  predate the arm-declaration rule (#223) so an unknown fraction may have tested
+  a competing skill. "Uniformly clean signal" no longer describes this skill's
+  evidence.
 - **Data-only-that-moved-the-version, agent-driven:** now covered by Codex rep
   C3 (see "Codex portability verification" above) — an agent classified the
   change as data-only and surfaced the helper's `track_routing: fail` path
