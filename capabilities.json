@@ -1057,6 +1057,14 @@
     {
       "path": "bin/context_graph/tests/test_review.py",
       "reason": "unit tests for context_graph.review; test infrastructure, not a capability an agent invokes."
+    },
+    {
+      "path": "bin/context_graph/index_writer.py",
+      "reason": "library module rendering the deterministic rebuildable index.json object from a final graph (#185 apply); consumed by bin/context-graph.py's `apply` subcommand (the capability row), not a standalone capability itself."
+    },
+    {
+      "path": "bin/context_graph/tests/test_index_writer.py",
+      "reason": "unit tests for context_graph.index_writer; test infrastructure, not a capability an agent invokes."
     }
   ],
   "external_upstreams": [
