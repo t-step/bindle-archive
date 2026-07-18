@@ -1,4 +1,5 @@
 # GENERATED from capabilities.json — do not edit; run 'make manifest'
+claude	skill	context-graph	skills/context-graph	skills/context-graph
 claude	skill	domi-consumer	skills/domi-consumer	skills/domi-consumer
 claude	skill	fork-pr-flow	skills/fork-pr-flow	skills/fork-pr-flow
 claude	skill	hands-on-keyboard	skills/hands-on-keyboard	skills/hands-on-keyboard
@@ -12,6 +13,7 @@ claude	skill	scoped-sequential-prs	skills/scoped-sequential-prs	skills/scoped-se
 claude	skill	session-continuity	skills/session-continuity	skills/session-continuity
 claude	skill	verify-then-commit	skills/verify-then-commit	skills/verify-then-commit
 claude	agent	knowledge-scout	agents/knowledge-scout.md	agents/knowledge-scout.md
+claude	command	context-graph	commands/context-graph.md	commands/context-graph.md
 claude	command	handoff	commands/handoff.md	commands/handoff.md
 claude	command	license-audit	commands/license-audit.md	commands/license-audit.md
 claude	command	notes-home	commands/notes-home.md	commands/notes-home.md

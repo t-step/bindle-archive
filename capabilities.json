@@ -751,6 +751,38 @@
       "maturity": "draft",
       "mutation": [],
       "version_introduced": "0.4.0"
+    },
+    {
+      "name": "context-graph",
+      "type": "skill",
+      "path": "skills/context-graph",
+      "description": "Use when reviewing, drafting, or confirming semantic relationships in a Bindle context graph, or when the user runs `/context-graph <verb>` — an optional authoring layer over the deterministic context-graph CLI (init / preview / candidates / propose / confirm / apply). It drafts proposals and drives the CLI; it is never the authority for endpoint legality, candidate keys, identities, or acceptance. Not for building the graph's deterministic tooling itself (that is the CLI, issues #180/#183/#184/#185).",
+      "provider": {
+        "claude": "installed",
+        "codex": "untested"
+      },
+      "maturity": "tested",
+      "mutation": [
+        "disk",
+        "network"
+      ],
+      "version_introduced": "0.7.0"
+    },
+    {
+      "name": "context-graph",
+      "type": "command",
+      "path": "commands/context-graph.md",
+      "description": "Author and review context-graph semantic proposals over the deterministic CLI (init / preview / candidates / propose / confirm / apply)",
+      "provider": {
+        "claude": "installed",
+        "codex": "unsupported"
+      },
+      "maturity": "tested",
+      "mutation": [
+        "disk",
+        "network"
+      ],
+      "version_introduced": "0.7.0"
     }
   ],
   "not_a_capability": [
