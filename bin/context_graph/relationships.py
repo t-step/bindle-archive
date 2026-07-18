@@ -16,7 +16,14 @@ SEMANTIC_KINDS = frozenset(
     {"decision", "learning", "assumption", "tension", "question"}
 )
 EVIDENCE_KINDS = frozenset(
-    {"session", "handoff", "design_document", "github_issue", "github_pr"}
+    {
+        "session",
+        "handoff",
+        "document_repository",
+        "document_project_local",
+        "github_issue",
+        "github_pr",
+    }
 )
 RESERVED_SEMANTIC_KINDS = frozenset(
     {
@@ -41,7 +48,13 @@ NODE_GROUPS = {
     "resolving": frozenset({"decision", "learning"}),
     "evidence-any": EVIDENCE_KINDS,
     "validation-evidence": frozenset(
-        {"session", "handoff", "design_document", "github_pr"}
+        {
+            "session",
+            "handoff",
+            "document_repository",
+            "document_project_local",
+            "github_pr",
+        }
     ),
 }
 

@@ -37,7 +37,8 @@
           "source_kind": {
             "enum": [
               "decision", "learning", "assumption", "tension", "question",
-              "session", "handoff", "design_document", "github_issue", "github_pr",
+              "session", "handoff", "document_repository", "document_project_local",
+              "github_issue", "github_pr",
               null
             ]
           },
@@ -45,7 +46,8 @@
           "target_kind": {
             "enum": [
               "decision", "learning", "assumption", "tension", "question",
-              "session", "handoff", "design_document", "github_issue", "github_pr",
+              "session", "handoff", "document_repository", "document_project_local",
+              "github_issue", "github_pr",
               null
             ]
           }
