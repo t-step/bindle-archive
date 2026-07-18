@@ -105,8 +105,16 @@ def _render_review_trigger(edges, nodes_by_id):
 
 
 def _render_unconnected(nodes, edges):
+    # Only structural + evidence edges count as "incident" here. `contains`
+    # is excluded on purpose: the compiler adds one project->node `contains`
+    # edge for every anchored semantic node unconditionally (compiler.py
+    # ~370-375), so counting it would make every semantic node "incident"
+    # and this section could never surface a genuinely isolated entry.
     incident = set()
     for edge in edges:
+        if edge["relationship"] not in _STRUCTURAL_RELATIONSHIPS and \
+                edge["relationship"] not in _EVIDENCE_RELATIONSHIPS:
+            continue
         incident.add(edge["source"])
         incident.add(edge["target"])
     lines = [

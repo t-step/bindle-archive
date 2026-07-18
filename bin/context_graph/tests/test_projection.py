@@ -39,6 +39,36 @@ class RenderManagedRegionTest(unittest.TestCase):
         self.assertIn("Use a lock", body)
         self.assertIn("implemented_by", body)
 
+    def test_contains_only_node_is_unconnected(self):
+        # A semantic node whose ONLY edge is the compiler's unconditional
+        # project->node `contains` edge must still surface in "Unconnected
+        # durable entries" -- `contains` is structural bookkeeping, not a
+        # sign the entry has real structural/evidence coupling.
+        graph = {
+            "project_id": "context-project:abc",
+            "nodes": [
+                {"id": "project:abc", "class": "project", "kind": "project",
+                 "label": "Project abc", "status": "active"},
+                {"id": "n:isolated", "class": "semantic", "kind": "decision",
+                 "label": "Isolated decision", "status": "active"},
+            ],
+            "edges": [
+                {"key": "project:abc|contains|n:isolated", "source": "project:abc",
+                 "relationship": "contains", "target": "n:isolated",
+                 "status": "confirmed", "origin": "project_membership",
+                 "basis": [], "review_trigger": False},
+            ],
+            "coverage": {"project_map": "complete", "sessions": "complete", "handoffs": "complete",
+                         "documents": "complete", "github_issues": "complete",
+                         "github_prs": "complete", "commits": "complete"},
+            "conflicts": [],
+        }
+        body = projection.render_managed_region(graph)
+        section = body.split("## Unconnected durable entries\n\n", 1)[1]
+        section = section.split("\n## ", 1)[0]
+        self.assertIn("Isolated decision", section)
+        self.assertNotEqual(section.strip(), "(none)")
+
 
 if __name__ == "__main__":
     unittest.main()
