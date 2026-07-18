@@ -91,12 +91,17 @@ never through projection.
 project-scoped and opaque:
 
 ```text
-arch-node:<project-id-hex>:<32-lowercase-hex>
+arch-node:<project-id>:<32-lowercase-hex>
 ```
 
-where `<project-id-hex>` is the 32-hex payload of the consuming project's
-`project:<hex>` identity and the second field is fresh command-allocated entropy.
-A single binding id is **never** embedded in the identity; repository
+where `<project-id>` is the consuming project's **full** `project:<32-hex>`
+token (not the bare hex) and the second field is fresh command-allocated
+entropy — regex `^arch-node:(project:[0-9a-f]{32}):([0-9a-f]{32})$`. Embedding
+the full `project:` token matches the frozen convention of every other compound
+ID that embeds a project (`session:`/`handoff:`/`document:`, `ids.py:38-44`) and
+keeps a single `grep 'project:<hex>'` able to find every ID scoped to a project;
+a bare-hex form would silently break that. A single binding id is **never**
+embedded in the identity; repository
 participation is mutable provenance (§3). Frozen: context-node IDs are never
 reused as architecture IDs; provider structural IDs are never architecture IDs;
 filenames, note titles, `owner/repo`, checkout paths, provider labels, and link
@@ -146,11 +151,18 @@ proposal contract the deterministic workflow consumes.
 
 ### Identity (FC-2)
 
-`arch-node:<project-id-hex>:<32-lowercase-hex>`. Allocation is command-owned
-entropy (`secrets.token_hex(16)`), mirroring how context-node IDs are minted in
-`bin/context_graph/review.py:204` and `bin/map-entry-id.py:145` — never model-
-chosen. A parser/formatter pair belongs alongside the existing typed-ID grammar
-in `bin/context_graph/ids.py` (regexes at `ids.py:33-49`), or in an architecture-
+`arch-node:<project-id>:<32-lowercase-hex>` (full `project:<hex>` token, §2
+FC-2). The second field is allocated **once, at the confirmed creation event**,
+from command-owned entropy (`secrets.token_hex(16)`), mirroring how context-node
+IDs are minted in `bin/context_graph/review.py:204` and `bin/map-entry-id.py:145`
+— never model-chosen, never content-hashed, never derived from a filename or a
+provider ID. Once allocated it is **immutable**: it is persisted (judgments +
+index) and never re-derived, regenerated, or re-minted on a later run. A rename
+updates the existing node and appends to `prior_ids[]`; a reappearance reuses the
+existing identity via continuity; split/merge/participation-change flow through
+child G's confirmation and can never silently mint or replace an identity. A
+parser/formatter pair belongs alongside the existing typed-ID grammar in
+`bin/context_graph/ids.py` (regexes at `ids.py:33-49`), or in an architecture-
 local `ids` module that reuses the same construction discipline. Prior identities
 and aliases are retained on the node so exact-match continuity survives a rename.
 
@@ -160,7 +172,7 @@ Stored as YAML front-matter on each note and, authoritatively, in
 `.bindle/architecture/index.json`:
 
 ```text
-arch_id                 arch-node:<project-id-hex>:<hex>
+arch_id                 arch-node:<project-id>:<hex>   (full project: token)
 project_id              project:<hex>
 binding_ids[]           participating repository bindings (mutable; may grow/shrink)
 projection_type         codebase_map | component            (MVP; more in F)
@@ -178,9 +190,13 @@ last_projected_at       (written to state, not to prose that must be no-op stabl
 
 `binding_ids[]` is a **list** and mutable: a component may span repositories, and
 adding/removing a participating binding updates provenance without churning
-`arch_id` (FC-2). Note that `last_projected_at` must not enter any byte-compared
-generated region, or it would defeat the semantic no-op (FC-6); it lives in state
-only.
+`arch_id` (FC-2). `last_projected_at` must not enter any byte-compared generated
+region, or it would defeat the semantic no-op (FC-6); it lives in state only, and
+**advances only when the projection content actually changed**. On a semantic
+no-op **every** artifact is byte-stable — generated notes, `index.json`,
+`config.json`, and `apply-state.json` alike — so an unchanged rerun performs zero
+writes with no timestamp-only churn anywhere (FC-6, and the extended apply
+contract in §5).
 
 ### State authority (FC-5)
 
@@ -196,7 +212,23 @@ only.
 ```
 
 Roles are frozen; filenames may change only if a strong existing convention
-justifies it, but the authority separation must remain explicit. This mirrors —
+justifies it, but the authority separation must remain explicit. **`judgments.jsonl`
+is the single append-only authority** for confirmed decisions; `index.json` and
+the generated Markdown are rebuildable from it; `apply-state.json` is **recovery
+metadata only, never a semantic authority** — losing it can never change what the
+projection *means*, only whether an interrupted write needs resuming.
+
+**`apply-state.json` lifecycle (frozen).** Created after the complete file
+manifest is built and validated and **before** the first write; advanced after
+each file write (appending that path plus its post-write hash, in the frozen
+write order); **cleared** (removed, or marked `complete`) on successful
+completion of the whole manifest; **retained** on any failure or interruption so
+the next run detects an incomplete apply, compares on-disk hashes against the
+manifest, and resumes or safely reruns without duplicating notes or discarding
+user content (§5.2). A retained apply-state whose manifest already matches disk
+is a completed apply and is simply cleared — never replayed.
+
+This mirrors —
 but is **separate from** — the context graph's `.bindle/context/{config,index,
 judgments.jsonl}` (`bin/context_graph/config.py:42-43`). Architecture state never
 lives under `.bindle/context/`, and never mutates it.
@@ -262,12 +294,30 @@ Keeping these engine-owned means a minimal provider (files + imports only) still
 yields a projection, and two providers exposing the same supported facts yield
 equivalent Bindle conclusions (child E equivalence).
 
+**Capability degradation is visible, never fabricated (frozen).** A missing
+`provider_capabilities` flag means the corresponding facts are **unavailable**,
+not empty. If a provider does not expose `has_calls`, call-derived signals
+(fan-in/out on call edges, call neighborhoods) are marked `unavailable` and any
+note that would depend on them says so; the engine must **never** treat "capability
+not supported" as "supported and observed to be zero." The two are distinct states
+and both are surfaced. This also bounds equivalence (child E): equivalence is
+required only over the intersection of supported capabilities, so a provider that
+lacks a capability degrades a projection visibly rather than diverging silently.
+
 ### 4.3 Degraded states (FC-4)
 
 `unavailable` (no provider / no graph), `unsupported_version` (interchange schema
 mismatch), `stale` (graph `source_commit` ≠ current repo commit), `malformed`
 (schema-invalid). Each is explicit and blocks writes for the affected binding
 without deleting or staling existing notes.
+
+**Degraded states are per-binding and never contagious (frozen, FC-4).** In a
+multi-repository project a binding that is unavailable or stale marks **only**
+that binding's contributions. Notes sourced solely from other, available bindings
+are untouched — not staled, not deleted, not rewritten. An architecture node that
+spans bindings and loses one participant is marked partially degraded (the
+affected `binding_ids[]` entry noted), never deleted or blanket-staled. A partial
+provider outage therefore produces zero destructive reconciliation anywhere.
 
 ---
 
@@ -290,10 +340,15 @@ without deleting or staling existing notes.
 * **Semantic no-op** — `bin/context_graph/apply.py`: `_write_if_changed`
   (`apply.py:340`) writes nothing when on-disk bytes equal planned bytes
   (mtime-stable).
-* **Planned-state-before-write** — `apply.build_plan`/`apply.apply`
-  (`apply.py:65`, `apply.py:379`): construct and validate the complete intended
-  final state before the first write, then write only changed artifacts under a
-  single-writer lock.
+* **Planned-state-before-write *pattern*** — `apply.build_plan`/`apply.apply`
+  (`apply.py:65`, `apply.py:379`) demonstrate the discipline to copy: build and
+  validate the complete intended final state before the first write, then write
+  only changed artifacts under a single-writer lock. Note the architecture apply
+  is a **new orchestrator**, not a call into #185's `apply()` — the latter plans a
+  **fixed** three-artifact set (map→index→context) and, by its own docstring, has
+  "per-file atomicity only -- there is no cross-file atomicity" and no resume
+  ledger. Architecture reuses the primitives (`_write_if_changed`, `ProjectLock`,
+  `write_atomic`) inside a new plan/apply that handles a variable manifest (§5.2).
 * **Single-writer lock** — `bin/context_graph/lock.py`: `ProjectLock`.
 * **Minimal-diff marker insertion** — `bin/context_graph/map_writer.py`:
   `plan_map_bytes` (`map_writer.py:30`) as the model for inserting an
@@ -363,7 +418,9 @@ validated.
 
 ### B — Architecture identity, authority, provenance, and state
 
-**Owns:** project-scoped `arch-node` identity (FC-2) and its parser/formatter;
+**Owns:** project-scoped `arch-node:<project-id>:<hex>` identity (full `project:`
+token, FC-2), allocated once at confirmed creation and immutable thereafter, and
+its parser/formatter;
 separation from context-node and provider-node identity; projection `config.json`;
 append-oriented `judgments.jsonl`; rebuildable `index.json`; aliases / prior
 identities and exact-match continuity; `apply-state.json` schema (interrupted-apply
@@ -409,10 +466,16 @@ A's interchange; **no CodeGraph imports in the engine**; shared-capability
 equivalence tests (inputs exposing the same supported structural facts produce
 equivalent normalized facts and projection plans; optional provider observations
 need **not** match); stale-commit detection; provider-version provenance.
-**Depends on:** A; may proceed in parallel with B, C, D. **Acceptance:** CodeGraph
-output translates into schema-valid interchange; the equivalence suite shows
-fixture-input and CodeGraph-input over the same facts yield equivalent plans;
-commit mismatch is detected and surfaced as `stale`.
+**Depends on:** A; **implementation-parallel with B, C, D** (D's own acceptance
+runs against A's reference provider, so D needs no adapter to be built and
+tested). **Acceptance:** CodeGraph output translates into schema-valid
+interchange; the equivalence suite shows fixture-input and CodeGraph-input over
+the same facts yield equivalent plans; commit mismatch is detected and surfaced
+as `stale`; **plus the first-usable-release gate — a complete real-CodeGraph
+end-to-end test** (CodeGraph → interchange → bounded candidates → preview →
+confirm → apply → zero-write rerun on an actual indexed repo), not fixture
+equivalence alone. That end-to-end gate is a **release dependency on D + E
+together**, distinct from E's implementation parallelism with D.
 
 ### F — Extended architecture note types
 
@@ -513,10 +576,31 @@ A ── E ──────────┴──────── H
 D ── I   (F, G optional inputs to I)
 ```
 
-**Parallel fronts once A lands:** B, C, and E can proceed concurrently (E is fully
-parallel to B/C/D). D joins after B and C. After D: F, G, H, I open. Solid arrows
-are hard dependencies; dashed arrows (F→H, F→I, G→I) are soft (richer inputs, not
-blockers).
+**Parallel fronts once A's schema is frozen:** B, C, and E proceed concurrently.
+D joins after B and C. After D: F, G, H, I open. Solid arrows are hard
+dependencies; dashed arrows (F→H, F→I, G→I) are soft (richer inputs, not blockers).
+
+**Dependency types (each edge classified — not all "depends on" are equal):**
+
+* **Contract dependency** — needs only the upstream *schema/interface frozen*, not
+  its code running. `A→B`, `A→C`, `A→E` are contract deps: B/C/E bind to A's
+  interchange schema. B's core (arch-node identity, state-file schemas) needs *no*
+  part of A; only B's provenance fields that reference `binding_id`/`source_commit`
+  wait on A's schema freeze — so **B can start in parallel with A** and finalize
+  provenance once A freezes.
+* **Implementation dependency** — needs the upstream code. `B→D`, `C→D`: D consumes
+  B's identity/state modules and C's candidate output at runtime. E is
+  implementation-parallel to D (see §6-E).
+* **Release dependency** — not a build-order edge; gates a *release*, not a start.
+  The first-usable-release end-to-end gate needs **D + E together**; the epic
+  closure set (§10) is a release-level constraint over A,B,C,D,E,G,H.
+* **Optional-enrichment dependency** — dashed edges (F→H, F→I, G→I): richer inputs
+  that improve a downstream child but never block it; I's deps are all of this
+  kind at the closure level (I is non-blocking, §10).
+
+**No cycle exists.** Reconciliation (G) depends on B, D; multi-repo (H) on B, D,
+E (+ soft F); model (I) on D (+ soft F, G). None of B/C/D/E depends on F/G/H/I, so
+the later children cannot feed back into the foundation — the graph is a DAG.
 
 ---
 
@@ -579,7 +663,9 @@ Own the project-scoped architecture identity space, authority-separated state
 under .bindle/architecture/, provenance, and the multi-file apply-state schema.
 
 ## Owns
-- identity `arch-node:<project-id-hex>:<32-lowercase-hex>` + parser/formatter;
+- identity `arch-node:<project-id>:<32-lowercase-hex>` (full `project:<hex>`
+  token; regex `^arch-node:(project:[0-9a-f]{32}):([0-9a-f]{32})$`), allocated
+  once at confirmed creation, immutable thereafter, + parser/formatter;
 - separation from context-node and provider structural identity;
 - .bindle/architecture/{config.json, judgments.jsonl, index.json, apply-state.json}
   with frozen roles;
@@ -709,7 +795,12 @@ facts and projection plans. Optional provider observations need NOT be identical
 - CodeGraph output -> schema-valid interchange;
 - equivalence suite: fixture-input and CodeGraph-input over the same facts yield
   equivalent plans;
-- commit mismatch detected and surfaced as stale.
+- commit mismatch detected and surfaced as stale;
+- FIRST-USABLE-RELEASE GATE: a complete real-CodeGraph end-to-end test
+  (CodeGraph -> interchange -> bounded candidates -> preview -> confirm -> apply
+  -> zero-write rerun on an actually-indexed repo), not fixture equivalence alone.
+  This gate is a release dependency on D + E together; E is otherwise
+  implementation-parallel with D (D tests against A's reference provider).
 ```
 
 ### F — `feat: extended architecture note types (#141 child)`
@@ -829,7 +920,7 @@ notes where an invariant is *frozen* earlier than the owning child.
 | # | #141 acceptance criterion | Owner | Enforced-by |
 |---|---|---|---|
 | AC1 | structurally-indexed repo produces a previewable projection | D | A,C |
-| AC2 | codebase map + restrained number of architectural nodes | C,D | — |
+| AC2 | codebase map + restrained number of architectural nodes | D | C |
 | AC3 | raw files/symbols do not become notes by default | C | D |
 | AC4 | identity scoped to project (+ binding provenance), never filename/title/owner-repo/path/label/link | B | D |
 | AC5 | context semantic-node IDs never reused | B | D |
@@ -848,7 +939,7 @@ notes where an invariant is *frozen* earlier than the owning child.
 | AC18 | Claude Code and Codex invoke the same provider-neutral workflow with equivalent results | E | A (+ I for authoring parity) |
 | AC19 | no custom Obsidian plugin required | D | — |
 | AC20 | no local GitHub artifact mirror created | D | (FC-1) |
-| AC21 | no source code copied wholesale | C,D | FC-7 |
+| AC21 | no source code copied wholesale | D | C, FC-7 |
 
 | # | #141 pressure test | Owner | Enforced-by |
 |---|---|---|---|
@@ -868,7 +959,18 @@ notes where an invariant is *frozen* earlier than the owning child.
 | PT14 | privacy: secrets/ignored/absolute paths/sensitive IDs never in notes or logs | C | A,D (FC-7) |
 | PT15 | interrupted write resumes without duplicates or partial corruption | D | B (apply-state) |
 
+Every criterion and pressure test has **exactly one primary owner** (the `Owner`
+column); the `Enforced-by` column lists supporting children where an invariant is
+*frozen* earlier — supporting ownership never means a second authoritative owner.
 No criterion or pressure test is left without an owner (§12 audit confirms).
+
+**Owner distribution → closure (§10).** Primary owners are: A (AC17, PT3, PT4);
+B (AC4, AC5, PT5); C (AC3, PT10, PT14); D (AC1, AC2, AC6–AC13, AC19–AC21, PT6,
+PT8, PT9, PT15); E (AC18, PT7); G (AC14–AC16, PT11–PT13); H (AC9, PT1, PT2).
+**F is the primary owner of no acceptance criterion or pressure test** — it
+appears only as a supporting/enforcing child (PT10). That is the evidence behind
+the closure decision in §10: F cannot be a closure blocker under #141's own
+acceptance contract, whereas G and H each own criteria that gate closure.
 
 ---
 
@@ -877,15 +979,33 @@ No criterion or pressure test is left without an owner (§12 audit confirms).
 | Milestone | Children | Kind | User-facing? | Notes |
 |---|---|---|---|---|
 | Internal contract milestone | A + B + C + D | contract validation | **No** | full engine + projection loop proven on the canonical local JSON provider/fixtures; validates the interchange, identity, selection, and apply contracts |
-| **First usable release** | A + B + C + D + **E** | release | **Yes** | closes the complete CodeGraph → normalized graph → bounded map/component candidates → preview → confirm → safe Markdown projection → zero-write rerun loop |
-| Later release | F | release | Yes | flows + boundaries first, then test surfaces, then carefully bounded hotspots |
-| Reconciliation + breadth | G + H | release(s) | Yes | may be separate releases if scopes remain substantial |
+| **First usable release** | A + B + C + D + **E** | release | **Yes** | closes the complete CodeGraph → normalized graph → bounded map/component candidates → preview → confirm → safe Markdown projection → zero-write rerun loop. Gated on a **real-CodeGraph end-to-end test**, not fixture equivalence alone (§6-E) |
+| Later release | F | release | Yes | flows + boundaries first, then test surfaces, then carefully bounded hotspots. **Does not gate epic closure** (owns no acceptance criterion) but completes #141's enumerated note-type model |
+| Reconciliation + breadth | G + H | release(s) | Yes | may be separate releases if scopes remain substantial. **Both gate closure** (G owns AC14–16/PT11–13; H owns AC9/PT1–2) |
 | Optional enhancement | I | enhancement | Yes | non-blocking model-assisted authoring |
 
-**Epic closure.** The deterministic architecture-projection epic (#141) is closed
-by **A through H**. **I is optional and does not block closure** (§11). #142
-(historical enrichment) is **not** part of #141 closure and stays separate,
-blocked, and conditional.
+**Epic closure — corrected against #141's acceptance contract.** Closure is gated
+by satisfying #141's acceptance criteria and pressure tests, and each maps to a
+primary owner (§9). The closure-blocking set is therefore **A, B, C, D, E, G, H**
+— every child that primarily owns at least one criterion or pressure test.
+
+* **F does *not* block closure.** F is the primary owner of no acceptance
+  criterion or pressure test (§9): #141's acceptance bar is "a codebase map and a
+  restrained number of selected architectural nodes" (AC2, owned by D), *not*
+  flows/boundaries. F completes #141's enumerated note-type *model* and is a
+  committed in-epic release, but under #141's own acceptance contract it is
+  non-blocking. (This follows #141's promised product outcome, not merely the
+  requested decomposition — the acceptance criteria, not the note-type
+  enumeration, define "delivered.")
+* **I does *not* block closure** — optional model assistance; no acceptance
+  criterion requires model-generated content (§11 D5).
+* **#142** (historical enrichment) is **not** part of #141 closure and stays
+  separate, blocked, and conditional.
+
+If the operator decides #141 must not close until the full note-type model
+(flows/boundaries/test-surfaces) ships, that is a *policy* choice to add F to the
+blocking set — it is not forced by the acceptance criteria as written, and it
+should be recorded explicitly rather than assumed.
 
 ---
 
@@ -901,7 +1021,9 @@ the "engine never imports a provider" and "network never required" invariants
 by real tools and would need re-contracting when a real provider arrives.
 
 **D2 — Project-scoped opaque identity, binding participation as mutable
-provenance. (Chosen.)** `arch-node:<project-id-hex>:<hex>`; `binding_ids[]` is
+provenance. (Chosen.)** `arch-node:<project-id>:<hex>` — full `project:<hex>`
+token embedded (matching `session:`/`handoff:`/`document:` per `ids.py:38-44`),
+allocated once at confirmed creation; `binding_ids[]` is
 mutable provenance. *Rejected: binding-scoped identity
 (`arch-node:<project>:<binding>:<hex>`)* — a component or flow may span multiple
 repositories, and embedding a binding id churns identity whenever repository
@@ -925,8 +1047,9 @@ Hotspots are further deferred and may render as temporal status rather than
 durable identities.
 
 **D5 — Model assistance does not block epic closure. (Chosen.)** The deterministic
-loop (A–H) delivers every #141 acceptance criterion and pressure test (§9) with no
-model in the path; AC18 (Claude Code ≡ Codex equivalent results) is satisfied by
+closure set (A, B, C, D, E, G, H — the primary owners of every acceptance
+criterion and pressure test, §9/§10) delivers all of them with no model in the
+path; AC18 (Claude Code ≡ Codex equivalent results) is satisfied by
 the provider-neutral deterministic workflow (child E), with child I adding only an
 optional authoring-parity layer. *Rejected: model assistance as a closure
 requirement* — no acceptance criterion requires model-generated content; making it
@@ -939,6 +1062,16 @@ blocking acceptance criterion must be named on child I; none exists today.
 ## 12. Audit: lost / weakened / duplicated / orphaned requirements
 
 Systematic pass over the current #141 body against the child DAG.
+
+> **Second-round corrections (readiness audit).** This pass also folded in the
+> implementation-readiness audit: (1) `arch-node` identity now embeds the **full
+> `project:<hex>` token**, matching the `session:`/`handoff:`/`document:` ID
+> convention (`ids.py:38-44`) and preserving cross-ID grep-ability, rather than a
+> bare hex; (2) every acceptance criterion/pressure test now has **exactly one
+> primary owner** (AC2, AC21 de-duplicated to D); (3) **closure is corrected to A,
+> B, C, D, E, G, H** — F owns no criterion and is non-blocking; (4) `apply-state.json`
+> lifecycle, per-binding non-contagious degradation, visible capability degradation,
+> allocate-once identity, and no-timestamp-only zero-write are now frozen explicitly.
 
 * **Lost:** none. Every acceptance criterion and pressure test has an owner (§9).
 * **Weakened:** none. Authority separation (FC-1), identity constraints (FC-2),
@@ -1002,7 +1135,9 @@ judgments or ledger entries.
 ## Frozen contracts
 - Authority separation: projection creates no context-graph edges/judgments;
   references context-node + evidence identities read-only from index.json.
-- Identity: arch-node:<project-id-hex>:<32-hex>, project-scoped and opaque;
+- Identity: arch-node:<project-id>:<32-hex> (full project:<hex> token embedded,
+  matching session/handoff/document ID convention), project-scoped and opaque,
+  allocated once at confirmed creation and immutable thereafter;
   repository participation (binding_ids[]) is mutable provenance; never derived
   from filename/title/owner-repo/path/provider-label/link-text; no binding id in
   identity; rename/transfer/rebind/add/remove never churns identity.
@@ -1043,7 +1178,10 @@ judgments or ledger entries.
 - Optional: I.
 
 ## Closure
-A through H close this epic. I is optional and non-blocking. #142 (historical
+Closure is gated by #141's acceptance criteria/pressure tests, which map to
+primary owners A, B, C, D, E, G, H — this is the closure-blocking set. F owns no
+acceptance criterion (it completes the note-type model but does not gate closure)
+and I is optional model assistance; both are non-blocking. #142 (historical
 enrichment) is separate, blocked, and conditional and is not part of this closure.
 
 ## Out of scope
