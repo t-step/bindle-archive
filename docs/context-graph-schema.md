@@ -133,6 +133,20 @@ grouped by contract category: `core/`, `map-shape/`, `endpoint-matrix/`,
 `bin/test-context-graph-schema.sh` to execute the whole corpus plus the
 JSON-Schema/native conformance pass.
 
+## Materialized index (`index.json`)
+
+`schemas/context-graph/v1/index.schema.json` defines the derived, rebuildable
+`index.json` envelope later `apply`-phase tasks (index_writer, apply) render
+against; it is presentation-only, never a source of truth. `project_id`
+carries the opaque project identity the index was built for. `edges[].origin`
+is `deterministic` or `human_judgment`, mirroring `edge.schema.json`'s
+authority split. `conflicts` lists detected but unresolved semantic
+conflicts surfaced for human review. `unresolved_evidence` lists evidence
+pointers the compiler could not attach to any node or edge.
+`suppressed_rejections` lists proposals or candidates rejected during
+compilation and intentionally excluded from the live graph, kept for
+auditability.
+
 ## Non-goals (owned elsewhere)
 
 This contract does not parse project maps (#183), resolve GitHub (#183/

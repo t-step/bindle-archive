@@ -4,11 +4,28 @@
   "title": "context-graph v1 derived materialized index (rebuildable, presentation only)",
   "type": "object",
   "additionalProperties": false,
-  "required": ["schema_version", "nodes", "edges", "coverage"],
+  "required": ["schema_version", "project_id", "nodes", "edges", "coverage",
+               "conflicts", "unresolved_evidence", "suppressed_rejections"],
   "properties": {
     "schema_version": { "const": 1 },
-    "nodes": { "type": "array" },
-    "edges": { "type": "array" },
+    "project_id": { "type": "string", "minLength": 1 },
+    "nodes": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "class", "kind", "label", "status"]
+      }
+    },
+    "edges": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["key", "source", "relationship", "target", "status", "origin", "review_trigger", "basis"],
+        "properties": {
+          "origin": { "enum": ["deterministic", "human_judgment"] }
+        }
+      }
+    },
     "coverage": {
       "type": "object",
       "properties": {
@@ -20,6 +37,9 @@
         "github_prs": { "enum": ["complete", "partial", "uncertain", "unavailable", "unsupported"] },
         "commits": { "enum": ["complete", "partial", "uncertain", "unavailable", "unsupported"] }
       }
-    }
+    },
+    "conflicts": { "type": "array" },
+    "unresolved_evidence": { "type": "array" },
+    "suppressed_rejections": { "type": "array" }
   }
 }
