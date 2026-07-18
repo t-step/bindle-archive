@@ -135,9 +135,16 @@ def build_plan(notes_home, project_slug, repo_roots=None, adopt_context_md=False
 
     def _revalidate(ev):
         if ev.get("subject_type") == "identity_anchor":
-            # An accepted anchor stays effective only while its entry still
-            # exists unanchored with byte-identical content (same fingerprint).
-            return ev.get("entry_fingerprint") in base_anchor_fps
+            # An accepted anchor stays effective if its target still exists
+            # in either state: already MATERIALIZED (its assigned_id is a
+            # node in the base graph, from a prior apply's marker) or still
+            # PENDING (its fingerprint is an unanchored candidate, not yet
+            # applied). base_anchor_fps only ever holds UNANCHORED entries,
+            # so without the materialized-node check every anchor would be
+            # flagged stale_illegal_judgment and dropped on the apply
+            # immediately after the one that materialized it (issue #185).
+            return (ev.get("assigned_id") in base_nodes_by_id
+                    or ev.get("entry_fingerprint") in base_anchor_fps)
         if ev.get("subject_type") == "edge":
             src = base_nodes_by_id.get(ev.get("source"))
             tgt = base_nodes_by_id.get(ev.get("target"))

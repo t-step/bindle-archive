@@ -42,17 +42,44 @@ class EdgeSubjectKey(unittest.TestCase):
 
 class AnchorSubjectKey(unittest.TestCase):
     def test_coarser_than_candidate_key_ignores_entry_fingerprint(self):
-        # Two different entry byte-versions of the same map slot share a subject.
-        s1 = canonical.anchor_subject_key("project:p", "map.md", "decisions", "decision")
-        s2 = canonical.anchor_subject_key("project:p", "map.md", "decisions", "decision")
+        # Two different entry byte-versions of the same map slot, SAME claim
+        # text, share a subject (editing the entry's BODY keeps the same
+        # subject; supersede via the finer candidate_key).
+        s1 = canonical.anchor_subject_key(
+            "project:p", "map.md", "decisions", "decision", "Use a lock")
+        s2 = canonical.anchor_subject_key(
+            "project:p", "map.md", "decisions", "decision", "Use a lock")
         self.assertEqual(s1, s2)
         self.assertTrue(s1.startswith("anchor-subject:sha256:"))
 
     def test_section_or_kind_change_changes_subject(self):
-        base = canonical.anchor_subject_key("project:p", "map.md", "decisions", "decision")
+        base = canonical.anchor_subject_key(
+            "project:p", "map.md", "decisions", "decision", "Use a lock")
         self.assertNotEqual(
-            base, canonical.anchor_subject_key("project:p", "map.md", "learnings", "decision")
+            base, canonical.anchor_subject_key(
+                "project:p", "map.md", "learnings", "decision", "Use a lock")
         )
+
+    def test_distinct_claims_do_not_collide(self):
+        # Bug 1 (#185 dogfood / #184 defect): two SIBLING entries in the same
+        # section+kind with DIFFERENT claim headings must get DIFFERENT
+        # subject keys -- the anti-collision fix (issue #185).
+        s1 = canonical.anchor_subject_key(
+            "project:p", "map.md", "decisions", "decision", "First decision")
+        s2 = canonical.anchor_subject_key(
+            "project:p", "map.md", "decisions", "decision", "Second decision")
+        self.assertNotEqual(s1, s2)
+
+    def test_same_claim_same_subject_supersede_on_body_edit(self):
+        # Editing an entry's BODY (not its claim heading) keeps the same
+        # subject_key, so re-accepting supersedes the prior acceptance for
+        # that slot -- this is the existing #184 binding-amendment behavior,
+        # unaffected by the anti-collision fix.
+        s1 = canonical.anchor_subject_key(
+            "project:p", "map.md", "decisions", "decision", "Use a lock")
+        s2 = canonical.anchor_subject_key(
+            "project:p", "map.md", "decisions", "decision", "Use a lock")
+        self.assertEqual(s1, s2)
 
 
 class EdgeDependencyFingerprint(unittest.TestCase):

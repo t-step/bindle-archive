@@ -34,6 +34,25 @@ ANCHOR_MAP = (
 _A = "context-node:demo:" + "a" * 32
 _B = "context-node:demo:" + "b" * 32
 
+# TWO unanchored decisions, same section+kind, DISTINCT claim headings. Bug 1
+# (#185 dogfood / #184 defect): anchor_subject_key had no per-entry input, so
+# both entries produced the SAME subject_key -> the reducer's `effective`
+# dict (keyed by subject_key) let the second accepted anchor silently
+# overwrite the first.
+TWO_DECISION_MAP = (
+    "# Demo\n\n"
+    "## Brief\n\n"
+    "## Decisions\n"
+    "### First decision (2026-07, settled)\n"
+    "why: x\nso: y\nevidence:\n\n"
+    "### Second decision (2026-07, settled)\n"
+    "why: x\nso: y\nevidence:\n\n"
+    "## Learnings\n\n"
+    "## Assumptions & tensions\n\n"
+    "## Open questions\n\n"
+    "## Superseded\n"
+)
+
 # Two anchored decisions/learnings for the abort test. D is a decision, L a
 # learning; `L --motivates--> D` is legal because motivates' target may be a
 # decision. Moving D into `## Learnings` (ABORT_MAP_ILLEGAL) turns it into a
@@ -330,6 +349,73 @@ class ApplyWriteTest(unittest.TestCase):
             os.path.join(pdir, ".bindle", "context", "index.json")))
         self.assertTrue(os.path.exists(os.path.join(pdir, "context.md")))
         self.assertFalse(os.path.exists(lpath))
+
+
+class BuildPlanTwoDecisionAnchorTest(unittest.TestCase):
+    """Bug 1 (#185 dogfood, a #184 defect fixed here per maintainer ruling):
+    anchor_subject_key(project_id, map_path, section, entry_kind) has no
+    per-entry input, so two decisions in the same section+kind collide onto
+    ONE subject_key -> ledger.reduce_judgments' `effective` dict (keyed by
+    subject_key) lets the second accepted anchor silently overwrite the
+    first. Confirming BOTH sibling anchors must yield BOTH anchored nodes.
+    FAILS before the fix (only one decision anchors)."""
+
+    def setUp(self):
+        self.nh = tempfile.mkdtemp()
+        self.addCleanup(shutil.rmtree, self.nh, ignore_errors=True)
+        self.slug = "demo"
+        config.init_project(self.nh, self.slug)
+        _write_map(self.nh, self.slug, TWO_DECISION_MAP)
+
+    def test_both_sibling_anchors_survive(self):
+        preview = compiler.compile_preview(self.nh, self.slug)
+        cands = preview["identity_anchor_candidates"]
+        self.assertEqual(len(cands), 2, cands)
+        for c in cands:
+            res = review.confirm(self.nh, self.slug, c["candidate_key"], "accepted",
+                                 now="2026-07-17T00:00:00Z")
+            self.assertIsNotNone(res["event"], res["findings"])
+
+        plan = apply.build_plan(self.nh, self.slug)
+        self.assertTrue(plan["ok"], plan.get("findings"))
+        planned_bytes = plan["artifacts"]["map"]["planned_bytes"]
+        self.assertEqual(planned_bytes.count(b"bindle:context-id:"), 2)
+        labels = [n["label"]
+                  for n in plan["artifacts"]["index"]["planned_obj"]["nodes"]]
+        self.assertIn("First decision", labels)
+        self.assertIn("Second decision", labels)
+
+
+class ApplyIdempotentAnchorTest(unittest.TestCase):
+    """Bug 2 (#185's own bug): `_revalidate`'s identity_anchor branch only
+    checked `base_anchor_fps`, which the compiler emits ONLY for UNANCHORED
+    entries -- so once an anchor is materialized (its marker written on a
+    prior apply), the NEXT apply flags the accepted event
+    `stale_illegal_judgment` and drops it, forever. FAILS before the fix
+    (second apply loses the anchor)."""
+
+    def setUp(self):
+        self.nh = tempfile.mkdtemp()
+        self.addCleanup(shutil.rmtree, self.nh, ignore_errors=True)
+        self.slug = "demo"
+        config.init_project(self.nh, self.slug)
+        _write_map(self.nh, self.slug, ANCHOR_MAP)
+        preview = compiler.compile_preview(self.nh, self.slug)
+        key = preview["identity_anchor_candidates"][0]["candidate_key"]
+        review.confirm(self.nh, self.slug, key, "accepted",
+                       now="2026-07-17T00:00:00Z")
+
+    def test_second_apply_keeps_anchor_effective(self):
+        res1 = apply.apply(self.nh, self.slug)
+        self.assertTrue(res1["ok"], res1.get("findings"))
+
+        plan2 = apply.build_plan(self.nh, self.slug)
+        self.assertTrue(plan2["ok"], plan2.get("findings"))
+        codes = [f["code"] for f in plan2["findings"]]
+        self.assertNotIn("stale_illegal_judgment", codes)
+        labels = [n["label"]
+                  for n in plan2["artifacts"]["index"]["planned_obj"]["nodes"]]
+        self.assertIn("Use a single-writer lock", labels)
 
 
 if __name__ == "__main__":
