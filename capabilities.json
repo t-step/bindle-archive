@@ -1033,6 +1033,14 @@
     {
       "path": "bin/context_graph/tests/test_compiler.py",
       "reason": "unit tests for context_graph.compiler; test infrastructure, not a capability an agent invokes."
+    },
+    {
+      "path": "bin/context_graph/ledger.py",
+      "reason": "library module for #184 context-graph judgment ledger persistence (append-only judgments.jsonl state, load/append operations); foundation module consumed by context_graph judgment ledger orchestration, not a standalone capability."
+    },
+    {
+      "path": "bin/context_graph/tests/test_ledger.py",
+      "reason": "unit tests for context_graph.ledger; test infrastructure, not a capability an agent invokes."
     }
   ],
   "external_upstreams": [
