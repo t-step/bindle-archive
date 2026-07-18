@@ -1,6 +1,6 @@
 # context-graph — pressure tests
 
-**Status: VERIFIED (2026-07-18, issue #186).** Three layers of evidence:
+**Status: VERIFIED (2026-07-18, issues #186/#211).** Four layers of evidence:
 
 1. **Structural graduation gate (the graduation-blocking guarantee).**
    `bin/test-context-graph-skill.sh` — wired into `make test` and pre-commit —
@@ -18,6 +18,10 @@
    where the harness had reindexed the *installed* skill, invoking it through the
    **Skill tool** (no injected guidance), graded from raw transcripts. Confirms
    the trigger fires and the wording holds behavior end-to-end. See Layer 3.
+4. **Codex adapter live proof.** A real `codex exec` session, run from the
+   `cover-story` checkout against that project's context graph, authored a
+   `proposal.json`, formed the `propose` invocation from the helper CLI, and
+   received the same candidate key as an equivalent fixture proposal. See Layer 4.
 
 Because this skill's core safety is *structural* — every path flows through the
 same `propose`/`confirm` authority — the structural gate is the primary proof;
@@ -186,11 +190,65 @@ discharges the Layer-2 live-discovery deferral. The lone no-Skill-tool rep (A3) 
 recorded as-is: discovery is reliable but not universal, and the underlying
 invariant is source-discoverable regardless.
 
+## Layer 4 — Codex adapter live proof (2026-07-18, issue #211)
+
+The Codex adapter deferral is **discharged**. A real Codex CLI session was run
+from the `cover-story` checkout with:
+
+```
+codex exec --skip-git-repo-check -s workspace-write -C <cover-story checkout> "<prompt>"
+```
+
+The prompt supplied only the portable contract, the notes-home/project slug, and
+the helper path. It did **not** supply the exact `propose` command. Raw JSONL
+transcripts were kept outside the repository because they include local absolute
+paths.
+
+**Transcript grade.** The nested Codex session inspected the helper CLI
+(`--help` for `preview`, `candidates`, and `propose`), previewed the real
+`cover-story` graph, wrote `proposal.json`, and actually ran:
+
+```
+<bindle>/bin/context-graph.py propose \
+  --notes-home <notes-home> --project cover-story --format json \
+  --input proposal.json
+```
+
+No `confirm` or `apply` command was run. The validating command exited `0` and
+returned a candidate with empty findings:
+
+- `candidate_key`: `candidate:sha256:1f80fbd3b3553a0300665e15e9ac0deafcfc4fb200b5cda635a85b070b07f65e`
+- `subject_key`: `edge-subject:sha256:ad8262f3c1333e51948e327a532a45b606689fe461d558bb515bfda9a4419c2e`
+- source: `context-node:cover-story:a82c67cabaac21d40295b09b20cc7576`
+  (`semantic` / `decision`)
+- relationship: `constrains`
+- target: `context-node:cover-story:9b18c56f9aea25cffc592fee5765d717`
+  (`semantic` / `assumption`)
+- basis: `design/caper-systems-bible.md`
+- producer: `skill`
+
+**Fixture parity.** An equivalent `producer: "fixture"` proposal, differing only
+in producer provenance, was run through the same CLI against the same graph. It
+also exited `0`, returned empty findings, and emitted the identical
+`candidate_key`, `subject_key`, and dependency fingerprint. Only the recorded
+`producer` field differed.
+
+**Provenance gotcha.** An initial proof prompt asked the nested session to use
+`producer: "codex"`. The CLI rejected that with `E_PROPOSAL_MALFORMED` because
+v1 accepts only `fixture`, `human`, and `skill`. That was a prompt error, not a
+CLI-equivalence failure; the successful proof uses the accepted adapter
+provenance vocabulary.
+
+**Verdict.** Codex can author a proposal against the provider-neutral CLI without
+being handed the exact invocation, and the validated proposal reduces to the same
+canonical candidate as an equivalent fixture proposal. CLI equivalence holds
+cross-provider for this adapter proof.
+
 ## Deferred
 
 - ~~**Live-discovery behavioral reps**~~ — **done 2026-07-18, see Layer 3.** A
   fresh post-merge session (harness reindexed the installed skill) confirmed
   subagents invoke it via the Skill tool and hold behavior on both scenarios.
-- **Codex adapter:** CLI equivalence is machine-proven (a `producer=fixture`
-  proposal reduces identically), but a real Codex session authoring a proposal
-  against the CLI has not been run — see the `skill-portability-audit.md` row.
+- ~~**Codex adapter**~~ — **done 2026-07-18, see Layer 4.** A real Codex session
+  authored a proposal against the CLI and reduced to the same candidate as the
+  equivalent fixture proposal.
