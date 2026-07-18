@@ -124,6 +124,13 @@ repos:
         additional_dependencies: ["jsonschema"]
         pass_filenames: false
         always_run: true
+      - id: bindle-test-structural-graph
+        name: structural-graph interchange tests
+        entry: bash bin/test-structural-graph.sh
+        language: python
+        additional_dependencies: ["jsonschema"]
+        pass_filenames: false
+        always_run: true
       - id: bindle-test-context-evidence
         name: context-evidence normalizer tests
         entry: bin/test-context-evidence.sh
