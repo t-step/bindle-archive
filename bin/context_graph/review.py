@@ -175,7 +175,8 @@ def _confirm_anchor(notes_home, slug, candidate_key, decision, repo_roots,
 
     if c is not None:
         subject_key = canonical.anchor_subject_key(
-            c["project_id"], c["map_path"], c["section"], c["entry_kind"])
+            c["project_id"], c["map_path"], c["section"], c["entry_kind"],
+            c["display_claim"])
         entry_fp = c["entry_fingerprint"]
     elif prior is not None:
         subject_key = prior.get("subject_key")

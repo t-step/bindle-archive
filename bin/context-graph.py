@@ -15,11 +15,13 @@ docs/design/2026-07-17-context-graph-foundation.md section 4. #183 adds
 history), `propose` (validate an edge proposal against a fresh preview,
 writes nothing, takes no lock), and `confirm` (revalidate against the
 current graph and append exactly one judgment event under the
-single-writer "confirm" lock). The remaining verbs shown in that design
-(`apply`, bare `validate`/`status`) belong to #185/#186 and are not
-defined here. `preview` intentionally has no `--adopt-context-md` flag --
-that flag previews a `context.md` diff, which is #185's apply-safety
-projection, not part of #183's own scope.
+single-writer "confirm" lock). #185 adds `apply` -- recompute a fresh
+preview, reduce #184's judgment ledger against it, and atomically write
+map.md/index.json/context.md under the single-writer "apply" lock. The
+remaining verb shown in that design (bare `validate`/`status`) belongs to
+#185/#186 and is not defined here. `preview` intentionally has no
+`--adopt-context-md` flag -- that flag previews a `context.md` diff, which
+is `apply`'s own safety projection, not part of #183's own scope.
 
 Exit codes: 0 success (including a `config validate` run that found zero
 findings, a `preview` run whose conflicts list is non-empty, or a
@@ -32,9 +34,10 @@ review.ReviewError from `candidates`/`propose`/`confirm` (review._preview()
 wraps the same underlying CompilerError before it reaches the CLI),
 lock.LockContention on `init`, a
 non-empty findings list from `config validate`, `propose` (no valid
-candidate), or `confirm` (rejected/stale/invalid); 2 argparse usage error
-(e.g. a missing required argument) -- unchanged stdlib behavior, not
-implemented by this CLI.
+candidate), `confirm` (rejected/stale/invalid), or `apply` (ok=False, or
+ok=True with a non-empty conflicts list, e.g. an unmanaged context.md); 2
+argparse usage error (e.g. a missing required argument) -- unchanged
+stdlib behavior, not implemented by this CLI.
 """
 import argparse
 import json
@@ -44,6 +47,7 @@ import sys
 
 sys.path.insert(0, os.path.dirname(__file__))
 
+from context_graph import apply as apply_mod
 from context_graph import atomic_io
 from context_graph import compiler
 from context_graph import config
@@ -132,8 +136,31 @@ def cmd_config_status(args):
     owner_live = None
     if isinstance(owner, dict) and "pid" in owner and owner.get("hostname") == socket.gethostname():
         owner_live = lock.pid_is_running(owner["pid"])
-    _emit({"config": cfg, "lock": owner, "lock_owner_live": owner_live}, args.format)
+    pdir = config.project_dir(args.notes_home, args.project)
+    orphaned_temp_files = _find_orphaned_temp_files((pdir, cdir))
+    _emit({"config": cfg, "lock": owner, "lock_owner_live": owner_live,
+           "orphaned_temp_files": orphaned_temp_files}, args.format)
     return 0
+
+
+def _find_orphaned_temp_files(directories):
+    """Report (never delete -- design doc section 12, orphan cleanup is
+    passive) files left behind by a crash between atomic_io.write_atomic's
+    tempfile.mkstemp() call and its os.replace(). Matches that call's exact
+    convention: prefix=".tmp-", no fixed suffix, created directly in the
+    directory that holds the file it was standing in for."""
+    found = set()
+    for directory in directories:
+        try:
+            entries = os.listdir(directory)
+        except OSError:
+            continue
+        for name in entries:
+            if name.startswith(".tmp-"):
+                candidate = os.path.join(directory, name)
+                if os.path.isfile(candidate):
+                    found.add(candidate)
+    return sorted(found)
 
 
 def cmd_config_validate(args):
@@ -279,6 +306,19 @@ def cmd_confirm(args):
     return 0 if not out["findings"] else 1
 
 
+def cmd_apply(args):
+    try:
+        repo_roots = _parse_repo_roots(args.repo_root)
+    except ValueError as e:
+        _emit({"findings": _error_findings("E_USAGE", str(e))}, args.format)
+        return 1
+    out = apply_mod.apply(args.notes_home, args.project,
+                          repo_roots=repo_roots,
+                          adopt_context_md=args.adopt_context_md)
+    _emit(out, args.format)
+    return 0 if out["ok"] and not out["conflicts"] else 1
+
+
 def cmd_config_break_lock(args):
     cdir = config.context_dir(args.notes_home, args.project)
     if not args.force:
@@ -334,6 +374,16 @@ def main(argv=None):
     p_confirm.add_argument("--input", default=None, metavar="PATH",
                             help="proposal.json (required for edge accepted|rejected)")
     p_confirm.set_defaults(func=cmd_confirm)
+
+    p_apply = sub.add_parser(
+        "apply", help="recompute, validate, and atomically write map/index/context (#185)")
+    _add_common_args(p_apply)
+    p_apply.add_argument(
+        "--repo-root", action="append", default=[], metavar="ALIAS=PATH",
+        help="repeatable; ALIAS must be a configured repository alias")
+    p_apply.add_argument("--adopt-context-md", action="store_true",
+                         help="adopt a still-markerless context.md, refusing if it gained markers")
+    p_apply.set_defaults(func=cmd_apply)
 
     p_config = sub.add_parser("config", help="read or mutate project configuration")
     config_sub = p_config.add_subparsers(dest="config_command", required=True)

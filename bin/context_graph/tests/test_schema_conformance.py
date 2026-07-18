@@ -31,6 +31,10 @@ def _load_schema(name):
         return json.load(fh)
 
 
+def _validate(document, schema):
+    jsonschema.validate(document, schema)
+
+
 @unittest.skipUnless(HAVE_JSONSCHEMA, "jsonschema not installed (test-only dependency; skipped locally)")
 class TestSchemaConformance(unittest.TestCase):
     """Every schema-and-native-classified invariant must agree between the
@@ -127,6 +131,31 @@ class TestSchemaConformance(unittest.TestCase):
                         self.fail("%s: %s object failed schema conformance: %s" % (path, key, exc))
         self.assertGreater(checked, 0, "no objects were checked — fixture corpus is empty")
         self.assertGreater(skipped, 0, "expected at least one non-expect_valid:true bundle to be skipped")
+
+    def test_index_schema_accepts_materialized_index(self):
+        schema = _load_schema("index.schema.json")
+        doc = {
+            "schema_version": 1,
+            "project_id": "context-project:abc123",
+            "nodes": [{"id": "context-project:abc123", "class": "project",
+                       "kind": None, "label": "Demo", "status": "active"}],
+            "edges": [{"key": "a|supports|b", "source": "a", "relationship": "supports",
+                       "target": "b", "status": "confirmed", "origin": "human_judgment",
+                       "basis": [], "review_trigger": False}],
+            "coverage": {"project_map": "complete", "sessions": "complete",
+                         "handoffs": "complete", "documents": "complete",
+                         "github_issues": "complete", "github_prs": "complete",
+                         "commits": "complete"},
+            "conflicts": [], "unresolved_evidence": [], "suppressed_rejections": [],
+        }
+        _validate(doc, schema)  # must not raise
+
+    def test_index_schema_rejects_unknown_top_level_key(self):
+        schema = _load_schema("index.schema.json")
+        doc = {"schema_version": 1, "nodes": [], "edges": [],
+               "coverage": {}, "surprise": 1}
+        with self.assertRaises(Exception):
+            _validate(doc, schema)
 
 
 @unittest.skipUnless(HAVE_JSONSCHEMA, "jsonschema not installed (test-only dependency; skipped locally)")

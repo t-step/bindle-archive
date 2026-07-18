@@ -223,12 +223,17 @@ def _node_class_kind(node):
     return node.get("class"), node.get("kind")
 
 
-def compile_preview(notes_home, project_slug, repo_roots=None, github_adapter=None):
+def compile_preview(notes_home, project_slug, repo_roots=None, github_adapter=None,
+                     map_text_override=None):
     """Run the full deterministic preview pipeline and return one preview
     dict. Writes nothing. Raises CompilerError only when configuration is
     missing/malformed or the map cannot be read at all -- every other
     problem (malformed entry, unresolved evidence, illegal edge) is
-    reported inside the returned preview's "conflicts", never raised."""
+    reported inside the returned preview's "conflicts", never raised.
+
+    map_text_override, when given, is parsed as the project map (coverage
+    "complete") instead of reading map.md from disk. Default None preserves
+    today's on-disk-read behavior byte-for-byte."""
     conflicts = []
 
     # Phase 1: load configuration (read-only).
@@ -240,8 +245,13 @@ def compile_preview(notes_home, project_slug, repo_roots=None, github_adapter=No
     # Phase 2: validate roots and ownership.
     conflicts.extend(_validate_roots(cfg, repo_roots))
 
-    # Phase 3: parse map entries.
-    map_text, project_map_coverage = _read_map(notes_home, project_slug)
+    # Phase 3: parse map entries. A caller-supplied map_text_override (the
+    # apply orchestrator's planned map bytes, in memory) is parsed in place
+    # of the on-disk map.md -- see design doc section 12 steps 4-5.
+    if map_text_override is not None:
+        map_text, project_map_coverage = map_text_override, "complete"
+    else:
+        map_text, project_map_coverage = _read_map(notes_home, project_slug)
     parsed = {"entries": [], "conflicts": []} if map_text is None else map_parser.parse_project_map(map_text)
     conflicts.extend(parsed["conflicts"])
     map_rel_path = _map_rel_path(project_slug)

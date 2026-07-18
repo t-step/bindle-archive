@@ -184,12 +184,16 @@ def edge_subject_key(source_id, relationship, target_id):
     return "edge-subject:sha256:" + hashlib.sha256(payload).hexdigest()
 
 
-def anchor_subject_key(project_id, map_path, section, entry_kind):
+def anchor_subject_key(project_id, map_path, section, entry_kind, display_claim):
     """Identity-anchor subject key: bindle-context-anchor-subject-v1 — the
-    reducer's grouping identity for a single map slot, coarser than the anchor
-    candidate key (no entry_fingerprint input). Editing an entry's bytes yields
-    a new candidate key but the same subject, so re-accepting supersedes the
-    prior acceptance for that slot (issue #184 binding amendment)."""
+    reducer's grouping identity for a single map slot: (project, map,
+    section, kind, claim-text), coarser than the anchor candidate key (no
+    entry_fingerprint input). Editing an entry's BODY keeps the same claim
+    heading and therefore the same subject, so re-accepting supersedes the
+    prior acceptance for that slot (issue #184 binding amendment). Editing
+    the CLAIM HEADING changes `display_claim`, yielding a NEW subject — a
+    new slot — which is what keeps sibling entries with distinct claims in
+    the same section+kind from colliding onto one subject (issue #185)."""
     payload = b"\0".join(
         (
             b"bindle-context-anchor-subject-v1",
@@ -197,6 +201,7 @@ def anchor_subject_key(project_id, map_path, section, entry_kind):
             map_path.encode("utf-8"),
             section.encode("utf-8"),
             entry_kind.encode("utf-8"),
+            display_claim.encode("utf-8"),
         )
     )
     return "anchor-subject:sha256:" + hashlib.sha256(payload).hexdigest()
