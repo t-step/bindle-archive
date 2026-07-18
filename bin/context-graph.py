@@ -10,23 +10,30 @@ add-repository`, `config update-repository`, `config remove-repository`,
 `config set-default`, `config break-lock` — the initialization and
 configuration boundary frozen by
 docs/design/2026-07-17-context-graph-foundation.md section 4. #183 adds
-`preview` -- the read-only, write-nothing deterministic compiler. The
-remaining verbs shown in that design (`candidates`, `propose`, `confirm`,
-`apply`, bare `validate`/`status`) belong to #184/#185/#186 and are not
+`preview` -- the read-only, write-nothing deterministic compiler. #184 adds
+`candidates` (read-only union of live anchor candidates and ledger
+history), `propose` (validate an edge proposal against a fresh preview,
+writes nothing, takes no lock), and `confirm` (revalidate against the
+current graph and append exactly one judgment event under the
+single-writer "confirm" lock). The remaining verbs shown in that design
+(`apply`, bare `validate`/`status`) belong to #185/#186 and are not
 defined here. `preview` intentionally has no `--adopt-context-md` flag --
 that flag previews a `context.md` diff, which is #185's apply-safety
 projection, not part of #183's own scope.
 
 Exit codes: 0 success (including a `config validate` run that found zero
-findings, or a `preview` run whose conflicts list is non-empty --
-conflicts are reported, not run failures); 1 a domain error's findings
-list was rendered instead of a traceback -- config.ConfigError (and
-subclasses, e.g. ConfigInvalidError, ConfigMissingError) from any
-config.py call, context_graph.compiler.CompilerError from `preview`
-(missing/malformed configuration, an unreadable map), lock.LockContention
-on `init`, or a non-empty findings list from `config validate`; 2 argparse
-usage error (e.g. a missing required argument) -- unchanged stdlib
-behavior, not implemented by this CLI.
+findings, a `preview` run whose conflicts list is non-empty, or a
+`candidates` run with an empty rows list -- these are reported, not run
+failures); 1 a domain error's findings list was rendered instead of a
+traceback -- config.ConfigError (and subclasses, e.g. ConfigInvalidError,
+ConfigMissingError) from any config.py call, context_graph.compiler.CompilerError
+from `preview`/`candidates`/`propose`/`confirm` (missing/malformed
+configuration, an unreadable map), review.ReviewError from
+`candidates`/`propose`/`confirm`, lock.LockContention on `init`, a
+non-empty findings list from `config validate`, `propose` (no valid
+candidate), or `confirm` (rejected/stale/invalid); 2 argparse usage error
+(e.g. a missing required argument) -- unchanged stdlib behavior, not
+implemented by this CLI.
 """
 import argparse
 import json
@@ -36,9 +43,11 @@ import sys
 
 sys.path.insert(0, os.path.dirname(__file__))
 
+from context_graph import atomic_io
 from context_graph import compiler
 from context_graph import config
 from context_graph import lock
+from context_graph import review
 
 
 def _emit(obj, fmt):
@@ -225,6 +234,50 @@ def cmd_preview(args):
     return 0
 
 
+def cmd_candidates(args):
+    try:
+        out = review.list_candidates(args.notes_home, args.project,
+                                      subject_type=args.subject_type, status=args.status)
+    except review.ReviewError as exc:
+        _emit({"findings": exc.findings}, args.format)
+        return 1
+    _emit(out, args.format)
+    return 0
+
+
+def cmd_propose(args):
+    try:
+        proposal = atomic_io.read_json(args.input)
+    except (OSError, ValueError) as exc:
+        _emit({"findings": _error_findings("E_INPUT_UNREADABLE", str(exc))}, args.format)
+        return 1
+    try:
+        out = review.propose(args.notes_home, args.project, proposal)
+    except review.ReviewError as exc:
+        _emit({"findings": exc.findings}, args.format)
+        return 1
+    _emit(out, args.format)
+    return 0 if out["candidate"] is not None else 1
+
+
+def cmd_confirm(args):
+    proposal = None
+    if args.input:
+        try:
+            proposal = atomic_io.read_json(args.input)
+        except (OSError, ValueError) as exc:
+            _emit({"findings": _error_findings("E_INPUT_UNREADABLE", str(exc))}, args.format)
+            return 1
+    try:
+        out = review.confirm(args.notes_home, args.project, args.candidate_key,
+                              args.decision, proposal=proposal)
+    except review.ReviewError as exc:
+        _emit({"findings": exc.findings}, args.format)
+        return 1
+    _emit(out, args.format)
+    return 0 if not out["findings"] else 1
+
+
 def cmd_config_break_lock(args):
     cdir = config.context_dir(args.notes_home, args.project)
     if not args.force:
@@ -256,6 +309,30 @@ def main(argv=None):
         "--repo-root", action="append", default=[], metavar="ALIAS=PATH",
         help="repeatable; ALIAS must be a configured repository alias")
     p_preview.set_defaults(func=cmd_preview)
+
+    p_candidates = sub.add_parser(
+        "candidates", help="list candidates (union of live anchors + ledger, #184)")
+    _add_common_args(p_candidates)
+    p_candidates.add_argument("--subject-type", choices=["edge", "identity_anchor"], default=None)
+    p_candidates.add_argument(
+        "--status", choices=["pending", "accepted", "rejected", "retired"], default=None)
+    p_candidates.set_defaults(func=cmd_candidates)
+
+    p_propose = sub.add_parser(
+        "propose", help="validate an edge proposal against a fresh preview; writes nothing (#184)")
+    _add_common_args(p_propose)
+    p_propose.add_argument("--input", required=True, metavar="PATH",
+                            help="path to a proposal.json envelope")
+    p_propose.set_defaults(func=cmd_propose)
+
+    p_confirm = sub.add_parser(
+        "confirm", help="append one judgment event under the single-writer lock (#184)")
+    _add_common_args(p_confirm)
+    p_confirm.add_argument("--candidate-key", required=True)
+    p_confirm.add_argument("--decision", required=True, choices=["accepted", "rejected", "retired"])
+    p_confirm.add_argument("--input", default=None, metavar="PATH",
+                            help="proposal.json (required for edge accepted|rejected)")
+    p_confirm.set_defaults(func=cmd_confirm)
 
     p_config = sub.add_parser("config", help="read or mutate project configuration")
     config_sub = p_config.add_subparsers(dest="config_command", required=True)
