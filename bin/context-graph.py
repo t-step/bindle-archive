@@ -111,6 +111,65 @@ def cmd_config_validate(args):
     return 1 if findings else 0
 
 
+def cmd_config_add_repository(args):
+    try:
+        cfg, entry = config.add_repository(
+            args.notes_home, args.project, args.alias, args.provider,
+            coordinates=args.coordinates, local_checkout_path=args.local_checkout_path,
+            is_default=args.default)
+    except config.ConfigError as e:
+        _emit({"findings": e.findings}, args.format)
+        return 1
+    except lock.LockContention as e:
+        _emit({"findings": _error_findings("E_LOCK_CONTENTION", str(e))}, args.format)
+        return 1
+    _emit({"repository": entry, "config": cfg}, args.format)
+    return 0
+
+
+def cmd_config_update_repository(args):
+    default = True if args.default else (False if args.no_default else None)
+    try:
+        cfg, entry = config.update_repository(
+            args.notes_home, args.project, args.binding_id, alias=args.alias,
+            coordinates=args.coordinates, local_checkout_path=args.local_checkout_path,
+            default=default)
+    except config.ConfigError as e:
+        _emit({"findings": e.findings}, args.format)
+        return 1
+    except lock.LockContention as e:
+        _emit({"findings": _error_findings("E_LOCK_CONTENTION", str(e))}, args.format)
+        return 1
+    _emit({"repository": entry, "config": cfg}, args.format)
+    return 0
+
+
+def cmd_config_remove_repository(args):
+    try:
+        cfg, removed = config.remove_repository(args.notes_home, args.project, args.binding_id)
+    except config.ConfigError as e:
+        _emit({"findings": e.findings}, args.format)
+        return 1
+    except lock.LockContention as e:
+        _emit({"findings": _error_findings("E_LOCK_CONTENTION", str(e))}, args.format)
+        return 1
+    _emit({"removed": removed, "config": cfg}, args.format)
+    return 0
+
+
+def cmd_config_set_default(args):
+    try:
+        cfg, entry = config.set_default(args.notes_home, args.project, args.binding_id)
+    except config.ConfigError as e:
+        _emit({"findings": e.findings}, args.format)
+        return 1
+    except lock.LockContention as e:
+        _emit({"findings": _error_findings("E_LOCK_CONTENTION", str(e))}, args.format)
+        return 1
+    _emit({"repository": entry, "config": cfg}, args.format)
+    return 0
+
+
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__,
                                       formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -131,6 +190,36 @@ def main(argv=None):
     p_validate = config_sub.add_parser("validate", help="read-only config validation")
     _add_common_args(p_validate)
     p_validate.set_defaults(func=cmd_config_validate)
+
+    p_add = config_sub.add_parser("add-repository", help="add one repository binding")
+    _add_common_args(p_add)
+    p_add.add_argument("--alias", required=True)
+    p_add.add_argument("--provider", required=True)
+    p_add.add_argument("--coordinates", default=None)
+    p_add.add_argument("--local-checkout-path", default=None)
+    p_add.add_argument("--default", action="store_true")
+    p_add.set_defaults(func=cmd_config_add_repository)
+
+    p_update = config_sub.add_parser("update-repository", help="update one repository binding")
+    _add_common_args(p_update)
+    p_update.add_argument("--binding-id", required=True)
+    p_update.add_argument("--alias", default=None)
+    p_update.add_argument("--coordinates", default=None)
+    p_update.add_argument("--local-checkout-path", default=None)
+    default_group = p_update.add_mutually_exclusive_group()
+    default_group.add_argument("--default", action="store_true")
+    default_group.add_argument("--no-default", action="store_true")
+    p_update.set_defaults(func=cmd_config_update_repository)
+
+    p_remove = config_sub.add_parser("remove-repository", help="remove one repository binding")
+    _add_common_args(p_remove)
+    p_remove.add_argument("--binding-id", required=True)
+    p_remove.set_defaults(func=cmd_config_remove_repository)
+
+    p_default = config_sub.add_parser("set-default", help="set the unique default repository")
+    _add_common_args(p_default)
+    p_default.add_argument("--binding-id", required=True)
+    p_default.set_defaults(func=cmd_config_set_default)
 
     args = parser.parse_args(argv)
     return args.func(args)
