@@ -987,6 +987,18 @@
       "reason": "unit tests for #184 context-graph judgment ledger primitives; test infrastructure, not a capability an agent invokes."
     },
     {
+      "path": "bin/context_graph/proposals.py",
+      "reason": "library module for edge proposal validation and candidate production in the context_graph contract (#184); foundation module consumed by context_graph judgment ledger operations, not a standalone capability."
+    },
+    {
+      "path": "bin/context_graph/tests/fixtures_184.py",
+      "reason": "shared literal builders for #184 proposal and reducer tests; fixture infrastructure, not a capability an agent invokes."
+    },
+    {
+      "path": "bin/context_graph/tests/test_proposals.py",
+      "reason": "unit tests for context_graph.proposals; test infrastructure, not a capability an agent invokes."
+    },
+    {
       "path": "bin/context_graph/validation.py",
       "reason": "library module for object-kind validation and creation-authority checks in the context_graph contract; composes ids/relationships/canonical into validate_bundle/validate_config, not a standalone capability."
     },
