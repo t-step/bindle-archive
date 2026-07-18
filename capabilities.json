@@ -1059,6 +1059,14 @@
       "reason": "unit tests for context_graph.review; test infrastructure, not a capability an agent invokes."
     },
     {
+      "path": "bin/context_graph/apply.py",
+      "reason": "library module orchestrating the #185 apply pipeline (recompute #183, reduce #184 judgments, plan map/index/context, whole-state validation); consumed by bin/context-graph.py's `apply` subcommand (the capability row), not a standalone capability itself."
+    },
+    {
+      "path": "bin/context_graph/tests/test_apply.py",
+      "reason": "unit tests for context_graph.apply; test infrastructure, not a capability an agent invokes."
+    },
+    {
       "path": "bin/context_graph/index_writer.py",
       "reason": "library module rendering the deterministic rebuildable index.json object from a final graph (#185 apply); consumed by bin/context-graph.py's `apply` subcommand (the capability row), not a standalone capability itself."
     },
