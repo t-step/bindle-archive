@@ -217,3 +217,33 @@ def plan_context_md(existing_text, managed_body, title="Project"):
 
     new_text = existing_text[:begin_idx] + wrapped_region + existing_text[end_stop:]
     return {"action": "update", "text": new_text}
+
+
+def plan_adopt_context_md(existing_text, managed_body, title="Project"):
+    """Plan the `--adopt-context-md` transition for a hand-authored
+    `context.md` the preview found markerless. `existing_text` is the
+    file's current content (the file is expected to be present -- this is
+    the guard for an already-existing file, not the absent-file create
+    path). Pure: no I/O.
+
+    Re-checks the marker state at apply time: if the file is *still*
+    markerless it is safe to adopt non-destructively, preserving all
+    existing prose as maintainer notes below the newly inserted managed
+    region. If the file has gained ANY BEGIN/END occurrence since preview
+    (a valid pair or a malformed one), the adoption target moved out from
+    under us and we refuse rather than guess at merging around markers we
+    didn't expect.
+    """
+    kind, _, _ = _scan_markers(existing_text)
+    if kind != "unmanaged":
+        return {"action": "conflict", "code": "context_md_adopt_state_changed"}
+
+    wrapped_region = BEGIN + "\n" + managed_body + END
+    text = (
+        "# %s — context\n" % title
+        + wrapped_region
+        + "\n## Maintainer notes\n"
+        + "(notes below this line are yours -- the tool will never touch them)\n\n"
+        + existing_text
+    )
+    return {"action": "adopt", "text": text}

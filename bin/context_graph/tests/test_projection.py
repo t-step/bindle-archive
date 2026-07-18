@@ -116,5 +116,22 @@ class PlanContextMdTest(unittest.TestCase):
         self.assertEqual(out, {"action": "conflict", "code": "context_md_malformed_markers"})
 
 
+class AdoptContextMdTest(unittest.TestCase):
+    def test_still_markerless_adopts(self):
+        out = P.plan_adopt_context_md("hand written notes\n", SKELE_BODY)
+        self.assertEqual(out["action"], "adopt")
+        self.assertIn(P.BEGIN, out["text"])
+        self.assertIn("hand written notes", out["text"])
+
+    def test_gained_marker_refuses(self):
+        existing = P.BEGIN + "\nx\n" + P.END + "\n"
+        out = P.plan_adopt_context_md(existing, SKELE_BODY)
+        self.assertEqual(out, {"action": "conflict", "code": "context_md_adopt_state_changed"})
+
+    def test_gained_malformed_marker_refuses(self):
+        out = P.plan_adopt_context_md(P.BEGIN + "\nno end\n", SKELE_BODY)
+        self.assertEqual(out, {"action": "conflict", "code": "context_md_adopt_state_changed"})
+
+
 if __name__ == "__main__":
     unittest.main()
