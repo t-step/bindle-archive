@@ -20,10 +20,12 @@ import json
 import os
 
 from context_graph import (
+    atomic_io,
     compiler,
     config,
     index_writer,
     ledger,
+    lock,
     map_parser,
     projection,
     relationships as rel,
@@ -315,3 +317,70 @@ def build_plan(notes_home, project_slug, repo_roots=None, adopt_context_md=False
             },
         },
     }
+
+
+def _write_if_changed(path, planned_bytes):
+    """Semantic no-op comparison (design doc section 12 step 7): if the file
+    already exists and its bytes are byte-identical to `planned_bytes`, write
+    NOTHING -- no temp file, no rename, so its mtime never advances. Otherwise
+    atomically replace it and report whether the file was created or updated."""
+    existing = None
+    try:
+        with open(path, "rb") as fh:
+            existing = fh.read()
+    except FileNotFoundError:
+        existing = None
+    if existing is not None and existing == planned_bytes:
+        return {"path": path, "written": False, "reason": "noop"}
+    atomic_io.write_atomic(path, planned_bytes)
+    return {
+        "path": path,
+        "written": True,
+        "reason": "created" if existing is None else "updated",
+    }
+
+
+def _write_context(context_artifact, conflicts):
+    """Write context.md per its projection plan. create/update/adopt carry the
+    rendered `text` (UTF-8 encoded, then byte-compared like any other artifact);
+    `noop` writes nothing; `conflict` (e.g. a markerless hand-authored file)
+    writes nothing and appends its code to `conflicts` -- so a context conflict
+    still lets map + index write (per-file atomicity, not cross-file)."""
+    path = context_artifact["path"]
+    plan = context_artifact["plan"]
+    action = plan["action"]
+    if action in ("create", "update", "adopt"):
+        return _write_if_changed(path, plan["text"].encode("utf-8"))
+    if action == "noop":
+        return {"path": path, "written": False, "reason": "noop"}
+    # action == "conflict"
+    conflicts.append({"code": plan["code"], "artifact": "context.md"})
+    return {"path": path, "written": False, "reason": "conflict"}
+
+
+def apply(notes_home, project_slug, repo_roots=None, adopt_context_md=False,
+          github_adapter=None):
+    """Acquire the project single-writer lock, build the full plan inside it,
+    and atomically write only the artifacts whose planned bytes differ from
+    disk, in the fixed order map -> index -> context (design doc section 12
+    step 7: the persisted map marker is source authority; generated outputs
+    follow). Per-file atomicity only -- there is no cross-file atomicity. The
+    lock is released on completion or exception via ProjectLock's context
+    manager."""
+    cdir = config.context_dir(notes_home, project_slug)
+    with lock.ProjectLock(cdir, "apply"):
+        plan = build_plan(notes_home, project_slug, repo_roots,
+                          adopt_context_md, github_adapter)
+        if not plan["ok"]:
+            return {"ok": False, "findings": plan["findings"],
+                    "conflicts": plan.get("conflicts", []), "writes": []}
+        writes = []
+        art = plan["artifacts"]
+        writes.append(_write_if_changed(
+            art["map"]["path"], art["map"]["planned_bytes"]))      # map FIRST
+        writes.append(_write_if_changed(
+            art["index"]["path"], art["index"]["planned_bytes"]))  # index SECOND
+        conflicts = list(plan.get("conflicts", []))
+        writes.append(_write_context(art["context"], conflicts))   # context THIRD
+        return {"ok": True, "findings": plan["findings"],
+                "conflicts": conflicts, "writes": writes}

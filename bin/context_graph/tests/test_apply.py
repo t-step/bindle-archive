@@ -3,14 +3,16 @@ planned-state construction for the #185 apply pipeline (design doc section
 12 steps 1-6). build_plan writes nothing; these tests assert only on the
 returned plan.
 """
+import json
 import os
 import shutil
 import sys
 import tempfile
+import time
 import unittest
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", ".."))
-from context_graph import apply, canonical, compiler, config, ledger, review
+from context_graph import apply, canonical, compiler, config, ledger, lock, review
 
 # One UNANCHORED decision (no bindle:context-id marker) so compile_preview
 # emits exactly one identity_anchor candidate. The heading carries the
@@ -222,6 +224,112 @@ class BuildPlanTier2AbortTest(unittest.TestCase):
         self.assertIn("illegal_edge_planned_state", codes)
         # Tier 2 must NOT masquerade as the Tier 1 (continued) code.
         self.assertNotIn("stale_illegal_judgment", codes)
+
+
+class ApplyWriteTest(unittest.TestCase):
+    """Task 9 (design section 12 step 7): apply() acquires the single-writer
+    lock, calls build_plan inside it, and atomically writes only the artifacts
+    whose planned bytes differ from disk, in the fixed order map -> index ->
+    context. setUp mirrors BuildPlanAnchorTest: one accepted identity anchor."""
+
+    def setUp(self):
+        self.nh = tempfile.mkdtemp()
+        self.addCleanup(shutil.rmtree, self.nh, ignore_errors=True)
+        self.slug = "demo"
+        config.init_project(self.nh, self.slug)
+        _write_map(self.nh, self.slug, ANCHOR_MAP)
+        review.confirm(self.nh, self.slug, self._anchor_key(), "accepted",
+                       now="2026-07-17T00:00:00Z")
+
+    def _anchor_key(self):
+        preview = compiler.compile_preview(self.nh, self.slug)
+        return preview["identity_anchor_candidates"][0]["candidate_key"]
+
+    def _mtimes(self):
+        pdir = os.path.join(self.nh, "projects", self.slug)
+        cdir = os.path.join(pdir, ".bindle", "context")
+        return {
+            "map": os.path.getmtime(os.path.join(pdir, "map.md")),
+            "index": os.path.getmtime(os.path.join(cdir, "index.json")),
+            "context": os.path.getmtime(os.path.join(pdir, "context.md")),
+        }
+
+    def test_first_apply_writes_all_three(self):
+        res = apply.apply(self.nh, self.slug)
+        self.assertTrue(res["ok"], res.get("findings"))
+        pdir = os.path.join(self.nh, "projects", self.slug)
+        self.assertTrue(os.path.exists(os.path.join(pdir, "context.md")))
+        self.assertTrue(os.path.exists(
+            os.path.join(pdir, ".bindle", "context", "index.json")))
+        with open(os.path.join(pdir, "map.md")) as fh:
+            self.assertIn("bindle:context-id:", fh.read())
+        # Every artifact was written on the first apply, and the lock released.
+        self.assertTrue(all(w["written"] for w in res["writes"]))
+        self.assertFalse(os.path.exists(
+            lock.lock_path(config.context_dir(self.nh, self.slug))))
+
+    def test_second_unchanged_apply_zero_writes(self):
+        apply.apply(self.nh, self.slug)
+        before = self._mtimes()
+        res = apply.apply(self.nh, self.slug)
+        after = self._mtimes()
+        self.assertEqual(before, after)  # no mtime advances
+        self.assertTrue(all(not w["written"] for w in res["writes"]))
+        self.assertTrue(all(w["reason"] == "noop" for w in res["writes"]))
+
+    def test_markerless_context_md_refused_but_map_index_written(self):
+        pdir = os.path.join(self.nh, "projects", self.slug)
+        with open(os.path.join(pdir, "context.md"), "w") as fh:
+            fh.write("hand written, no markers\n")
+        res = apply.apply(self.nh, self.slug)
+        with open(os.path.join(pdir, "context.md")) as fh:
+            self.assertEqual(fh.read(), "hand written, no markers\n")  # untouched
+        codes = [c.get("code") for c in res["conflicts"]]
+        self.assertIn("context_md_unmanaged", codes)
+        self.assertTrue(os.path.exists(
+            os.path.join(pdir, ".bindle", "context", "index.json")))
+        # map + index still wrote despite the context conflict.
+        ctx_write = next(w for w in res["writes"] if w["path"].endswith("context.md"))
+        self.assertEqual(ctx_write["reason"], "conflict")
+        self.assertFalse(ctx_write["written"])
+        self.assertTrue(res["writes"][0]["written"])  # map
+        self.assertTrue(res["writes"][1]["written"])  # index
+
+    def test_stale_lock_broken_then_apply_reconstructs_full_state(self):
+        """Incomplete-apply detection and safe retry (design section 12): a
+        stale `.lock` (operation:"apply", old acquired_at) is left by a crashed
+        writer. After `lock.break_lock(cdir)` a fresh apply re-derives the whole
+        state from sources -- proving retry is a clean re-derivation, not a
+        resume of partial work. (apply's lock uses the default 10s contention
+        window, so we do not block on it here; break_lock is the operator path.)
+        """
+        cdir = config.context_dir(self.nh, self.slug)
+        os.makedirs(cdir, exist_ok=True)
+        lpath = lock.lock_path(cdir)
+        stale = {
+            "pid": 999999, "hostname": "crashed-host", "operation": "apply",
+            "acquired_at": time.strftime(
+                "%Y-%m-%dT%H:%M:%SZ", time.gmtime(time.time() - 86400)),
+        }
+        with open(lpath, "w", encoding="utf-8") as fh:
+            fh.write(json.dumps(stale, sort_keys=True))
+
+        # The stale lock is present and carries the crashed writer's metadata.
+        owner = lock.break_lock(cdir)
+        self.assertEqual(owner["operation"], "apply")
+        self.assertEqual(owner["hostname"], "crashed-host")
+        self.assertFalse(os.path.exists(lpath))
+
+        # A fresh apply reconstructs full state and releases the lock.
+        res = apply.apply(self.nh, self.slug)
+        self.assertTrue(res["ok"], res.get("findings"))
+        pdir = os.path.join(self.nh, "projects", self.slug)
+        with open(os.path.join(pdir, "map.md")) as fh:
+            self.assertIn("bindle:context-id:", fh.read())
+        self.assertTrue(os.path.exists(
+            os.path.join(pdir, ".bindle", "context", "index.json")))
+        self.assertTrue(os.path.exists(os.path.join(pdir, "context.md")))
+        self.assertFalse(os.path.exists(lpath))
 
 
 if __name__ == "__main__":
