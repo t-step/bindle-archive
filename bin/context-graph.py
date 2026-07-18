@@ -19,7 +19,7 @@ single-writer "confirm" lock). #185 adds `apply` -- recompute a fresh
 preview, reduce #184's judgment ledger against it, and atomically write
 map.md/index.json/context.md under the single-writer "apply" lock. The
 remaining verb shown in that design (bare `validate`/`status`) belongs to
-#186 and is not defined here. `preview` intentionally has no
+#185/#186 and is not defined here. `preview` intentionally has no
 `--adopt-context-md` flag -- that flag previews a `context.md` diff, which
 is `apply`'s own safety projection, not part of #183's own scope.
 
@@ -136,8 +136,31 @@ def cmd_config_status(args):
     owner_live = None
     if isinstance(owner, dict) and "pid" in owner and owner.get("hostname") == socket.gethostname():
         owner_live = lock.pid_is_running(owner["pid"])
-    _emit({"config": cfg, "lock": owner, "lock_owner_live": owner_live}, args.format)
+    pdir = config.project_dir(args.notes_home, args.project)
+    orphaned_temp_files = _find_orphaned_temp_files((pdir, cdir))
+    _emit({"config": cfg, "lock": owner, "lock_owner_live": owner_live,
+           "orphaned_temp_files": orphaned_temp_files}, args.format)
     return 0
+
+
+def _find_orphaned_temp_files(directories):
+    """Report (never delete -- design doc section 12, orphan cleanup is
+    passive) files left behind by a crash between atomic_io.write_atomic's
+    tempfile.mkstemp() call and its os.replace(). Matches that call's exact
+    convention: prefix=".tmp-", no fixed suffix, created directly in the
+    directory that holds the file it was standing in for."""
+    found = set()
+    for directory in directories:
+        try:
+            entries = os.listdir(directory)
+        except OSError:
+            continue
+        for name in entries:
+            if name.startswith(".tmp-"):
+                candidate = os.path.join(directory, name)
+                if os.path.isfile(candidate):
+                    found.add(candidate)
+    return sorted(found)
 
 
 def cmd_config_validate(args):
