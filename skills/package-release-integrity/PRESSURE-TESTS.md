@@ -351,7 +351,8 @@ literally compliant while leaving the authoritative check unrun.
 
 Under the predeclared scoring these are PASSes and that stands. This is a
 **separate soft spot**, not #224, and is deliberately **not fixed on this
-branch** — it needs its own issue and its own reps.
+branch** — tracked in **#242**, which owns the contract decision (invoke the
+authority vs. route to it verbally) and the reps that would follow it.
 
 ## Honest caveats
 
