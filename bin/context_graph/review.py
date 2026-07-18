@@ -215,3 +215,52 @@ def _confirm_anchor(notes_home, slug, candidate_key, decision, repo_roots,
 
     ledger.append_judgment(path, event)
     return {"event": event, "idempotent": False, "findings": []}
+
+
+def list_candidates(notes_home, slug, subject_type=None, status=None,
+                    repo_roots=None, github_adapter=None):
+    """Union of live #183 anchor regeneration and persisted ledger history.
+    Read-only: validates/generates nothing new, takes no lock (design
+    section 4, L241-257). Returns {"rows": [dict], "findings": [dict]}."""
+    rows = []
+    want_pending = status in (None, "pending")
+    want_ledger = status in (None, "accepted", "rejected", "retired")
+
+    if want_pending and subject_type in (None, "identity_anchor"):
+        preview = _preview(notes_home, slug, repo_roots, github_adapter)
+        for c in preview.get("identity_anchor_candidates", []):
+            rows.append({"subject_type": "identity_anchor", "status": "pending",
+                         "candidate_origin": c["candidate_origin"],
+                         "candidate_key": c["candidate_key"],
+                         "display_claim": c.get("display_claim")})
+    # Pending edge candidates never persist -> nothing to list (by construction).
+
+    if want_ledger:
+        path = ledger.judgments_path(notes_home, slug)
+        events = ledger.load_judgments(path)
+        reduced = ledger.reduce_judgments(events)
+        for ev in events:
+            st = _ledger_row_status(ev, reduced)
+            if st is None or (status is not None and st != status):
+                continue
+            if subject_type is not None and ev.get("subject_type") != subject_type:
+                continue
+            rows.append({"subject_type": ev.get("subject_type"), "status": st,
+                         "candidate_origin": "validated_proposal"
+                         if ev.get("subject_type") == "edge" else "deterministic_compiler",
+                         "candidate_key": ev.get("candidate_key")})
+    return {"rows": rows, "findings": []}
+
+
+def _ledger_row_status(ev, reduced):
+    key = ev.get("candidate_key")
+    if ev.get("decision") == "accepted":
+        for cur in reduced["effective"].values():
+            if cur["candidate_key"] == key:
+                return "accepted"
+        return None  # superseded/revoked acceptance is not a current row
+    if ev.get("decision") == "rejected" and key in reduced["rejected_keys"]:
+        return "rejected"
+    if ev.get("decision") == "retired" and key in reduced["retired_keys"]:
+        return "retired"
+    return None

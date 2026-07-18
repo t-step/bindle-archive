@@ -219,5 +219,32 @@ class ConfirmAnchor(ProposeBase):
         self.assertEqual(events[1]["entry_fingerprint"], c["entry_fingerprint"])
 
 
+class ListCandidates(ConfirmAnchor):
+    # ProposeBase's own map has both entries fully anchored, so it yields
+    # zero identity_anchor_candidates on its own (see ConfirmAnchor.setUp's
+    # comment) -- reuse ConfirmAnchor's fixture (one unanchored assumption
+    # bullet added) so pending-anchor listing actually has rows to assert on.
+    def test_pending_edge_is_always_empty(self):
+        out = review.list_candidates(self.notes_home, self.slug,
+                                     subject_type="edge", status="pending")
+        self.assertEqual(out["rows"], [])
+
+    def test_pending_anchor_lists_live_candidates(self):
+        out = review.list_candidates(self.notes_home, self.slug,
+                                     subject_type="identity_anchor", status="pending")
+        self.assertTrue(out["rows"])
+        for r in out["rows"]:
+            self.assertEqual(r["subject_type"], "identity_anchor")
+            self.assertIn("candidate_origin", r)
+
+    def test_accepted_reads_ledger(self):
+        c = review.list_candidates(self.notes_home, self.slug,
+                                   subject_type="identity_anchor", status="pending")["rows"][0]
+        review.confirm(self.notes_home, self.slug, c["candidate_key"], "accepted",
+                       now="2026-07-17T00:00:00Z")
+        out = review.list_candidates(self.notes_home, self.slug, status="accepted")
+        self.assertTrue(any(r["candidate_key"] == c["candidate_key"] for r in out["rows"]))
+
+
 if __name__ == "__main__":
     unittest.main()
