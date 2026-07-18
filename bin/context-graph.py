@@ -170,6 +170,18 @@ def cmd_config_set_default(args):
     return 0
 
 
+def cmd_config_break_lock(args):
+    if not args.force:
+        _emit({"findings": _error_findings(
+            "E_LOCK_BREAK_NOT_CONFIRMED",
+            "config break-lock requires --force to confirm")}, args.format)
+        return 1
+    cdir = config.context_dir(args.notes_home, args.project)
+    owner = lock.break_lock(cdir)
+    _emit({"removed_owner": owner}, args.format)
+    return 0
+
+
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__,
                                       formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -220,6 +232,11 @@ def main(argv=None):
     _add_common_args(p_default)
     p_default.add_argument("--binding-id", required=True)
     p_default.set_defaults(func=cmd_config_set_default)
+
+    p_break = config_sub.add_parser("break-lock", help="remove an existing .lock directly")
+    _add_common_args(p_break)
+    p_break.add_argument("--force", action="store_true")
+    p_break.set_defaults(func=cmd_config_break_lock)
 
     args = parser.parse_args(argv)
     return args.func(args)
