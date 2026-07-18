@@ -130,6 +130,12 @@ repos:
         language: script
         pass_filenames: false
         always_run: true
+      - id: bindle-test-context-graph-skill
+        name: context-graph skill ontology-safety graduation gate
+        entry: bin/test-context-graph-skill.sh
+        language: script
+        pass_filenames: false
+        always_run: true
       - id: bindle-link
         name: link new items into ~/.claude (post-merge)
         entry: bin/install.sh
