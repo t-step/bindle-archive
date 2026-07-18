@@ -38,6 +38,7 @@ test:
 	bin/test-map-entry-id.sh
 	bin/test-context-graph-schema.sh
 	bin/test-context-evidence.sh
+	bin/test-context-graph-cli.sh
 
 install:
 	bin/install.sh

@@ -16,6 +16,12 @@ New Bindle names prefer:
     profile.md
     sessions/YYYY-MM-DD-<slug>.md
     handoffs/YYYY-MM-DD-<slug>.md
+    context.md                       # NEW — regenerable projection, #185 apply
+    .bindle/context/
+      config.json                    # NEW — authoritative, #191
+      judgments.jsonl                # NEW — append-only ledger, #184
+      index.json                     # NEW — rebuildable materialized graph, #185
+      .lock                          # NEW — single-writer lock
 ```
 
 Everything is plain Markdown with safe kebab-case filenames. There is no

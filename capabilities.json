@@ -647,6 +647,19 @@
       "version_introduced": "0.7.0"
     },
     {
+      "name": "context-graph",
+      "type": "script",
+      "path": "bin/context-graph.py",
+      "description": "CLI entry point for Bindle's context graph (issue #191, epic #140), thin per the #180 adapter pattern — argument parsing and JSON/text rendering only, dispatching into context_graph.config / context_graph.lock for all domain logic. `init --notes-home DIR --project SLUG [--display-name NAME]` allocates a project identity and creates config.json under the project's .bindle/context directory, reporting `{\"created\": bool, \"config\": {...}}` (idempotent: a second call against an existing valid config reports created=false rather than erroring). `config status --notes-home DIR --project SLUG` is read-only: reports the current config plus lock file state (`lock`, `lock_owner_live` — the latter only resolved when the lock's recorded hostname matches the local host). `config validate --notes-home DIR --project SLUG` is read-only structural + semantic validation of the persisted config via context_graph.config.all_findings, printing `{\"findings\": [...]}` and exiting 1 if any finding is present, 0 otherwise. `config add-repository --notes-home DIR --project SLUG --alias ALIAS --provider PROVIDER [--coordinates COORD] [--local-checkout-path PATH] [--default]` appends one repository binding, allocating its binding_id and reporting `{\"repository\": {...}, \"config\": {...}}`. `config update-repository --notes-home DIR --project SLUG --binding-id ID [--alias ALIAS] [--coordinates COORD] [--local-checkout-path PATH] [--default | --no-default]` patches only the supplied fields on one existing binding (the mutually exclusive `--default`/`--no-default` pair set or unset default status; omitting both leaves it unchanged), reporting the same shape. `config remove-repository --notes-home DIR --project SLUG --binding-id ID` deletes one binding, reporting `{\"removed\": {...}, \"config\": {...}}`. `config set-default --notes-home DIR --project SLUG --binding-id ID` makes one existing binding the unique default, reporting `{\"repository\": {...}, \"config\": {...}}`. `config break-lock --notes-home DIR --project SLUG --force` removes an existing lock file directly (requires --force confirmation), reporting `{\"removed_owner\": null_or_dict}` and exiting 0 on success, or 1 if --force is absent. All eight subcommands accept `--format json|text`; every mutating subcommand except `config break-lock` (`init`, all four `config *-repository`/`set-default` verbs) wraps its domain call in `config.ConfigError` (renders `e.findings`, exit 1) and `lock.LockContention` (renders an `E_LOCK_CONTENTION` finding, exit 1) handling — a not-found binding-id surfaces as a clean findings list, never a traceback.",
+      "provider": {
+        "claude": "manual",
+        "codex": "manual"
+      },
+      "maturity": "tested",
+      "mutation": ["disk"],
+      "version_introduced": "0.7.0"
+    },
+    {
       "name": "release-captain",
       "type": "skill",
       "path": "skills/release-captain",
@@ -898,6 +911,10 @@
       "reason": "a point-in-time implementation plan for the #180 context-graph schema/fixture implementation; planning artifact, not itself a capability."
     },
     {
+      "path": "docs/superpowers/plans/2026-07-17-context-graph-init-config-191.md",
+      "reason": "a point-in-time implementation plan for the #191 context-graph project-identity/repository-binding implementation; planning artifact, not itself a capability."
+    },
+    {
       "path": "bin/check-context-graph-fixtures.py",
       "reason": "fixture validator invoked by the test harness / make check machinery, exactly like bin/check-inventory.py; not itself a capability an agent invokes for its own sake."
     },
@@ -906,8 +923,20 @@
       "reason": "package marker and module docstring for the context_graph library; internal machinery, not a capability invoked directly."
     },
     {
+      "path": "bin/context_graph/atomic_io.py",
+      "reason": "library module for atomic-write primitives (write_atomic, write_json_atomic, read_json, append_line_atomic) in the context_graph contract; foundation module consumed by context_graph state management, not a standalone capability."
+    },
+    {
+      "path": "bin/context_graph/lock.py",
+      "reason": "library module for single-writer project lock (atomic create-exclusive, bounded exponential backoff, contention timeouts) in the context_graph contract; foundation module consumed by init/config/confirm/apply operations, not a standalone capability."
+    },
+    {
       "path": "bin/context_graph/ids.py",
       "reason": "library module for typed-ID parsing/formatting in the context_graph contract; foundation module consumed by other contract modules, not a standalone capability."
+    },
+    {
+      "path": "bin/context_graph/config.py",
+      "reason": "library module for project identity allocation and the config.json init lifecycle (allocate_project_id, allocate_binding_id, load_config, init_project) in the context_graph contract; consumed by a future CLI task (init/config status/config validate), not a standalone capability itself."
     },
     {
       "path": "bin/context_graph/evidence.py",
@@ -918,8 +947,20 @@
       "reason": "test package marker; test infrastructure, not a capability."
     },
     {
+      "path": "bin/context_graph/tests/test_atomic_io.py",
+      "reason": "unit tests for context_graph.atomic_io; test infrastructure, not a capability an agent invokes."
+    },
+    {
+      "path": "bin/context_graph/tests/test_lock.py",
+      "reason": "unit tests for context_graph.lock; test infrastructure, not a capability an agent invokes."
+    },
+    {
       "path": "bin/context_graph/tests/test_ids.py",
       "reason": "unit tests for context_graph.ids; test infrastructure, not a capability an agent invokes."
+    },
+    {
+      "path": "bin/context_graph/tests/test_config.py",
+      "reason": "unit tests for context_graph.config; test infrastructure, not a capability an agent invokes."
     },
     {
       "path": "bin/context_graph/tests/test_evidence.py",
