@@ -374,5 +374,31 @@ class MissingMap(CompilerTestBase):
         self.assertEqual(preview["coverage"]["project_map"], "unavailable")
 
 
+class MapTextOverride(CompilerTestBase):
+    # Task 7 (#185): compile_preview can compile an in-memory map string
+    # instead of reading map.md from disk -- the seam apply's orchestrator
+    # (design doc section 12 steps 4-5) uses to preview the planned map
+    # bytes for the first-apply anchor, in the same run, without a write.
+    def test_map_text_override_used_instead_of_disk(self):
+        self.init()
+        self.write_map(self.base_map(decisions=(
+            "### On-disk decision (2026-07, settled) "
+            "<!-- bindle:context-id: context-node:%s:22222222222222222222222222222222 -->\n"
+            "why: x\nso: y\n" % self.slug
+        )))
+        override = self.base_map(decisions=(
+            "### Overridden decision (2026-07, settled) "
+            "<!-- bindle:context-id: context-node:%s:11111111111111111111111111111111 -->\n"
+            "why: x\nso: y\n" % self.slug
+        ))
+        preview = compiler.compile_preview(
+            self.notes_home, self.slug, map_text_override=override
+        )
+        labels = [n["label"] for n in preview["nodes"]]
+        self.assertIn("Overridden decision", labels)
+        self.assertNotIn("On-disk decision", labels)
+        self.assertEqual(preview["coverage"]["project_map"], "complete")
+
+
 if __name__ == "__main__":
     unittest.main()
