@@ -64,3 +64,38 @@ class ValidateEdgeProposal(unittest.TestCase):
             fx.preview())
         self.assertEqual(out["findings"], [])
         self.assertEqual(out["candidate"]["target_class"], "evidence")
+
+    def test_contradicts_candidate_endpoints_are_order_independent(self):
+        # Symmetric `contradicts` canonicalizes source/target lexicographically
+        # for the key -- the emitted candidate's own source/target (and their
+        # class/kind) must agree with that same canonicalized order, not the
+        # caller's submission order, or a consumer recomputing candidate_key
+        # from the embedded endpoints would get a different key back.
+        forward = proposals.validate_edge_proposal(
+            fx.edge_proposal(relationship="contradicts"), fx.preview())
+        reverse = proposals.validate_edge_proposal(
+            fx.edge_proposal(relationship="contradicts",
+                              source=fx.LEARNING_B["id"], target=fx.DECISION_A["id"]),
+            fx.preview())
+        self.assertEqual(forward["findings"], [])
+        self.assertEqual(reverse["findings"], [])
+        fc, rc = forward["candidate"], reverse["candidate"]
+
+        # DECISION_A's id sorts lexicographically before LEARNING_B's, so both
+        # submission orders canonicalize to source=A, target=B.
+        self.assertEqual(fc["source"], fx.DECISION_A["id"])
+        self.assertEqual(fc["target"], fx.LEARNING_B["id"])
+        self.assertEqual(fc["source"], rc["source"])
+        self.assertEqual(fc["target"], rc["target"])
+        self.assertEqual(fc["candidate_key"], rc["candidate_key"])
+        self.assertEqual(fc["subject_type"], rc["subject_type"])
+        self.assertEqual(forward["subject_key"], reverse["subject_key"])
+
+        # source_class/source_kind must describe whichever id ended up stored
+        # in "source" (DECISION_A) -- including for the reverse submission,
+        # where the caller's own "source" was LEARNING_B.
+        for c in (fc, rc):
+            self.assertEqual(c["source_class"], "semantic")
+            self.assertEqual(c["source_kind"], "decision")
+            self.assertEqual(c["target_class"], "semantic")
+            self.assertEqual(c["target_kind"], "learning")

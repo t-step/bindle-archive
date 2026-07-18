@@ -88,6 +88,16 @@ def validate_edge_proposal(proposal, preview):
         target_id, tgt["class"], tgt["kind"], proposal["basis"])
     subject_key = canonical.edge_subject_key(key_source, relationship, key_target)
 
+    # The emitted candidate's own source/target (and their class/kind) must
+    # match whichever endpoint order the key was minted over -- for symmetric
+    # contradicts that's the canonicalized (key_source, key_target) pair, not
+    # the raw proposal order, so a future consumer recomputing candidate_key
+    # from the embedded endpoints gets the same key back. Directional
+    # relationships have key_source == source_id / key_target == target_id,
+    # so this is a no-op for them.
+    key_src_node = index[key_source]
+    key_tgt_node = index[key_target]
+
     candidate = {
         "subject_type": "edge",
         "candidate_key": candidate_key,
@@ -95,14 +105,14 @@ def validate_edge_proposal(proposal, preview):
         "dependency_fingerprint": dependency_fingerprint,
         "producer": proposal["producer"],
         "validation_status": "valid",
-        "source": source_id,
+        "source": key_source,
         "relationship": relationship,
-        "target": target_id,
+        "target": key_target,
         "basis": proposal["basis"],
-        "source_class": src["class"],
-        "source_kind": src["kind"],
-        "target_class": tgt["class"],
-        "target_kind": tgt["kind"],
+        "source_class": key_src_node["class"],
+        "source_kind": key_src_node["kind"],
+        "target_class": key_tgt_node["class"],
+        "target_kind": key_tgt_node["kind"],
         "explanation": proposal["explanation"],
     }
     return {"candidate": candidate, "subject_key": subject_key, "findings": []}

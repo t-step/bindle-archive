@@ -245,6 +245,57 @@ class ListCandidates(ConfirmAnchor):
         out = review.list_candidates(self.notes_home, self.slug, status="accepted")
         self.assertTrue(any(r["candidate_key"] == c["candidate_key"] for r in out["rows"]))
 
+    def _valid_edge_proposal(self):
+        # Same legal pair as ConfirmEdge._valid_proposal (learning -> decision
+        # under "motivates") -- ListCandidates doesn't inherit ConfirmEdge, so
+        # this is its own copy of that fixture shape.
+        ids = self.node_ids()
+        return {"source": ids["learning"], "relationship": "motivates",
+                "target": ids["decision"], "basis": [], "explanation": "x",
+                "producer": "human"}
+
+    def test_reject_then_reaccept_identical_key_lists_only_accepted(self):
+        # Reject candidate K, then re-propose the byte-identical edge (same
+        # basis -> same candidate_key K) and accept it. rejected_keys is a
+        # monotonic set on the reducer (never pruned), so a naive per-event
+        # projection would show K as BOTH rejected and accepted. The fix must
+        # dedupe to K's most-recent decision only.
+        p = self._valid_edge_proposal()
+        key1 = review.propose(self.notes_home, self.slug, p)["candidate"]["candidate_key"]
+        res1 = review.confirm(self.notes_home, self.slug, key1, "rejected", proposal=p,
+                              now="2026-07-17T00:00:00Z")
+        self.assertEqual(res1["findings"], [])
+        key2 = review.propose(self.notes_home, self.slug, p)["candidate"]["candidate_key"]
+        self.assertEqual(key1, key2, "identical proposal must recompute the same candidate_key")
+        res2 = review.confirm(self.notes_home, self.slug, key2, "accepted", proposal=p,
+                              now="2026-07-17T00:00:01Z")
+        self.assertEqual(res2["findings"], [])
+
+        out = review.list_candidates(self.notes_home, self.slug, subject_type="edge")
+        matching = [r for r in out["rows"] if r["candidate_key"] == key1]
+        self.assertEqual(len(matching), 1, "must list K exactly once")
+        self.assertEqual(matching[0]["status"], "accepted")
+
+        rejected = review.list_candidates(self.notes_home, self.slug, status="rejected")
+        self.assertFalse(any(r["candidate_key"] == key1 for r in rejected["rows"]),
+                         "--status rejected must not list a currently-effective key")
+
+    def test_double_reject_lists_single_row(self):
+        # Two `rejected` confirms of one candidate_key must project to one
+        # rejected row, not two duplicate rows.
+        p = self._valid_edge_proposal()
+        key1 = review.propose(self.notes_home, self.slug, p)["candidate"]["candidate_key"]
+        review.confirm(self.notes_home, self.slug, key1, "rejected", proposal=p,
+                       now="2026-07-17T00:00:00Z")
+        key2 = review.propose(self.notes_home, self.slug, p)["candidate"]["candidate_key"]
+        self.assertEqual(key1, key2)
+        review.confirm(self.notes_home, self.slug, key2, "rejected", proposal=p,
+                       now="2026-07-17T00:00:01Z")
+
+        out = review.list_candidates(self.notes_home, self.slug, status="rejected")
+        matching = [r for r in out["rows"] if r["candidate_key"] == key1]
+        self.assertEqual(len(matching), 1, "double reject must yield a single row")
+
 
 if __name__ == "__main__":
     unittest.main()

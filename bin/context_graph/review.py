@@ -239,7 +239,23 @@ def list_candidates(notes_home, slug, subject_type=None, status=None,
         path = ledger.judgments_path(notes_home, slug)
         events = ledger.load_judgments(path)
         reduced = ledger.reduce_judgments(events)
+        # rejected_keys/retired_keys are monotonic sets on the reducer (never
+        # pruned -- relied on elsewhere for propose-time suppression), so a
+        # naive per-event walk would emit a stale rejected/retired row
+        # alongside a later re-acceptance of the same candidate_key, or one
+        # row per repeated identical decision. Project ledger history down to
+        # AT MOST ONE row per candidate_key: that key's most-recent event in
+        # append order (last event wins), keeping first-seen order for the
+        # row list.
+        latest_by_key = {}
+        key_order = []
         for ev in events:
+            key = ev.get("candidate_key")
+            if key not in latest_by_key:
+                key_order.append(key)
+            latest_by_key[key] = ev
+        for key in key_order:
+            ev = latest_by_key[key]
             st = _ledger_row_status(ev, reduced)
             if st is None or (status is not None and st != status):
                 continue
