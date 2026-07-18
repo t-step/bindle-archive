@@ -16,16 +16,19 @@ REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 PY="$(command -v python3)"
 CLI="$REPO_ROOT/bin/context-graph.py"
 
+SCRATCH="$(mktemp -d)"
+trap 'rm -rf "$SCRATCH"' EXIT
+
 pass=0
 fail=0
 check() {
   local desc="$1"
   shift
   if "$@"; then
-    printf '  \xe2\x9c\x93 %s\n' "$desc"
+    printf '  ✓ %s\n' "$desc"
     pass=$((pass + 1))
   else
-    printf '  \xe2\x9c\x97 %s\n' "$desc"
+    printf '  ✗ %s\n' "$desc"
     fail=$((fail + 1))
   fi
 }
@@ -33,19 +36,19 @@ check() {
 echo "== fixture 24: invocation outside a Git repo with explicit paths =="
 OUTSIDE_DIR="$(mktemp -d)"
 NH="$(mktemp -d)"
-(cd "$OUTSIDE_DIR" && "$PY" "$CLI" init --notes-home "$NH" --project outsiderepo) >/tmp/cg-init.out 2>&1
+(cd "$OUTSIDE_DIR" && "$PY" "$CLI" init --notes-home "$NH" --project outsiderepo) >"$SCRATCH/cg-init.out" 2>&1
 check "init succeeds from a directory outside any Git repo" test $? -eq 0
 
 echo "== fixture 5: two concurrent init processes persist exactly one ID =="
 NH2="$(mktemp -d)"
-"$PY" "$CLI" init --notes-home "$NH2" --project racer >/tmp/cg-race-a.json 2>&1 &
+"$PY" "$CLI" init --notes-home "$NH2" --project racer >"$SCRATCH/cg-race-a.json" 2>&1 &
 PID_A=$!
-"$PY" "$CLI" init --notes-home "$NH2" --project racer >/tmp/cg-race-b.json 2>&1 &
+"$PY" "$CLI" init --notes-home "$NH2" --project racer >"$SCRATCH/cg-race-b.json" 2>&1 &
 PID_B=$!
 wait "$PID_A"
 wait "$PID_B"
-ID_A=$("$PY" -c "import json;print(json.load(open('/tmp/cg-race-a.json'))['config']['project_id'])")
-ID_B=$("$PY" -c "import json;print(json.load(open('/tmp/cg-race-b.json'))['config']['project_id'])")
+ID_A=$("$PY" -c "import json;print(json.load(open('$SCRATCH/cg-race-a.json'))['config']['project_id'])")
+ID_B=$("$PY" -c "import json;print(json.load(open('$SCRATCH/cg-race-b.json'))['config']['project_id'])")
 check "concurrent init processes agree on one project_id" bash -c "test '$ID_A' = '$ID_B'"
 
 echo "== fixture 3: repeated init is byte-identical =="
