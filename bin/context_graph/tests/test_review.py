@@ -96,5 +96,128 @@ class ProposeCompilerError(unittest.TestCase):
         self.assertEqual(ctx.exception.findings[0]["code"], "E_CONFIG_MISSING")
 
 
+from context_graph import review, ledger
+
+
+class ConfirmEdge(ProposeBase):
+    def _valid_proposal(self):
+        ids = self.node_ids()
+        # "motivates" requires target in {decision, question} (see
+        # relationships.ENDPOINT_MATRIX["motivates"]) -- source=learning,
+        # target=decision is the legal pair the fixture's two anchored
+        # nodes can form.
+        return {"source": ids["learning"], "relationship": "motivates",
+                "target": ids["decision"], "basis": [], "explanation": "x",
+                "producer": "human"}
+
+    def test_accept_appends_event_with_edge_content(self):
+        p = self._valid_proposal()
+        out = review.propose(self.notes_home, self.slug, p)
+        key = out["candidate"]["candidate_key"]
+        res = review.confirm(self.notes_home, self.slug, key, "accepted",
+                             proposal=p, now="2026-07-17T00:00:00Z")
+        self.assertEqual(res["findings"], [])
+        self.assertFalse(res["idempotent"])
+        events = ledger.load_judgments(ledger.judgments_path(self.notes_home, self.slug))
+        self.assertEqual(len(events), 1)
+        self.assertEqual(events[0]["decision"], "accepted")
+        self.assertEqual(events[0]["source"], p["source"])   # embedded content
+        self.assertEqual(events[0]["relationship"], "motivates")
+
+    def test_accept_is_idempotent(self):
+        p = self._valid_proposal()
+        key = review.propose(self.notes_home, self.slug, p)["candidate"]["candidate_key"]
+        review.confirm(self.notes_home, self.slug, key, "accepted", proposal=p,
+                       now="2026-07-17T00:00:00Z")
+        res2 = review.confirm(self.notes_home, self.slug, key, "accepted", proposal=p,
+                              now="2026-07-17T00:00:01Z")
+        self.assertTrue(res2["idempotent"])
+        events = ledger.load_judgments(ledger.judgments_path(self.notes_home, self.slug))
+        self.assertEqual(len(events), 1)  # no second line
+
+    def test_confirm_key_mismatch_refused(self):
+        p = self._valid_proposal()
+        bogus = "candidate:sha256:" + "0" * 64
+        res = review.confirm(self.notes_home, self.slug, bogus, "accepted", proposal=p,
+                             now="2026-07-17T00:00:00Z")
+        self.assertIsNone(res["event"])
+        self.assertTrue(res["findings"])
+
+    def test_reject_appends_event_without_edge_content(self):
+        p = self._valid_proposal()
+        key = review.propose(self.notes_home, self.slug, p)["candidate"]["candidate_key"]
+        res = review.confirm(self.notes_home, self.slug, key, "rejected", proposal=p,
+                             now="2026-07-17T00:00:00Z")
+        self.assertEqual(res["findings"], [])
+        events = ledger.load_judgments(ledger.judgments_path(self.notes_home, self.slug))
+        self.assertEqual(len(events), 1)
+        self.assertEqual(events[0]["decision"], "rejected")
+        self.assertNotIn("source", events[0])
+
+    def test_retire_needs_no_input_and_names_prior_subject(self):
+        p = self._valid_proposal()
+        key = review.propose(self.notes_home, self.slug, p)["candidate"]["candidate_key"]
+        review.confirm(self.notes_home, self.slug, key, "accepted", proposal=p,
+                       now="2026-07-17T00:00:00Z")
+        res = review.confirm(self.notes_home, self.slug, key, "retired",
+                             now="2026-07-17T00:00:01Z")
+        self.assertEqual(res["findings"], [])
+        events = ledger.load_judgments(ledger.judgments_path(self.notes_home, self.slug))
+        self.assertEqual(len(events), 2)
+        self.assertEqual(events[1]["decision"], "retired")
+        self.assertEqual(events[1]["subject_key"], events[0]["subject_key"])
+
+
+class ConfirmAnchor(ProposeBase):
+    def setUp(self):
+        # ProposeBase's map has both entries fully anchored (each carries a
+        # bindle:context-id marker) so it yields zero anchor candidates on
+        # its own -- rewrite the map with one unanchored assumption bullet
+        # under "## Assumptions & tensions" (the shape proven by
+        # test_compiler.py's AnchorCandidates fixture) so compile_preview
+        # emits exactly one identity_anchor_candidate to confirm against.
+        super().setUp()
+        pdir = os.path.join(self.notes_home, "projects", self.slug)
+        map_text = MAP_TWO_DECISIONS.replace(
+            "## Assumptions & tensions\n\n",
+            "## Assumptions & tensions\n"
+            "- An unanchored assumption — confidence: low — evidence: docs/w.md\n\n",
+        )
+        with open(os.path.join(pdir, "map.md"), "w", encoding="utf-8") as fh:
+            fh.write(map_text)
+
+    def _anchor_candidate(self):
+        from context_graph import compiler
+        preview = compiler.compile_preview(self.notes_home, self.slug)
+        cands = preview["identity_anchor_candidates"]
+        self.assertTrue(cands, "map must yield at least one anchor candidate")
+        return cands[0]
+
+    def test_accept_allocates_id_and_appends(self):
+        c = self._anchor_candidate()
+        res = review.confirm(self.notes_home, self.slug, c["candidate_key"], "accepted",
+                             now="2026-07-17T00:00:00Z")
+        self.assertEqual(res["findings"], [])
+        ev = ledger.load_judgments(ledger.judgments_path(self.notes_home, self.slug))[0]
+        self.assertEqual(ev["subject_type"], "identity_anchor")
+        self.assertTrue(ev["assigned_id"].startswith("context-node:"))
+        self.assertEqual(ev["entry_fingerprint"], c["entry_fingerprint"])
+
+    def test_retired_of_prior_acceptance_carries_assigned_id(self):
+        c = self._anchor_candidate()
+        review.confirm(self.notes_home, self.slug, c["candidate_key"], "accepted",
+                       now="2026-07-17T00:00:00Z")
+        events = ledger.load_judgments(ledger.judgments_path(self.notes_home, self.slug))
+        accepted_id = events[0]["assigned_id"]
+        res = review.confirm(self.notes_home, self.slug, c["candidate_key"], "retired",
+                             now="2026-07-17T00:00:01Z")
+        self.assertEqual(res["findings"], [])
+        events = ledger.load_judgments(ledger.judgments_path(self.notes_home, self.slug))
+        self.assertEqual(len(events), 2)
+        self.assertEqual(events[1]["subject_type"], "identity_anchor")
+        self.assertEqual(events[1]["assigned_id"], accepted_id)
+        self.assertEqual(events[1]["entry_fingerprint"], c["entry_fingerprint"])
+
+
 if __name__ == "__main__":
     unittest.main()
