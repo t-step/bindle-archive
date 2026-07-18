@@ -36,12 +36,18 @@ not_exists() { [ ! -e "$1" ] && [ ! -L "$1" ]; }    # gone, even as broken link
 
 TMP="$(mktemp -d)"
 trap 'rm -rf "$TMP"' EXIT
+export HOME="$TMP/home-env"
+mkdir -p "$HOME"
+export PATH="$HOME/.local/bin:$PATH"
 
 # build_repo DIR — a minimal fake Bindle repo with one of each item type.
 build_repo() {
   local r="$1"
+  rm -f "$HOME/.local/bin/bindle"
   mkdir -p "$r/bin" "$r/skills/demo" "$r/agents" "$r/commands" "$r/global"
   cp "$INSTALL_SRC" "$r/bin/install.sh"
+  printf '#!/usr/bin/env bash\nprintf "fake bindle\\n"\n' >"$r/bin/bindle"
+  chmod +x "$r/bin/bindle"
   printf -- '---\nname: demo\ndescription: demo\n---\n' >"$r/skills/demo/SKILL.md"
   printf -- '---\nname: demo\ndescription: d\n---\nbody\n' >"$r/agents/demo.md"
   printf -- '---\ndescription: d\n---\nbody\n' >"$r/commands/demo.md"
@@ -56,6 +62,7 @@ claude	agent	demo	agents/demo.md	agents/demo.md
 claude	command	demo	commands/demo.md	commands/demo.md
 claude	global-guidance	claude	global/CLAUDE.md	CLAUDE.md
 codex	global-guidance	agents	global/AGENTS.md	AGENTS.md
+local	executable	bindle	bin/bindle	bindle
 TSV
 }
 
@@ -78,8 +85,9 @@ add_codex_skill() {
 echo "fresh install:"
 REPO="$TMP/repo"
 HOME_DIR="$TMP/home"
+BIN_DIR="$TMP/bin-home"
 build_repo "$REPO"
-"$REPO/bin/install.sh" --home "$HOME_DIR" >/dev/null
+"$REPO/bin/install.sh" --home "$HOME_DIR" --bin-dir "$BIN_DIR" >/dev/null
 status=$?
 
 check "clean install exits zero" test "$status" -eq 0
@@ -87,11 +95,36 @@ check "skill linked" links_to "$REPO/skills/demo" "$HOME_DIR/skills/demo"
 check "agent linked" links_to "$REPO/agents/demo.md" "$HOME_DIR/agents/demo.md"
 check "command linked" links_to "$REPO/commands/demo.md" "$HOME_DIR/commands/demo.md"
 check "CLAUDE.md linked" links_to "$REPO/global/CLAUDE.md" "$HOME_DIR/CLAUDE.md"
+check "bindle executable linked" links_to "$REPO/bin/bindle" "$BIN_DIR/bindle"
 
 echo "idempotent re-run:"
-out="$("$REPO/bin/install.sh" --home "$HOME_DIR" 2>&1)"
+out="$("$REPO/bin/install.sh" --home "$HOME_DIR" --bin-dir "$BIN_DIR" 2>&1)"
 check "nothing relinked" contains "0 linked" "$out"
-check "reports all current" contains "4 already current" "$out"
+check "reports all current" contains "5 already current" "$out"
+
+echo "bin-dir PATH remediation:"
+REPO="$TMP/repo-bin-path"
+HOME_DIR="$TMP/home-bin-path"
+BIN_DIR="$TMP/not-on-path/bin"
+build_repo "$REPO"
+out="$(PATH="/usr/bin:/bin" "$REPO/bin/install.sh" --home "$HOME_DIR" --bin-dir "$BIN_DIR" 2>&1)"
+status=$?
+check "install with bin-dir not on PATH still exits zero" test "$status" -eq 0
+check "install reports bindle path remediation" contains "Add $BIN_DIR to PATH" "$out"
+
+echo "bin-dir override conflict safety:"
+REPO="$TMP/repo-bin-conflict"
+HOME_DIR="$TMP/home-bin-conflict"
+BIN_DIR="$TMP/bin-conflict"
+build_repo "$REPO"
+mkdir -p "$BIN_DIR"
+printf 'do not touch\n' >"$BIN_DIR/bindle"
+out="$("$REPO/bin/install.sh" --home "$HOME_DIR" --bin-dir "$BIN_DIR" 2>&1)"
+status=$?
+check "bin-dir executable conflict reported" contains "CONFLICT" "$out"
+check "bin-dir executable conflict causes nonzero exit" test "$status" -ne 0
+check "bin-dir foreign executable untouched" is_real_file "$BIN_DIR/bindle"
+check "bin-dir foreign executable content kept" file_is "do not touch" "$BIN_DIR/bindle"
 
 # ===========================================================================
 echo "conflict safety (foreign items left untouched):"

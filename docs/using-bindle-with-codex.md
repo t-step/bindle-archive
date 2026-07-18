@@ -13,9 +13,10 @@ bin/install.sh --provider codex --codex-home ~/.codex
 
 `--codex-home` is an **explicit target directory you choose** — Bindle does
 not claim a universal Codex global-install standard; on this machine
-lowercase `~/.codex` is the local convention. The install is exactly one
-symlink: `global/AGENTS.md` → `<codex-home>/AGENTS.md`. Nothing else is
-installed for Codex.
+lowercase `~/.codex` is the local convention. The Codex guidance install links
+`global/AGENTS.md` → `<codex-home>/AGENTS.md`; every install also links the
+provider-neutral `bindle` executable to `~/.local/bin/bindle` unless
+`--bin-dir DIR` overrides it.
 
 ## Install eligible skills
 
@@ -48,6 +49,8 @@ frontmatter, found by walking the Agent Skills directories.
   scanner (plain grep, offline);
 - [`bin/slugify.sh`](../bin/slugify.sh) — the canonical slug rule for
   notes-home path segments;
+- `bindle --help`, `bindle doctor`, `bindle context`, `bindle map`, and
+  `bindle evidence` after running the installer;
 - the provider-neutral session-note conventions themselves: notes home,
   file naming, session-note / handoff / profile shapes.
 

@@ -33,14 +33,19 @@ exit_is() { [ "$1" -eq "$2" ]; }               # exit_is ACTUAL EXPECTED
 
 TMP="$(mktemp -d)"
 trap 'rm -rf "$TMP"' EXIT
+export HOME="$TMP/home-env"
+mkdir -p "$HOME"
+export PATH="$HOME/.local/bin:$PATH"
 
 # build_repo DIR — a minimal fake Bindle repo with one of each item type.
 build_repo() {
   local r="$1"
+  rm -f "$HOME/.local/bin/bindle"
   mkdir -p "$r/bin" "$r/skills/demo" "$r/agents" "$r/commands" "$r/global"
   cp "$DOCTOR_SRC" "$r/bin/doctor.sh"
   cp "$INSTALL_SRC" "$r/bin/install.sh"
-  chmod +x "$r/bin/doctor.sh" "$r/bin/install.sh"
+  printf '#!/usr/bin/env bash\nprintf "fake bindle\\n"\n' >"$r/bin/bindle"
+  chmod +x "$r/bin/doctor.sh" "$r/bin/install.sh" "$r/bin/bindle"
   printf -- '---\nname: demo\ndescription: demo\n---\n' >"$r/skills/demo/SKILL.md"
   printf -- '---\nname: demo\ndescription: d\n---\nbody\n' >"$r/agents/demo.md"
   printf -- '---\ndescription: d\n---\nbody\n' >"$r/commands/demo.md"
@@ -57,6 +62,7 @@ claude	agent	demo	agents/demo.md	agents/demo.md
 claude	command	demo	commands/demo.md	commands/demo.md
 claude	global-guidance	claude	global/CLAUDE.md	CLAUDE.md
 codex	global-guidance	agents	global/AGENTS.md	AGENTS.md
+local	executable	bindle	bin/bindle	bindle
 TSV
 }
 
@@ -96,9 +102,10 @@ snapshot() {
 echo "1. healthy after fixture install:"
 REPO="$TMP/repo1"
 HOME_DIR="$TMP/home1"
+BIN_DIR="$TMP/bin1"
 build_repo "$REPO"
-"$REPO/bin/install.sh" --home "$HOME_DIR" >/dev/null
-out="$("$REPO/bin/doctor.sh" --home "$HOME_DIR" 2>&1)"
+"$REPO/bin/install.sh" --home "$HOME_DIR" --bin-dir "$BIN_DIR" >/dev/null
+out="$(PATH="$BIN_DIR:$PATH" "$REPO/bin/doctor.sh" --home "$HOME_DIR" --bin-dir "$BIN_DIR" 2>&1)"
 status=$?
 
 check "exits zero" exit_is "$status" 0
@@ -106,7 +113,19 @@ check "reports skill current" contains "skills/demo — current" "$out"
 check "reports agent current" contains "agents/demo.md — current" "$out"
 check "reports command current" contains "commands/demo.md — current" "$out"
 check "reports global CLAUDE.md current" contains "global/CLAUDE.md — current" "$out"
-check "summary shows 4 current" contains "4 current" "$out"
+check "reports bindle executable current" contains "bin/bindle — current" "$out"
+check "summary shows 5 current" contains "5 current" "$out"
+
+echo "1b. bin-dir PATH remediation:"
+REPO="$TMP/repo1b"
+HOME_DIR="$TMP/home1b"
+BIN_DIR="$TMP/not-on-path/bin"
+build_repo "$REPO"
+"$REPO/bin/install.sh" --home "$HOME_DIR" --bin-dir "$BIN_DIR" >/dev/null
+out="$(PATH="/usr/bin:/bin" "$REPO/bin/doctor.sh" --home "$HOME_DIR" --bin-dir "$BIN_DIR" 2>&1)"
+status=$?
+check "doctor reports bindle path remediation" contains "Add $BIN_DIR to PATH" "$out"
+check "PATH remediation is a finding" test "$status" -ne 0
 
 # ===========================================================================
 echo "2. fresh empty home:"

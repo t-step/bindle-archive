@@ -1,12 +1,13 @@
 ---
 description: Author and review context-graph semantic proposals over the deterministic CLI (init / preview / candidates / propose / confirm / apply)
 argument-hint: <init | config | preview | candidates | propose | confirm | apply> [args]
-allowed-tools: Bash(python3:*)
+allowed-tools: Bash(bindle:*), Bash(python3:*)
 ---
 
 <!-- Conventions and the full authority contract live in the `context-graph`
      skill — read it first. The skill is a proposal producer and interaction
-     layer only; the deterministic CLI (bin/context-graph.py) is the sole
+     layer only; the deterministic helper (bin/context-graph.py, normally
+     reached through `bindle context`) is the sole
      authority for endpoint legality, candidate keys, identity, and
      acceptance. This command is a thin entry point into that skill. -->
 
@@ -28,10 +29,10 @@ Ground rules — the contract, not suggestions (the skill states them in full):
 
 Steps:
 
-1. Locate the Bindle checkout (`readlink ~/.claude/commands/context-graph.md`,
-   repo root two levels up from the target) so you can run
-   `python3 <bindle>/bin/context-graph.py`. If missing, tell the user to run
-   the CLI from their Bindle checkout by hand.
+1. Prefer `bindle context <verb> ...`. If `bindle` is missing, locate the
+   Bindle checkout (`readlink ~/.claude/commands/context-graph.md`, repo root
+   two levels up from the target) and use the compatibility helper
+   `python3 <bindle>/bin/context-graph.py`.
 2. Read the `context-graph` skill and follow it for the named verb.
 3. Default with no argument: run `preview` (read-only) and summarize the graph,
    then ask what the user wants to propose or review.

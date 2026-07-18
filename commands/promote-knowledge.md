@@ -1,7 +1,7 @@
 ---
 description: Promote project evidence into the living project map — propose, confirm, write
 argument-hint: [project slug; default = current repo's project]
-allowed-tools: Bash(ls:*), Bash(date:*), Bash(wc:*), Bash(mkdir -p:*), Bash(git rev-parse:*), Bash(gh issue view:*), Bash(gh pr view:*), Bash(python3 bin/map-entry-id.py allocate:*), Bash(python3 bin/map-entry-id.py validate:*)
+allowed-tools: Bash(ls:*), Bash(date:*), Bash(wc:*), Bash(mkdir -p:*), Bash(git rev-parse:*), Bash(gh issue view:*), Bash(gh pr view:*), Bash(bindle map allocate:*), Bash(bindle map validate:*), Bash(python3 bin/map-entry-id.py allocate:*), Bash(python3 bin/map-entry-id.py validate:*)
 ---
 
 <!-- The contract (ladder, map format, rules, report shape):
@@ -60,8 +60,9 @@ Steps:
    existing file, never touch lines outside the named entries; re-add a
    missing `##` section header if the confirmed write needs it. For each
    confirmed `add`, and for the replacement side of each confirmed
-   `supersede`, run `python3 bin/map-entry-id.py allocate --project
-   <slug>` and embed the printed id as the entry's `<!-- bindle:context-id:
+   `supersede`, run `bindle map allocate --project <slug>` (or the direct
+   helper `python3 bin/map-entry-id.py allocate --project <slug>` when debugging
+   from a checkout) and embed the printed id as the entry's `<!-- bindle:context-id:
    ... -->` marker in the *same* edit that writes the entry (contract:
    "Stable identities") — never invent, guess, or reuse an id, and never
    allocate for a candidate before it is actually confirmed. A confirmed

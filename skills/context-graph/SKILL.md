@@ -55,14 +55,16 @@ rejects is rejected — never "repaired" by the skill into a different valid one
 Every verb runs the deterministic tool in your Bindle checkout:
 
 ```
-python3 <bindle>/bin/context-graph.py <verb> \
-  --notes-home <notes-home> --project <slug> [verb args] [--format json]
+bindle context <verb> --project <slug> [verb args] [--format json]
 ```
 
-`--format json` is the default and is what you parse. `<bindle>` is the root of
-your Bindle checkout; `<notes-home>` and `<slug>` identify the project (see
-**Project identity** below). Surface the CLI's own JSON findings to the user —
-do not paraphrase a rejection into a softer one.
+`--format json` is the default and is what you parse. `bindle context` defaults
+the notes home from `BINDLE_NOTES_DIR`, then `~/.bindle`; pass
+`--notes-home <notes-home>` for an explicit override. The direct helper
+`python3 <bindle>/bin/context-graph.py ...` remains supported for compatibility
+and debugging. `<slug>` identifies the project (see **Project identity** below).
+Surface the CLI's own JSON findings to the user — do not paraphrase a rejection
+into a softer one.
 
 | Verb | Purpose | Skill's role |
 |---|---|---|

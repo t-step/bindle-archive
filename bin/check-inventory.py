@@ -20,8 +20,10 @@ REQUIRED = ["name", "type", "path", "description", "provider", "maturity",
 SEMVER = re.compile(r"^\d+\.\d+\.\d+$")
 
 INSTALL_TYPES = ("skill", "agent", "command", "global-guidance")
-_PROVIDER_RANK = {"claude": 0, "codex": 1}
-_CATEGORY_RANK = {"skill": 0, "agent": 1, "command": 2, "global-guidance": 3}
+LOCAL_EXECUTABLES = {"bindle"}
+_PROVIDER_RANK = {"claude": 0, "codex": 1, "local": 2}
+_CATEGORY_RANK = {"skill": 0, "agent": 1, "command": 2, "global-guidance": 3,
+                  "executable": 4}
 # global-guidance name -> provider (mirrors the gg map in check_completeness_clean)
 _GG_PROVIDER = {"claude": "claude", "agents": "codex"}
 MANIFEST_BANNER = ("# GENERATED from capabilities.json — do not edit; "
@@ -67,10 +69,12 @@ def _install_rows(cap):
     provider.codex == "installed" (explicit per-skill eligibility, not a
     directory sweep — #57)."""
     t = cap.get("type")
-    if t not in INSTALL_TYPES:
-        return []
     name = cap.get("name")
     src_rel = cap.get("path")
+    if t == "script" and name in LOCAL_EXECUTABLES:
+        return [("local", "executable", name, src_rel, cap.get("install_destination") or name)]
+    if t not in INSTALL_TYPES:
+        return []
     if not isinstance(name, str) or not isinstance(src_rel, str):
         return []
     if name.startswith(("_", ".")):
