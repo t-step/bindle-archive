@@ -855,6 +855,10 @@
       "reason": "a point-in-time implementation plan for the profile-proposals queue feature (same precedent as its paired design spec); planning artifact, not itself a capability."
     },
     {
+      "path": "docs/superpowers/plans/2026-07-17-context-graph-apply.md",
+      "reason": "a point-in-time implementation plan for the context-graph apply phase (#185, epic #140); planning artifact, not itself a capability."
+    },
+    {
       "path": "docs/using-bindle-with-codex.md",
       "reason": "a meta-guide for Codex describing which existing capabilities to use (docs/session-notes-format.md, docs/privacy-boundaries.md, bin/slugify.sh, bin/check-private-info.sh); not itself a distinct capability."
     },
