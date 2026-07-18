@@ -101,5 +101,35 @@ expect_rc "domi-governed -> rc 0 (defer is not a failure)" 0
 run python3 "$HELPER" check --repo "$FIX/consistent"
 expect_contains "plain repo -> portable mode" "mode: portable"
 
+# Fixture provenance (#224, checklist item 8). The defer fixture's pin was
+# all-zeros until 2026-07-18; a pressure-test rep read the placeholder, decided
+# the repo had "never actually been synced to a real DomI commit," and certified
+# a release it should have deferred. Well-formed is not enough — the pin must
+# also be believable to an agent that opens it.
+echo "defer-fixture provenance:"
+PIN="$FIX/domi-governed/.domi-pin"
+pin_field() { grep -E "^$1:" "$PIN" | head -1 | sed -E "s/^$1:[[:space:]]*//"; }
+if printf '%s' "$(pin_field sha)" | grep -qE '^[0-9a-f]{40}$'; then
+  echo "  ok: pin sha is 40-hex (well-formed)"
+  pass=$((pass + 1))
+else
+  echo "  FAIL: pin sha is not 40-hex"
+  fail=$((fail + 1))
+fi
+if [ "$(pin_field sha)" = "0000000000000000000000000000000000000000" ]; then
+  echo "  FAIL: pin sha is the all-zeros placeholder (checklist item 8)"
+  fail=$((fail + 1))
+else
+  echo "  ok: pin sha is not the all-zeros placeholder"
+  pass=$((pass + 1))
+fi
+if printf '%s' "$(pin_field manifest_sha256)" | grep -qE '^0{64}$'; then
+  echo "  FAIL: pin manifest_sha256 is the all-zeros placeholder (checklist item 8)"
+  fail=$((fail + 1))
+else
+  echo "  ok: pin manifest_sha256 is not the all-zeros placeholder"
+  pass=$((pass + 1))
+fi
+
 echo "test-package-release-integrity: $pass passed, $fail failed"
 [ "$fail" -eq 0 ]
