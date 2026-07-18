@@ -142,6 +142,21 @@ def structural_findings(cfg):
     return findings
 
 
+def _git_env():
+    """Return a cleaned environment dict with git-related variables stripped.
+    This ensures that subprocess.run(["git", ...]) calls are hermetic — they
+    operate on the repo specified by -C, not inherited GIT_DIR/GIT_WORK_TREE/etc
+    from an ambient git process (e.g. a parent git commit hook). This is needed
+    for production code that shells out to git and for tests that create
+    temporary git repos, to ensure correctness even when invoked from within
+    a git hook or other git-wrapping context."""
+    env = dict(os.environ)
+    for key in ("GIT_DIR", "GIT_WORK_TREE", "GIT_INDEX_FILE",
+                "GIT_OBJECT_DIRECTORY", "GIT_COMMON_DIR"):
+        env.pop(key, None)
+    return env
+
+
 def _coordinates_from_git_url(url):
     """'git@github.com:owner/repo.git' or 'https://github.com/owner/repo.git'
     -> 'owner/repo'. Returns None for a URL shape this cannot parse rather
@@ -178,7 +193,7 @@ def local_origin_findings(cfg):
         try:
             out = subprocess.run(
                 ["git", "-C", checkout, "remote", "get-url", "origin"],
-                capture_output=True, text=True, timeout=5)
+                capture_output=True, text=True, timeout=5, env=_git_env())
         except (OSError, subprocess.TimeoutExpired):
             continue
         if out.returncode != 0:

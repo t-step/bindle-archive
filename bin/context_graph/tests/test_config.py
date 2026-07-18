@@ -8,6 +8,7 @@ import unittest
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", ".."))
 
 from context_graph import config
+from context_graph import ids as _ids
 
 
 class TestProjectIdentity(unittest.TestCase):
@@ -304,6 +305,86 @@ class TestRepositoryBindingCrud(unittest.TestCase):
             config.add_repository(self.notes_home, "proj", alias="a", provider="github")
         after = open(path, "r", encoding="utf-8").read()
         self.assertEqual(before, after)
+
+
+class TestStructuralAndOriginChecks(unittest.TestCase):
+    def setUp(self):
+        self.notes_home = tempfile.mkdtemp()
+
+    def test_unsupported_schema_version_reported(self):
+        cfg = {"schema_version": 2, "project_id": config.allocate_project_id(),
+               "project_slug": "x", "repositories": []}
+        codes = {f["code"] for f in config.structural_findings(cfg)}
+        self.assertIn("E_CONFIG_SCHEMA_VERSION_UNSUPPORTED", codes)
+
+    def test_unknown_top_level_field_reported(self):
+        cfg = {"schema_version": 1, "project_id": config.allocate_project_id(),
+               "project_slug": "x", "repositories": [], "mystery": True}
+        codes = {f["code"] for f in config.structural_findings(cfg)}
+        self.assertIn("E_CONFIG_UNKNOWN_FIELD", codes)
+
+    def test_malformed_binding_id_reported(self):
+        cfg = {"schema_version": 1, "project_id": config.allocate_project_id(),
+               "project_slug": "x", "repositories": [
+                   {"alias": "a", "binding_id": "repository-binding:not-hex",
+                    "provider": "github"}]}
+        codes = {f["code"] for f in config.structural_findings(cfg)}
+        self.assertIn("E_CONFIG_MALFORMED_BINDING_ID", codes)
+
+    def test_local_origin_findings_reports_disagreement(self):
+        import subprocess
+        checkout = tempfile.mkdtemp()
+        subprocess.run(["git", "-C", checkout, "init", "-q"], check=True,
+                       env=config._git_env())
+        subprocess.run(["git", "-C", checkout, "remote", "add", "origin",
+                         "git@github.com:actual-owner/actual-repo.git"], check=True,
+                       env=config._git_env())
+        cfg = {"schema_version": 1, "project_id": config.allocate_project_id(),
+               "project_slug": "x", "repositories": [
+                   {"alias": "a", "binding_id": config.allocate_binding_id(),
+                    "provider": "github", "coordinates": "configured-owner/configured-repo",
+                    "local_checkout_path": checkout}]}
+        codes = {f["code"] for f in config.local_origin_findings(cfg)}
+        self.assertIn("E_CONFIG_LOCAL_ORIGIN_DISAGREEMENT", codes)
+
+    def test_local_origin_findings_silent_when_agreeing(self):
+        import subprocess
+        checkout = tempfile.mkdtemp()
+        subprocess.run(["git", "-C", checkout, "init", "-q"], check=True,
+                       env=config._git_env())
+        subprocess.run(["git", "-C", checkout, "remote", "add", "origin",
+                         "git@github.com:same-owner/same-repo.git"], check=True,
+                       env=config._git_env())
+        cfg = {"schema_version": 1, "project_id": config.allocate_project_id(),
+               "project_slug": "x", "repositories": [
+                   {"alias": "a", "binding_id": config.allocate_binding_id(),
+                    "provider": "github", "coordinates": "same-owner/same-repo",
+                    "local_checkout_path": checkout}]}
+        self.assertEqual(config.local_origin_findings(cfg), [])
+
+    def test_local_origin_findings_silent_when_no_local_checkout(self):
+        cfg = {"schema_version": 1, "project_id": config.allocate_project_id(),
+               "project_slug": "x", "repositories": [
+                   {"alias": "a", "binding_id": config.allocate_binding_id(),
+                    "provider": "github", "coordinates": "owner/repo"}]}
+        self.assertEqual(config.local_origin_findings(cfg), [])
+
+    def test_document_ids_differ_by_binding(self):
+        binding_a = config.allocate_binding_id()
+        binding_b = config.allocate_binding_id()
+        pid = config.allocate_project_id()
+        id_a = _ids.format_document_repository_id(pid, binding_a, "README.md")
+        id_b = _ids.format_document_repository_id(pid, binding_b, "README.md")
+        self.assertNotEqual(id_a, id_b)
+
+    def test_config_validate_never_writes(self):
+        config.init_project(self.notes_home, "proj")
+        path = config.config_path(self.notes_home, "proj")
+        before_mtime = os.stat(path).st_mtime_ns
+        cfg = config.load_config(path)
+        config.all_findings(cfg)
+        after_mtime = os.stat(path).st_mtime_ns
+        self.assertEqual(before_mtime, after_mtime)
 
 
 if __name__ == "__main__":
