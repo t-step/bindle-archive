@@ -1474,6 +1474,37 @@ cannot feed back into the foundation — the graph is a DAG. Topological order:
 
 ## 8. Proposed child issues (titles + implementation-ready bodies)
 
+### Created child issues (filed 2026-07-18)
+
+All twelve children are filed against milestone **v0.8.0**, parented by the literal
+`Parent: #141` marker in each body. Scope is unchanged from the bodies in §8 — only
+the `#141-<letter>` dependency tokens were resolved to concrete issue numbers.
+
+| Child | Issue |
+|---|---|
+| **A** | [#227](https://github.com/thomas-estep/bindle/issues/227) |
+| **B** | [#228](https://github.com/thomas-estep/bindle/issues/228) |
+| **C** | [#229](https://github.com/thomas-estep/bindle/issues/229) |
+| **D** | [#230](https://github.com/thomas-estep/bindle/issues/230) |
+| **E** | [#231](https://github.com/thomas-estep/bindle/issues/231) |
+| **F1** | [#232](https://github.com/thomas-estep/bindle/issues/232) |
+| **F2** | [#233](https://github.com/thomas-estep/bindle/issues/233) |
+| **F3** | [#234](https://github.com/thomas-estep/bindle/issues/234) |
+| **F4** | [#235](https://github.com/thomas-estep/bindle/issues/235) |
+| **G** | [#236](https://github.com/thomas-estep/bindle/issues/236) |
+| **H** | [#237](https://github.com/thomas-estep/bindle/issues/237) |
+| **I** | [#238](https://github.com/thomas-estep/bindle/issues/238) |
+
+Closure-blocking: **A, B, C, D, E, F1, F2, F3, F4, G, H** (#227, #228,
+#229, #230, #231, #232, #233, #234,
+#235, #236, #237). Non-blocking: **I** (#238).
+
+Labels applied: `type: feat` on all twelve; `status: ready` + `priority: now` on
+**A** only (its dependencies are complete); `status: blocked` + `priority: normal`
+on B–H; `status: blocked` + `priority: someday` on **I** so the optional child is
+not read as critical-path. No assignees.
+
+
 Paste-ready. Each body carries `Parent: #141` (the repo's epic-child convention —
 `gh issue list --search` does not reliably enumerate children; parent is recorded
 in the body and children are found by grepping `Parent: #141`). Labels proposed:
@@ -2604,10 +2635,9 @@ document to discover what a requirement means.
 
 Remaining, in order:
 
-1. **File the twelve children** from §8 — A, B, C, D, E, F1, F2, F3, F4, G, H, I.
-   Each body now carries a *Parent requirements owned* block listing the parent
-   identifiers it is primary for and those it supports, so children do not depend on
-   §9's table. **Not yet done; not authorized in this pass.**
+1. ~~File the twelve children from §8.~~ **DONE 2026-07-18** — filed as #227–#238
+   (§8 "Created child issues"), all on milestone v0.8.0 with the `Parent: #141`
+   marker, and linked from the parent's Child issues task list.
 2. **Child E opens with the mandatory E-1 feasibility phase** (§6-E) before adapter
    implementation. If E-1 finds no automatable stable CodeGraph surface, it records
    a **no-go** and the first usable release is re-planned rather than shipped behind
