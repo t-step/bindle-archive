@@ -1067,6 +1067,10 @@
       "reason": "unit tests for context_graph.apply; test infrastructure, not a capability an agent invokes."
     },
     {
+      "path": "bin/context_graph/tests/test_cli_apply.py",
+      "reason": "process-boundary test for #185's `apply` subcommand wiring in bin/context-graph.py (subparser registration, --repo-root/--adopt-context-md flag plumbing, exit-code convention); test infrastructure, not a capability an agent invokes."
+    },
+    {
       "path": "bin/context_graph/index_writer.py",
       "reason": "library module rendering the deterministic rebuildable index.json object from a final graph (#185 apply); consumed by bin/context-graph.py's `apply` subcommand (the capability row), not a standalone capability itself."
     },
