@@ -36,6 +36,7 @@ test:
 	bin/test-release-please-sync.sh
 	bin/test-release-publish.sh
 	bin/test-map-entry-id.sh
+	bin/test-bindle-cli.sh
 	bin/test-context-graph-schema.sh
 	bin/test-context-evidence.sh
 	bin/test-context-graph-cli.sh

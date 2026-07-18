@@ -1,0 +1,125 @@
+#!/usr/bin/env bash
+#
+# bindle — stable public CLI entry point.
+#
+# This file is intentionally only a dispatcher. Domain behavior stays in the
+# existing helpers under bin/.
+set -euo pipefail
+
+resolve_self() {
+  local source dir target
+  source="${BASH_SOURCE[0]}"
+  while [ -L "$source" ]; do
+    dir="$(cd -P "$(dirname "$source")" && pwd)"
+    target="$(readlink "$source")"
+    case "$target" in
+      /*) source="$target" ;;
+      *) source="$dir/$target" ;;
+    esac
+  done
+  cd -P "$(dirname "$source")" && pwd
+}
+
+SCRIPT_DIR="$(resolve_self)"
+BINDLE_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+PYTHON_BIN="${PYTHON:-python3}"
+
+usage() {
+  cat <<'EOF'
+Usage:
+  bindle --help
+  bindle version
+  bindle doctor [args...]
+  bindle context [args...]
+  bindle context-graph [args...]
+  bindle map [args...]
+  bindle evidence [args...]
+
+Commands:
+  version        Print the Bindle VERSION value.
+  doctor         Dispatch to the existing doctor helper.
+  context        Dispatch to the existing context-graph helper.
+  context-graph  Compatibility alias for context.
+  map            Dispatch to the existing map-entry-id helper.
+  evidence       Dispatch to the existing context-evidence helper.
+EOF
+}
+
+missing_helper() {
+  echo "bindle: missing helper: $1" >&2
+  exit 127
+}
+
+exec_python_helper() {
+  local helper="$1"
+  shift
+  [ -f "$helper" ] || missing_helper "$helper"
+  exec "$PYTHON_BIN" "$helper" "$@"
+}
+
+exec_shell_helper() {
+  local helper="$1"
+  shift
+  [ -f "$helper" ] || missing_helper "$helper"
+  exec "$helper" "$@"
+}
+
+has_notes_home_arg() {
+  local arg
+  for arg in "$@"; do
+    case "$arg" in
+      --notes-home | --notes-home=*) return 0 ;;
+    esac
+  done
+  return 1
+}
+
+notes_home_default() {
+  if [ -n "${BINDLE_NOTES_DIR:-}" ]; then
+    printf '%s\n' "$BINDLE_NOTES_DIR"
+  else
+    printf '%s\n' "$HOME/.bindle"
+  fi
+}
+
+if [ $# -eq 0 ]; then
+  usage
+  exit 0
+fi
+
+case "$1" in
+  -h | --help | help)
+    usage
+    exit 0
+    ;;
+  version | --version)
+    [ -f "$BINDLE_ROOT/VERSION" ] || missing_helper "$BINDLE_ROOT/VERSION"
+    cat "$BINDLE_ROOT/VERSION"
+    exit 0
+    ;;
+  doctor)
+    shift
+    exec_shell_helper "$BINDLE_ROOT/bin/doctor.sh" "$@"
+    ;;
+  context | context-graph)
+    shift
+    if has_notes_home_arg "$@"; then
+      exec_python_helper "$BINDLE_ROOT/bin/context-graph.py" "$@"
+    else
+      exec_python_helper "$BINDLE_ROOT/bin/context-graph.py" "$@" --notes-home "$(notes_home_default)"
+    fi
+    ;;
+  map)
+    shift
+    exec_python_helper "$BINDLE_ROOT/bin/map-entry-id.py" "$@"
+    ;;
+  evidence)
+    shift
+    exec_python_helper "$BINDLE_ROOT/bin/context-evidence.py" "$@"
+    ;;
+  *)
+    echo "bindle: unknown command: $1" >&2
+    usage >&2
+    exit 2
+    ;;
+esac

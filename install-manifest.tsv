@@ -27,3 +27,4 @@ claude	global-guidance	claude	global/CLAUDE.md	CLAUDE.md
 codex	skill	fork-pr-flow	skills/fork-pr-flow	fork-pr-flow
 codex	skill	verify-then-commit	skills/verify-then-commit	verify-then-commit
 codex	global-guidance	agents	global/AGENTS.md	AGENTS.md
+local	executable	bindle	bin/bindle	bindle

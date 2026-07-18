@@ -30,6 +30,7 @@
 #   bin/install.sh --provider codex --codex-home DIR --agents-skills-home DIR2
 #                                                        # Codex AGENTS.md + eligible skills
 #   bin/install.sh --provider all --codex-home DIR      # Claude + Codex
+#   bin/install.sh --bin-dir DIR                        # bindle executable target (default: ~/.local/bin)
 #   bin/install.sh --prune                              # prune broken owned links
 #   bin/install.sh --home DIR                           # Claude home override
 #   bin/install.sh --allow-conflicts                    # don't fail on conflicts
@@ -64,6 +65,7 @@ source "$REPO_ROOT/bin/lib/manifest.sh"
 CLAUDE_HOME="${HOME}/.claude"
 CODEX_HOME=""
 AGENTS_SKILLS_HOME=""
+BINDLE_BIN_DIR="${HOME}/.local/bin"
 PROVIDER="claude"
 PRUNE=false
 ALLOW_CONFLICTS=false
@@ -106,6 +108,10 @@ while [ $# -gt 0 ]; do
       AGENTS_SKILLS_HOME="${2:-}"
       shift 2
       ;;
+    --bin-dir)
+      BINDLE_BIN_DIR="${2:-}"
+      shift 2
+      ;;
     *)
       echo "Unknown option: $1" >&2
       exit 2
@@ -138,6 +144,9 @@ case "$PROVIDER" in
     fi
     ;;
 esac
+
+mkdir -p "$BINDLE_BIN_DIR"
+BINDLE_BIN_DIR="$(cd "$BINDLE_BIN_DIR" && pwd)"
 
 case "$PROVIDER" in
   claude | all)
@@ -234,6 +243,7 @@ _each_expected_cb() {
   local provider="$1" category="$2" dest_rel="$5" src="$4" home
   case "$provider" in
     claude) home="$CLAUDE_HOME" ;;
+    local) home="$BINDLE_BIN_DIR" ;;
     codex)
       case "$category" in
         skill) home="$AGENTS_SKILLS_HOME" ;;
@@ -242,8 +252,8 @@ _each_expected_cb() {
       ;;
   esac
   case "$PROVIDER" in
-    claude) [ "$provider" = claude ] || return 0 ;;
-    codex) [ "$provider" = codex ] || return 0 ;;
+    claude) [ "$provider" = claude ] || [ "$provider" = local ] || return 0 ;;
+    codex) [ "$provider" = codex ] || [ "$provider" = local ] || return 0 ;;
   esac
   "$_EACH_CB" "$src" "$home/$dest_rel"
 }
@@ -336,6 +346,7 @@ _link_in_group() {
   [ "$provider" = "$_GRP_PROVIDER" ] && [ "$category" = "$_GRP_CATEGORY" ] || return 0
   case "$provider" in
     claude) home="$CLAUDE_HOME" ;;
+    local) home="$BINDLE_BIN_DIR" ;;
     codex)
       case "$category" in
         skill) home="$AGENTS_SKILLS_HOME" ;;
@@ -400,9 +411,37 @@ install_surfaces() {
       _file_group codex "Codex global instructions:" "$CODEX_HOME/AGENTS.md"
       ;;
   esac
+  echo "Bindle executable:"
+  _GRP_PROVIDER="local" _GRP_CATEGORY="executable"
+  each_manifest_item "$REPO_ROOT" _link_in_group
+  if $PRUNE; then prune_path "$BINDLE_BIN_DIR/bindle"; fi
 }
 
 install_surfaces
+
+path_contains_dir() {
+  case ":$PATH:" in
+    *":$1:"*) return 0 ;;
+    *) return 1 ;;
+  esac
+}
+
+path_remediation() {
+  local shell_name shell_rc
+  shell_name="$(basename "${SHELL:-sh}")"
+  case "$shell_name" in
+    zsh) shell_rc="$HOME/.zshrc" ;;
+    bash) shell_rc="$HOME/.bashrc" ;;
+    fish) shell_rc="$HOME/.config/fish/config.fish" ;;
+    *) shell_rc="your shell startup file" ;;
+  esac
+  echo "PATH notice: $BINDLE_BIN_DIR is not on PATH."
+  if [ "$shell_name" = fish ]; then
+    echo "Add $BINDLE_BIN_DIR to PATH: fish_add_path $BINDLE_BIN_DIR"
+  else
+    echo "Add $BINDLE_BIN_DIR to PATH: add 'export PATH=\"$BINDLE_BIN_DIR:\$PATH\"' to $shell_rc"
+  fi
+}
 
 echo
 echo "Done: ${linked} linked, ${current} already current, ${conflicts} conflicts, ${pruned} pruned."
@@ -422,6 +461,10 @@ case "$PROVIDER" in
     echo "Codex home: $CODEX_HOME"
     ;;
 esac
+echo "Bindle executable dir: $BINDLE_BIN_DIR"
+if ! path_contains_dir "$BINDLE_BIN_DIR"; then
+  path_remediation
+fi
 if [ "$conflicts" -gt 0 ]; then
   echo "Conflicts left untouched — nothing owned by another source was modified."
   if ! $ALLOW_CONFLICTS; then

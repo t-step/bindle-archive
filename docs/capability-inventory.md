@@ -14,16 +14,16 @@ This doc is the schema reference and the "how do I add a capability" guide.
 The full design rationale lives in
 [`docs/design/2026-07-11-capability-inventory.md`](design/2026-07-11-capability-inventory.md).
 
-## What it is not (yet)
+## What it generates
 
-- It does not generate the README / `docs/provider-interop.md` blocks from
-  itself — those are still hand-maintained and only checked against the
-  inventory in one place (see "Bound table" below).
+The inventory now drives both generated install projections and selected
+documentation tables:
 
-This is a named follow-up in the design doc, deferred until the inventory has
-proven itself trustworthy. (The type→install-destination mapping — the other
-named follow-up — is no longer duplicated: `install.sh` and `doctor.sh` now
-read it from the generated `install-manifest.tsv`, see below.)
+- `install-manifest.tsv` is generated from installable capability rows and is
+  consumed by `install.sh` / `doctor.sh`.
+- The provider install-layout blocks in `README.md` and
+  `docs/provider-interop.md` are generated and drift-checked by
+  `bin/check-inventory.py`.
 
 ## Schema
 
@@ -67,12 +67,13 @@ row, not the other way around, unless the frontmatter is actually wrong.
 ### `install-manifest.tsv` (generated)
 
 `bin/check-inventory.py --emit-manifest` projects the installable capabilities
-(`skill`/`agent`/`command`/`global-guidance`) into a committed tab-separated
-manifest — `provider  category  name  src_rel  dest_rel`. `install.sh` and
-`doctor.sh` read it via `bin/lib/manifest.sh`, so the type→destination mapping
-lives only in the generator. `make check` regenerates it in memory and fails on
-drift; run `make manifest` (or `bin/new.sh`, which regenerates automatically) to
-refresh it. Never hand-edit it.
+(`skill`/`agent`/`command`/`global-guidance`, plus the local `bindle`
+executable) into a committed tab-separated manifest — `provider  category  name
+src_rel  dest_rel`. `install.sh` and `doctor.sh` read it via
+`bin/lib/manifest.sh`, so the type→destination mapping lives only in the
+generator. `make check` regenerates it in memory and fails on drift; run
+`make manifest` (or `bin/new.sh`, which regenerates automatically) to refresh
+it. Never hand-edit it.
 
 ## The completeness model
 

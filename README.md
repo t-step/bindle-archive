@@ -52,6 +52,13 @@ bin/install.sh --provider claude
 bin/install.sh --provider claude --prune
 ```
 
+Every install also links the public `bindle` executable, defaulting to
+`~/.local/bin/bindle`. Override that with `--bin-dir DIR`:
+
+```bash
+bin/install.sh --bin-dir ~/bin
+```
+
 Install Codex global guidance only into an explicit target directory:
 
 ```bash
@@ -65,11 +72,13 @@ For tests or alternate Claude targets, `--home DIR` still means the Claude home:
 bin/install.sh --home /tmp/claude-home
 ```
 
-Re-run anytime. The installer is idempotent and conflict-safe.
+Re-run anytime. The installer is idempotent and conflict-safe. If the executable
+directory is not on `PATH`, install and doctor output include a shell-specific
+remediation.
 
 ## Troubleshooting
 
-`bin/doctor.sh` (or `make doctor`) is the read-only diagnostic: it reports the
+`bindle doctor` (or `bin/doctor.sh` / `make doctor`) is the read-only diagnostic: it reports the
 state of every managed destination (current / missing / stale / broken /
 conflicting / possibly an earlier checkout), the notes-home resolution, and
 local tool availability, with a suggested next action for every finding. It

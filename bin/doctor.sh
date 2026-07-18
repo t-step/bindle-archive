@@ -31,6 +31,7 @@
 #   bin/doctor.sh --home DIR          # diagnose a different Claude home
 #   bin/doctor.sh --codex-home DIR    # also diagnose a Codex AGENTS.md target
 #   bin/doctor.sh --agents-skills-home DIR   # also diagnose Codex Agent Skills
+#   bin/doctor.sh --bin-dir DIR       # diagnose bindle executable target
 #
 # Exit codes:
 #   0  no findings (everything current, or nothing to report)
@@ -48,6 +49,8 @@ CODEX_HOME=""
 HAVE_CODEX=false
 AGENTS_SKILLS_HOME=""
 HAVE_AGENTS_SKILLS_HOME=false
+BINDLE_BIN_DIR="${HOME}/.local/bin"
+path_findings=0
 
 while [ $# -gt 0 ]; do
   case "$1" in
@@ -65,9 +68,13 @@ while [ $# -gt 0 ]; do
       HAVE_AGENTS_SKILLS_HOME=true
       shift 2
       ;;
+    --bin-dir)
+      BINDLE_BIN_DIR="${2:-}"
+      shift 2
+      ;;
     *)
       echo "Unknown option: $1" >&2
-      echo "Usage: bin/doctor.sh [--home DIR] [--codex-home DIR] [--agents-skills-home DIR]" >&2
+      echo "Usage: bin/doctor.sh [--home DIR] [--codex-home DIR] [--agents-skills-home DIR] [--bin-dir DIR]" >&2
       exit 2
       ;;
   esac
@@ -225,6 +232,13 @@ _doctor_codex_skills_cb() {
   AGENTS_SKILLS_ITEMS=$((AGENTS_SKILLS_ITEMS + 1))
   check_item "${4#"$REPO_ROOT"/}" "$4" "$AGENTS_SKILLS_HOME/$5"
 }
+# shellcheck disable=SC2329 # invoked indirectly, by name, via each_manifest_item
+_doctor_local_executable_cb() {
+  [ "$1" = local ] || return 0
+  [ "$2" = executable ] || return 0
+  [ -e "$4" ] || return 0
+  check_item "${4#"$REPO_ROOT"/}" "$4" "$BINDLE_BIN_DIR/$5"
+}
 
 claude_section() {
   echo
@@ -250,6 +264,41 @@ codex_skills_section() {
   each_manifest_item "$REPO_ROOT" _doctor_codex_skills_cb
   [ "$AGENTS_SKILLS_ITEMS" -gt 0 ] || echo "  - no Codex-eligible skills in this repo"
   sweep_dir "$AGENTS_SKILLS_HOME" "skills"
+}
+
+path_contains_dir() {
+  case ":$PATH:" in
+    *":$1:"*) return 0 ;;
+    *) return 1 ;;
+  esac
+}
+
+path_remediation() {
+  local shell_name shell_rc export_cmd
+  shell_name="$(basename "${SHELL:-sh}")"
+  case "$shell_name" in
+    zsh) shell_rc="$HOME/.zshrc" ;;
+    bash) shell_rc="$HOME/.bashrc" ;;
+    fish) shell_rc="$HOME/.config/fish/config.fish" ;;
+    *) shell_rc="your shell startup file" ;;
+  esac
+  printf '  \xe2\x9c\x97 PATH — missing: %s is not on PATH\n' "$BINDLE_BIN_DIR"
+  if [ "$shell_name" = fish ]; then
+    printf '      \xe2\x86\x92 Add %s to PATH: fish_add_path %s\n' "$BINDLE_BIN_DIR" "$BINDLE_BIN_DIR"
+  else
+    export_cmd="export PATH=\"$BINDLE_BIN_DIR:\$PATH\""
+    printf '      \xe2\x86\x92 Add %s to PATH: add '\''%s'\'' to %s\n' "$BINDLE_BIN_DIR" "$export_cmd" "$shell_rc"
+  fi
+  path_findings=1
+}
+
+executable_section() {
+  echo
+  echo "bindle executable ($BINDLE_BIN_DIR):"
+  each_manifest_item "$REPO_ROOT" _doctor_local_executable_cb
+  if ! path_contains_dir "$BINDLE_BIN_DIR"; then
+    path_remediation
+  fi
 }
 
 notes_section() {
@@ -347,6 +396,7 @@ fi
 if $HAVE_AGENTS_SKILLS_HOME; then
   codex_skills_section
 fi
+executable_section
 notes_section
 tools_section
 
@@ -355,7 +405,7 @@ echo
 printf 'summary: %d current, %d missing, %d stale, %d broken, %d conflict, %d earlier-checkout\n' \
   "$current_count" "$missing_count" "$stale_count" "$broken_count" "$conflict_count" "$earlier_count"
 
-total_findings=$((missing_count + stale_count + broken_count + conflict_count + earlier_count))
+total_findings=$((missing_count + stale_count + broken_count + conflict_count + earlier_count + path_findings))
 if [ "$total_findings" -eq 0 ]; then
   exit 0
 else

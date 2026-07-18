@@ -261,10 +261,12 @@ The installer supports:
 bin/install.sh --provider claude
 bin/install.sh --provider codex --codex-home ~/.codex
 bin/install.sh --provider all --codex-home ~/.codex
+bin/install.sh --bin-dir ~/.local/bin
 ```
 
 For backward compatibility, `bin/install.sh` with no provider keeps the
-existing Claude install behavior.
+existing Claude install behavior. Every provider install also links the
+provider-neutral `bindle` executable, defaulting to `~/.local/bin/bindle`.
 
 Claude:
 
@@ -279,6 +281,13 @@ Codex:
 - require `--codex-home <dir>` for `--provider codex` and `--provider all`;
 - document that `--codex-home` is an explicit target directory;
 - do not install Claude-only `skills/`, `agents/`, or `commands/`.
+
+Executable:
+
+- install `bin/bindle` to `~/.local/bin/bindle` by default;
+- support `--bin-dir <dir>` for tests or alternate user bin directories;
+- report shell-specific PATH remediation when the executable directory is not
+  on `PATH`.
 
 Conflict safety applies to every provider target:
 

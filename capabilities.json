@@ -306,6 +306,27 @@
       "version_introduced": "0.2.0"
     },
     {
+      "name": "bindle",
+      "type": "script",
+      "path": "bin/bindle",
+      "description": "Stable public Bindle CLI dispatcher: resolves the installed checkout root, prints version/help, and delegates context/map/evidence/doctor commands to the existing helper authorities without duplicating domain logic.",
+      "provider": {
+        "claude": "installed",
+        "codex": "installed"
+      },
+      "maturity": "tested",
+      "mutation": [
+        "disk"
+      ],
+      "version_introduced": "0.8.0",
+      "install_destination": "bindle",
+      "dependencies": [
+        "context-graph",
+        "map-entry-id",
+        "context-evidence"
+      ]
+    },
+    {
       "name": "session-context",
       "type": "script",
       "path": "bin/session-context.sh",
