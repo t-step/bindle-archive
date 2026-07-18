@@ -5,20 +5,26 @@
 rendering, dispatch into context_graph.config / context_graph.lock. No
 independent domain logic lives here.
 
-This issue (#191) implements exactly: `init`, `config status`, `config
-validate`, `config add-repository`, `config update-repository`, `config
-remove-repository`, `config set-default`, `config break-lock` — the
-initialization and configuration boundary frozen by
-docs/design/2026-07-17-context-graph-foundation.md section 4. The remaining
-verbs shown there (`preview`, `candidates`, `propose`, `confirm`, `apply`,
-bare `validate`/`status`) belong to #183/#184/#185/#186 and are not defined
-here.
+#191 implements: `init`, `config status`, `config validate`, `config
+add-repository`, `config update-repository`, `config remove-repository`,
+`config set-default`, `config break-lock` — the initialization and
+configuration boundary frozen by
+docs/design/2026-07-17-context-graph-foundation.md section 4. #183 adds
+`preview` -- the read-only, write-nothing deterministic compiler. The
+remaining verbs shown in that design (`candidates`, `propose`, `confirm`,
+`apply`, bare `validate`/`status`) belong to #184/#185/#186 and are not
+defined here. `preview` intentionally has no `--adopt-context-md` flag --
+that flag previews a `context.md` diff, which is #185's apply-safety
+projection, not part of #183's own scope.
 
 Exit codes: 0 success (including a `config validate` run that found zero
-findings); 1 a domain error's findings list was rendered instead of a
-traceback -- config.ConfigError (and subclasses, e.g. ConfigInvalidError,
-ConfigMissingError) from any config.py call, lock.LockContention on
-`init`, or a non-empty findings list from `config validate`; 2 argparse
+findings, or a `preview` run whose conflicts list is non-empty --
+conflicts are reported, not run failures); 1 a domain error's findings
+list was rendered instead of a traceback -- config.ConfigError (and
+subclasses, e.g. ConfigInvalidError, ConfigMissingError) from any
+config.py call, context_graph.compiler.CompilerError from `preview`
+(missing/malformed configuration, an unreadable map), lock.LockContention
+on `init`, or a non-empty findings list from `config validate`; 2 argparse
 usage error (e.g. a missing required argument) -- unchanged stdlib
 behavior, not implemented by this CLI.
 """
@@ -30,6 +36,7 @@ import sys
 
 sys.path.insert(0, os.path.dirname(__file__))
 
+from context_graph import compiler
 from context_graph import config
 from context_graph import lock
 
@@ -53,8 +60,29 @@ def _emit_text(obj):
             print("%s:%s %s" % (f["code"], loc, f["message"]))
     elif findings == []:
         print("ok: no findings")
+    elif "nodes" in obj and "edges" in obj:
+        _emit_text_preview(obj)
     else:
         print(json.dumps(obj, indent=2, sort_keys=True))
+
+
+def _emit_text_preview(preview):
+    print("context-graph preview (project %s)" % preview["project_id"])
+    print("nodes: %d, edges: %d, identity-anchor candidates: %d, conflicts: %d"
+          % (len(preview["nodes"]), len(preview["edges"]),
+             len(preview["identity_anchor_candidates"]), len(preview["conflicts"])))
+    print("coverage:")
+    for source, state in sorted(preview["coverage"].items()):
+        print("  %s: %s" % (source, state))
+    if preview["identity_anchor_candidates"]:
+        print("unanchored entries:")
+        for c in preview["identity_anchor_candidates"]:
+            print("  [%s/%s] %s" % (c["section"], c["entry_kind"], c["display_claim"]))
+    if preview["conflicts"]:
+        print("conflicts:")
+        for f in preview["conflicts"]:
+            loc = " line=%s" % f["line"] if f.get("line") else ""
+            print("  [%s]%s %s" % (f["code"], loc, f["message"]))
 
 
 def _error_findings(code, message, **extra):
@@ -172,6 +200,31 @@ def cmd_config_set_default(args):
     return 0
 
 
+def _parse_repo_roots(pairs):
+    roots = {}
+    for pair in pairs or []:
+        alias, sep, path = pair.partition("=")
+        if not sep:
+            raise ValueError("--repo-root must be ALIAS=PATH, got %r" % (pair,))
+        roots[alias] = path
+    return roots
+
+
+def cmd_preview(args):
+    try:
+        repo_roots = _parse_repo_roots(args.repo_root)
+    except ValueError as e:
+        _emit({"findings": _error_findings("E_USAGE", str(e))}, args.format)
+        return 1
+    try:
+        preview = compiler.compile_preview(args.notes_home, args.project, repo_roots=repo_roots)
+    except compiler.CompilerError as e:
+        _emit({"findings": e.findings}, args.format)
+        return 1
+    _emit(preview, args.format)
+    return 0
+
+
 def cmd_config_break_lock(args):
     cdir = config.context_dir(args.notes_home, args.project)
     if not args.force:
@@ -195,6 +248,14 @@ def main(argv=None):
     _add_common_args(p_init)
     p_init.add_argument("--display-name", default=None)
     p_init.set_defaults(func=cmd_init)
+
+    p_preview = sub.add_parser(
+        "preview", help="read-only deterministic compiler preview (#183)")
+    _add_common_args(p_preview)
+    p_preview.add_argument(
+        "--repo-root", action="append", default=[], metavar="ALIAS=PATH",
+        help="repeatable; ALIAS must be a configured repository alias")
+    p_preview.set_defaults(func=cmd_preview)
 
     p_config = sub.add_parser("config", help="read or mutate project configuration")
     config_sub = p_config.add_subparsers(dest="config_command", required=True)

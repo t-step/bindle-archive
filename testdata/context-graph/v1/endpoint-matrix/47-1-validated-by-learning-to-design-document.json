@@ -10,7 +10,7 @@
     {
       "id": "document:project:5f56c9b95c41c298f70d6dd4e5db8c2a:project-local:docs/design/example-47.md",
       "class": "evidence",
-      "kind": "design_document",
+      "kind": "document_project_local",
       "label": "design doc docs/design/example-47.md",
       "status": "current"
     }

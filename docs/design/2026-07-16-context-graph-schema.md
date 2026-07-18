@@ -288,9 +288,9 @@ native validator is authoritative (§11).
 - **`node.schema.json`** — `id`, `class` ∈ {project, semantic, evidence},
   `kind`, `label`, `status`, `source`, optional `confidence` (valid only for
   `assumption`/`tension`). Semantic kinds: decision, learning, assumption,
-  tension, question. Evidence kinds: session, handoff, design_document,
-  github_issue, github_pr. Reserved future kinds are documented but rejected as
-  emitted v1 output (fixture 30).
+  tension, question. Evidence kinds: session, handoff, document_repository,
+  document_project_local, github_issue, github_pr. Reserved future kinds are
+  documented but rejected as emitted v1 output (fixture 30).
 - **`edge.schema.json`** — `key`, `source`, `relationship`, `target`, `status`,
   `origin` ∈ {deterministic, human_judgment}, `review_trigger`, `basis`. No
   generic `related_to`. `implements` is rejected (fixture 24).
@@ -336,8 +336,8 @@ semantic-any        = decision | learning | assumption | tension | question
 claim               = decision | learning | assumption
 uncertainty         = assumption | tension | question
 resolving           = decision | learning
-evidence-any        = session | handoff | design_document | github_issue | github_pr
-validation-evidence = session | handoff | design_document | github_pr
+evidence-any        = session | handoff | document_repository | document_project_local | github_issue | github_pr
+validation-evidence = session | handoff | document_repository | document_project_local | github_pr
 ```
 
 Reserved future node kinds satisfy no v1 group (fixture 54).

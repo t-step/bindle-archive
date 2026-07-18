@@ -9,7 +9,7 @@
     {
       "id": "document:project:99999999999999999999999999999999:project-local:notes/local-notes.md",
       "class": "evidence",
-      "kind": "design_document",
+      "kind": "document_project_local",
       "label": "Local working notes",
       "status": "current"
     }

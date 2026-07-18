@@ -65,14 +65,18 @@ class TestEndpointMatrix(unittest.TestCase):
         self.assertTrue(ok["ok"])
         self.assertFalse(bad["ok"])
 
-    def test_validated_by_learning_to_design_ok_question_to_issue_fails(self):
-        ok = rel.validate_endpoint_pair(
-            "validated_by", "semantic", "learning", "evidence", "design_document"
+    def test_validated_by_learning_to_document_ok_question_to_issue_fails(self):
+        repo_bound = rel.validate_endpoint_pair(
+            "validated_by", "semantic", "learning", "evidence", "document_repository"
+        )
+        project_local = rel.validate_endpoint_pair(
+            "validated_by", "semantic", "learning", "evidence", "document_project_local"
         )
         bad = rel.validate_endpoint_pair(
             "validated_by", "semantic", "question", "evidence", "github_issue"
         )
-        self.assertTrue(ok["ok"])
+        self.assertTrue(repo_bound["ok"])
+        self.assertTrue(project_local["ok"])
         self.assertFalse(bad["ok"])
 
     def test_resolves_decision_to_question_ok_reversed_fails(self):

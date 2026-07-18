@@ -53,7 +53,8 @@ anchor-candidate:sha256:<64-lowercase-hex>
 
 Classes: `project`, `semantic`, `evidence`. Semantic kinds: `decision`,
 `learning`, `assumption`, `tension`, `question`. Evidence kinds: `session`,
-`handoff`, `design_document`, `github_issue`, `github_pr`. Reserved future
+`handoff`, `document_repository`, `document_project_local`, `github_issue`,
+`github_pr`. Reserved future
 semantic kinds (documented, never emitted in v1):
 `problem`, `concept`, `constraint`, `solution`, `pattern`, `principle`,
 `architecture_component`, `architecture_flow`, `boundary`, `test_surface`.

@@ -22,14 +22,14 @@
     {
       "id": "document:project:88888888888888888888888888888888:repository-binding:11111111111111111111111111111111:docs/README.md",
       "class": "evidence",
-      "kind": "design_document",
+      "kind": "document_repository",
       "label": "README (primary binding)",
       "status": "current"
     },
     {
       "id": "document:project:88888888888888888888888888888888:repository-binding:22222222222222222222222222222222:docs/README.md",
       "class": "evidence",
-      "kind": "design_document",
+      "kind": "document_repository",
       "label": "README (docs-mirror binding)",
       "status": "current"
     }
