@@ -162,3 +162,88 @@ def anchor_dependency_fingerprint(
         )
     )
     return "sha256:" + hashlib.sha256(payload).hexdigest()
+
+
+def edge_subject_key(source_id, relationship, target_id):
+    """Edge subject key: bindle-context-edge-subject-v1 — the reducer's
+    grouping identity, deliberately coarser than the candidate key (no basis
+    input). Two basis-varying candidates of the same relationship share one
+    subject, so accepting the newer supersedes the older (issue #184 binding
+    amendment). Symmetric `contradicts` collapses endpoint order, matching
+    candidate_key."""
+    if relationship == "contradicts":
+        source_id, target_id = sorted((source_id, target_id))
+    payload = b"\0".join(
+        (
+            b"bindle-context-edge-subject-v1",
+            source_id.encode("utf-8"),
+            relationship.encode("utf-8"),
+            target_id.encode("utf-8"),
+        )
+    )
+    return "edge-subject:sha256:" + hashlib.sha256(payload).hexdigest()
+
+
+def anchor_subject_key(project_id, map_path, section, entry_kind):
+    """Identity-anchor subject key: bindle-context-anchor-subject-v1 — the
+    reducer's grouping identity for a single map slot, coarser than the anchor
+    candidate key (no entry_fingerprint input). Editing an entry's bytes yields
+    a new candidate key but the same subject, so re-accepting supersedes the
+    prior acceptance for that slot (issue #184 binding amendment)."""
+    payload = b"\0".join(
+        (
+            b"bindle-context-anchor-subject-v1",
+            project_id.encode("utf-8"),
+            map_path.encode("utf-8"),
+            section.encode("utf-8"),
+            entry_kind.encode("utf-8"),
+        )
+    )
+    return "anchor-subject:sha256:" + hashlib.sha256(payload).hexdigest()
+
+
+def _kind_token(kind):
+    # Node kind is None only for the project node; real kinds are never empty,
+    # so None -> "" is unambiguous. class is always hashed alongside, so this
+    # can never collide a project endpoint with a semantic/evidence one.
+    return "" if kind is None else kind
+
+
+def edge_dependency_fingerprint(
+    source_id,
+    source_class,
+    source_kind,
+    relationship,
+    target_id,
+    target_class,
+    target_kind,
+    basis_entries,
+):
+    """Edge candidate-scoped staleness fingerprint:
+    bindle-context-edge-dependency-v1 (issue #184; inputs frozen by design
+    section 9). Hashes only the material dependencies of the candidate:
+    canonical endpoint IDs, current endpoint classes/kinds, relationship, and
+    the canonical material basis. Endpoint-matrix validity is constant-true for
+    any minted candidate (an illegal pair never reaches key construction), so it
+    is not a hashed variable. v1 declares no source/target metadata material
+    beyond class/kind. Symmetric `contradicts` collapses the two endpoint
+    triples together so A-contradicts-B and B-contradicts-A share a
+    fingerprint. Own domain literal so its bytes never equal a candidate key."""
+    src = (source_id, source_class, _kind_token(source_kind))
+    tgt = (target_id, target_class, _kind_token(target_kind))
+    if relationship == "contradicts":
+        src, tgt = sorted((src, tgt))
+    payload = b"\0".join(
+        (
+            b"bindle-context-edge-dependency-v1",
+            src[0].encode("utf-8"),
+            src[1].encode("utf-8"),
+            src[2].encode("utf-8"),
+            relationship.encode("utf-8"),
+            tgt[0].encode("utf-8"),
+            tgt[1].encode("utf-8"),
+            tgt[2].encode("utf-8"),
+            canonical_basis_bytes(basis_entries),
+        )
+    )
+    return "sha256:" + hashlib.sha256(payload).hexdigest()
