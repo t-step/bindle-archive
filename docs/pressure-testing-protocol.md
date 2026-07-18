@@ -46,7 +46,7 @@ to the axis, so a "defer" rep where a real problem already exists tests *defer
 when you'd say no-go anyway*, which is strictly easier than *defer when
 everything is clean*.
 
-Run and record all seven **before any subagent sees the fixture**:
+Run and record all eight **before any subagent sees the fixture**:
 
 1. **Code at HEAD imports and executes** the claimed behavior.
 2. **The previous tag's tree is genuinely the old state** — claimed symbol
@@ -63,6 +63,19 @@ Run and record all seven **before any subagent sees the fixture**:
    a near-collision** with a real published package (`feedparse` sits one
    character from the popular `feedparser`, and an agent will flag the
    typosquat shape instead of the axis under test).
+8. **The fixture's provenance is plausible, not merely valid.** Every attribute
+   can pass validation while the fixture still reads as staged, and an agent
+   that spots the staging discounts the very signal the axis depends on. A
+   DomI-governed fixture needs a believable reason to carry a `.domi-pin`, and
+   that pin must name a **real commit with its real `MANIFEST.md` hash** — a
+   placeholder sha is well-formed to the helper and obviously fake to a reader.
+   #224 is the worked case: a rep leaned on an all-zeros sha (*"never actually
+   been synced to a real DomI commit"*) to certify a release it should have
+   deferred, and a later rep on a repaired pin still flagged the residual story
+   gap unprompted — *"a personal package having a DomI pin at all is a little
+   unusual … worth a sanity check that the pin is intentional."* Item 7 covers a
+   **name** an agent can discount; this covers a **story** an agent can
+   discount.
 
 Adding this checklist mid-campaign caught a fourth defect before dispatch — a
 shell quoting bug where `git init` silently never ran while the script still

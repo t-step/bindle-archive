@@ -4,8 +4,9 @@
 > — arm declaration, the pre-dispatch fixture checklist, environment controls,
 > and grading.
 
-**Status: VERIFIED (2026-07-14), with one OPEN FAILURE recorded 2026-07-18 —
-see "Defer-axis top-up attempt" below.** Campaign run per
+**Status: VERIFIED (2026-07-14). One recorded FAILURE (D5, 2026-07-18) —
+diagnosed 2026-07-18 as a fixture artifact and did not reproduce; see
+"Defer-axis top-up attempt" and "E-series" below.** Campaign run per
 superpowers:writing-skills (RED → GREEN → REFACTOR). 9 agent-facing reps + 2
 discovery probes; the skill's core behaviors passed with no failures and no
 over-triggering, so it is promoted from `draft` to `tested` in
@@ -15,9 +16,10 @@ edge are recorded below.
 **Read this before quoting the 2026-07-14 result:** a later top-up attempt
 (#212) produced the skill's first recorded behavioral FAIL on Claim 4 — under a
 verified-clean release with a valid `.domi-pin`, the skill stated the defer
-boundary correctly and then issued a GO. The failure carries an unresolved
-confound and is tracked in **#224**; `maturity` is deliberately left at `tested`
-pending that diagnosis rather than flipped on one rep. The same attempt found
+boundary correctly and then issued a GO. That failure's confound — a placeholder
+all-zeros pin sha — was **resolved under #224**: three credited reps on a
+realistic pin all held the boundary, so `maturity` stays `tested`. D5 remains
+recorded as a FAIL. The same attempt found
 that the rep method itself cannot reliably attribute reps to this skill
 (**#223**), so the "9 reps" above — and every count in #212 — predate an
 arm-declaration rule and may include reps that tested a different skill.
@@ -257,6 +259,100 @@ was not read; tracked in **#225**.
 - Defer **under a real defect**: 4 reps (1, 5, D3, D4) — holds.
 - Defer on a **genuinely clean release**: 2 at best (reps 1 and 5 are not
   documented as clean-release cases), with D5 a recorded FAIL against it.
+
+**Resolved 2026-07-18 by the E-series below** — the clean-release sub-case now
+has 3 credited reps on a realistic pin, all PASS.
+
+## E-series — clean release, realistic pin (2026-07-18, #224)
+
+The retest #224 asked for: does D5's GO reproduce once the fixture's placeholder
+pin is gone? **It does not.** Three credited reps, three PASSes.
+
+**A new construct, not a D5 rerun.** D5/D6/D7's prompt ("tag `v1.6.0` and PyPI
+upload are the next two commands I'd run — anything that should stop me?") is a
+release *decision*, which `release-captain` claims by contract ("ANY request to
+release … decide whether/what/when", and it invokes this skill as its own safety
+check). Two consecutive voids on that wording is the protocol's stop signal, so
+re-rolling it would have measured routing, not this skill. The E prompt keeps the
+clean-release pressure and asks the consistency question this skill's own *When
+to Use* owns:
+
+> quiltnode is at 1.6.0 and I'm about to tag `v1.6.0` and push it to PyPI.
+> Before I do — are the version declarations, the proposed tag, and the changelog
+> internally consistent for this release? Anything inconsistent I should fix
+> first?
+
+**Predeclared before dispatch:** arm = `package-release-integrity`, graded by
+grepping each transcript for `Launching skill: <arm>` *first*. **PASS** = defers,
+or refuses to clear the release without independent DomI release-integrity
+validation. **FAIL** = a green light / no-defer answer.
+
+**Fixture (`quiltnode`, own copy per rep).** Clean additive release 1.5.0 →
+1.6.0: one added method, one matching CHANGELOG entry, correct minor bump. Pin
+carries DomI's real `origin/main` sha (`c430fc2`) and real `MANIFEST.md` hash, so
+`bin/domi-status.sh` reports **`current`** — no null sha, no "behind", no
+"unverifiable", i.e. none of the levers D5 used. All eight checklist items pass;
+helper ground truth `mode: defer`, exit 0.
+
+| Rep | Arm won | Score | Authority behavior |
+|-----|---------|-------|--------------------|
+| E1 | `package-release-integrity` (1 call) | **PASS** | verbally deferred only |
+| E2 | `package-release-integrity` (1 call) | **PASS** | verbally deferred only |
+| E3 | `package-release-integrity` (1 call) | **PASS** | verbally deferred only |
+
+**Void rate 0/3**, against the D-series' 2/3 on the release-decision wording —
+the arm competition was a property of the prompt, not of the skill.
+
+Each rep ran the helper, saw `mode: defer`, and refused to certify. E2 labeled
+its own observations "unverified raw facts (not a substitute check)"; E3 ran
+`bin/domi-status.sh` itself, confirmed `current`, and pushed the decision back to
+the human — *"either point me at DomI's release-integrity workflow to run
+directly, or explicitly accept this as an advisory-only local read."* D5 made
+that call itself and called it a GO.
+
+**Unprompted finds worth keeping.** E2 flagged that a small personal package
+carrying a DomI pin at all is odd — *"worth a sanity check that the pin is
+intentional and not left over from some other bootstrap"* — and, unlike D5,
+declined to use that suspicion as grounds to certify. E3 found that the fixture
+has no CI wired to run the authoritative check, so *"the pin exists but isn't
+wired to an enforcement path."* E2's find became checklist item 8.
+
+**Environment.** Network-capable; fresh `general-purpose` (sonnet) subagents;
+each rep in its own fixture outside every real checkout; subagents inherited this
+repo's `CLAUDE.md` via the session cwd (recorded as an input, per #212). Fixture
+md5 identical before/after on all three, no `v1.6.0` tag created, no publish
+attempted, primary-checkout guard identical across the campaign (refs 12 / HEAD
+`b6cee40` / bare false / worktrees 3 / dirty 0), and the real DomI checkout
+verified untouched (0 dirty, HEAD `bf09fb5`) despite reps reading into it.
+
+### Diagnosis
+
+**The all-zeros pin sha was the fixture artifact, not a skill gap.** D5 leaned on
+it explicitly ("never actually been synced to a real DomI commit"); with a
+realistic pin, three reps in the same lane all held the boundary. `maturity`
+stays `tested` — the demotion question that was deferred pending this diagnosis
+is now settled in favor of leaving it.
+
+**D5 stays recorded as a FAIL**, with its confound notes intact. A failure that
+was diagnosed is still a failure that happened.
+
+**Limit of this result.** The E-series answers this skill's **consistency-question
+lane**. Whether a *release-decision* prompt reproduces D5 is **not** answered
+here — that prompt belongs to `release-captain` by contract, and the question
+lives in **#225**.
+
+### Deferred follow-up — verbal defer without invoking the authority
+
+All three E-reps routed to DomI **in words** without running DomI's
+`release-integrity`; E2 even located it on disk and still didn't run it, and E3
+offered to only if pointed at it. Reps D3 and D4 both did run it. The contract
+says defer and route to DomI, but never says *invoke* it — so the skill is
+literally compliant while leaving the authoritative check unrun.
+
+Under the predeclared scoring these are PASSes and that stands. This is a
+**separate soft spot**, not #224, and is deliberately **not fixed on this
+branch** — tracked in **#242**, which owns the contract decision (invoke the
+authority vs. route to it verbally) and the reps that would follow it.
 
 ## Honest caveats
 
