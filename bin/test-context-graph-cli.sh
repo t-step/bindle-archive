@@ -87,6 +87,98 @@ check "break-lock without --force is refused" test $? -ne 0
 "$PY" "$CLI" config break-lock --notes-home "$NH5" --project locked --force >/dev/null
 check "break-lock --force removes the lock" bash -c "test ! -f '$LOCKDIR/.lock'"
 
+echo "== #184 process-level propose/confirm/candidates + cross-boundary endpoint-legality (§16) =="
+NH6="$(mktemp -d)"
+"$PY" "$CLI" init --notes-home "$NH6" --project proj >/dev/null
+check "init succeeds for the judgment-ledger scenario" test $? -eq 0
+
+# Minimal map.md carrying two ANCHORED entries (explicit bindle:context-id
+# markers) -- the grammar proven by test_review.py's MAP_TWO_DECISIONS
+# fixture and test_compiler.py's base_map. Unanchored entries only ever
+# yield identity_anchor_candidates, never usable proposal endpoints, so the
+# two node ids below (context-node:proj:1111.../context-node:proj:2222...)
+# come straight off the markers, matching the literal ids baked into the
+# testdata/context-graph-judgment/v1/proposal-*.json fixtures -- no id needs
+# to be discovered at runtime.
+MAP_PATH="$NH6/projects/proj/map.md"
+cat >"$MAP_PATH" <<'MAPEOF'
+## Brief
+
+## Decisions
+### A decision (2026-07, settled) <!-- bindle:context-id: context-node:proj:11111111111111111111111111111111 -->
+why: x
+so: y
+revisit-when: z
+evidence:
+
+## Learnings
+### A learning (2026-07) <!-- bindle:context-id: context-node:proj:22222222222222222222222222222222 -->
+why: x
+so: y
+evidence:
+
+## Assumptions & tensions
+
+## Open questions
+
+## Superseded
+MAPEOF
+
+LEGAL="$REPO_ROOT/testdata/context-graph-judgment/v1/proposal-legal.json"
+ILLEGAL="$REPO_ROOT/testdata/context-graph-judgment/v1/proposal-illegal-endpoint.json"
+ADVISORY="$REPO_ROOT/testdata/context-graph-judgment/v1/proposal-advisory-mismatch.json"
+
+"$PY" "$CLI" propose --notes-home "$NH6" --project proj --input "$LEGAL" \
+  >"$SCRATCH/cg-propose-legal.json" 2>&1
+check "propose on a legal endpoint pair exits 0" test $? -eq 0
+CANDKEY=$("$PY" -c "
+import json
+d = json.load(open('$SCRATCH/cg-propose-legal.json'))
+print(d['candidate']['candidate_key'] if d.get('candidate') else '')
+")
+check "propose prints a candidate_key" bash -c "test -n '$CANDKEY'"
+
+"$PY" "$CLI" confirm --notes-home "$NH6" --project proj \
+  --candidate-key "$CANDKEY" --decision accepted --input "$LEGAL" \
+  >"$SCRATCH/cg-confirm.json" 2>&1
+check "confirm --decision accepted on the proposed candidate exits 0" test $? -eq 0
+JUDGMENTS="$NH6/projects/proj/.bindle/context/judgments.jsonl"
+check "confirm appends exactly one judgments.jsonl line" bash -c \
+  "test -f '$JUDGMENTS' && test \$(wc -l <'$JUDGMENTS') -eq 1"
+
+"$PY" "$CLI" candidates --notes-home "$NH6" --project proj --status accepted \
+  >"$SCRATCH/cg-candidates.json" 2>&1
+check "candidates --status accepted exits 0" test $? -eq 0
+check "candidates --status accepted lists the confirmed candidate_key" bash -c "
+\"$PY\" -c \"
+import json
+d = json.load(open('$SCRATCH/cg-candidates.json'))
+raise SystemExit(0 if any(r['candidate_key'] == '$CANDKEY' for r in d['rows']) else 1)
+\"
+"
+
+"$PY" "$CLI" propose --notes-home "$NH6" --project proj --input "$ILLEGAL" \
+  >"$SCRATCH/cg-propose-illegal.json" 2>&1
+check "propose on a cross-boundary illegal endpoint pair exits 1" test $? -eq 1
+check "propose on an illegal endpoint pair mints no candidate" bash -c "
+\"$PY\" -c \"
+import json
+d = json.load(open('$SCRATCH/cg-propose-illegal.json'))
+raise SystemExit(0 if d['candidate'] is None else 1)
+\"
+"
+
+"$PY" "$CLI" propose --notes-home "$NH6" --project proj --input "$ADVISORY" \
+  >"$SCRATCH/cg-propose-advisory.json" 2>&1
+check "propose with a mismatched advisory_candidate_key exits 1" test $? -eq 1
+check "propose with a mismatched advisory_candidate_key mints no candidate" bash -c "
+\"$PY\" -c \"
+import json
+d = json.load(open('$SCRATCH/cg-propose-advisory.json'))
+raise SystemExit(0 if d['candidate'] is None else 1)
+\"
+"
+
 echo
 echo "test-context-graph-cli: $pass passed, $fail failed"
 [ "$fail" -eq 0 ]
