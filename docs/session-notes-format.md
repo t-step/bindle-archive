@@ -35,6 +35,12 @@ Not everything here is equally load-bearing. Each section is labeled:
     profile.md                        # durable facts: gates, commands, safety notes
     sessions/YYYY-MM-DD-<slug>.md     # one note per session
     handoffs/YYYY-MM-DD-<slug>.md     # paste-ready prompts for future sessions
+    context.md                        # NEW — regenerable projection, #185 apply
+    .bindle/context/
+      config.json                     # NEW — authoritative, #191
+      judgments.jsonl                 # NEW — append-only ledger, #184
+      index.json                      # NEW — rebuildable materialized graph, #185
+      .lock                           # NEW — single-writer lock
 ```
 
 Everything is plain Markdown. There is no database, daemon, or init step;
