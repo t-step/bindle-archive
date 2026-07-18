@@ -13,6 +13,26 @@ output. Architecture projection is a **downstream, rebuildable reading surface**
 it never becomes a context-graph authority. Where this record and a live issue
 body diverge, the live body wins and this record must be corrected.
 
+## 0. Authority split (read this before editing anything here)
+
+| Artifact | Is authority for | Is **not** |
+|---|---|---|
+| **live #141** | the canonical product contract — summary, promised UX, frozen cross-child contracts, amendments, ACs, PTs, closure | a place for child implementation detail |
+| **this document** | rationale, decomposition, traceability, decisions, and paste-ready child bodies | an authority over a contradictory live issue |
+| **child issues** | implementation contracts for their own scope | a place to restate or reinterpret the parent |
+
+Two rules follow, and both are load-bearing:
+
+* **Where this record and the live issue body diverge, the live body wins and this
+  record must be corrected.** This document never outranks #141.
+* **The contract is not maintained in three places.** §13 is a *generated candidate
+  snapshot*, not a third editable copy — the staged candidate lives in
+  `2026-07-18-141-candidate-parent-body.md`, and once applied, §13 is replaced by a
+  snapshot of the final live body. Appendix A is a frozen historical recovery
+  source and is never edited.
+
+---
+
 > **Contract-provenance warning (fourth-round gate).** The §13 replacement body
 > **was applied** to live #141 at `2026-07-18T18:53:20Z` — after all three commits
 > on this branch, and contrary to §13's own "not yet applied" note (now corrected).
@@ -574,7 +594,10 @@ sixth, so it must be fixed **before** D rather than negotiated per-child.
   Architectural Flows/       (F1)
   Boundaries/                (F2)
   Test Surfaces/             (F3)
-  Hotspots/                  (F4, only if promoted to a durable type — §10)
+  Hotspots/                  (F4 — durable tree only if F4 renders hotspots as a
+                             durable type; default is bounded temporal status
+                             inside the notes above. Either way F4 blocks
+                             closure, §10)
 ```
 
 **Owner split:** **B** owns the tree contract and the `note_path` grammar (it is a
@@ -1184,27 +1207,25 @@ low/med/high, or ≥N), never a raw number — so `fan-in 41→42` is byte-ident
 a no-op, and only a band crossing rewrites. **The same banded values feed C's
 ranking** (§6-C), or churn excluded from note bytes re-enters through note
 existence. **Depends on:** D (F1); each subsequent F on its predecessor. **Closure:**
-F1–F3 deliver #141's enumerated durable note types and **block epic closure** (§10);
-F4 is non-blocking **only under a recorded amendment** — see the flag below. All of
-F1–F4 populate the note tree frozen in §3 and may not invent sibling roots.
+**F1–F4 all deliver #141's enumerated note types and all block epic closure**
+(§10); see the rendering-vs-scope note below. All of F1–F4 populate the note tree
+frozen in §3 and may not invent sibling roots.
 **Acceptance (per child):** deterministic selection + generated-region rendering; a
 transient metric change within a band does not create or churn a durable note;
 flows/boundaries reference structural evidence without creating context-graph edges.
 
-> **F4's closure exemption is a second deliberate deviation — flagged, not
-> laundered.** The rule invoked to make F1–F3 blocking is "is it in #141's
-> *Projection model* enumeration of six **initial** supported note types." Hotspots
-> **is** in that list, verbatim ("5. Hotspot or risk seam"), and #141's *Intended
-> user experience* draws `Hotspots` as a **top-level node of the notes-home tree**,
-> beside Components and Boundaries. F4 was exempted on a different ground — this
-> decomposition's own choice to render hotspots as temporal status inside durable
-> notes (§6-F). That is the decomposition changing the artifact's shape and then
-> using the changed shape to drop it from scope, which is exactly the move §10
-> forbids in the opposite direction. §12 previously claimed "one deliberate
-> deviation"; this is the second. It is **not** silently accepted here: F4 stays
-> non-blocking **only if the operator records the amendment on #141**, exactly as
-> the identity deviation (D2) is recorded. Absent that record, **F4 blocks closure
-> like F1–F3** (§10, §15).
+> **Rendering choice is not a scope reduction (operator-decided).** An earlier
+> revision exempted F4 from closure because *this decomposition* chose to render
+> hotspots as temporal status. That was the decomposition changing the artifact's
+> shape and then using the changed shape to narrow scope — the same move §10
+> forbids in the other direction. Hotspots **is** item 5 of #141's six initial note
+> types, verbatim ("5. Hotspot or risk seam"), and #141's *Intended user
+> experience* draws `Hotspots` as a top-level node of the notes-home tree.
+> **Resolved: F4 blocks closure.** F4 may still model hotspots as *bounded temporal
+> status inside durable architecture notes* rather than minting a durable note per
+> metric fluctuation — that rendering latitude is preserved — but the
+> hotspot/risk-seam outcome itself is part of the epic's promise and is not
+> optional.
 
 ### G — Architecture reconciliation
 
@@ -1896,13 +1917,13 @@ note-per-metric-wiggle churn.
 - a transient metric change within a band produces zero writes;
 - hotspot status never creates a durable identity unless promoted.
 
-## Closure — OPERATOR DECISION REQUIRED
-#141's Projection model lists "Hotspot or risk seam" as one of its six INITIAL
-supported note types, and its Intended user experience draws Hotspots as a
-TOP-LEVEL node of the notes-home tree. Rendering it as temporal status instead is
-this decomposition's own design choice, so exempting it from closure on that basis
-is a DELIBERATE DEVIATION from #141. It is NON-BLOCKING ONLY IF THE OPERATOR
-RECORDS THAT AMENDMENT ON #141. Absent the record, F4 blocks closure like F1-F3.
+## Closure
+BLOCKS epic closure. "Hotspot or risk seam" is one of #141's six initial supported
+note types and its Intended user experience draws Hotspots as a top-level node of
+the notes-home tree. This child retains latitude in HOW it renders them — bounded
+temporal status inside durable architecture notes is preferred over minting a
+durable note per metric fluctuation — but that is a rendering decision, not a
+scope reduction.
 ```
 
 ### G — `feat: architecture reconciliation lifecycle (#141 child)`
@@ -2145,10 +2166,10 @@ surface) and its *Intended user experience* renders all six; AC2's "restrained
 number of architectural **nodes**" is a *bounding* constraint, not a reduction to
 components. So closing #141 with flows/boundaries/test-surfaces unbuilt would
 under-deliver its stated initial scope. **F1 (flows), F2 (boundaries), F3 (test
-surfaces) therefore block epic closure**; **F4 (hotspots) blocks closure too unless
-the operator records the temporal-status amendment on #141** (§6-F, §10) — the
-earlier framing exempted it on the decomposition's own design choice, which is the
-same laundering the doc forbids elsewhere. I remains non-blocking. (Note AC12 "full
+surfaces) and F4 (hotspots/risk seams) therefore all block epic closure** (§6-F,
+§10). The earlier framing exempted F4 on the decomposition's own rendering choice,
+which is the same laundering the doc forbids elsewhere; that exemption is
+withdrawn. I remains non-blocking. (Note AC12 "full
 refresh reconciles the *complete* projection" is owned by **G**, so the first usable
 release A–E, which lacks G, is explicitly a *partial-projection* release that does
 not yet claim AC12 or ongoing-refactor reconciliation.)
@@ -2160,16 +2181,16 @@ not yet claim AC12 or ongoing-refactor reconciliation.)
 |---|---|---|---|---|
 | Internal contract milestone | A + B + C + D | contract validation | **No** | full engine + projection loop proven on the canonical local JSON provider/fixtures; validates the interchange, identity, selection, and apply contracts |
 | **First usable release** | A + B + C + D + **E** | release | **Yes (partial)** | the complete CodeGraph → normalized graph → bounded map/component candidates → preview → confirm → safe projection → zero-write rerun loop. Gated on a **real-CodeGraph end-to-end test**, not fixture equivalence alone (§6-E). *Partial:* usable for initial projection + idempotent/changed-only refresh, but **not** ongoing-refactor maintenance — rename/removal (G, AC14/AC16) and complete reconciliation (AC12) are not yet in |
-| Later release | F1 flows → F2 boundaries → F3 test surfaces | release(s) | Yes | delivers #141's remaining enumerated durable note types. **F1–F3 gate epic closure** (they complete #141's initial note-type set) |
+| Later release | F1 flows → F2 boundaries → F3 test surfaces | release(s) | Yes | delivers #141's remaining enumerated durable note types. **F1–F3 gate epic closure** |
 | Reconciliation + breadth | G + H | release(s) | Yes | may be separate releases if scopes remain substantial. **Both gate closure** (G owns AC12/AC14–16/PT11–13/PT30; H owns AC9/PT1) |
-| Post-MVP / conditional | F4 hotspots | enhancement | Yes | **blocking unless amended** — hotspots is one of #141's six initial note types; non-blocking only if the temporal-status amendment is recorded on #141 |
+| Extended note types (cont.) | F4 hotspots / risk seams | release | Yes | **gates closure** — hotspots is one of #141's six initial note types. May render as bounded temporal status inside durable notes rather than a durable note per metric wiggle; the rendering choice does not remove it from scope |
 | Post-MVP / optional | I model layer | enhancement | Yes | **non-blocking** — optional model-assisted authoring; C supplies deterministic names so I is never load-bearing |
 
 **Epic closure — corrected by the four-review gate.** Closure is gated by
 #141's *full promised outcome*, not the AC bullets read in isolation. #141's
 *Projection model* names six "initial supported note types," so the durable ones
-must ship. The closure-blocking set is **A, B, C, D, E, F1, F2, F3, G, H** — **plus
-F4 unless the hotspot amendment is recorded on #141** (below). I is non-blocking.
+must ship. The closure-blocking set is **A, B, C, D, E, F1, F2, F3, F4, G, H**.
+I is non-blocking.
 
 **Is the first usable release genuinely usable?** Now yes — but only because of a
 fourth-round correction. As previously written it was not: FC-2 froze exactly two
@@ -2183,15 +2204,12 @@ makes A–E ship anything at all. **PT19** tests exactly this.
   enumerated initial note types; closing without them under-delivers the stated
   scope. (This reverses the prior readiness-audit's "F non-blocking," which three
   independent reviews and #141's note-type enumeration corrected.)
-* **F4 (hotspots) blocks closure *unless the operator records an amendment*.**
-  Hotspots is item 5 of #141's own six initial note types, and its *Intended user
-  experience* draws `Hotspots` as a top-level node of the notes-home tree.
-  Exempting it because *this decomposition* chose to render it as temporal status
-  is the decomposition changing the artifact's shape and then using the changed
-  shape to narrow scope — the same move §10 forbids in the other direction, and a
-  second deliberate deviation that §12 previously did not count. So: non-blocking
-  **only** with the amendment recorded on #141 (like D2's identity amendment);
-  blocking otherwise.
+* **F4 (hotspots) blocks closure.** Hotspots is item 5 of #141's own six initial
+  note types, and its *Intended user experience* draws `Hotspots` as a top-level
+  node of the notes-home tree. F4 retains latitude in *how* it renders them —
+  bounded temporal status inside durable architecture notes is acceptable and
+  preferred over a durable note per metric fluctuation — but that is a rendering
+  decision, not a scope reduction.
 * **I does *not* block closure** — optional model assistance; no acceptance
   criterion requires model-generated content (§11 D5).
 * **#142** (historical enrichment) is **not** part of #141 closure and stays
@@ -2241,11 +2259,9 @@ first usable release. **But this is a release-staging choice, not a scope
 reduction:** F1–F3 (flows, boundaries, test surfaces) are #141's enumerated initial
 note types and **do gate epic closure** (§10). The prior readiness-audit conflated
 "not in the first release" with "not required for closure"; the three-review gate
-corrected that. F4 hotspots render as temporal status and are non-blocking **only
-under a recorded amendment on #141** — the fourth-round gate found that exempting
-F4 on this document's own rendering choice, when hotspots is one of #141's six
-enumerated initial note types, was the same laundering the doc forbids elsewhere
-(§6-F, §10).
+corrected that. **F4 also blocks closure**; it may render hotspots as bounded
+temporal status inside durable notes, but that rendering choice does not remove
+hotspots/risk seams from #141's promised outcome (§6-F, §10).
 
 **D5 — Model assistance does not block epic closure. (Chosen.)** The deterministic
 closure set (A, B, C, D, E, F1–F3, G, H — the primary owners of every acceptance
@@ -2340,13 +2356,12 @@ Systematic pass over the current #141 body against the child DAG.
   containment (R2), deterministic naming (R3), the diff-size confirmation limit
   (R4), and external-link allowlisting (R5). **The audit's scope had been narrower
   than the contract it claimed to audit.**
-* **Weakened:** none, but **three deliberate deviations are flagged, not laundered**
-  (the prior pass counted one):
+* **Weakened:** none, but **two deliberate deviations are flagged, not laundered**
+  (the prior pass counted one; a third — F4's closure exemption — was withdrawn
+  rather than recorded, since the operator resolved F4 as closure-blocking with
+  rendering latitude preserved):
   1. **Identity** — D2 removes binding id from identity (below).
-  2. **F4 / hotspots** — exempted from closure on the decomposition's own rendering
-     choice, though hotspots is one of #141's six enumerated initial note types
-     (§6-F, §10). Non-blocking **only** with a recorded amendment.
-  3. **`last_projected_at`** — #141's *Provenance* requires a per-note "last
+  2. **`last_projected_at`** — #141's *Provenance* requires a per-note "last
      projection timestamp"; §3 relocates it to state only, to protect the
      byte-stable no-op (FC-6). The engineering call is right; it is still a
      deviation from #141's literal text and is disclosed here rather than assumed.
@@ -2389,7 +2404,14 @@ Systematic pass over the current #141 body against the child DAG.
 
 ## 13. Proposed rewritten #141 epic body
 
-> **STATUS CORRECTED — this was applied, and it destroyed contract text.** The
+> **THIS SECTION IS A GENERATED CANDIDATE SNAPSHOT, NOT AN AUTHORITY.** The
+> canonical product contract is the **live #141 body**. The current staged
+> candidate lives at `docs/design/2026-07-18-141-candidate-parent-body.md`; once the
+> operator applies it, **replace this section with a snapshot of the final live
+> body** so there are not three independently editable copies of the same contract
+> (§0). Do not edit this section as though it were the contract.
+>
+> **STATUS — this was applied, and it destroyed contract text.** The
 > previous revision of this section claimed "Not yet applied — no GitHub mutation
 > performed." That was false: the body below was written to live #141 at
 > `2026-07-18T18:53:20Z`, after all three commits on this branch. Worse, it
@@ -2489,23 +2511,30 @@ judgments or ledger entries.
 - First usable release (partial): A+B+C+D+E — the complete CodeGraph→map/component
   loop; gated on a real-CodeGraph end-to-end test. Not yet ongoing-refactor
   maintenance (rename/removal + complete reconciliation come with G).
-- Later releases: F1→F2→F3 (durable note types); then G + H (may be separate).
-- Post-MVP / optional: F4 hotspots (temporal status); I model layer.
+- Then G + H (may be separate releases).
+- Extended note types: F1 flows → F2 boundaries → F3 test surfaces → F4 hotspots
+  (F4 may render as bounded temporal status inside durable notes).
+- Optional, non-blocking: I model layer.
 
 ## Closure
 Closure is gated by #141's full promised outcome — including its six enumerated
 initial note types — not the acceptance-criterion bullets read in isolation. The
-closure-blocking set is A, B, C, D, E, F1, F2, F3, G, H. Non-blocking: I (optional
-model assistance). #142 (historical enrichment) is separate, blocked, conditional,
-and not part of this closure.
+closure-blocking set is A, B, C, D, E, F1, F2, F3, F4, G, H. Non-blocking: I
+(optional model assistance). #142 (historical enrichment) is separate, blocked,
+conditional, and not part of this closure.
+
+All four extended-note phases block closure. F4 may model hotspots as bounded
+temporal status inside durable architecture notes rather than creating a durable
+standalone note per metric fluctuation; that rendering choice does not remove
+hotspots/risk seams from the epic's promised outcome.
 
 Two deliberate amendments of #141 are recorded by adopting this body:
 1. **Identity** — project-scoped only; binding participation is mutable provenance,
    not identity, amending "scoped to project and, where relevant, stable
    repository-binding identity."
-2. **Hotspots (F4)** — rendered as temporal status inside durable notes rather than
-   as a durable note type of its own. **F4 is non-blocking ONLY under this
-   amendment**; without it, F4 blocks closure like F1–F3.
+2. **Matcher signals** — provider structural IDs are provenance only and never
+   continuity-matching signals, amending the prior identity model's "existing
+   stable provider graph ID, where available."
 
 A third, smaller deviation is disclosed: the per-note "last projection timestamp"
 in #141's *Provenance* lives in state only, to keep an unchanged rerun byte-stable.
@@ -2561,38 +2590,40 @@ bulk backfill (see #142); a custom Obsidian plugin; a local GitHub artifact mirr
    children ride v0.8.0 or later children move to a subsequent milestone is an
    operator release-planning decision, not a design decision.
 
-4. **Whether F4/hotspots is amended or blocking.** §6-F/§10 leave this an explicit
-   operator decision rather than resolving it unilaterally, because resolving it
-   either way is a scope change to #141. Not a design question.
-
 Everything else in the brief and the four-review gate is resolved by the decisions
 in §11 and the contracts in §2–§5.
 
 ---
 
-## 15. Required operator actions before any child issue is filed
+## 15. Recovery state and remaining operator actions
 
-These are **GitHub mutations this document deliberately did not perform.** They are
-listed here because filing children on top of the current live #141 would build on
-a contract that no longer states its own requirements.
+**A candidate merged parent body has been built and is staged for review** at
+`docs/design/2026-07-18-141-candidate-parent-body.md`. It restores the six
+requirement sections the epic reframe deleted, merges the epic framing around them,
+and reconciles the approved amendments directly into the canonical wording. **It
+has not been written to GitHub.**
 
-1. **Restore #141's deleted sections.** The §13 reframe was applied as a
-   *replacement*, dropping `## Acceptance criteria` (21 bullets), `## Pressure
-   tests` (15), `## Intended user experience`, `## Selection approach`,
-   `## Confirmation policy`, and `## Security and privacy`. Restore them verbatim
-   from **Appendix A**, then merge the §13 epic reframe *around* them. Verify with
+Remaining operator actions, in order:
+
+1. **Review the candidate body** and its reconciliation table (reported alongside
+   it). It is self-contained: every AC, R, and PT identifier a child cites is
+   stated in the parent, so no implementer needs this design document to discover
+   what a requirement means.
+2. **Apply it to #141**, replacing the current body. Verify with
    `gh issue view 141 | grep -c 'Acceptance criteria\|Pressure tests'` → expect `2`.
-2. **Record the two amendments explicitly** (§13 Closure): project-scoped identity,
-   and hotspots-as-temporal-status. Until the second is recorded, **F4 blocks
-   closure**.
-3. **Decide the F4 question** (§14 Q4) — it determines the closure-blocking set.
-4. **Confirm the label/milestone state.** #141 currently carries `status: ready`,
-   `priority: now`, milestone `v0.8.0`. The originating handoff required operator
-   sign-off before that relabel; it was applied without it. Either ratify or revert.
-5. **Then** file A, B, C, D, E, F1, F2, F3, F4, G, H, I — twelve issues, from §8.
+3. **Replace §13 of this document** with a snapshot of the final live body (§13 is
+   marked as a generated candidate, not a third editable copy of the contract).
+4. **Then** file A, B, C, D, E, F1, F2, F3, F4, G, H, I — twelve issues, from §8.
 
-**Nothing in this document should be read as authorization to perform any of the
-above.** Each is a human decision on a live, shared artifact.
+**Explicitly *not* part of this recovery.** #141's labels (`status: ready`,
+`priority: now`) and milestone (`v0.8.0`) were set at `2026-07-18T17:14:03Z` and
+`17:09:49Z` respectively — **before** the body replacement at `18:53:19Z`, per the
+issue timeline. No GitHub event evidence ties them to the body-replacement
+operation, so they are left alone and require no ratification.
+
+**#142** remains separate, conditional, and untouched.
+
+**Nothing in this document is authorization to perform any of the above.**
 
 ---
 
