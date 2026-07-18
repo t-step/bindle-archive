@@ -100,7 +100,8 @@ def build_plan(notes_home, project_slug, repo_roots=None, adopt_context_md=False
     index_path = os.path.join(context_dir, "index.json")
     if os.path.exists(index_path):
         try:
-            existing_index = json.load(open(index_path, encoding="utf-8"))
+            with open(index_path, encoding="utf-8") as fh:
+                existing_index = json.load(fh)
         except (ValueError, OSError):
             existing_index = None
         if isinstance(existing_index, dict) and \
@@ -112,21 +113,41 @@ def build_plan(notes_home, project_slug, repo_roots=None, adopt_context_md=False
 
     # Step 3: load and reduce the judgment ledger. The revalidation callback
     # (invoked per accepted event by the reducer) gates identity-anchor events
-    # by fingerprint against this run's #183 graph; an accepted **edge** event
-    # returns True here (its endpoint legality is deferred to step 6's
-    # materialization against the PLANNED graph, which includes any node newly
-    # anchored this run -- revalidating it against `base` would wrongly reject
-    # an edge whose endpoint only becomes legal after the anchor is applied).
+    # by fingerprint against this run's #183 graph, and applies TIER 1 of the
+    # two-tier illegal-judged-edge model (design section 11/12/16):
+    #
+    #   Tier 1 (here, drop-and-continue): if BOTH endpoints of an accepted edge
+    #   already exist in `base` (the on-disk graph) and the pair is illegal, the
+    #   judgment was already stale before this run -- return False so the
+    #   reducer drops it as inert and emits a `stale_illegal_judgment` finding;
+    #   the apply CONTINUES with the edge simply not materialized.
+    #
+    #   If either endpoint is ABSENT from `base` it may be first-anchored THIS
+    #   run, so its legality cannot be judged against `base` -- return True and
+    #   defer to Tier 2 (step 6's materialization against the PLANNED graph).
     events = ledger.load_judgments(ledger.judgments_path(notes_home, project_slug))
     base_anchor_fps = {
         c["entry_fingerprint"] for c in base["identity_anchor_candidates"]
     }
+    base_nodes_by_id = {n["id"]: n for n in base["nodes"]}
 
     def _revalidate(ev):
         if ev.get("subject_type") == "identity_anchor":
             # An accepted anchor stays effective only while its entry still
             # exists unanchored with byte-identical content (same fingerprint).
             return ev.get("entry_fingerprint") in base_anchor_fps
+        if ev.get("subject_type") == "edge":
+            src = base_nodes_by_id.get(ev.get("source"))
+            tgt = base_nodes_by_id.get(ev.get("target"))
+            if src is None or tgt is None:
+                # An endpoint may be first-anchored this run: defer legality to
+                # the planned-graph check at step 6 (Tier 2).
+                return True
+            verdict = rel.validate_endpoint_pair(
+                ev.get("relationship"), src.get("class"), src.get("kind"),
+                tgt.get("class"), tgt.get("kind"))
+            # Tier 1: illegal already against base -> drop as inert, continue.
+            return verdict["ok"]
         return True
 
     reduced = ledger.reduce_judgments(events, revalidate=_revalidate)
@@ -186,15 +207,19 @@ def build_plan(notes_home, project_slug, repo_roots=None, adopt_context_md=False
             relationship, src.get("class"), src.get("kind"),
             tgt.get("class"), tgt.get("kind"))
         if not verdict["ok"]:
-            # An accepted edge whose endpoint pair has become genuinely
-            # illegal by apply time (e.g. a referenced node's kind changed
-            # between reduction and apply). Design doc section 11 / section 12
-            # step 6: this aborts the ENTIRE apply -- it is never written as a
-            # mere semantic conflict, and nothing is written at all.
+            # TIER 2 (design section 11/12/16, two-tier illegal-edge model): an
+            # accepted edge that was LEGAL at ledger reduction (an endpoint was
+            # absent from `base`, so Tier 1 deferred it) but is ILLEGAL against
+            # the PLANNED graph -- e.g. an endpoint first-anchored THIS run
+            # whose planned kind makes the pair illegal. Unlike Tier 1's
+            # drop-and-continue, this aborts the ENTIRE apply and nothing is
+            # written. A DISTINCT finding code (`illegal_edge_planned_state`,
+            # never `stale_illegal_judgment`) lets a consumer tell "continued"
+            # from "aborted".
             findings.append(_finding(
-                "stale_illegal_judgment",
-                "accepted judged edge %s|%s|%s is no longer a legal endpoint "
-                "pair (%s/%s -> %s/%s)" % (
+                "illegal_edge_planned_state",
+                "accepted judged edge %s|%s|%s is illegal against the planned "
+                "graph (%s/%s -> %s/%s)" % (
                     source, relationship, target, src.get("class"),
                     src.get("kind"), tgt.get("class"), tgt.get("kind")),
                 subject_key=ev.get("subject_key")))
