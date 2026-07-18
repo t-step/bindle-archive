@@ -57,10 +57,16 @@ is not part of #141's closure.
 Create and safely maintain a bounded, human-readable architecture map from a
 provider-neutral structural graph.
 
-The structural provider remains the authoritative machine-resolution graph of
-files, symbols, dependencies, call paths, and blast radius. Bindle creates a
-curated, **rebuildable** projection containing durable architectural concepts:
-components, flows, boundaries, hotspots, and test surfaces.
+The structural provider is the authoritative machine-resolution graph of **directly
+observed structural facts** — files, symbols, dependencies, and call edges. Bindle
+creates a curated projection containing durable architectural concepts: components,
+flows, boundaries, hotspots, and test surfaces.
+
+**Derived signals are Bindle's, not the provider's.** Fan-in, fan-out, dependency
+neighborhoods, **blast-radius signals**, clustering, ranking, and projection plans
+are computed by the engine from provider primitives (§7). A provider may ship its
+own interpretations, but only as capability-gated hints that never silently replace
+engine normalization.
 
 This is not a general structural-graph export and not a visualization feature.
 The goal is to make a project's architecture legible without reproducing the
@@ -102,8 +108,13 @@ rendering choice and does **not** remove hotspots/risk seams from the promise.
 
 Frozen:
 
-* the structural provider is authority **only** for observed structural facts
-  exposed by its index or export;
+* the structural provider is authority **only** for raw normalized structural
+  nodes, edges, and directly observed facts exposed by its index or export — it is
+  **not** authority for any derived signal;
+* **the engine** is authority for fan-in, fan-out, neighborhoods, blast-radius
+  signals, clustering, ranking, and projection plans; provider-derived
+  interpretations may appear only as capability-gated hints and may never silently
+  replace engine normalization;
 * the context graph is authority for durable project understanding, semantic
   identity, normalized evidence, and confirmed human judgments;
 * architecture projection is a downstream, rebuildable reading surface;
@@ -134,11 +145,32 @@ These hold across every child. A child may extend a contract; none may weaken it
   state. Provider disappearance is **never** deletion or blanket staleness. A
   partial multi-repository outage carries forward the unavailable binding's
   contribution and never stales unaffected notes.
-* **FC-5 State authority** — architecture identity, confirmed decisions, **and
-  observed provenance** live in an append-only judgments log under the notes home.
-  Generated Markdown and the materialized index are rebuildable materializations,
-  never authorities, and are never read back to recover identity or meaning.
-  Recovery state is metadata only.
+* **FC-5 State authority** — three artifacts, three disjoint roles. **An observed
+  provider fact never becomes a confirmed judgment merely because a projection
+  ran.**
+
+  | Artifact | Authority for | Explicitly not |
+  |---|---|---|
+  | `judgments.jsonl` (append-only) | identity **allocation**; confirmed naming and grouping; confirmed identity **continuity**; rename, reappearance, split, merge, and stale **decisions**; explicit operator amendments | anything the provider merely observed |
+  | `index.json` (projection state) | current observed provider provenance; participating bindings; source commits; provider and schema versions; path and symbol membership; per-binding coverage and status; derived confidence and metrics; current projection/rendering status | **meaning** — it never establishes identity or a confirmed decision |
+  | `apply-state.json` | interrupted-apply recovery metadata **only** | any semantic role whatsoever |
+
+  Generated Markdown is a rendering of `index.json` and is never read back to
+  recover identity or meaning. Identity is recovered **only** from
+  `judgments.jsonl`.
+
+  **`index.json` is durable state, not a disposable cache.** It is reconstructible
+  from `judgments.jsonl` plus a *live provider at the recorded commit* — but only
+  while that provider is available. A binding's carried-forward contribution during
+  an outage exists nowhere else, so deleting `index.json` while a binding is
+  `unavailable` **loses** that contribution. It must be treated as durable state and
+  backed up accordingly.
+
+  **Optional run ledger.** If durable run history is wanted for audit, it lives in a
+  separate append-only observation ledger with an **explicitly non-semantic role**.
+  It may be truncated or deleted without changing what the projection *means*, and
+  nothing may read it to establish identity, continuity, or any confirmed decision.
+  It is never a substitute for `judgments.jsonl` and never overloads it.
 * **FC-6 Note safety and byte preservation** — §11.
 * **FC-7 Bounded and private** — §9, §12.
 * **FC-8 Deterministic core, optional model** — identity, persistence, structural
@@ -219,7 +251,11 @@ from unrelated code later written at the same paths.
 Renames update the existing note where confidence is high; ambiguous identity
 changes require review. Membership delta alone is never identity.
 
-**Provenance recorded per projected node:**
+**Provenance recorded per projected node.** All of the following is **observed
+state held in `index.json`**, not judgment (FC-5). Only the identity allocation and
+the confirmed rename/split/merge decisions that produced the alias fields are
+recorded in `judgments.jsonl`; the observations below are re-derived from the
+provider on each run and are never promoted to judgments:
 
 * stable Bindle projection ID (project-scoped);
 * stable project identity;
@@ -235,7 +271,8 @@ changes require review. Membership delta alone is never identity.
 * confidence;
 * prior identities or aliases following a rename, split, or merge, in **both**
   directions (a split records its origin and its products, so a reverted split is
-  recoverable);
+  recoverable) — *materialized here, but authored by the confirmed decision in
+  `judgments.jsonl`*;
 * last projection timestamp — **in state only** (amendment 3).
 
 ## 7. Provider / interchange boundary
@@ -245,14 +282,32 @@ sits between any provider and the projection engine. The engine consumes only th
 interchange and **never imports CodeGraph or any other provider**. Network access
 is never required by the engine or the reference provider.
 
-> *Amended from the original "Adapter boundary".* The prior preferred order was
-> "1. stable local export or CLI contract; 2. direct local adapter; 3. MCP-assisted
-> discovery." Measurement shows CodeGraph 1.4.1 ships a local CLI but **no bulk
-> export verb**; `explore`/`node` emit truncating human-formatted output with no
-> `--json`, and `query --json` defaults to a limit of 10. The interchange therefore
-> comes **first**, with adapters behind it, and the adapter preference order is:
-> direct local adapter → narrow `--json`-capable non-truncating CLI verbs →
-> MCP-assisted only where deterministic access is insufficient.
+> *Amended from the original "Adapter boundary".* The prior wording froze a
+> preference order over concrete mechanisms ("stable local export or CLI contract →
+> direct local adapter → MCP-assisted discovery"). Any such ordering is an
+> implementation conclusion about a *particular provider version*, not a durable
+> product contract, so it does not belong in this epic. The interchange comes
+> **first**; the adapter mechanism is chosen against the properties below.
+
+**The integration surface is specified by property, not by mechanism (frozen).**
+Any provider adapter — CodeGraph's included — must be:
+
+* **deterministic** — the same repository at the same commit yields the same
+  normalized facts;
+* **local and network-free**;
+* **pinned and reproducible** — the provider version and the ingestion surface are
+  recorded, and a given pin reproduces a given result;
+* **non-truncating and machine-formatted** — an adapter may **not** depend on
+  truncating or human-formatted output;
+* **fail-closed** — an unsupported provider version or a changed storage schema is
+  detected and refuses, rather than silently degrading.
+
+Undocumented provider storage may be read **only** with an explicit version pin, a
+compatibility fixture, and fail-closed schema detection.
+
+The exact mechanism is selected from measured available interfaces and **recorded in
+child E**, not frozen here. **If no automatable stable surface exists, E records a
+no-go** — a manual or non-reproducible check is never laundered into acceptance.
 
 **The interchange carries raw structural facts only; conclusions are engine-owned.**
 Files, symbols (with a normalized `kind` enum), tests, and
@@ -396,6 +451,17 @@ preserved, never clobbered. Zero writes on a semantic no-op. **No false claim of
 cross-file filesystem atomicity**: atomicity is per-file; cross-file integrity comes
 from the manifest and resume ledger.
 
+**Recovery reads recovery state; it never reads meaning from it (FC-5).**
+`apply-state.json` is used solely to *detect* an incomplete prior apply and to
+reconcile partially written notes. It is never consulted to establish identity,
+continuity, or any confirmed decision — those come from `judgments.jsonl` alone, and
+because the identity commit is appended **before** the first file write, a crashed
+run's identities are always already recorded. Losing `apply-state.json` can never
+change what the projection *means*, only whether an interrupted write needs
+resuming. Likewise a note is never parsed to recover identity: deleting a generated
+note is safe, and the next run re-matches the recomputed cluster against
+`judgments.jsonl`.
+
 ### Stale, removed, split, merged
 
 * **Stale or removed:** never delete automatically. Mark `projection_status: stale`
@@ -457,10 +523,19 @@ surface collisions respectively, but route every allocation through B.
 | Reconciliation + breadth | G + H | Yes |
 | Optional | I | Yes |
 
-The first usable release is gated on a **real-CodeGraph end-to-end run**
+The first usable release is gated on an **automatable real-CodeGraph end-to-end run**
 (CodeGraph → interchange → bounded candidates → preview → confirm → apply →
-zero-write rerun on an actually indexed repository), together with plan
-equivalence — a **combined D+E gate**, not fixture equivalence alone.
+zero-write rerun on a pinned indexed fixture repository), together with plan
+equivalence — a **combined D+E gate**, not fixture equivalence alone. **A
+manual-only check is insufficient as the sole release gate.**
+
+Child **E begins with a mandatory feasibility phase** (not a separate child) that
+must: (1) measure the supported CodeGraph interfaces; (2) select and record the
+integration surface against §7's properties; (3) create a pinned indexed fixture
+repository or equivalent reproducible fixture; (4) define the automatable end-to-end
+gate; (5) fail closed on unsupported CodeGraph versions or schema changes. If that
+phase concludes no automatable stable surface exists, it records a **no-go** and the
+first usable release is re-planned rather than shipped behind an unverifiable gate.
 
 ## 15. Epic closure
 
@@ -479,86 +554,90 @@ equivalence — a **combined D+E gate**, not fixture equivalence alone.
 
 ## 16. Acceptance criteria
 
-| # | Criterion | Owner |
-|---|---|---|
-| AC1 | A structurally indexed local repository produces a previewable architecture projection. | D |
-| AC2 | The projection contains a codebase map and a restrained number of selected architectural nodes. | D |
-| AC3 | Raw files and symbols do not become notes by default. | C |
-| AC4 | Architecture identity is scoped to stable project identity — never to filename, note title, `owner/repo`, checkout path, provider label, or link text alone. Repository-binding participation is recorded as mutable provenance, not identity (amendment 1). | B |
-| AC5 | Context semantic-node IDs are never reused merely because an architecture label resembles them. | B |
-| AC6 | Architecture notes reference context nodes and normalized evidence without inventing parallel meanings or reinterpreting #140 relationship names. | D |
-| AC7 | Architecture projection creates no context-graph judgments and no ledger entries. | D |
-| AC8 | Repositoryless projects degrade cleanly; architecture projection may be unavailable. | D |
-| AC9 | Multi-repository projects are supported with explicit binding selection. | H |
-| AC10 | Re-running against the same commit and configuration produces zero writes. | D |
-| AC11 | A changed-only refresh updates affected areas without rebuilding unrelated notes. | D |
-| AC12 | A full refresh reconciles the complete projection. | G |
-| AC13 | User-authored sections survive every refresh byte-identically. | D |
-| AC14 | Renames are preserved where confidence is high. | G |
-| AC15 | Ambiguous renames, splits, and merges require confirmation. | G |
-| AC16 | Removed nodes are marked stale rather than deleted. | G |
-| AC17 | Projection operates without network access. | A |
-| AC18 | Both Claude Code and Codex invoke the same provider-neutral workflow with equivalent results. | D |
-| AC19 | No custom Obsidian plugin is required. | D |
-| AC20 | No local GitHub artifact mirror is created. | D |
-| AC21 | No source code is copied wholesale. | D |
+| # | Criterion | Primary owner | Supporting |
+|---|---|---|---|
+| AC1 | A structurally indexed local repository produces a previewable architecture projection. | **D** | A, C |
+| AC2 | The projection contains a codebase map and a restrained number of selected architectural nodes. | **D** | C |
+| AC3 | Raw files and symbols do not become notes by default. | **C** | D |
+| AC4 | Architecture identity is scoped to stable project identity — never to filename, note title, `owner/repo`, checkout path, provider label, or link text alone. Repository-binding participation is recorded as mutable provenance, not identity (amendment 1). | **B** | D |
+| AC5 | Context semantic-node IDs are never reused merely because an architecture label resembles them. | **B** | D |
+| AC6 | Architecture notes reference context nodes and normalized evidence without inventing parallel meanings or reinterpreting #140 relationship names. | **D** | B |
+| AC7 | Architecture projection creates no context-graph judgments and no ledger entries. | **D** | B |
+| AC8 | Repositoryless projects degrade cleanly; architecture projection may be unavailable. | **D** | — |
+| AC9 | Multi-repository projects are supported with explicit binding selection. | **H** | B, D |
+| AC10 | Re-running against the same commit and configuration produces zero writes. | **D** | C |
+| AC11 | A changed-only refresh updates affected areas without rebuilding unrelated notes. | **D** | C |
+| AC12 | A full refresh reconciles the complete projection. | **G** | D |
+| AC13 | User-authored sections survive every refresh byte-identically. | **D** | B |
+| AC14 | Renames are preserved where confidence is high. | **G** | B |
+| AC15 | Ambiguous renames, splits, and merges require confirmation. | **G** | B, D |
+| AC16 | Removed nodes are marked stale rather than deleted. | **G** | — |
+| AC17 | Projection operates without network access. | **A** | D, E |
+| AC18 | Both Claude Code and Codex invoke the same provider-neutral workflow with equivalent results. | **D** | E |
+| AC19 | No custom Obsidian plugin is required. | **D** | — |
+| AC20 | No local GitHub artifact mirror is created. | **D** | — |
+| AC21 | No source code is copied wholesale. | **D** | C |
 
 **Additional binding requirements** (stated in the prose sections above; numbered
 here so children can cite them):
 
-| # | Requirement | Owner |
-|---|---|---|
-| R1 | The notes home contains the architecture tree of §3 (Codebase Map, Components, Architectural Flows, Boundaries, Hotspots, Test Surfaces); children populate it and may not invent sibling roots. | B (contract), D + F1–F4 (populate) |
-| R2 | All writes remain below the configured notes home, verified after symlink resolution; a plan containing an escaping path is rejected whole. | D |
-| R3 | Every component has a deterministic human-readable name; model assistance may only improve it. | C |
-| R4 | Confirmation fires above configured note-count **and diff-size** limits. | B |
-| R5 | External links are allowlisted and previewed. | D |
+| # | Requirement | Primary owner | Supporting |
+|---|---|---|---|
+| R1 | The notes home contains the architecture tree of §3 (Codebase Map, Components, Architectural Flows, Boundaries, Hotspots, Test Surfaces); children populate it and may not invent sibling roots. | **B** | D, F1, F2, F3, F4 (populate) |
+| R2 | All writes remain below the configured notes home, verified after symlink resolution; a plan containing an escaping path is rejected whole. | **D** | B |
+| R3 | Every component has a deterministic human-readable name; model assistance may only improve it. | **C** | I |
+| R4 | Confirmation fires above configured note-count **and diff-size** limits. | **B** | D, G |
+| R5 | External links are allowlisted and previewed. | **D** | A |
 
 ## 17. Pressure tests
 
 **From the original contract:**
 
-| # | Pressure test | Owner |
-|---|---|---|
-| PT1 | Multi-repository projects — architecture nodes from two bindings remain distinct and correctly attributed. | H |
-| PT2 | Repository rename with stable IDs — rename a binding's coordinates; project ID, binding ID, and projection identities do not churn. | B |
-| PT3 | Provider graph unavailable — projection reports unavailable rather than inferring or deleting. | D |
-| PT4 | Provider graph stale — detect commit mismatch and refuse or clearly mark the plan stale. | D |
-| PT5 | Context node referenced without identity conflation — an architecture label resembling a decision claim does not reuse that decision's semantic ID. | B |
-| PT6 | Structural proximity not creating semantic relationships — two modules that call each other produce no context-graph edge. | D |
-| PT7a | Equivalent deterministic fixture output — CLI and another adapter produce equivalent **normalized graph fixtures**. | E |
-| PT7b | Equivalent **projection plans** across adapters. | D+E release gate |
-| PT7 | *(the original single criterion; split into PT7a and PT7b above, because a projection plan is the planner's artifact and the adapter child cannot produce one alone)* | — split — |
-| PT8 | Unchanged rerun produces zero writes. | D |
-| PT9 | Repositoryless project — projection unavailable, project otherwise intact. | D |
-| PT10 | Noise control against repositories with hundreds of modules, generated code, vendored dependencies, monorepo packages, and large test trees; note counts remain bounded. | C |
-| PT11 | Rename resilience — rename a component directory and key symbols without changing responsibility; the existing note updates rather than duplicating. | G |
-| PT12 | Split and merge — reviewable proposals, user content preserved. | G |
-| PT13 | Hand-edited notes — edits to user-owned sections, generated sections, and removed markers produce preservation or conflict classification. | G |
-| PT14 | Privacy — secrets, ignored paths, absolute paths, and sensitive identifiers in fixtures never appear in generated notes **or logs**. | A |
-| PT15 | Interrupted write — the plan resumes without duplicates or partial corruption. | D |
+| # | Pressure test | Primary owner | Supporting |
+|---|---|---|---|
+| PT1 | Multi-repository projects — architecture nodes from two bindings remain distinct and correctly attributed. | **H** | B |
+| PT2 | Repository rename with stable IDs — rename a binding's coordinates; project ID, binding ID, and projection identities do not churn. | **B** | D |
+| PT3 | Provider graph unavailable — projection reports unavailable rather than inferring or deleting. | **D** | A |
+| PT4 | Provider graph stale — detect commit mismatch and refuse or clearly mark the plan stale. | **D** | A, E |
+| PT5 | Context node referenced without identity conflation — an architecture label resembling a decision claim does not reuse that decision's semantic ID. | **B** | D |
+| PT6 | Structural proximity not creating semantic relationships — two modules that call each other produce no context-graph edge. | **D** | B |
+| PT7a | Equivalent deterministic fixture output — CLI and another adapter produce equivalent **normalized graph fixtures**. | **E** | A |
+| PT7b | Equivalent **projection plans** across adapters. | **D** | E — required release-gate participant |
+| PT8 | Unchanged rerun produces zero writes. | **D** | C |
+| PT9 | Repositoryless project — projection unavailable, project otherwise intact. | **D** | A |
+| PT10 | Noise control against repositories with hundreds of modules, generated code, vendored dependencies, monorepo packages, and large test trees; note counts remain bounded. | **C** | D, F1 |
+| PT11 | Rename resilience — rename a component directory and key symbols without changing responsibility; the existing note updates rather than duplicating. | **G** | B |
+| PT12 | Split and merge — reviewable proposals, user content preserved. | **G** | D |
+| PT13 | Hand-edited notes — edits to user-owned sections, generated sections, and removed markers produce preservation or conflict classification. | **G** | D |
+| PT14 | Privacy — secrets, ignored paths, absolute paths, and sensitive identifiers in fixtures never appear in generated notes **or logs**. | **A** | C, D |
+| PT15 | Interrupted write — the plan resumes without duplicates or partial corruption. | **D** | B |
+
+*(The original contract's single PT7 is split into **PT7a** and **PT7b** above: a
+projection plan is the planner's artifact, so the adapter child cannot produce one
+alone. A reference to "PT7" means both.)*
 
 **Added by the epic decomposition** (not in the original contract; each closes a
 gap found by adversarial review):
 
-| # | Pressure test | Owner |
-|---|---|---|
-| PT16 | Provider/capability toggle at the same commit — clusters coarsen monotonically, identity does not churn. | D |
-| PT17 | Partial multi-repository outage — the unavailable binding's content is carried forward, and aggregate metrics are not zero-fabricated. | D (carry-forward) + C (aggregation) |
-| PT18 | Hand edit made between an interrupted apply and its resume is preserved, never clobbered by a stale intended byte. | D |
-| PT19 | Fresh project with an empty judgments log still produces a projection (the no-match → mint path). | D |
-| PT20 | Torn trailing line in the judgments log truncates and reports; corruption elsewhere hard-aborts. | B |
-| PT21 | Materialized index deleted while a binding is unavailable — rebuild preserves the carried-forward contribution. | D |
-| PT22 | Rank oscillation at the note cap — no orphaned notes, cap observable. | C |
-| PT23 | Provider symbol-ID format changes at a fixed commit — identity does not churn. | B |
-| PT24 | Provider advertises a capability but fails to parse a subtree — reads as partial, never as observed zero. | A |
-| PT25 | Inputs change between preview and confirm — apply aborts, nothing written. | D |
-| PT26 | A planned path escapes the notes home (including via symlink) — the whole plan is rejected. | D |
-| PT27 | Dirty working tree at a matching source commit — marked partial, never claimed current. | A |
-| PT28 | Concurrent context-graph apply and architecture apply are serialized by one project lock. | B |
-| PT29 | Interchange asserting a foreign or unconfigured binding ID is rejected. | A |
-| PT30 | A user renames a generated note in Obsidian — conflict, not silent re-create. | G |
-| PT31 | A commit touching one unrelated file rewrites zero notes. | D |
+| # | Pressure test | Primary owner | Supporting |
+|---|---|---|---|
+| PT16 | Provider/capability toggle at the same commit — clusters coarsen monotonically, identity does not churn. | **D** | B, C |
+| PT17 | Partial multi-repository outage — the unavailable binding's contribution is carried forward, and aggregate metrics are not zero-fabricated. | **D** | C — aggregation primitive |
+| PT18 | Hand edit made between an interrupted apply and its resume is preserved, never clobbered by a stale intended byte. | **D** | B |
+| PT19 | Fresh project with an empty judgments log still produces a projection (the no-match → mint path). | **D** | B |
+| PT20 | Torn trailing line in the judgments log truncates and reports; corruption elsewhere hard-aborts. | **B** | — |
+| PT21 | Projection state deleted while a binding is unavailable — the loss of the carried-forward contribution is detected and reported, never silently re-rendered as if the binding contributed nothing. | **D** | B |
+| PT22 | Rank oscillation at the note cap — no orphaned notes, cap observable. | **C** | F1 |
+| PT23 | Provider symbol-ID format changes at a fixed commit — identity does not churn. | **B** | A |
+| PT24 | Provider advertises a capability but fails to parse a subtree — reads as partial, never as observed zero. | **A** | C |
+| PT25 | Inputs change between preview and confirm — apply aborts, nothing written. | **D** | B |
+| PT26 | A planned path escapes the notes home (including via symlink) — the whole plan is rejected. | **D** | B |
+| PT27 | Dirty working tree at a matching source commit — marked partial, never claimed current. | **A** | D |
+| PT28 | Concurrent context-graph apply and architecture apply are serialized by one project lock. | **B** | D |
+| PT29 | Interchange asserting a foreign or unconfigured binding ID is rejected. | **A** | B |
+| PT30 | A user renames a generated note in Obsidian — conflict, not silent re-create. | **G** | D |
+| PT31 | A commit touching one unrelated file rewrites zero notes. | **D** | C |
+| PT32 | An observed provider fact is never written into the judgments log; a run that only re-observes produces no new judgment record. | **B** | D |
 
 ## 18. Out of scope
 

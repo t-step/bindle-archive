@@ -233,41 +233,51 @@ mismatch yields an explicit `unavailable` or `stale` state. Provider
 disappearance is **never** interpreted as architecture deletion, wholesale
 staleness of every note, or permission to rewrite existing notes.
 
-**FC-5 — State authority.** Durable authority lives in structured state under
-`<notes_home>/projects/<project_slug>/.bindle/architecture/` (§3), not in
-generated Markdown or the materialized index. **Architecture identity, its match
-signals, and confirmed naming/grouping/rename/split/merge/stale decisions live in
-`judgments.jsonl`**; generated Markdown and `index.json` are rebuildable
-materializations and are never consulted to recover identity or meaning. Deleting
+**FC-5 — State authority.** Durable state lives under
+`<notes_home>/projects/<project_slug>/.bindle/architecture/` (§3). **Architecture
+identity, its match signals, and confirmed naming/grouping/rename/split/merge/stale
+decisions live in `judgments.jsonl`**; generated Markdown is a rendering of
+`index.json` and is never consulted to recover identity or meaning. Deleting
 a generated note is therefore always safe (FC-6): the next run recovers the node's
 `arch_id` by matching the recomputed cluster against `judgments.jsonl` (FC-2), not
 by reading the note back.
 
-**`judgments.jsonl` carries two record kinds — decisions *and* observations
-(frozen; corrects a circular rebuild rule).** The earlier phrasing made
-`index.json` rebuildable "from `judgments.jsonl` plus the structural graph at the
-recorded `source_commit`" while `source_commit` itself was recorded *only* in
-`index.json` and in note front-matter. That rebuild is unexecutable: delete
-`index.json` and there is no legal source for the commit to rebuild at, since
-FC-5 forbids reading it back out of a note. It also left **carry-forward content**
-(§4.3 — an unavailable binding's last-known contribution) with no authoritative
-home, so deleting a "rebuildable" `index.json` during an outage would permanently
-destroy good content. Both are closed by giving the log two record kinds:
+**Three artifacts, three disjoint roles (frozen — corrected fifth round).** An
+earlier revision closed a circular-rebuild defect by giving `judgments.jsonl` a
+second record kind (`observation`) carrying `source_commit`, provider versions, and
+per-binding contribution. That fixed the rebuild but **conflated provider
+observations with confirmed durable judgments** — a projection run would mint
+judgment records merely by observing, which is an authority violation. The
+conflation is withdrawn. The corrected split:
 
-* **`decision` records** — human-confirmed naming, grouping, creation, rename,
-  split, merge, stale. Authority for *meaning*.
-* **`observation` records** — the append-only provenance ledger: per apply, the
-  `source_commit`, `provider_name`/`provider_version`, `interchange_schema_version`,
-  and per-binding contribution + status for every affected `arch_id`. Authority for
-  *what was observed and when*, and therefore for carry-forward.
+| Artifact | Authority for | Explicitly not |
+|---|---|---|
+| `judgments.jsonl` (append-only) | identity **allocation**; confirmed naming and grouping; confirmed identity **continuity**; rename, reappearance, split, merge, stale **decisions**; explicit operator amendments | anything the provider merely observed |
+| `index.json` (projection state) | current observed provider provenance; participating bindings; source commits; provider/schema versions; path and symbol membership; per-binding coverage and status; derived confidence and metrics; current projection/rendering status | **meaning** — never establishes identity or a confirmed decision |
+| `apply-state.json` | interrupted-apply recovery metadata **only** | any semantic role whatsoever |
 
-`index.json` is then genuinely rebuildable — from decisions + the latest
-observation per `(arch_id, binding_id)` + the structural graph at the observed
-commit — and is **never** an authority for anything. A rebuild that re-observes a
-provider at a *different* commit legitimately yields different provenance and
-staleness, and is not claimed to be byte-identical. Note front-matter is
-**decorative only** (§3): it is rendered *inside* the generated region and is never
-parsed back.
+**An observed provider fact never becomes a judgment because a projection ran.**
+
+**How the original circular-rebuild defect is now resolved.** Not by promoting
+observations to judgments, but by correcting `index.json`'s *status*: it is
+**durable projection state, not a disposable cache**. It is reconstructible from
+`judgments.jsonl` plus a **live provider at the recorded commit** — but only while
+that provider is available. During an outage a binding's carried-forward
+contribution exists nowhere else, so **deleting `index.json` while a binding is
+`unavailable` loses that contribution**. That is now stated as a real operational
+constraint (PT21) rather than papered over by calling the file rebuildable. The
+earlier draft's contradiction — "authoritative in `index.json`" *and* "never an
+authority" — is resolved by scoping: `index.json` **is** authority for *observed
+provenance*, and is **never** authority for *meaning*.
+
+**Optional run ledger.** If durable run history is wanted for audit, it lives in a
+**separate** append-only observation ledger with an explicitly **non-semantic**
+role: it may be truncated or deleted without changing what the projection means,
+and nothing may read it to establish identity, continuity, or any confirmed
+decision. It never substitutes for `judgments.jsonl` and never overloads it.
+
+Note front-matter is **decorative only** (§3): rendered *inside* the generated
+region and never parsed back.
 
 **FC-6 — Note safety and byte preservation.** Every Markdown write reuses #185's
 generated-region, marker-validation, byte-preservation, semantic-no-op, and per-
@@ -395,7 +405,9 @@ defeats the epic's entire product goal.
 ### Provenance schema (per projected node)
 
 Held in `index.json` (a rebuildable materialization, FC-5 — **not** an authority)
-and derived from `judgments.jsonl`'s decision + observation records. A **subset**
+as **observed state** (FC-5) — authoritative for provenance, never for meaning.
+Only identity allocation and the confirmed decisions behind the alias fields live
+in `judgments.jsonl`. A **subset**
 is rendered into note front-matter for human readability; that rendering is
 **decorative and never parsed back** (FC-5), and lives *inside* the generated
 region so a stale copy can never survive a refresh:
@@ -489,14 +501,19 @@ for two projects, directly contradicting FC-2's project-scoped identity. Frozen:
   config.json        projection settings: participating bindings, caps + OVER-CAP
                      BEHAVIOR, thresholds, exclusions, DIFF-SIZE CONFIRMATION
                      LIMIT, projection schema version, project_id
-  judgments.jsonl    append-only log, two record kinds (FC-5):
-                       decision    — naming, grouping, creation, rename, split,
-                                     merge, stale (authority for MEANING)
-                       observation — source_commit, provider name/version,
-                                     schema version, per-binding contribution +
-                                     status/coverage (authority for CARRY-FORWARD)
-  index.json         rebuildable materialized projection state (nodes +
-                     provenance + references-to-context)
+  judgments.jsonl    append-only DECISIONS ONLY (FC-5): identity allocation,
+                     confirmed naming/grouping/continuity, rename, reappearance,
+                     split, merge, stale, explicit operator amendments.
+                     Authority for MEANING. Never records an observation.
+  index.json         DURABLE projection state (not a cache): observed provenance,
+                     participating bindings, source commits, provider/schema
+                     versions, path+symbol membership, per-binding coverage and
+                     status, derived confidence/metrics, projection status,
+                     references-to-context. Authority for OBSERVED PROVENANCE,
+                     never for meaning.
+  observations.jsonl (OPTIONAL) append-only run ledger for audit. EXPLICITLY
+                     NON-SEMANTIC: truncatable without changing meaning; never
+                     read to establish identity, continuity, or a decision.
   apply-state.json   multi-file apply manifest + interruption/recovery state
 ```
 
@@ -1159,11 +1176,14 @@ both pass here, where B's identity and C's clustering are both present.
 
 ### E — CodeGraph adapter and equivalence proof
 
-**Owns:** a CodeGraph adapter as justified by available stable interfaces. **The
-preferred order is corrected by measurement (§14 Q1): a bulk *export* surface does
-not exist**, so the order is **direct local adapter (reading `.codegraph/`) →
-narrow CLI verbs where they are `--json`-capable and non-truncating → MCP-assisted
-only where deterministic access is insufficient**; translation into
+**Owns:** a CodeGraph adapter whose integration surface satisfies the **frozen
+properties** (not a frozen mechanism — a mechanism ordering is an implementation
+conclusion about one provider version, not a product contract): deterministic,
+local, network-free, pinned and reproducible, non-truncating and machine-formatted,
+and fail-closed on an unsupported version or changed schema. Undocumented provider
+storage may be read only with an explicit version pin, a compatibility fixture, and
+fail-closed schema detection. **E opens with a mandatory feasibility phase**
+(below). Also owns translation into
 A's interchange; **no CodeGraph imports in the engine**; shared-capability
 equivalence tests (inputs exposing the same supported structural facts produce
 equivalent normalized facts and projection plans **modulo freshly-allocated
@@ -1180,9 +1200,22 @@ interchange; **normalized-fact equivalence** — fixture-input and CodeGraph-inp
 over the same supported facts yield equivalent normalized facts; commit mismatch is
 detected and surfaced as `stale`; provider-version provenance recorded.
 **Release-gated (not E's solo acceptance):** *plan* equivalence and the complete
-real-CodeGraph end-to-end run (CodeGraph → interchange → bounded candidates →
-preview → confirm → apply → zero-write rerun on an actual indexed repo) are the
-**`{D,E}` first-usable-release gate**.
+**automatable** real-CodeGraph end-to-end run (CodeGraph → interchange → bounded
+candidates → preview → confirm → apply → zero-write rerun on a **pinned indexed
+fixture repository**) are the **`{D,E}` first-usable-release gate**. A manual-only
+check is insufficient as the sole release gate.
+
+> **Mandatory feasibility phase (E-1), inside E — not a separate child.** Repository
+> evidence does not show the feasibility decision is independently mergeable
+> (it produces a recorded decision and a fixture, not a shippable seam), so it is a
+> first phase rather than a split. E-1 must: (1) measure the supported CodeGraph
+> interfaces; (2) select and **record** the integration surface against the frozen
+> properties; (3) create a pinned indexed fixture repository or equivalent
+> reproducible fixture; (4) define the automatable real-CodeGraph end-to-end gate;
+> (5) fail closed on unsupported CodeGraph versions or schema changes. **If no
+> automatable stable surface exists, E-1 records a no-go** and the first usable
+> release is re-planned — a non-reproducible check is never laundered into
+> acceptance.
 
 > **Why E's acceptance was narrowed.** E previously depended on A alone while its
 > headline criterion was that both inputs "yield equivalent **plans**." A plan is
@@ -1507,6 +1540,10 @@ privacy machinery: `bin/check-private-info.sh`, `.gitleaks.toml`,
 ## Boundary
 Consumes #140 identities read-only. Creates no context-graph state. Blocks B, C,
 D, E, H.
+
+## Parent requirements owned
+PRIMARY (this child is accountable; see #141 for full text): AC17, PT14, PT24, PT27, PT29
+SUPPORTING (this child enforces or supplies a primitive; another child is primary): AC1, R5, PT3, PT4, PT7a, PT9, PT23
 ```
 
 ### B — `feat: architecture identity, authority, provenance, and state (#141 child)`
@@ -1536,11 +1573,16 @@ apply-state schema. Sole allocator of architecture identity.
   project_id mismatch is a HARD ABORT, mirroring apply.py:70-73);
 - THE STATIC CONFIRMATION POLICY (which change classes require confirmation and
   at what thresholds) — split out of G so the G-less first release has an owner;
-- judgments.jsonl, APPEND-ONLY, TWO RECORD KINDS: `decision` (naming, grouping,
-  creation, rename, split, merge, stale) and `observation` (source_commit,
-  provider name/version, schema version, per-binding contribution/status/
-  coverage). Observations are what make index.json genuinely rebuildable and give
-  carry-forward an authoritative home;
+- judgments.jsonl, APPEND-ONLY, DECISIONS ONLY: identity allocation, confirmed
+  naming/grouping/continuity, rename, reappearance, split, merge, stale, explicit
+  operator amendments. An observed provider fact MUST NOT be written here merely
+  because a projection ran (PT32);
+- index.json as DURABLE projection state (not a cache) holding observed provenance,
+  bindings, commits, provider/schema versions, membership, per-binding coverage and
+  status, derived confidence/metrics, and projection status — authority for
+  OBSERVED PROVENANCE, never for meaning;
+- the OPTIONAL non-semantic observations.jsonl run ledger, if durable audit history
+  is wanted;
 - JUDGMENTS INTEGRITY: per-record record_id + checksum; torn TRAILING line is
   truncated-and-reported; corruption anywhere else HARD ABORTS; last-write-wins by
   FILE ORDER (decided_at is audit only). append_line_atomic (atomic_io.py:59-66)
@@ -1608,6 +1650,10 @@ Creates no context-graph edges/judgments. Generated-region core extraction is
 child D's (rendering plumbing). PT16 (capability toggle) and the index.json
 rebuild criterion are owned by D, not here — both require C's clustering, which B
 cannot import without losing its parallelism with A. Blocks D, G, H.
+
+## Parent requirements owned
+PRIMARY (this child is accountable; see #141 for full text): AC4, AC5, R1, R4, PT2, PT5, PT20, PT23, PT28, PT32
+SUPPORTING (this child enforces or supplies a primitive; another child is primary): AC6, AC7, AC9, AC13, AC14, AC15, R2, PT1, PT6, PT11, PT15, PT16, PT18, PT19, PT21, PT25, PT26, PT29
 ```
 
 ### C — `feat: deterministic bounded candidate planning (#141 child)`
@@ -1665,6 +1711,10 @@ from note BYTES re-enters through note EXISTENCE.
 
 ## Boundary
 No model assistance (deterministic only). Blocks D, E (plan comparison), F1.
+
+## Parent requirements owned
+PRIMARY (this child is accountable; see #141 for full text): AC3, R3, PT10, PT22
+SUPPORTING (this child enforces or supplies a primitive; another child is primary): AC1, AC2, AC10, AC11, AC21, PT8, PT14, PT16, PT17, PT24, PT31
 ```
 
 ### D — `feat: safe projection loop for map and components (#141 child)`
@@ -1739,8 +1789,11 @@ the manifest, the resume ledger, redaction, or locking.
 - a planned path escaping the notes home rejects the whole plan;
 - PT16: a capability toggle at the same commit coarsens clusters monotonically and
   does not churn identity (owned HERE — needs B's identity AND C's clustering);
-- INDEX REBUILD: judgments.jsonl (decisions + observations) plus the same-commit
-  structural graph reproduces index.json (owned HERE, same reason);
+- INDEX REBUILD: judgments.jsonl (decisions) plus a LIVE provider at the recorded
+  commit reproduces index.json (owned HERE, same reason). Where a binding is
+  unavailable, the rebuild CANNOT reproduce its carried-forward contribution — that
+  loss is DETECTED AND REPORTED, never silently re-rendered as a zero contribution
+  (PT21);
 - codebase map + a restrained number of components produced; raw files/symbols
   never become notes.
 
@@ -1748,6 +1801,10 @@ the manifest, the resume ledger, redaction, or locking.
 With A = internal contract milestone; with E = first usable release. Advanced
 reconciliation (rename/split/merge/stale) is G. Complete reconciliation (AC12) is
 G, not this child.
+
+## Parent requirements owned
+PRIMARY (this child is accountable; see #141 for full text): AC1, AC2, AC6, AC7, AC8, AC10, AC11, AC13, AC18, AC19, AC20, AC21, R2, R5, PT3, PT4, PT6, PT7b, PT8, PT9, PT15, PT16, PT17, PT18, PT19, PT21, PT25, PT26, PT31
+SUPPORTING (this child enforces or supplies a primitive; another child is primary): AC3, AC4, AC5, AC9, AC12, AC15, AC17, R1, R4, PT2, PT5, PT10, PT12, PT13, PT14, PT27, PT28, PT30, PT32
 ```
 
 ### E — `feat: CodeGraph adapter and interchange equivalence proof (#141 child)`
@@ -1760,10 +1817,17 @@ A CodeGraph adapter behind the #141-A interchange, proving provider neutrality b
 equivalence with the reference JSON provider.
 
 ## Owns
-- CodeGraph adapter. PREFERRED ORDER, CORRECTED BY MEASUREMENT: direct local
-  adapter (reading .codegraph/) -> narrow CLI verbs where they are --json-capable
-  and non-truncating -> MCP-assisted only where deterministic access is
-  insufficient. A bulk EXPORT surface does not exist (see Risks);
+- MANDATORY FIRST PHASE E-1 (feasibility): measure supported CodeGraph interfaces;
+  select and RECORD the integration surface; create a pinned indexed fixture repo
+  or equivalent reproducible fixture; define the automatable end-to-end gate; fail
+  closed on unsupported versions or schema changes. If no automatable stable
+  surface exists, RECORD A NO-GO rather than laundering a manual check into
+  acceptance;
+- CodeGraph adapter satisfying the PARENT'S FROZEN PROPERTIES (not a frozen
+  mechanism): deterministic, local, network-free, pinned + reproducible,
+  non-truncating and machine-formatted, fail-closed on unsupported version or
+  changed schema. Undocumented provider storage only with an explicit version pin,
+  a compatibility fixture, and fail-closed schema detection;
 - translation into A's interchange; NO CodeGraph imports in the engine;
 - shared-capability equivalence tests; stale-commit detection; provider-version
   provenance.
@@ -1787,23 +1851,26 @@ produces normalized facts and has none). Implementation-parallel with B and D.
 - provider-version provenance recorded.
 
 ## Release-gated (NOT E's solo acceptance)
-PLAN equivalence and the complete real-CodeGraph end-to-end run (CodeGraph ->
-interchange -> bounded candidates -> preview -> confirm -> apply -> zero-write
-rerun on an actually-indexed repo) are the {D,E} FIRST-USABLE-RELEASE GATE.
+PLAN equivalence and the complete AUTOMATABLE real-CodeGraph end-to-end run
+(CodeGraph -> interchange -> bounded candidates -> preview -> confirm -> apply ->
+zero-write rerun on a PINNED INDEXED FIXTURE REPO) are the {D,E}
+FIRST-USABLE-RELEASE GATE. A manual-only check is insufficient as the sole gate.
 
-## Risks / open (see design doc §14 Q1)
-CodeGraph 1.4.1 ships a local CLI, but there is NO `export` verb and no bulk graph
-dump. `explore` and `node` have no --json and truncate; `query --json` defaults to
---limit 10. The core structural_edges the interchange needs (calls, imports,
-contains, tests) are reachable only through query-scoped, human-formatted,
-truncating verbs. So the "stable local export/CLI" first choice is INFEASIBLE and
-the fallback is parsing an undocumented third-party SQLite schema with no
-cross-version stability guarantee — which also threatens matcher stability if
-provider symbol-ID formats change (design doc FC-2 forbids provider IDs as matcher
-signals for exactly this reason). This repo has NO .codegraph/ index (deliberately
-removed), so the e2e gate cannot run here without re-indexing. E MUST resolve
-whether this gate is automatable or is an explicitly-labelled manual check; a
-non-reproducible check cannot fail a build and is not an acceptance criterion.
+## Input to E-1 (measurement 2026-07-18, CodeGraph 1.4.1 — NOT a frozen contract)
+A local CLI exists but there is NO `export` verb and no bulk graph dump. `explore`
+and `node` have no --json and truncate; `query --json` defaults to --limit 10. The
+core structural_edges the interchange needs (calls, imports, contains, tests) are
+reachable only through query-scoped, human-formatted, truncating verbs — which the
+parent's non-truncating property excludes. The remaining candidate is the
+undocumented .codegraph/ SQLite store, permitted ONLY with a version pin,
+compatibility fixture, and fail-closed schema detection. This repo has NO
+.codegraph/ index (deliberately removed), so E-1 must create the pinned fixture.
+Re-verify all of this at the CodeGraph version E actually targets.
+
+
+## Parent requirements owned
+PRIMARY (this child is accountable; see #141 for full text): PT7a
+SUPPORTING (this child enforces or supplies a primitive; another child is primary): AC17, AC18, PT4, PT7b
 ```
 
 ### F1 — `feat: architectural flow notes (#141 child, F1)`
@@ -1838,6 +1905,12 @@ only a band crossing rewrites. The same banded values feed C's ranking.
 ## Closure
 BLOCKS epic closure — #141's Projection model enumerates flows among its six
 initial supported note types.
+
+## Parent requirements owned
+PRIMARY (this child is accountable; see #141 for full text): none — this child
+owns no AC bullet. It is closure-blocking via #141's enumeration of six initial
+note types (Projection model + Intended user experience), not via an AC.
+SUPPORTING (this child enforces or supplies a primitive; another child is primary): R1, PT10, PT22
 ```
 
 ### F2 — `feat: boundary notes (#141 child, F2)`
@@ -1864,6 +1937,12 @@ type.
 
 ## Closure
 BLOCKS epic closure (#141 initial note type).
+
+## Parent requirements owned
+PRIMARY (this child is accountable; see #141 for full text): none — this child
+owns no AC bullet. It is closure-blocking via #141's enumeration of six initial
+note types (Projection model + Intended user experience), not via an AC.
+SUPPORTING (this child enforces or supplies a primitive; another child is primary): R1
 ```
 
 ### F3 — `feat: test-surface notes (#141 child, F3)`
@@ -1892,6 +1971,12 @@ extended note type.
 
 ## Closure
 BLOCKS epic closure (#141 initial note type).
+
+## Parent requirements owned
+PRIMARY (this child is accountable; see #141 for full text): none — this child
+owns no AC bullet. It is closure-blocking via #141's enumeration of six initial
+note types (Projection model + Intended user experience), not via an AC.
+SUPPORTING (this child enforces or supplies a primitive; another child is primary): R1
 ```
 
 ### F4 — `feat: hotspot / risk-seam rendering (#141 child, F4)`
@@ -1924,6 +2009,12 @@ the notes-home tree. This child retains latitude in HOW it renders them — boun
 temporal status inside durable architecture notes is preferred over minting a
 durable note per metric fluctuation — but that is a rendering decision, not a
 scope reduction.
+
+## Parent requirements owned
+PRIMARY (this child is accountable; see #141 for full text): none — this child
+owns no AC bullet. It is closure-blocking via #141's enumeration of six initial
+note types (Projection model + Intended user experience), not via an AC.
+SUPPORTING (this child enforces or supplies a primitive; another child is primary): R1
 ```
 
 ### G — `feat: architecture reconciliation lifecycle (#141 child)`
@@ -1972,6 +2063,10 @@ user-authored content.
 - removed nodes marked stale, never deleted;
 - every transition exceeding structural evidence requires confirmation;
 - G ALLOCATES NO IDENTITY EXCEPT THROUGH B (test).
+
+## Parent requirements owned
+PRIMARY (this child is accountable; see #141 for full text): AC12, AC14, AC15, AC16, PT11, PT12, PT13, PT30
+SUPPORTING (this child enforces or supplies a primitive; another child is primary): R4
 ```
 
 ### H — `feat: multi-repository architecture projection (#141 child)`
@@ -2016,6 +2111,10 @@ cross-repository flows.
 - a partial outage never drops the unavailable binding's content;
 - a DECONFIGURED binding is retired via G, not carried forward indefinitely and
   not silently dropped on a config edit.
+
+## Parent requirements owned
+PRIMARY (this child is accountable; see #141 for full text): AC9, PT1
+SUPPORTING (this child enforces or supplies a primitive; another child is primary): none
 ```
 
 ### I — `feat: optional model-assisted architecture authoring (#141 child, non-blocking)`
@@ -2047,6 +2146,12 @@ metrics; candidate keys; confirmation authority; apply behavior.
 - the deterministic epic closes without this child, WITH USABLE NOTE TITLES;
 - model proposals are indistinguishable, downstream, from human proposals
   (same contract).
+
+## Parent requirements owned
+PRIMARY (this child is accountable; see #141 for full text): none — by design.
+This child is NON-BLOCKING for epic closure; no AC, R, or PT requires
+model-generated content.
+SUPPORTING (this child enforces or supplies a primitive; another child is primary): R3
 ```
 ---
 
@@ -2132,7 +2237,7 @@ not #141's):
 |---|---|---|
 | PT19\* | fresh project, empty `judgments.jsonl` → projection produces notes (no-match→mint branch) | D |
 | PT20\* | torn trailing line in `judgments.jsonl` → truncate-and-report; mid-file corruption → hard abort | B |
-| PT21\* | `index.json` deleted while a binding is `unavailable` → rebuild preserves the carried-forward contribution (observation records) | D |
+| PT21\* | projection state deleted while a binding is `unavailable` → the loss of the carried-forward contribution is **detected and reported**, never silently re-rendered as a zero contribution | D |
 | PT22\* | rank oscillation at the note cap → no orphaned notes, cap observable | C |
 | PT23\* | provider symbol-ID format changes at a fixed commit → identity does not churn (provider-independent matcher signals) | B |
 | PT24\* | provider advertises `has_calls` but fails to parse a subtree → reads as partial, never as observed zero | A |
@@ -2143,6 +2248,7 @@ not #141's):
 | PT29\* | interchange asserting a foreign/unconfigured `binding_id` → rejected | A |
 | PT30\* | user renames a generated note in Obsidian → conflict, not silent re-create | G |
 | PT31\* | a commit touching one unrelated file rewrites zero notes | D |
+| PT32\* | an observed provider fact is never written into `judgments.jsonl`; a run that only re-observes produces no new judgment record | B |
 
 Every criterion, recovered requirement, and pressure test has **exactly one primary
 owner** (the `Owner` column). The `Enforced-by` column lists supporting children
@@ -2321,9 +2427,9 @@ Systematic pass over the current #141 body against the child DAG.
 > every possible ordering broke a frozen invariant, now fixed as one atomic append
 > preceding any write (adopting `review.py:202-204`'s precedent); (3) **`index.json`
 > was simultaneously declared authoritative and rebuildable**, and its rebuild input
-> (`source_commit`) lived only inside the artifact being rebuilt — `judgments.jsonl`
-> now carries observation records alongside decisions, which also gives carry-forward
-> an authoritative home; (4) **the frozen state path omitted `<notes_home>/projects/
+> (`source_commit`) lived only inside the artifact being rebuilt — `index.json`
+> is now correctly typed as **durable projection state** — authority for observed
+> provenance, never for meaning — rather than a disposable cache; (4) **the frozen state path omitted `<notes_home>/projects/
 > <project_slug>/`**, which would have put two projects on one identity authority
 > (`config.py:89-98`); (5) **the notes home appeared nowhere in the document** —
 > `grep -ic 'notes.home'` returned 0 — so no child owned where notes are written or
@@ -2347,6 +2453,23 @@ Systematic pass over the current #141 body against the child DAG.
 > observed zero; `stale` was undefined for a dirty tree and for a coordinates-only
 > binding; component naming was unowned; AC18 needed Codex assets no child owned;
 > three DAG edges were redundant and two real ones missing.
+
+> **Fifth-round corrections (operator review of the recovery candidate).** Four
+> contract issues fixed in the candidate parent body and propagated here: (1) the
+> **authority split** — `judgments.jsonl` no longer carries observation records;
+> observed provenance is `index.json`'s, which is retyped as durable projection
+> state rather than a cache, with an optional explicitly-non-semantic run ledger for
+> audit (PT32 added); (2) the **blast-radius contradiction** — the parent summary
+> called the provider authoritative for blast radius while §4.2 makes it
+> engine-owned; provider authority is now scoped to raw nodes, edges, and directly
+> observed facts, engine authority to fan-in/out, neighborhoods, blast radius,
+> clustering, ranking, and plans; (3) **primary vs supporting ownership** made
+> explicit, since R1, PT7b, and PT17 visibly carried more than one owner while the
+> table claimed exactly one; (4) the **CodeGraph gate** — the parent no longer
+> freezes a version-specific adapter preference order, but a set of properties
+> (deterministic, local, pinned, reproducible, non-truncating, fail-closed), with a
+> mandatory feasibility phase inside E that must produce an automatable gate or
+> record a no-go.
 
 * **Lost: five, now recovered (R1–R5, §9).** The prior "Lost: none" was reached by
   walking only #141's *Acceptance criteria* and *Pressure tests*. Its binding
@@ -2550,36 +2673,20 @@ bulk backfill (see #142); a custom Obsidian plugin; a local GitHub artifact mirr
 
 ## 14. Unresolved questions (repository evidence cannot resolve)
 
-1. **CodeGraph ingestion surface + e2e-gate executability (child E).**
-   *Substantially resolved by measurement; the residue is narrower than the earlier
-   framing.* The previous text claimed this was "not determinable from this repo"
-   and that "the only confirmed access is the harness-level `codegraph_explore` MCP
-   tool." **Both halves were wrong, in opposite directions.** Measured:
+1. **CodeGraph integration surface (child E) — now bounded, not open.** Earlier
+   revisions treated this as an open design question and then over-corrected by
+   freezing a version-specific mechanism ordering into the epic. Both are wrong:
+   a mechanism ordering is an implementation conclusion about one provider version,
+   not a product contract. **Resolved:** the parent freezes *properties*
+   (deterministic, local, network-free, pinned and reproducible, non-truncating and
+   machine-formatted, fail-closed), and child **E-1** — a mandatory feasibility
+   phase inside E, not a separate child — measures the interfaces, records the
+   chosen surface, builds a pinned indexed fixture, and defines the automatable
+   end-to-end gate. **The residual risk is explicit and owned:** if no automatable
+   stable surface exists at E's target CodeGraph version, E-1 records a **no-go**
+   and the first usable release is re-planned. A manual-only check may not serve as
+   the sole release gate. Does not block A–D.
 
-   * A **local CLI does exist** — `codegraph` **1.4.1**, with
-     `init / index / sync / status / query / explore / node / files / callers /
-     callees / impact / affected`.
-   * But there is **no `export` verb and no bulk graph dump**. `files --json` gives
-     a file tree with no symbols or edges; `query --json` defaults to `--limit 10`;
-     `status --json` is index statistics; **`explore` and `node` have no `--json`**
-     and emit truncating, human-formatted output. The core `structural_edges[]` the
-     interchange requires (`calls`, `imports|depends_on`, `contains`, `tests`) are
-     reachable only through query-scoped, truncating verbs.
-
-   So §6-E's preferred order is corrected (direct local adapter first, CLI verbs
-   second, MCP last), and the **real** open question is narrower: whether reading
-   `.codegraph/`'s undocumented third-party SQLite schema is stable enough across
-   CodeGraph versions to be a release gate. That risk is coupled to FC-2 — a schema
-   or symbol-ID format change across provider versions is exactly why matcher
-   signals must be provider-independent.
-
-   **The gate also cannot run in this repo as it stands:** there is no `.codegraph/`
-   index here (deliberately removed). E must therefore either (a) make the gate
-   reproducible against a pinned, indexed fixture repo, or (b) **explicitly label it
-   a manual, non-reproducible check** — and a non-reproducible check cannot fail a
-   build, cannot be re-run by a second operator, and cannot detect regression, so it
-   is **not** an acceptance criterion. §10 currently makes it the sole gate on the
-   first usable release; E must resolve which it is. Does not block A–D.
 2. **Continuity-matcher signals/thresholds (deferred to child B).** FC-2 freezes
    the matcher *contract* (multi-signal, confidence-gated, judgments-authority,
    G-confirmation for ambiguous). The exact signals, weights, and high-confidence
