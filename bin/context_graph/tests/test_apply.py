@@ -417,6 +417,23 @@ class ApplyIdempotentAnchorTest(unittest.TestCase):
                   for n in plan2["artifacts"]["index"]["planned_obj"]["nodes"]]
         self.assertIn("Use a single-writer lock", labels)
 
+    def test_second_apply_emits_no_findings(self):
+        """A satisfied anchor (materialized by apply #1) was still being
+        passed whole to plan_map_bytes, which only matches anchors to
+        UNANCHORED entries by fingerprint -- so apply #2 emitted a spurious
+        `stale_anchor_no_entry` finding for it every time, even though
+        nothing on disk needed to change. A clean, unchanged re-apply must
+        produce ZERO findings and write NOTHING. FAILS before the fix
+        (stale_anchor_no_entry appears in plan2["findings"])."""
+        res1 = apply.apply(self.nh, self.slug)
+        self.assertTrue(res1["ok"], res1.get("findings"))
+
+        res2 = apply.apply(self.nh, self.slug)
+        self.assertTrue(res2["ok"], res2.get("findings"))
+        self.assertEqual(res2["findings"], [])
+        for w in res2["writes"]:
+            self.assertFalse(w["written"], w)
+
 
 if __name__ == "__main__":
     unittest.main()

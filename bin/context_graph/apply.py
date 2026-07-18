@@ -173,12 +173,23 @@ def build_plan(notes_home, project_slug, repo_roots=None, adopt_context_md=False
 
     # Step 3-4: construct the exact intended map.md bytes in memory -- only
     # authorized anchor markers inserted, no other byte changed.
+    #
+    # A satisfied anchor (its assigned_id is already a node in `base`) was
+    # materialized by a prior apply -- its marker already sits on disk, so it
+    # needs no insertion. plan_map_bytes only matches anchors to UNANCHORED
+    # entries by fingerprint, so passing satisfied anchors through would emit
+    # a spurious `stale_anchor_no_entry` finding on every clean re-apply
+    # (issue #185). Only PENDING anchors are inserted.
+    pending_anchor_events = [
+        ev for ev in accepted_anchor_events
+        if ev.get("assigned_id") not in base_nodes_by_id
+    ]
     map_rel_path = compiler._map_rel_path(project_slug)
     base_map_text = _read_text_or_none(
         os.path.join(project_dir, compiler.MAP_FILENAME)) or ""
     base_entries = map_parser.parse_project_map(base_map_text)["entries"]
     planned_map, map_findings = plan_map_bytes(
-        base_map_text, base_entries, accepted_anchor_events, project_id, map_rel_path)
+        base_map_text, base_entries, pending_anchor_events, project_id, map_rel_path)
     findings.extend(map_findings)
 
     # Step 4-5: re-compile against the PLANNED map bytes using the same
