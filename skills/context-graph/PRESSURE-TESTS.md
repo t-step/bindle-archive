@@ -1,5 +1,15 @@
 # context-graph — pressure tests
 
+> **Method of record:** [`docs/pressure-testing-protocol.md`](../../docs/pressure-testing-protocol.md)
+> — arm declaration, the pre-dispatch fixture checklist, environment controls,
+> and grading.
+>
+> **Caveat on the counts below (#223):** they predate the arm-declaration rule.
+> They were gathered without first verifying, per rep, which skill actually won
+> the trigger — so an unknown fraction may be **void** (a rep a competing skill
+> answered tests nothing about this skill). Treat them as a distribution, not an
+> arm, until re-attributed.
+
 **Status: VERIFIED (2026-07-18, issues #186/#211).** Four layers of evidence:
 
 1. **Structural graduation gate (the graduation-blocking guarantee).**
