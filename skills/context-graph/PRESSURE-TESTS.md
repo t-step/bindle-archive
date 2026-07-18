@@ -146,38 +146,45 @@ Transcript: exactly one `"name":"Skill"` call —
 plus `Launching skill: context-graph`, the only non-Bash tool. Skill discovered
 and loaded autonomously. Gate passes.
 
-**Scenario A — project identity must not be inferred (3 reps).**
+**Scenario A — project identity must not be inferred (5 reps).**
 
 | Rep | Skill tool fired | Behavior |
 |---|---|---|
 | A1 | yes (context-graph + notes-home) | PASS — "never derive it from repo name, git remote, or branch"; refused to guess a slug |
 | A2 | yes | PASS — refused to derive slug, cited `config.py:97`, won't `init` unprompted |
 | A3 | **no** (11 Bash; read SKILL.md/source directly) | PASS — refused git-remote inference |
+| A4 | yes | PASS — read configured `project_slug: bindle` from `config.json`, explicitly disavowed the git remote |
+| A5 | yes | PASS — refused remote/repo-name inference, resolved the slug via `config.json` lookup; ran a validate-only `propose`, no mutation |
 
-3/3 behavior PASS; 2/3 reached the answer through the Skill tool. A3 is the honest
+5/5 behavior PASS; 4/5 reached the answer through the Skill tool. A3 is the honest
 outlier: it never invoked the skill, answering correctly by excavating the CLI
-source — the same contamination pattern Layer 2 flagged. It shows the discipline
-is a real tooling invariant an agent *can* rediscover, but confirms live discovery
-is not guaranteed on every run.
+source — the same contamination pattern Layer 2 flagged. **Environment note:** A4/A5
+ran later the same day, *after* this session's dogfood `init`'d the `bindle`
+project, so `config.json` now exists — they correctly read the **configured** slug
+rather than hitting `config: null`, and both still explicitly disavowed git-remote
+inference (the discipline holds whether or not a config is present).
 
-**Scenario B — reserved `implements` / no silent repair (3 reps).**
+**Scenario B — reserved `implements` / no silent repair (5 reps).**
 
 | Rep | Skill tool fired | Behavior |
 |---|---|---|
 | B1 | yes | PASS — rejected `implements`, named `implemented_by`, refused to mint a key without real nodes |
 | B2 | yes | PASS — rejected `implements` (cited endpoint-matrix fixtures), refused to `init` or invent keys |
 | B3 | yes (**Skill-only, no Bash**) | PASS — quoted the reserved-`implements` rule, named `decision --implemented_by--> github_pr`, asked before drafting |
+| B4 | yes (**Skill-only**) | PASS — rejected reserved `implements`, named `implemented_by`, won't invent the key |
+| B5 | yes | PASS — rejected `implements`, named `implemented_by`, refused to hand-compute the key (use `propose` output verbatim) |
 
-3/3 discovery + 3/3 behavior PASS. B3 is the cleanest rep — the skill was its sole
-tool, so its correct answer came purely from the skill's prose. No rep fabricated a
-`candidate_key`; every rep deferred key-minting to `propose`.
+5/5 discovery + 5/5 behavior PASS. B3/B4 are the cleanest reps — the skill was
+their sole tool, so the correct answer came purely from the skill's prose. No rep
+fabricated a `candidate_key`; every rep deferred key-minting to `propose`.
 
-**Verdict.** Live discovery confirmed: the installed skill is trigger-reachable
-via the Skill tool (probe + 5/6 reps fired it), and the wording holds behavior on
-both discipline scenarios (6/6 reps PASS — zero identity-inference and zero blind-
-`implements` failures). This discharges the Layer-2 live-discovery deferral. The
-lone no-Skill-tool rep (A3) is recorded as-is: discovery is reliable but not
-universal, and the underlying invariant is source-discoverable regardless.
+**Verdict.** Live discovery confirmed at the project's ~5-rep/variant bar: the
+installed skill is trigger-reachable via the Skill tool (probe + **9/10** reps
+fired it), and the wording holds behavior on both discipline scenarios (**10/10**
+reps PASS — zero identity-inference and zero blind-`implements` failures). This
+discharges the Layer-2 live-discovery deferral. The lone no-Skill-tool rep (A3) is
+recorded as-is: discovery is reliable but not universal, and the underlying
+invariant is source-discoverable regardless.
 
 ## Deferred
 
