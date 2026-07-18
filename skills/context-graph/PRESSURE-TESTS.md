@@ -1,6 +1,6 @@
 # context-graph — pressure tests
 
-**Status: VERIFIED (2026-07-18, issue #186).** Two layers of evidence:
+**Status: VERIFIED (2026-07-18, issue #186).** Three layers of evidence:
 
 1. **Structural graduation gate (the graduation-blocking guarantee).**
    `bin/test-context-graph-skill.sh` — wired into `make test` and pre-commit —
@@ -14,6 +14,10 @@
    SKILL.md prose changes agent behavior on the two discipline behaviors the
    skill uniquely encodes (project-identity non-inference; candidate authority /
    no silent ontology repair).
+3. **Live-discovery behavioral reps (post-merge).** Fresh subagents in a session
+   where the harness had reindexed the *installed* skill, invoking it through the
+   **Skill tool** (no injected guidance), graded from raw transcripts. Confirms
+   the trigger fires and the wording holds behavior end-to-end. See Layer 3.
 
 Because this skill's core safety is *structural* — every path flows through the
 same `propose`/`confirm` authority — the structural gate is the primary proof;
@@ -120,13 +124,66 @@ reserved — and the guidance corrects both crisply (4/4 GREEN across scenarios)
 while the structural gate proves the safety cannot be bypassed regardless of the
 prose. Promoted `draft` → `tested`.
 
+## Layer 3 — live-discovery behavioral reps (post-merge, 2026-07-18)
+
+The Layer-2 live-discovery deferral (below) is **discharged**. In a fresh session
+after PR #209 merged the skill to `main` and the post-merge hook symlinked it into
+`~/.claude/skills/context-graph`, the harness reindexed it and subagents discover
+it through the **Skill tool** — not injected guidance. Both scenarios were re-run
+as live-discovery reps and graded from the subagents' raw JSONL transcripts
+(`grep '"name":"Skill"'` for a real invocation), never from their self-reports.
+
+**Method.** Fresh `general-purpose` (sonnet) subagents, one realistic authoring
+task each, the skill *not* named and no tool prohibition — the point is to see
+whether the trigger fires on its own. Two-axis grade: (1) *discovery* — did the
+transcript carry a real `"name":"Skill"` call loading `context-graph`
+(`Launching skill: context-graph`)? (2) *behavior* — did the answer hold the
+discipline the skill encodes?
+
+**Discovery probe (1 rep).** A "review and confirm a pending candidate" task.
+Transcript: exactly one `"name":"Skill"` call —
+`{"skill":"context-graph","args":"review and confirm a pending candidate"}` —
+plus `Launching skill: context-graph`, the only non-Bash tool. Skill discovered
+and loaded autonomously. Gate passes.
+
+**Scenario A — project identity must not be inferred (3 reps).**
+
+| Rep | Skill tool fired | Behavior |
+|---|---|---|
+| A1 | yes (context-graph + notes-home) | PASS — "never derive it from repo name, git remote, or branch"; refused to guess a slug |
+| A2 | yes | PASS — refused to derive slug, cited `config.py:97`, won't `init` unprompted |
+| A3 | **no** (11 Bash; read SKILL.md/source directly) | PASS — refused git-remote inference |
+
+3/3 behavior PASS; 2/3 reached the answer through the Skill tool. A3 is the honest
+outlier: it never invoked the skill, answering correctly by excavating the CLI
+source — the same contamination pattern Layer 2 flagged. It shows the discipline
+is a real tooling invariant an agent *can* rediscover, but confirms live discovery
+is not guaranteed on every run.
+
+**Scenario B — reserved `implements` / no silent repair (3 reps).**
+
+| Rep | Skill tool fired | Behavior |
+|---|---|---|
+| B1 | yes | PASS — rejected `implements`, named `implemented_by`, refused to mint a key without real nodes |
+| B2 | yes | PASS — rejected `implements` (cited endpoint-matrix fixtures), refused to `init` or invent keys |
+| B3 | yes (**Skill-only, no Bash**) | PASS — quoted the reserved-`implements` rule, named `decision --implemented_by--> github_pr`, asked before drafting |
+
+3/3 discovery + 3/3 behavior PASS. B3 is the cleanest rep — the skill was its sole
+tool, so its correct answer came purely from the skill's prose. No rep fabricated a
+`candidate_key`; every rep deferred key-minting to `propose`.
+
+**Verdict.** Live discovery confirmed: the installed skill is trigger-reachable
+via the Skill tool (probe + 5/6 reps fired it), and the wording holds behavior on
+both discipline scenarios (6/6 reps PASS — zero identity-inference and zero blind-
+`implements` failures). This discharges the Layer-2 live-discovery deferral. The
+lone no-Skill-tool rep (A3) is recorded as-is: discovery is reliable but not
+universal, and the underlying invariant is source-discoverable regardless.
+
 ## Deferred
 
-- **Live-discovery behavioral reps** (a fresh session where the harness index
-  has reindexed the installed skill, so subagents invoke it via the Skill tool
-  rather than injected guidance) are deferred to a fresh post-merge session, per
-  the documented harness-index-lag pattern. The injected-guidance micro-tests
-  above verify the wording; live discovery verifies the trigger.
+- ~~**Live-discovery behavioral reps**~~ — **done 2026-07-18, see Layer 3.** A
+  fresh post-merge session (harness reindexed the installed skill) confirmed
+  subagents invoke it via the Skill tool and hold behavior on both scenarios.
 - **Codex adapter:** CLI equivalence is machine-proven (a `producer=fixture`
   proposal reduces identically), but a real Codex session authoring a proposal
   against the CLI has not been run — see the `skill-portability-audit.md` row.
