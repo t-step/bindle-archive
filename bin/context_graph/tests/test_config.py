@@ -29,10 +29,12 @@ class TestProjectIdentity(unittest.TestCase):
     def test_init_project_rerun_is_byte_identical_zero_writes(self):
         config.init_project(self.notes_home, "myproj")
         path = config.config_path(self.notes_home, "myproj")
-        before = open(path, "rb").read()
+        with open(path, "rb") as f:
+            before = f.read()
         before_mtime = os.stat(path).st_mtime_ns
         cfg2, created2 = config.init_project(self.notes_home, "myproj")
-        after = open(path, "rb").read()
+        with open(path, "rb") as f:
+            after = f.read()
         after_mtime = os.stat(path).st_mtime_ns
         self.assertFalse(created2)
         self.assertEqual(before, after)
@@ -100,12 +102,14 @@ class TestProjectIdentity(unittest.TestCase):
                    "project_slug": "badid", "repositories": []}
         with open(path, "w", encoding="utf-8") as f:
             json.dump(bad_cfg, f)
-        before = open(path, "r", encoding="utf-8").read()
+        with open(path, "r", encoding="utf-8") as f:
+            before = f.read()
         with self.assertRaises(config.ConfigInvalidError) as ctx:
             config.init_project(self.notes_home, "badid")
         codes = {f["code"] for f in ctx.exception.findings}
         self.assertIn("E_CONFIG_MALFORMED_PROJECT_ID", codes)
-        after = open(path, "r", encoding="utf-8").read()
+        with open(path, "r", encoding="utf-8") as f:
+            after = f.read()
         self.assertEqual(before, after)
 
     def test_structural_and_shared_findings_reject_repo_shaped_project_id(self):
@@ -162,13 +166,15 @@ class TestProjectIdentity(unittest.TestCase):
         os.makedirs(os.path.dirname(path), exist_ok=True)
         with open(path, "w", encoding="utf-8") as f:
             json.dump([1, 2, 3], f)
-        before = open(path, "r", encoding="utf-8").read()
+        with open(path, "r", encoding="utf-8") as f:
+            before = f.read()
         with self.assertRaises(config.ConfigInvalidError) as ctx:
             config.init_project(self.notes_home, "malformed")
         codes = {f["code"] for f in ctx.exception.findings}
         self.assertIn("E_CONFIG_MALFORMED_SHAPE", codes)
         # the malformed original is untouched, not replaced or emptied
-        after = open(path, "r", encoding="utf-8").read()
+        with open(path, "r", encoding="utf-8") as f:
+            after = f.read()
         self.assertEqual(before, after)
 
 
@@ -270,6 +276,15 @@ class TestRepositoryBindingCrud(unittest.TestCase):
         with self.assertRaises(config.BindingNotFoundError):
             config.remove_repository(self.notes_home, "proj", "repository-binding:" + "1" * 32)
 
+    def test_removing_current_default_leaves_zero_defaults_not_an_error(self):
+        _, entry = config.add_repository(self.notes_home, "proj", alias="a",
+                                          provider="github", is_default=True)
+        cfg, removed = config.remove_repository(self.notes_home, "proj", entry["binding_id"])
+        self.assertEqual(removed["binding_id"], entry["binding_id"])
+        self.assertEqual(cfg["repositories"], [])
+        self.assertEqual(config.blocking_findings(cfg), [])
+        self.assertEqual(config.all_findings(cfg), [])
+
     def test_set_default_sets_unique_default(self):
         _, a = config.add_repository(self.notes_home, "proj", alias="a", provider="github")
         cfg, _ = config.set_default(self.notes_home, "proj", a["binding_id"])
@@ -300,10 +315,12 @@ class TestRepositoryBindingCrud(unittest.TestCase):
         cfg["project_id"] = "project:not-hex"
         with open(path, "w", encoding="utf-8") as f:
             json.dump(cfg, f)
-        before = open(path, "r", encoding="utf-8").read()
+        with open(path, "r", encoding="utf-8") as f:
+            before = f.read()
         with self.assertRaises(config.ConfigInvalidError):
             config.add_repository(self.notes_home, "proj", alias="a", provider="github")
-        after = open(path, "r", encoding="utf-8").read()
+        with open(path, "r", encoding="utf-8") as f:
+            after = f.read()
         self.assertEqual(before, after)
 
 
@@ -368,6 +385,83 @@ class TestStructuralAndOriginChecks(unittest.TestCase):
                    {"alias": "a", "binding_id": config.allocate_binding_id(),
                     "provider": "github", "coordinates": "owner/repo"}]}
         self.assertEqual(config.local_origin_findings(cfg), [])
+
+    def test_add_repository_succeeds_despite_local_origin_disagreement(self):
+        # The ordinary fork workflow: `coordinates` points at upstream, but
+        # the local checkout's `origin` remote points at a fork. This is an
+        # advisory discovery signal (design doc's "advisory only"
+        # principle), never a write block -- add_repository must succeed.
+        import subprocess
+        config.init_project(self.notes_home, "proj")
+        checkout = tempfile.mkdtemp()
+        subprocess.run(["git", "-C", checkout, "init", "-q"], check=True,
+                       env=config._git_env())
+        subprocess.run(["git", "-C", checkout, "remote", "add", "origin",
+                         "git@github.com:real-owner/real-repo.git"], check=True,
+                       env=config._git_env())
+        cfg, entry = config.add_repository(
+            self.notes_home, "proj", alias="fork-workflow", provider="github",
+            coordinates="configured-owner/configured-repo",
+            local_checkout_path=checkout)
+        self.assertEqual(len(cfg["repositories"]), 1)
+        self.assertEqual(entry["coordinates"], "configured-owner/configured-repo")
+
+    def test_update_and_remove_repository_succeed_on_existing_local_origin_disagreement(self):
+        # Reproduces the recovery-lockout scenario: a config already on disk
+        # has a binding whose local checkout disagrees with its configured
+        # coordinates (origin drifted after the fact, or the file was
+        # hand-edited). update_repository/remove_repository must still be
+        # able to act on it -- the disagreement must never re-gate a
+        # mutation on an already-persisted config. Written directly via
+        # atomic_io.write_json_atomic (not add_repository) so this proves
+        # update/remove's own gating, independent of add_repository's.
+        import subprocess
+        from context_graph import atomic_io
+        checkout = tempfile.mkdtemp()
+        subprocess.run(["git", "-C", checkout, "init", "-q"], check=True,
+                       env=config._git_env())
+        subprocess.run(["git", "-C", checkout, "remote", "add", "origin",
+                         "git@github.com:real-owner/real-repo.git"], check=True,
+                       env=config._git_env())
+        binding_id = config.allocate_binding_id()
+        cfg = {"schema_version": 1, "project_id": config.allocate_project_id(),
+               "project_slug": "proj", "repositories": [
+                   {"alias": "a", "binding_id": binding_id, "provider": "github",
+                    "coordinates": "configured-owner/configured-repo",
+                    "local_checkout_path": checkout}]}
+        path = config.config_path(self.notes_home, "proj")
+        atomic_io.write_json_atomic(path, cfg)
+        # sanity: the config really does have a disagreement on disk
+        self.assertTrue(config.local_origin_findings(cfg))
+
+        updated_cfg, updated_entry = config.update_repository(
+            self.notes_home, "proj", binding_id, alias="renamed")
+        self.assertEqual(updated_entry["alias"], "renamed")
+
+        removed_cfg, removed = config.remove_repository(self.notes_home, "proj", binding_id)
+        self.assertEqual(removed["binding_id"], binding_id)
+        self.assertEqual(removed_cfg["repositories"], [])
+
+    def test_all_findings_still_reports_local_origin_disagreement(self):
+        # blocking_findings gates mutation and must be empty for an
+        # otherwise-valid disagreeing config; all_findings is still the full
+        # union `config validate`/`config status` report to an operator, so
+        # the disagreement itself must still surface there.
+        import subprocess
+        checkout = tempfile.mkdtemp()
+        subprocess.run(["git", "-C", checkout, "init", "-q"], check=True,
+                       env=config._git_env())
+        subprocess.run(["git", "-C", checkout, "remote", "add", "origin",
+                         "git@github.com:real-owner/real-repo.git"], check=True,
+                       env=config._git_env())
+        cfg = {"schema_version": 1, "project_id": config.allocate_project_id(),
+               "project_slug": "x", "repositories": [
+                   {"alias": "a", "binding_id": config.allocate_binding_id(),
+                    "provider": "github", "coordinates": "configured-owner/configured-repo",
+                    "local_checkout_path": checkout}]}
+        self.assertEqual(config.blocking_findings(cfg), [])
+        all_codes = {f["code"] for f in config.all_findings(cfg)}
+        self.assertIn("E_CONFIG_LOCAL_ORIGIN_DISAGREEMENT", all_codes)
 
     def test_document_ids_differ_by_binding(self):
         binding_a = config.allocate_binding_id()

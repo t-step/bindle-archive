@@ -57,8 +57,10 @@ def _emit_text(obj):
         print(json.dumps(obj, indent=2, sort_keys=True))
 
 
-def _error_findings(code, message):
-    return [{"code": code, "message": message, "index": None, "field": None}]
+def _error_findings(code, message, **extra):
+    d = {"code": code, "message": message, "index": None, "field": None}
+    d.update(extra)
+    return [d]
 
 
 def _add_common_args(p):
@@ -74,7 +76,7 @@ def cmd_init(args):
         _emit({"findings": e.findings}, args.format)
         return 1
     except lock.LockContention as e:
-        _emit({"findings": _error_findings("E_LOCK_CONTENTION", str(e))}, args.format)
+        _emit({"findings": _error_findings("E_LOCK_CONTENTION", str(e), owner=e.owner)}, args.format)
         return 1
     _emit({"created": created, "config": cfg}, args.format)
     return 0
@@ -121,7 +123,7 @@ def cmd_config_add_repository(args):
         _emit({"findings": e.findings}, args.format)
         return 1
     except lock.LockContention as e:
-        _emit({"findings": _error_findings("E_LOCK_CONTENTION", str(e))}, args.format)
+        _emit({"findings": _error_findings("E_LOCK_CONTENTION", str(e), owner=e.owner)}, args.format)
         return 1
     _emit({"repository": entry, "config": cfg}, args.format)
     return 0
@@ -138,7 +140,7 @@ def cmd_config_update_repository(args):
         _emit({"findings": e.findings}, args.format)
         return 1
     except lock.LockContention as e:
-        _emit({"findings": _error_findings("E_LOCK_CONTENTION", str(e))}, args.format)
+        _emit({"findings": _error_findings("E_LOCK_CONTENTION", str(e), owner=e.owner)}, args.format)
         return 1
     _emit({"repository": entry, "config": cfg}, args.format)
     return 0
@@ -151,7 +153,7 @@ def cmd_config_remove_repository(args):
         _emit({"findings": e.findings}, args.format)
         return 1
     except lock.LockContention as e:
-        _emit({"findings": _error_findings("E_LOCK_CONTENTION", str(e))}, args.format)
+        _emit({"findings": _error_findings("E_LOCK_CONTENTION", str(e), owner=e.owner)}, args.format)
         return 1
     _emit({"removed": removed, "config": cfg}, args.format)
     return 0
@@ -164,19 +166,21 @@ def cmd_config_set_default(args):
         _emit({"findings": e.findings}, args.format)
         return 1
     except lock.LockContention as e:
-        _emit({"findings": _error_findings("E_LOCK_CONTENTION", str(e))}, args.format)
+        _emit({"findings": _error_findings("E_LOCK_CONTENTION", str(e), owner=e.owner)}, args.format)
         return 1
     _emit({"repository": entry, "config": cfg}, args.format)
     return 0
 
 
 def cmd_config_break_lock(args):
+    cdir = config.context_dir(args.notes_home, args.project)
     if not args.force:
+        owner = lock.read_owner(lock.lock_path(cdir))
         _emit({"findings": _error_findings(
             "E_LOCK_BREAK_NOT_CONFIRMED",
-            "config break-lock requires --force to confirm")}, args.format)
+            "config break-lock requires --force to confirm (current owner: %r)" % (owner,),
+            owner=owner)}, args.format)
         return 1
-    cdir = config.context_dir(args.notes_home, args.project)
     owner = lock.break_lock(cdir)
     _emit({"removed_owner": owner}, args.format)
     return 0

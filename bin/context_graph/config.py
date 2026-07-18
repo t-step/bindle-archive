@@ -6,9 +6,22 @@ Read-only semantic checks (project-id shape, duplicate alias/binding-id,
 multiple-default) are context_graph.validation.validate_config (shipped by
 #180); this module adds config-file-specific structural and local-origin
 checks that validate_config cannot do because they need filesystem/git
-access outside its pure-object contract. context_graph.config.all_findings
-composes both, deliberately NOT adding new codes to validation.FINDING_CODES
-(that enum is #180-owned and cross-checked by test_schema_conformance.py).
+access outside its pure-object contract, deliberately NOT adding new codes
+to validation.FINDING_CODES (that enum is #180-owned and cross-checked by
+test_schema_conformance.py).
+
+Findings split into two categories. context_graph.config.blocking_findings
+is validate_config + structural_findings: genuinely broken/conflicting
+config state, and the only thing that gates a mutation (see
+_load_valid_or_raise and each mutator's post-mutation check).
+context_graph.config.all_findings is blocking_findings +
+local_origin_findings: the full union reported to an operator by
+`config validate`/`config status`. local_origin_findings compares a local
+git checkout's current `origin` remote to configured coordinates -- an
+external, mutable, advisory signal per the design's "advisory discovery
+inputs only, never project-identity authority" principle
+(docs/design/2026-07-17-context-graph-foundation.md), so it is surfaced but
+must never block a write.
 
 Every mutating function acquires context_graph.lock.ProjectLock for the
 duration of its read-modify-write and releases it (including on exception)
@@ -188,7 +201,7 @@ def local_origin_findings(cfg):
         checkout = repo.get("local_checkout_path")
         if not coordinates or not checkout:
             continue
-        if not os.path.isdir(os.path.join(checkout, ".git")):
+        if not os.path.exists(os.path.join(checkout, ".git")):
             continue
         try:
             out = subprocess.run(
@@ -239,17 +252,31 @@ def _malformed_shape_findings(cfg):
     return []
 
 
-def all_findings(cfg):
-    """The union `config validate` reports: shared semantic checks
-    (validate_config) plus this module's structural and local-origin
-    checks. A malformed top-level/repositories shape short-circuits before
-    any of those run, since they all assume dict access."""
+def blocking_findings(cfg):
+    """The subset of findings that gates a mutation: shared semantic checks
+    (validate_config) plus this module's structural checks -- genuinely
+    broken/conflicting config state. Deliberately excludes
+    local_origin_findings, an external, mutable, advisory-only signal (see
+    module docstring) that must never block a write. A malformed top-level/
+    repositories shape short-circuits before any of those run, since they
+    all assume dict access."""
     shape_findings = _malformed_shape_findings(cfg)
     if shape_findings:
         return shape_findings
-    return (validation.validate_config(cfg)
-            + structural_findings(cfg)
-            + local_origin_findings(cfg))
+    return validation.validate_config(cfg) + structural_findings(cfg)
+
+
+def all_findings(cfg):
+    """The union `config validate`/`config status` report to an operator:
+    blocking_findings plus the advisory local-origin-disagreement check.
+    This is a strict superset of blocking_findings -- reporting a signal to
+    an operator is not the same as gating a mutation on it. A malformed
+    top-level/repositories shape short-circuits before local_origin_findings
+    runs, since it also assumes dict access."""
+    shape_findings = _malformed_shape_findings(cfg)
+    if shape_findings:
+        return shape_findings
+    return blocking_findings(cfg) + local_origin_findings(cfg)
 
 
 def init_project(notes_home, project_slug, display_name=None):
@@ -263,7 +290,7 @@ def init_project(notes_home, project_slug, display_name=None):
     with lock.ProjectLock(cdir, "init"):
         existing = load_config(path)
         if existing is not None:
-            findings = all_findings(existing)
+            findings = blocking_findings(existing)
             if findings:
                 raise ConfigInvalidError(findings)
             return existing, False
@@ -275,19 +302,23 @@ def init_project(notes_home, project_slug, display_name=None):
         }
         if display_name:
             cfg["display_name"] = display_name
-        findings = all_findings(cfg)
+        findings = blocking_findings(cfg)
         if findings:
             raise ConfigInvalidError(findings)
         atomic_io.write_json_atomic(path, cfg)
         return cfg, True
 
 
-def _load_valid_or_raise(notes_home, project_slug, cdir):
+def _load_valid_or_raise(cdir):
+    """Load the config at `cdir`, raising ConfigMissingError if absent or
+    ConfigInvalidError if it fails blocking_findings (semantic/structural
+    checks only -- never gated on the advisory local-origin check). Returns
+    (path, cfg)."""
     path = os.path.join(cdir, CONFIG_FILENAME)
     cfg = load_config(path)
     if cfg is None:
         raise ConfigMissingError(path)
-    findings = all_findings(cfg)
+    findings = blocking_findings(cfg)
     if findings:
         raise ConfigInvalidError(findings)
     return path, cfg
@@ -302,9 +333,15 @@ def _find_repository(repositories, binding_id):
 
 def add_repository(notes_home, project_slug, alias, provider, coordinates=None,
                     local_checkout_path=None, is_default=False):
+    """Append a new repository binding with a freshly allocated binding_id.
+    `is_default=True` unsets `default_for_bare_references` on every other
+    binding before setting it on this one. Raises ConfigInvalidError
+    (without writing) if the resulting config fails blocking_findings, e.g.
+    a duplicate alias -- never on an advisory local-origin disagreement, a
+    local git checkout's remote is discovery input only."""
     cdir = context_dir(notes_home, project_slug)
     with lock.ProjectLock(cdir, "config"):
-        path, cfg = _load_valid_or_raise(notes_home, project_slug, cdir)
+        path, cfg = _load_valid_or_raise(cdir)
         entry = {"alias": alias, "binding_id": allocate_binding_id(), "provider": provider}
         if coordinates:
             entry["coordinates"] = coordinates
@@ -316,7 +353,7 @@ def add_repository(notes_home, project_slug, alias, provider, coordinates=None,
             entry["default_for_bare_references"] = True
         repositories.append(entry)
         new_cfg = dict(cfg, repositories=repositories)
-        findings = all_findings(new_cfg)
+        findings = blocking_findings(new_cfg)
         if findings:
             raise ConfigInvalidError(findings)
         atomic_io.write_json_atomic(path, new_cfg)
@@ -330,7 +367,7 @@ def update_repository(notes_home, project_slug, binding_id, alias=None,
     unchanged. Only supplied (non-None) fields change."""
     cdir = context_dir(notes_home, project_slug)
     with lock.ProjectLock(cdir, "config"):
-        path, cfg = _load_valid_or_raise(notes_home, project_slug, cdir)
+        path, cfg = _load_valid_or_raise(cdir)
         repositories = [dict(r) for r in cfg["repositories"]]
         idx = _find_repository(repositories, binding_id)
         if idx is None:
@@ -347,7 +384,7 @@ def update_repository(notes_home, project_slug, binding_id, alias=None,
         elif default is False:
             repositories[idx]["default_for_bare_references"] = False
         new_cfg = dict(cfg, repositories=repositories)
-        findings = all_findings(new_cfg)
+        findings = blocking_findings(new_cfg)
         if findings:
             raise ConfigInvalidError(findings)
         atomic_io.write_json_atomic(path, new_cfg)
@@ -355,16 +392,23 @@ def update_repository(notes_home, project_slug, binding_id, alias=None,
 
 
 def remove_repository(notes_home, project_slug, binding_id):
+    """Remove the binding matching `binding_id`. Raises BindingNotFoundError
+    if no binding matches. Removing the current default leaves zero
+    defaults -- that is a valid end state, not an error. Raises
+    ConfigInvalidError (without writing) if the resulting config fails
+    blocking_findings; never gated on the advisory local-origin check, so a
+    binding whose local checkout has drifted from its configured
+    coordinates can still be removed."""
     cdir = context_dir(notes_home, project_slug)
     with lock.ProjectLock(cdir, "config"):
-        path, cfg = _load_valid_or_raise(notes_home, project_slug, cdir)
+        path, cfg = _load_valid_or_raise(cdir)
         repositories = list(cfg["repositories"])
         idx = _find_repository(repositories, binding_id)
         if idx is None:
             raise BindingNotFoundError(binding_id)
         removed = repositories.pop(idx)
         new_cfg = dict(cfg, repositories=repositories)
-        findings = all_findings(new_cfg)
+        findings = blocking_findings(new_cfg)
         if findings:
             raise ConfigInvalidError(findings)
         atomic_io.write_json_atomic(path, new_cfg)
@@ -372,4 +416,6 @@ def remove_repository(notes_home, project_slug, binding_id):
 
 
 def set_default(notes_home, project_slug, binding_id):
+    """Sets `binding_id` as the unique default, unsetting any other.
+    Delegates to `update_repository`."""
     return update_repository(notes_home, project_slug, binding_id, default=True)
