@@ -1,6 +1,6 @@
 ---
 name: release-captain
-description: Use for ANY request to release, cut a release, "do a release", decide whether/what/when to release, or "take care of the release" for accumulated work — this is THE release-decision skill and it owns that decision. Gathers evidence since the latest tag, recommends a version class and timing with rationale and confidence, then (only on explicit per-step human approval) drives the configured release strategy to create or update a Release Please release PR. It NEVER cuts the release itself — never bumps VERSION, edits CHANGELOG, commits, tags, publishes, or deploys; those are human-authorized publication. It invokes package-release-integrity as its safety check, and is not replaced by it. Use even when the request sounds like "just handle it".
+description: Use for ANY request to release, cut a release, "do a release", decide whether/what/when to release, or "take care of the release" for accumulated work — this is THE release-decision skill and it owns that decision. Gathers evidence since the latest tag, recommends a version class and timing with rationale and confidence, then (only on explicit per-step human approval) drives the configured release strategy to create or update a Release Please release PR. It NEVER cuts the release itself — never bumps VERSION, edits CHANGELOG, commits, tags, publishes, or deploys; those are human-authorized publication. It invokes package-release-integrity as its safety check, and is not replaced by it. Where a well-formed .domi-pin marks release-semver-governance as inherited, upstream (DomI) policy is the default for the version and timing call and this skill routes rather than settles it locally. Use even when the request sounds like "just handle it".
 ---
 
 # Release captain
@@ -97,7 +97,31 @@ fabricated recommendation.
    repository release policy (Bindle's
    `CHANGELOG.md` SemVer rule: breaking-install/structure → major, new
    capability → minor, fix → patch); detect whether Release Please is
-   configured (`release-please-config.json`).
+   configured (`release-please-config.json`); and **detect inherited release
+   policy** — see below. Both halves of this step are required; the contract
+   (`docs/workflows/release-captain.md` §step 1) states them together.
+
+   **Detect inherited release policy.** Check the target repo for a
+   `.domi-pin`. Run `<bindle>/bin/domi-status.sh --repo <repo>` (or the
+   `domi-consumer` skill, which owns pin detection) and read the
+   `authority:` line it prints. Applicability is an **observable test**, not a
+   judgement call — do not reason about whether the pin "looks intentional":
+
+   | Condition | Result |
+   |---|---|
+   | no `.domi-pin` | decide locally as normal |
+   | pin present, well-formed, and `release-semver-governance` listed as inherited | **upstream policy is the default** for version class and timing |
+   | pin present but malformed, or the category not listed | decide locally; say which it was |
+
+   When upstream is the default, keep doing the local work this skill owns —
+   gather evidence, classify, check changelog and version-source hygiene — but
+   **route the version/timing call upstream rather than settling it here**, and
+   carry that through to step 5. Where inherited policy does not cover a
+   question, decide it here as normal.
+
+   A pin whose sha is a placeholder, or that reports `behind`/`forked`, is still
+   a pin: drift or an implausible-looking sha is a reason to flag it, never a
+   reason to treat the repo as ungoverned and proceed.
 2. **Gather evidence.** Run the L2 helper:
 
    ```bash
@@ -119,6 +143,14 @@ fabricated recommendation.
    explicit authority statement. **Fail-safe:** if any change is `uncertain` or
    evidence contradicts metadata, report the gap and decline a version/timing
    call — never fabricate one.
+
+   **When step 1 found inherited policy**, the authority statement is not a
+   caveat appended to a settled answer — it *is* the answer's status. Say that
+   upstream owns the version/timing call, name where to take it, and present the
+   local reasoning as input to that decision rather than as the decision. A
+   recommendation that reads "release now, confidence high" with the inherited
+   authority noted as a footnote has not routed anything; that is the #225
+   failure verbatim.
 
 **Hard stop after step 5.** Output the recommendation and **stop**. Do not bump
 `VERSION`, edit `CHANGELOG.md`, commit, or tag — no matter how the request was
@@ -208,15 +240,35 @@ Halt before `apply` on any of:
   gather);
 - a failed `dry-run`;
 - no operator-supplied approval token at the second approval gate (never
-  substitute a self-generated string).
+  substitute a self-generated string);
+- **inherited release policy covers the decision and has not been routed.**
+  Step 1 found a well-formed `.domi-pin` naming `release-semver-governance`, and
+  the version/timing call has not gone upstream. `apply` drives release-PR
+  artifacts off that call; producing them while upstream owns it overrides the
+  policy this skill is required to defer to. Halting here is not the same as
+  declining to help — the evidence, classification, and hygiene checks are still
+  yours to deliver.
 
 ## Fit with the rest of Bindle
 
 - **Beside `#59` release-integrity.** Run `package-release-integrity` before any
   publication — it verifies a release is *safe to cut*; this skill decides
-  *whether and what* to cut.
+  *whether and what* to cut. Note that skill defers on the same signal, so under
+  a governing pin it returns `mode: defer` rather than a verdict; that is the
+  authority working, not a check that failed to run.
+- **Route, don't invoke (a known soft spot).** This skill routes the call
+  upstream; it does not run DomI's own release-integrity itself. That matches
+  the contract's verb ("defer to", not "run"), but it means the authoritative
+  check can go unrun while this skill stays compliant. `package-release-integrity`
+  has the same gap, tracked in **#242** — which covers both skills, deliberately,
+  so the route-vs-invoke question is settled once rather than twice.
 - **Below repository release policy.** Defer to repo-local or inherited (DomI)
-  release policy where present.
+  release policy where present — detected in Flow step 1, carried through step
+  5, and enforced by the stop condition above. This bullet states the
+  *relationship*; those three are where it is *performed*. #225 is the worked
+  case for why the distinction matters: when this was the only place the
+  obligation appeared, agents read the pin and recommended a release anyway,
+  2/2.
 - **Above `<bindle>/bin/release.sh`.** That script remains legacy/fallback
   *publication* tooling only and does not regenerate Release-Please-owned
   artifacts (`VERSION`, `CHANGELOG.md`).

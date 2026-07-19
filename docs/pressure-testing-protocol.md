@@ -46,7 +46,8 @@ to the axis, so a "defer" rep where a real problem already exists tests *defer
 when you'd say no-go anyway*, which is strictly easier than *defer when
 everything is clean*.
 
-Run and record all eight **before any subagent sees the fixture**:
+Run and record all nine **before any subagent sees the fixture** (item 9 is
+graded after the rep, from its transcript):
 
 1. **Code at HEAD imports and executes** the claimed behavior.
 2. **The previous tag's tree is genuinely the old state** — claimed symbol
@@ -77,10 +78,31 @@ Run and record all eight **before any subagent sees the fixture**:
    **name** an agent can discount; this covers a **story** an agent can
    discount.
 
+9. **The rep cannot reach the answer key.** Fixture isolation stops a rep
+   *writing* to the real repo; it does nothing to stop it *reading* one. Our
+   own `PRESSURE-TESTS.md` files state the grading rubric and narrate prior
+   failures on the very axis under test, and they sit in the repo whose
+   `CLAUDE.md` a subagent inherits through the session cwd. A rep that reads
+   them is unscoreable — "the skill worked" can no longer be separated from "it
+   read the rubric" — regardless of how correct its behavior looks. #225 is the
+   worked case: two of four reps read into the real checkout unprompted, and one
+   landed on the exact sentence defining PASS for its own axis, so a
+   behaviorally-perfect rep had to be voided. Grade every rep for this
+   (`grep -c 'PRESSURE-TESTS\.md'` over the transcript, plus the issue number
+   and any rubric phrasing) and void on a hit. Sandboxing the cwd would also
+   close it, at the cost of the `CLAUDE.md` inheritance that makes reps
+   comparable across campaigns.
+
 Adding this checklist mid-campaign caught a fourth defect before dispatch — a
 shell quoting bug where `git init` silently never ran while the script still
 printed its success line. Never trust a success echo that isn't a verified
 postcondition.
+
+**Items 7–9 interact with arm declaration.** They are not independent knobs. In
+#225 the `README.md` governance note added to satisfy item 8 made the `.domi-pin`
+salient enough to reroute a rep's trigger to `domi-consumer`, voiding it on
+attribution. Strengthening a fixture's provenance can change which skill wins;
+re-check the arm after any fixture change made to satisfy the checklist.
 
 ## Environment controls
 
