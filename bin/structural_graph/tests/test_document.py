@@ -223,6 +223,50 @@ class TestRedactionIntegration(unittest.TestCase):
         self.assertNotIn("jane", json.dumps(result["findings"]))
 
 
+class TestPrivacyFixtureRegressions(unittest.TestCase):
+    """Mirrors testdata/structural-graph/v1/privacy/*.json at the unit level.
+
+    The regression target is context_graph.evidence._classify_local_path,
+    which rejects an unsafe absolute path and then echoes the raw value
+    straight back into its own "rejected" result. structural_graph.redaction
+    exists to make that impossible here: an anchor that cannot be
+    normalized fails the document closed with a static message, and an
+    incidental secret is scrubbed while the fact it names survives.
+    """
+
+    def test_absolute_path_anchor_is_malformed_and_finding_carries_no_value(self):
+        doc = minimal_document()
+        doc["files"][0]["path"] = "/Users" + "/jane/repo/src/app.py"
+        result = document.load_object(doc, config())
+        self.assertEqual(result["status"], "malformed")
+        self.assertEqual(
+            [f["code"] for f in result["findings"]], ["E_SG_UNNORMALIZABLE_ANCHOR"]
+        )
+        self.assertIsNone(result["facts"])
+        self.assertNotIn("jane", json.dumps(result["findings"]))
+
+    def test_bearer_token_in_diagnostic_is_scrubbed_and_fact_survives(self):
+        doc = minimal_document()
+        doc["diagnostics"] = [
+            {
+                "message": "auth failed with ghp_"
+                + "A" * 36
+                + " reading "
+                + "/Users"
+                + "/jane/repo"
+            }
+        ]
+        result = document.load_object(doc, config())
+        self.assertEqual(result["status"], "loaded")
+        blob = json.dumps(result["facts"])
+        self.assertNotIn("ghp_" + "A" * 36, blob)
+        self.assertNotIn("jane", blob)
+        message = result["facts"]["diagnostics"][0]["message"]
+        self.assertIn("[redacted:token]", message)
+        self.assertIn("[redacted:home-path]", message)
+        self.assertEqual(len(result["facts"]["files"]), 1)
+
+
 class TestMalformedRoot(unittest.TestCase):
     """A non-string root must fail the document closed, not load.
 

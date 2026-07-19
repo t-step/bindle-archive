@@ -160,6 +160,26 @@
       "capability": "contains",
       "query_path": "src/app.py",
       "expect_aggregate": "partial"
+    },
+    {
+      "id": "70",
+      "path": "privacy/70-absolute-path-anchor.json",
+      "assertion": "load_status",
+      "expect_status": "malformed",
+      "expect_freshness": "freshness_unknown",
+      "expect_codes": ["E_SG_UNNORMALIZABLE_ANCHOR"]
+    },
+    {
+      "id": "71",
+      "path": "privacy/71-secret-in-diagnostic.json",
+      "assertion": "load_status",
+      "expect_status": "loaded",
+      "expect_freshness": "freshness_unknown",
+      "expect_codes": []
+    },
+    {
+      "id": "72",
+      "assertion": "redaction_purity"
     }
   ]
 }

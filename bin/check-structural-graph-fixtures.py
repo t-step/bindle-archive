@@ -99,10 +99,40 @@ def assert_aggregate_coverage(fixture, base, config):
     return []
 
 
+SECRET_MARKERS = ("/Users/", "/home/", "ghp_", "sk-", "AKIA", "@")
+
+
+def assert_redaction_purity(fixture, base, config):
+    """No finding or fact anywhere in the corpus may carry a raw secret.
+
+    This is the regression test for the context_graph.evidence defect, where
+    an unsafe path was rejected and then echoed back verbatim in the result.
+    """
+    manifest = load_json(os.path.join(base, "manifest.json"))
+    problems = []
+    for entry in manifest["fixtures"]:
+        if "path" not in entry:
+            continue
+        target = os.path.join(base, entry["path"])
+        if not os.path.exists(target):
+            continue
+        result = document.load_object(load_json(target), config)
+        for label in ("findings", "facts"):
+            blob = json.dumps(result[label] or {})
+            for marker in SECRET_MARKERS:
+                if marker in blob:
+                    problems.append(
+                        "%s: %s contains unredacted marker %r"
+                        % (entry["path"], label, marker)
+                    )
+    return problems
+
+
 ASSERTIONS = {
     "load_status": assert_load_status,
     "set_load": assert_set_load,
     "aggregate_coverage": assert_aggregate_coverage,
+    "redaction_purity": assert_redaction_purity,
 }
 
 
