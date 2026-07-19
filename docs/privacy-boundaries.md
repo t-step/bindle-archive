@@ -24,9 +24,11 @@ Never commit, to this repo or any project repo:
   embed all of the above plus half-formed private context;
 - medical, salary, recruiter, HR, or other personal-life details;
 - personal denylist terms — names/projects/identifiers you've listed in
-  `~/.bindle/private-denylist.txt` or the deprecated
-  `~/.claude-kit/private-denylist.txt` (one per line; read by the scanner,
-  never committed).
+  `private-denylist.txt` at your notes home root (`$BINDLE_NOTES_DIR` when set,
+  else `~/.bindle`; deprecated `$CLAUDE_KIT_NOTES_DIR`/`~/.claude-kit` still
+  work, and `$BINDLE_DENYLIST` overrides them all). One term per line; read by
+  the scanner, never committed. **If no denylist resolves, these rules do not
+  run** — a passing scan then covers the patterns above only, and says so.
 
 "Private" is broader than "secret": a path or email that merely *identifies
 you* doesn't belong in a shareable repo even though it unlocks nothing.

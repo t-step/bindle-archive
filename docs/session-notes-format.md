@@ -60,10 +60,17 @@ Resolve `<notes-home>` in this order:
    workflow intentionally keeps using the old location. Bindle never
    migrates data between homes automatically.
 
-The privacy scanner's denylist resolves independently with the same shape:
-`$BINDLE_DENYLIST`, deprecated `$CLAUDE_KIT_DENYLIST`, then
-`private-denylist.txt` under `~/.bindle` or (compatibility) `~/.claude-kit` —
-see [`bin/check-private-info.sh`](../bin/check-private-info.sh).
+The privacy scanner's denylist **follows this same notes home**. An explicit
+`$BINDLE_DENYLIST` (deprecated: `$CLAUDE_KIT_DENYLIST`) overrides everything;
+otherwise the scanner reads `private-denylist.txt` at the notes home root,
+walking the four locations above in order. Relocating the notes home therefore
+moves the denylist with it — see
+[`bin/check-private-info.sh`](../bin/check-private-info.sh).
+
+A clean scan says which of the two it is: with no denylist resolved, the
+scanner reports `pattern rules only — NO personal denylist loaded`. That is a
+verdict about the *patterns*, not evidence that your personal terms are
+absent.
 
 ## Naming
 
