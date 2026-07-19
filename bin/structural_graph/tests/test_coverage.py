@@ -108,6 +108,39 @@ class TestTilingFindings(unittest.TestCase):
         overlaps = [f for f in found if f["code"] == "E_SG_COVERAGE_OVERLAP"]
         self.assertEqual([f["index"] for f in overlaps], [2, 3])
 
+    def test_two_capabilities_missing_root_report_findings_in_sorted_order(self):
+        # #227 changed the capability sort key; nothing pinned the resulting
+        # finding order. "alpha" and "zeta" both lack a root entry here --
+        # alpha has none at all, zeta only has one outside root -- so each
+        # contributes findings of its own. Because the two capabilities'
+        # findings aren't identical (one also reports an outside-root gap),
+        # the exact sequence below only holds if capabilities are actually
+        # visited in sorted ("alpha" before "zeta") order.
+        entries = [
+            {"path_prefix": "outside", "capability": "zeta", "status": "observed"}
+        ]
+        found = coverage.tiling_findings("src", ["zeta", "alpha"], entries)
+        self.assertEqual(
+            [(f["code"], f["message"], f["index"]) for f in found],
+            [
+                (
+                    "E_SG_COVERAGE_GAP",
+                    "capability has no coverage entry at the document root",
+                    None,
+                ),
+                (
+                    "E_SG_COVERAGE_GAP",
+                    "capability has no coverage entry at the document root",
+                    None,
+                ),
+                (
+                    "E_SG_COVERAGE_GAP",
+                    "coverage entry lies outside the document root",
+                    0,
+                ),
+            ],
+        )
+
 
 class TestDoesNotRaiseOnMalformedDocumentContent(unittest.TestCase):
     """#227 review finding: coverage.py is called directly by its own tests,
