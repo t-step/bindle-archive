@@ -17,6 +17,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from structural_graph import document
 from structural_graph import graphset
+from structural_graph.redaction import REDACTION_PATTERNS
 
 
 def load_json(path):
@@ -99,7 +100,42 @@ def assert_aggregate_coverage(fixture, base, config):
     return []
 
 
-SECRET_MARKERS = ("/Users/", "/home/", "ghp_", "sk-", "AKIA", "@")
+def _iter_corpus_documents(base):
+    """Yield every fixture document path under base, manifest.json excluded.
+
+    Discovers from disk rather than from manifest entries, so a fixture
+    file referenced only inside another fixture's "documents" map (or not
+    referenced at all) still gets scanned. Walk order is sorted so output
+    stays deterministic between runs.
+    """
+    for dirpath, dirnames, filenames in os.walk(base):
+        dirnames.sort()
+        for filename in sorted(filenames):
+            if filename == "manifest.json" or not filename.endswith(".json"):
+                continue
+            yield os.path.join(dirpath, filename)
+
+
+def _secret_hits(blob):
+    """Return the sorted, distinct REDACTION_PATTERNS names matched in blob.
+
+    Runs the real compiled regexes -- the same ones redaction.redact uses
+    to scrub a document -- so this check cannot drift from what the
+    redactor actually does. A legitimately-redacted value reads
+    "[redacted:<name>]", which contains none of the pattern shapes it
+    replaced (no "/Users/", "@", "ghp_", "sk-", "AKIA", ...), so scanning
+    the serialized output directly does not flag its own redaction marks.
+    """
+    return sorted(set(name for name, pattern in REDACTION_PATTERNS if pattern.search(blob)))
+
+
+def _record_leaks(problems, source, result):
+    for label in ("findings", "facts"):
+        blob = json.dumps(result[label] or {})
+        for name in _secret_hits(blob):
+            problems.append(
+                "%s: %s contains unredacted %s" % (source, label, name)
+            )
 
 
 def assert_redaction_purity(fixture, base, config):
@@ -107,24 +143,31 @@ def assert_redaction_purity(fixture, base, config):
 
     This is the regression test for the context_graph.evidence defect, where
     an unsafe path was rejected and then echoed back verbatim in the result.
+
+    Corpus-wide means two things: every fixture document on disk under
+    testdata/structural-graph/v1/ is scanned through document.load (not
+    only ones with a top-level manifest "path" entry), and every
+    set_load/aggregate_coverage fixture's aggregated graphset.load_set
+    result is scanned too, so the multi-binding merge/qualification path
+    is policed as well as the single-document path.
     """
-    manifest = load_json(os.path.join(base, "manifest.json"))
     problems = []
+
+    for target in _iter_corpus_documents(base):
+        result = document.load(target, config)
+        _record_leaks(problems, os.path.relpath(target, base), result)
+
+    manifest = load_json(os.path.join(base, "manifest.json"))
     for entry in manifest["fixtures"]:
-        if "path" not in entry:
+        if entry.get("assertion") not in ("set_load", "aggregate_coverage"):
             continue
-        target = os.path.join(base, entry["path"])
-        if not os.path.exists(target):
-            continue
-        result = document.load_object(load_json(target), config)
-        for label in ("findings", "facts"):
-            blob = json.dumps(result[label] or {})
-            for marker in SECRET_MARKERS:
-                if marker in blob:
-                    problems.append(
-                        "%s: %s contains unredacted marker %r"
-                        % (entry["path"], label, marker)
-                    )
+        paths = dict(
+            (binding, os.path.join(base, rel))
+            for binding, rel in entry["documents"].items()
+        )
+        result = graphset.load_set(config, paths)
+        _record_leaks(problems, "graphset:%s" % entry["id"], result)
+
     return problems
 
 
