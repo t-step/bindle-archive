@@ -250,7 +250,21 @@ def _vocabulary_findings(valid):
                     "coverage[].status",
                 )
             )
-        if entry.get("capability") not in declared:
+        capability = entry.get("capability")
+        # A capability that isn't a string can't be tested against `declared`
+        # (a set): membership on a list/dict operand raises TypeError before
+        # any comparison happens. Report the shape problem and skip the
+        # membership check rather than let it crash.
+        if not isinstance(capability, str):
+            out.append(
+                finding(
+                    "E_SG_MALFORMED_FIELD_SHAPE",
+                    "coverage capability is not a string",
+                    index,
+                    "coverage[].capability",
+                )
+            )
+        elif capability not in declared:
             out.append(
                 finding(
                     "E_SG_COVERAGE_UNDECLARED_CAPABILITY",
@@ -274,6 +288,20 @@ def _referential_findings(valid):
             # into E_SG_DUPLICATE_SYMBOL_ID would misreport which problem
             # the document actually has.
             continue
+        if not isinstance(symbol_id, str):
+            # A non-string id (list, dict, int, ...) can't be hashed into
+            # `ids` or tested with `in` without risking TypeError. Report it
+            # and leave it out of `ids` -- same treatment as a missing id, so
+            # an edge pointing at it is correctly flagged dangling below.
+            out.append(
+                finding(
+                    "E_SG_MALFORMED_FIELD_SHAPE",
+                    "symbol id is not a string",
+                    index,
+                    "symbols[].id",
+                )
+            )
+            continue
         if symbol_id in ids:
             out.append(
                 finding(
@@ -287,7 +315,22 @@ def _referential_findings(valid):
             ids.add(symbol_id)
     for index, edge in valid["edges"]:
         for field in ("source", "target"):
-            if edge.get(field) not in ids:
+            value = edge.get(field)
+            # A non-string, non-None endpoint (list, dict, int, ...) can't be
+            # tested with `in ids` without risking TypeError. `None` still
+            # falls through to the dangling check below: a missing endpoint
+            # legitimately names no symbol.
+            if value is not None and not isinstance(value, str):
+                out.append(
+                    finding(
+                        "E_SG_MALFORMED_FIELD_SHAPE",
+                        "edge " + field + " is not a string",
+                        index,
+                        "edges[]." + field,
+                    )
+                )
+                continue
+            if value not in ids:
                 out.append(
                     finding(
                         "E_SG_DANGLING_EDGE_ENDPOINT",

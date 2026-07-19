@@ -246,6 +246,107 @@ class TestMalformedFieldShape(unittest.TestCase):
             self.fail("validate_document raised %r" % (exc,))
 
 
+class TestUnhashableFieldValues(unittest.TestCase):
+    """Non-hashable *values* inside otherwise well-shaped elements.
+
+    _field_shape_findings only verifies elements are the right container
+    type (dict, or str for capabilities) -- it never inspects a dict's
+    values. id/source/target/capability all end up tested with `in` against
+    a validator-built set(), and set membership hashes the operand: a list
+    or dict there raises TypeError before this module gets a chance to
+    report it as a finding. This must never happen -- validators return
+    finding lists and never raise.
+    """
+
+    def test_non_hashable_coverage_capability_list_does_not_raise(self):
+        doc = minimal_document()
+        doc["coverage"][0]["capability"] = ["contains"]
+        found = validation.validate_document(doc)
+        self.assertIn("E_SG_MALFORMED_FIELD_SHAPE", codes(found))
+
+    def test_non_hashable_coverage_capability_dict_does_not_raise(self):
+        doc = minimal_document()
+        doc["coverage"][0]["capability"] = {"contains": True}
+        found = validation.validate_document(doc)
+        self.assertIn("E_SG_MALFORMED_FIELD_SHAPE", codes(found))
+
+    def test_non_hashable_symbol_id_list_does_not_raise(self):
+        doc = minimal_document()
+        doc["symbols"][0]["id"] = ["not", "hashable"]
+        found = validation.validate_document(doc)
+        self.assertIn("E_SG_MALFORMED_FIELD_SHAPE", codes(found))
+
+    def test_non_hashable_symbol_id_dict_does_not_raise(self):
+        doc = minimal_document()
+        doc["symbols"][0]["id"] = {"not": "hashable"}
+        found = validation.validate_document(doc)
+        self.assertIn("E_SG_MALFORMED_FIELD_SHAPE", codes(found))
+
+    def test_non_hashable_edge_source_list_does_not_raise(self):
+        doc = minimal_document()
+        doc["edges"] = [{"type": "calls", "source": ["x"], "target": "sym-1"}]
+        found = validation.validate_document(doc)
+        self.assertIn("E_SG_MALFORMED_FIELD_SHAPE", codes(found))
+
+    def test_non_hashable_edge_source_dict_does_not_raise(self):
+        doc = minimal_document()
+        doc["edges"] = [{"type": "calls", "source": {"x": 1}, "target": "sym-1"}]
+        found = validation.validate_document(doc)
+        self.assertIn("E_SG_MALFORMED_FIELD_SHAPE", codes(found))
+
+    def test_non_hashable_edge_target_list_does_not_raise(self):
+        doc = minimal_document()
+        doc["edges"] = [{"type": "calls", "source": "sym-1", "target": ["x"]}]
+        found = validation.validate_document(doc)
+        self.assertIn("E_SG_MALFORMED_FIELD_SHAPE", codes(found))
+
+    def test_non_hashable_edge_target_dict_does_not_raise(self):
+        doc = minimal_document()
+        doc["edges"] = [{"type": "calls", "source": "sym-1", "target": {"x": 1}}]
+        found = validation.validate_document(doc)
+        self.assertIn("E_SG_MALFORMED_FIELD_SHAPE", codes(found))
+
+    def test_non_string_hashable_symbol_id_int_reported(self):
+        # The guard is about type, not just hashability: an int id is
+        # perfectly hashable but is still not the string type the schema
+        # requires, and must be reported rather than silently accepted.
+        doc = minimal_document()
+        doc["symbols"][0]["id"] = 42
+        found = validation.validate_document(doc)
+        self.assertIn("E_SG_MALFORMED_FIELD_SHAPE", codes(found))
+
+    def test_non_string_hashable_edge_source_int_reported(self):
+        doc = minimal_document()
+        doc["edges"] = [{"type": "calls", "source": 42, "target": "sym-1"}]
+        found = validation.validate_document(doc)
+        self.assertIn("E_SG_MALFORMED_FIELD_SHAPE", codes(found))
+
+    def test_non_string_hashable_coverage_capability_int_reported(self):
+        doc = minimal_document()
+        doc["coverage"][0]["capability"] = 42
+        found = validation.validate_document(doc)
+        self.assertIn("E_SG_MALFORMED_FIELD_SHAPE", codes(found))
+
+    def test_non_hashable_symbol_id_excluded_from_ids_so_edge_is_dangling(self):
+        # Documented consequence of the fix: a symbol whose id is non-string
+        # never enters `ids`, so a well-shaped edge that names the same
+        # string the id would have been correctly reports as dangling
+        # rather than silently resolving against an id that was dropped.
+        doc = minimal_document()
+        doc["symbols"][0]["id"] = ["sym-1"]
+        doc["edges"] = [{"type": "calls", "source": "sym-1", "target": "sym-1"}]
+        found = validation.validate_document(doc)
+        self.assertIn("E_SG_DANGLING_EDGE_ENDPOINT", codes(found))
+
+    def test_findings_never_carry_a_value_key_for_unhashable_fields(self):
+        doc = minimal_document()
+        doc["symbols"][0]["id"] = ["not", "hashable"]
+        doc["coverage"][0]["capability"] = {"nested": True}
+        doc["edges"] = [{"type": "calls", "source": {"x": 1}, "target": ["y"]}]
+        for found in validation.validate_document(doc):
+            self.assertNotIn("value", found)
+
+
 class TestMissingVsDuplicateSymbolId(unittest.TestCase):
     def test_two_symbols_missing_id_are_not_reported_as_duplicates(self):
         doc = minimal_document()
