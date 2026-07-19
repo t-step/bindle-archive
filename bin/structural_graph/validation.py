@@ -22,6 +22,7 @@ FINDING_CODES = (
     "E_SG_UNKNOWN_FIELD",
     "E_SG_MALFORMED_BINDING_ID",
     "E_SG_MALFORMED_COMMIT",
+    "E_SG_MALFORMED_FIELD_SHAPE",
     "E_SG_UNKNOWN_SYMBOL_KIND",
     "E_SG_UNKNOWN_EDGE_TYPE",
     "E_SG_UNKNOWN_CAPABILITY",
@@ -118,9 +119,97 @@ def _shape_findings(doc):
     return out
 
 
-def _vocabulary_findings(doc):
+# Container fields whose elements must be objects. "capabilities" is
+# deliberately excluded: its elements are plain strings, not dicts.
+_DICT_ELEMENT_FIELDS = ("coverage", "files", "symbols", "edges")
+
+
+def _field_shape_findings(doc):
+    """Verify every container field is a list with well-shaped elements.
+
+    A malformed document is exactly the case this module exists to report
+    on, so this runs before any check that calls .get() on an element:
+    doc.get(field) or [] silently iterates whatever the field actually is
+    (a string yields its characters; an int isn't iterable at all), and an
+    unconditional item.get(...) then raises AttributeError on any element
+    that isn't a dict. Both are caller-visible crashes this function exists
+    to prevent.
+
+    Returns (findings, valid): findings is the E_SG_MALFORMED_FIELD_SHAPE
+    list; valid maps each container field name to the (index, item) pairs
+    safe for further inspection. A malformed field or element is reported
+    and dropped from valid, but never suppresses the checks run on any
+    other field or element -- every field is checked independently.
+    """
     out = []
-    for index, capability in enumerate(doc.get("capabilities") or []):
+    valid = {}
+
+    capabilities = doc.get("capabilities")
+    if capabilities is None:
+        valid["capabilities"] = []
+    elif not isinstance(capabilities, list):
+        out.append(
+            finding(
+                "E_SG_MALFORMED_FIELD_SHAPE",
+                "capabilities is not a list",
+                None,
+                "capabilities",
+            )
+        )
+        valid["capabilities"] = []
+    else:
+        items = []
+        for index, item in enumerate(capabilities):
+            if isinstance(item, str):
+                items.append((index, item))
+            else:
+                out.append(
+                    finding(
+                        "E_SG_MALFORMED_FIELD_SHAPE",
+                        "capabilities element is not a string",
+                        index,
+                        "capabilities[]",
+                    )
+                )
+        valid["capabilities"] = items
+
+    for field in _DICT_ELEMENT_FIELDS:
+        value = doc.get(field)
+        if value is None:
+            valid[field] = []
+            continue
+        if not isinstance(value, list):
+            out.append(
+                finding(
+                    "E_SG_MALFORMED_FIELD_SHAPE",
+                    field + " is not a list",
+                    None,
+                    field,
+                )
+            )
+            valid[field] = []
+            continue
+        items = []
+        for index, item in enumerate(value):
+            if isinstance(item, dict):
+                items.append((index, item))
+            else:
+                out.append(
+                    finding(
+                        "E_SG_MALFORMED_FIELD_SHAPE",
+                        field + " element is not an object",
+                        index,
+                        field + "[]",
+                    )
+                )
+        valid[field] = items
+
+    return out, valid
+
+
+def _vocabulary_findings(valid):
+    out = []
+    for index, capability in valid["capabilities"]:
         if capability not in schema.CAPABILITIES:
             out.append(
                 finding(
@@ -130,7 +219,7 @@ def _vocabulary_findings(doc):
                     "capabilities[]",
                 )
             )
-    for index, symbol in enumerate(doc.get("symbols") or []):
+    for index, symbol in valid["symbols"]:
         if symbol.get("kind") not in schema.SYMBOL_KINDS:
             out.append(
                 finding(
@@ -140,7 +229,7 @@ def _vocabulary_findings(doc):
                     "symbols[].kind",
                 )
             )
-    for index, edge in enumerate(doc.get("edges") or []):
+    for index, edge in valid["edges"]:
         if edge.get("type") not in schema.EDGE_TYPES:
             out.append(
                 finding(
@@ -150,8 +239,8 @@ def _vocabulary_findings(doc):
                     "edges[].type",
                 )
             )
-    declared = set(doc.get("capabilities") or [])
-    for index, entry in enumerate(doc.get("coverage") or []):
+    declared = set(capability for _, capability in valid["capabilities"])
+    for index, entry in valid["coverage"]:
         if entry.get("status") not in schema.COVERAGE_STATUSES:
             out.append(
                 finding(
@@ -173,12 +262,19 @@ def _vocabulary_findings(doc):
     return out
 
 
-def _referential_findings(doc):
+def _referential_findings(valid):
     out = []
-    seen = set()
-    for index, symbol in enumerate(doc.get("symbols") or []):
+    ids = set()
+    for index, symbol in valid["symbols"]:
         symbol_id = symbol.get("id")
-        if symbol_id in seen:
+        if symbol_id is None:
+            # A missing id is a distinct problem from a duplicated one and
+            # must never be compared against `ids`: two symbols that both
+            # lack an id are not duplicates of each other, and folding them
+            # into E_SG_DUPLICATE_SYMBOL_ID would misreport which problem
+            # the document actually has.
+            continue
+        if symbol_id in ids:
             out.append(
                 finding(
                     "E_SG_DUPLICATE_SYMBOL_ID",
@@ -187,10 +283,11 @@ def _referential_findings(doc):
                     "symbols[].id",
                 )
             )
-        seen.add(symbol_id)
-    for index, edge in enumerate(doc.get("edges") or []):
+        else:
+            ids.add(symbol_id)
+    for index, edge in valid["edges"]:
         for field in ("source", "target"):
-            if edge.get(field) not in seen:
+            if edge.get(field) not in ids:
                 out.append(
                     finding(
                         "E_SG_DANGLING_EDGE_ENDPOINT",
@@ -213,6 +310,8 @@ def validate_document(doc):
     out = []
     out.extend(version_findings(doc))
     out.extend(_shape_findings(doc))
-    out.extend(_vocabulary_findings(doc))
-    out.extend(_referential_findings(doc))
+    field_shape_findings, valid = _field_shape_findings(doc)
+    out.extend(field_shape_findings)
+    out.extend(_vocabulary_findings(valid))
+    out.extend(_referential_findings(valid))
     return out
