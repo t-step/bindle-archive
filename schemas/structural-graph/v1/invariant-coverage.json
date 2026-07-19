@@ -18,7 +18,6 @@
     "E_SG_DANGLING_EDGE_ENDPOINT": "native-only",
     "E_SG_COVERAGE_GAP": "native-only",
     "E_SG_COVERAGE_OVERLAP": "native-only",
-    "E_SG_FACT_OUTSIDE_ROOT": "native-only",
     "E_SG_UNNORMALIZABLE_ANCHOR": "native-only",
     "E_SG_BINDING_NOT_CONFIGURED": "native-only"
   }

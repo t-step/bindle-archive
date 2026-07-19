@@ -205,7 +205,8 @@ def main():
         problems = handler(fixture, base, config)
         if problems:
             failures += 1
-            print("  ✗ %s (%s)" % (fixture_id, fixture["path"] if "path" in fixture else fixture["assertion"]))
+            source = fixture.get("path") or fixture["assertion"]
+            print("  ✗ %s (%s)" % (fixture_id, source))
             for problem in problems:
                 print("      %s" % problem)
 

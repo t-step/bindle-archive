@@ -23,6 +23,14 @@ def load_set(cfg, paths_by_binding):
 
     paths_by_binding maps binding_id -> document path. A configured binding
     with no entry, or whose document is absent, is reported unavailable.
+
+    Findings gain a fifth key here. Inside a document, a finding is the
+    four-key {"code", "message", "index", "field"} shape that
+    validation.finding builds and validation.py enforces; a set spans
+    documents, so a finding is meaningless without saying which binding it
+    came from, and this layer adds "binding_id" as it copies each one. That
+    is a set-level shape, deliberately one layer above where the four-key
+    rule holds -- the per-document findings themselves are never mutated.
     """
     bindings = {}
     files = {}

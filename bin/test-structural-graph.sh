@@ -16,18 +16,23 @@ cd "$repo_root"
 pass=0
 fail=0
 
+# mktemp, not a $$-derived name: $$ is predictable, so a fixed /tmp path
+# built from it is a symlink-attack target and collides across concurrent
+# runs. Trapped so the file is removed even on an early set -e exit.
+out="$(mktemp "${TMPDIR:-/tmp}/sg-check.XXXXXX")"
+trap 'rm -f "$out"' EXIT
+
 check() {
   local label="$1"
   shift
-  if "$@" >/tmp/sg-check.$$ 2>&1; then
+  if "$@" >"$out" 2>&1; then
     echo "  ✓ $label"
     pass=$((pass + 1))
   else
     echo "  ✗ $label"
-    sed 's/^/      /' /tmp/sg-check.$$
+    sed 's/^/      /' "$out"
     fail=$((fail + 1))
   fi
-  rm -f /tmp/sg-check.$$
 }
 
 echo "structural-graph:"

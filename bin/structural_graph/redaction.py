@@ -20,10 +20,26 @@ import re
 REDACTED = "[redacted:%s]"
 
 # Name -> pattern. Names appear in findings; the matched text never does.
+#
+# Order is load-bearing: patterns apply in sequence over the same string, so
+# every specific path rule runs before the general absolute-path rule and a
+# "/Users/jane/..." string reads as home-path rather than absolute-path.
+#
+# The absolute-path rule redacts any /-rooted filesystem-path-shaped run,
+# because an absolute path names a machine's layout whoever's it is:
+# "/opt/acme-internal/secret-project" leaks as surely as a home directory.
+# Its leading (?<![\w\]/.~-]) requires the run to start at a path boundary,
+# which is what keeps redaction idempotent -- the replacement text
+# "[redacted:home-path]/repo" leaves "/repo" preceded by "]" and "/x.py"
+# preceded by a word character, so neither is a fresh match on a second pass.
 REDACTION_PATTERNS = (
     ("home-path", re.compile(r"/Users/[A-Za-z][A-Za-z0-9._-]*")),
     ("home-path", re.compile(r"/home/[A-Za-z][A-Za-z0-9._-]*")),
     ("vault-path", re.compile(r"iCloud~md~obsidian|Mobile Documents/[^ ]*[Oo]bsidian")),  # private-ok: pattern literal, see the SKIP_FILES entry in Step 5
+    (
+        "absolute-path",
+        re.compile(r"(?<![\w\]/.~-])/(?:[A-Za-z0-9._-]+/)*[A-Za-z0-9._-]+"),
+    ),
     ("email", re.compile(r"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}")),
     ("token", re.compile(r"gh[pousr]_[A-Za-z0-9]{20,}")),
     ("token", re.compile(r"sk-[A-Za-z0-9]{20,}")),
@@ -35,9 +51,14 @@ def normalize_path(value, root):
     """Return value as a repository-relative path, or None if unnormalizable.
 
     The interchange requires repository-relative paths. An absolute path, a
-    Windows drive path, a traversal, or a query string has no safe relative
-    form and is refused rather than guessed at -- callers turn a refused
-    anchor into a malformed document.
+    home-relative path ("~/x", "~jane/x"), a Windows drive path, a traversal,
+    or a query string has no safe relative form and is refused rather than
+    guessed at -- callers turn a refused anchor into a malformed document.
+
+    A "~"-prefixed path is refused for a second reason beyond ambiguity: it
+    resolves outside the repository and carries a username, and anchors are
+    exempt from redaction, so accepting one would persist that username in a
+    fact no later pass rewrites.
 
     root bounds what the document may reference: "" means the whole
     repository. A path outside root is unnormalizable, so a document cannot
@@ -49,6 +70,8 @@ def normalize_path(value, root):
         return None
     path = value.replace("\\", "/")
     if path.startswith("/"):
+        return None
+    if path.startswith("~"):
         return None
     if len(path) > 1 and path[1] == ":":
         return None

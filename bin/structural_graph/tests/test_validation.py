@@ -409,15 +409,71 @@ class TestCoveragePathPrefixShape(unittest.TestCase):
             self.assertNotIn("value", found)
 
 
+class TestSymbolIdRequired(unittest.TestCase):
+    """symbols[].id is required, and absence is its own code.
+
+    structural_graph.graphset keys its merged symbol table on
+    symbols[].id. Before this check a document whose symbol carried no id
+    reached status "loaded" with no findings at all, and the set loader
+    then raised KeyError on it -- an exception produced by document
+    content, which this package guarantees never happens.
+    """
+
+    def test_missing_id_is_reported(self):
+        doc = minimal_document()
+        del doc["symbols"][0]["id"]
+        found = validation.validate_document(doc)
+        self.assertEqual(
+            found,
+            [
+                {
+                    "code": "E_SG_MISSING_FIELD",
+                    "message": "symbol has no id",
+                    "index": 0,
+                    "field": "symbols[].id",
+                }
+            ],
+        )
+
+    def test_two_missing_ids_are_not_duplicates_of_each_other(self):
+        doc = minimal_document()
+        doc["symbols"] = [
+            {"name": "a", "kind": "module", "path": "src/app.py"},
+            {"name": "b", "kind": "module", "path": "src/app.py"},
+        ]
+        found = validation.validate_document(doc)
+        self.assertEqual(codes(found), ["E_SG_MISSING_FIELD"] * 2)
+        self.assertNotIn("E_SG_DUPLICATE_SYMBOL_ID", codes(found))
+
+    def test_missing_id_still_indexes_each_symbol(self):
+        doc = minimal_document()
+        doc["symbols"] = [
+            {"id": "sym-1", "name": "a", "kind": "module", "path": "src/app.py"},
+            {"name": "b", "kind": "module", "path": "src/app.py"},
+        ]
+        found = validation.validate_document(doc)
+        self.assertEqual([f["index"] for f in found], [1])
+
+    def test_a_real_duplicate_is_still_a_duplicate(self):
+        doc = minimal_document()
+        doc["symbols"] = [
+            {"id": "sym-1", "name": "a", "kind": "module", "path": "src/app.py"},
+            {"id": "sym-1", "name": "b", "kind": "module", "path": "src/app.py"},
+        ]
+        self.assertIn(
+            "E_SG_DUPLICATE_SYMBOL_ID", codes(validation.validate_document(doc))
+        )
+
+
 class TestSymbolNameShape(unittest.TestCase):
     """symbols[].name must be a string before it reaches document.py.
 
     name is an anchor field (schema.ANCHOR_FIELDS): document._anchor_findings
     feeds it to redaction.redact, which silently reports "no match" on a
     non-string value instead of catching a secret. Without this guard a
-    secret hidden in a list-shaped name produced no E_SG_UNNORMALIZABLE_ANCHOR
-    and the document loaded instead of failing closed -- #227's review
-    finding. Same bug class as coverage[].path_prefix above, different field.
+    secret hidden in a list-shaped name produces no E_SG_UNNORMALIZABLE_ANCHOR
+    and the document loads instead of failing closed. Same shape as the
+    coverage[].path_prefix guard above, different field.
     """
 
     def test_list_name_reported(self):
@@ -438,13 +494,25 @@ class TestSymbolNameShape(unittest.TestCase):
         found = validation.validate_document(doc)
         self.assertIn("E_SG_MALFORMED_FIELD_SHAPE", codes(found))
 
-    def test_missing_name_not_reported(self):
-        # Absence, unlike a wrong type, is not a shape violation: with no
-        # string present there is nothing a secret could hide inside.
+    def test_missing_name_is_a_missing_field_not_a_shape_finding(self):
+        # Absence and mistyping stay distinct codes. Absence is not a shape
+        # violation -- with no string present there is nothing a secret
+        # could hide inside -- but name is required, so it is still a
+        # finding, and the document must not load without one.
         doc = minimal_document()
         del doc["symbols"][0]["name"]
         found = validation.validate_document(doc)
-        self.assertEqual(found, [])
+        self.assertEqual(
+            found,
+            [
+                {
+                    "code": "E_SG_MISSING_FIELD",
+                    "message": "symbol has no name",
+                    "index": 0,
+                    "field": "symbols[].name",
+                }
+            ],
+        )
 
     def test_name_finding_names_the_field_and_index(self):
         doc = minimal_document()

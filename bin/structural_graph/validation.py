@@ -32,7 +32,6 @@ FINDING_CODES = (
     "E_SG_DANGLING_EDGE_ENDPOINT",
     "E_SG_COVERAGE_GAP",
     "E_SG_COVERAGE_OVERLAP",
-    "E_SG_FACT_OUTSIDE_ROOT",
     "E_SG_UNNORMALIZABLE_ANCHOR",
     "E_SG_BINDING_NOT_CONFIGURED",
 )
@@ -116,14 +115,13 @@ def _shape_findings(doc):
                 "source_commit",
             )
         )
-    # A non-string root (0, False, [], {}, None) is falsy, and
-    # document.py used to fold every falsy root into "" with
-    # `doc.get("root") or ""` before checking it -- the coercion made a
-    # malformed value indistinguishable from the legal empty-string root
-    # ("whole repository") and the E_SG_UNNORMALIZABLE_ANCHOR guard never
-    # fired. #227's review finding. root is already required above; this
-    # is the type check, so it must be isinstance and never truthiness --
-    # root == "" is legal and must keep producing no finding here.
+    # root is required above; this is its type check, and it tests
+    # isinstance rather than truthiness on purpose. root == "" is the legal
+    # "whole repository" value and must produce no finding, while every
+    # other falsy root (0, False, [], {}, None) is malformed. A truthiness
+    # test would collapse the two, and downstream code that then coerced
+    # with `or ""` would hand a malformed value to the
+    # E_SG_UNNORMALIZABLE_ANCHOR guard disguised as the legal one.
     if "root" in doc and not isinstance(doc["root"], str):
         out.append(
             finding(
@@ -133,12 +131,9 @@ def _shape_findings(doc):
                 "root",
             )
         )
-    # provider used to be checked for presence only: a string or list value
-    # sailed straight through into facts["provider"] with status="loaded".
     # The JSON Schema constrains provider to an object with required string
-    # name/version, so a silent native validator here would let the schema
-    # reject documents the native validator accepts -- #227 Task 7 carried
-    # finding (Task 5's review).
+    # name and version. These checks mirror it, so the native validator
+    # never accepts a provider the schema would reject.
     if "provider" in doc:
         provider = doc["provider"]
         if not isinstance(provider, dict):
@@ -287,11 +282,19 @@ def _vocabulary_findings(valid):
         # value instead of matching a secret pattern. Without this guard a
         # secret hidden in a list-shaped name produces no
         # E_SG_UNNORMALIZABLE_ANCHOR and the document loads instead of
-        # failing closed -- #227's review finding. Missing (None) is left
-        # alone, same treatment as symbol id above: there is no string to
-        # mistype.
+        # failing closed. Absence and mistyping are separate findings: an
+        # absent name is a missing required field, not a shape error.
         name = symbol.get("name")
-        if name is not None and not isinstance(name, str):
+        if name is None:
+            out.append(
+                finding(
+                    "E_SG_MISSING_FIELD",
+                    "symbol has no name",
+                    index,
+                    "symbols[].name",
+                )
+            )
+        elif not isinstance(name, str):
             out.append(
                 finding(
                     "E_SG_MALFORMED_FIELD_SHAPE",
@@ -368,11 +371,23 @@ def _referential_findings(valid):
     for index, symbol in valid["symbols"]:
         symbol_id = symbol.get("id")
         if symbol_id is None:
-            # A missing id is a distinct problem from a duplicated one and
-            # must never be compared against `ids`: two symbols that both
-            # lack an id are not duplicates of each other, and folding them
-            # into E_SG_DUPLICATE_SYMBOL_ID would misreport which problem
-            # the document actually has.
+            # An id is required: structural_graph.graphset keys its merged
+            # symbol table on symbols[].id, so a symbol without one has no
+            # place in a fact view and must not reach it.
+            #
+            # A missing id is reported as its own problem and never compared
+            # against `ids`: two symbols that both lack an id are not
+            # duplicates of each other, and folding them into
+            # E_SG_DUPLICATE_SYMBOL_ID would misreport which problem the
+            # document actually has.
+            out.append(
+                finding(
+                    "E_SG_MISSING_FIELD",
+                    "symbol has no id",
+                    index,
+                    "symbols[].id",
+                )
+            )
             continue
         if not isinstance(symbol_id, str):
             # A non-string id (list, dict, int, ...) can't be hashed into

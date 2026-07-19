@@ -176,5 +176,67 @@ class TestAggregateCoverage(unittest.TestCase):
         )
 
 
+class TestIdlessSymbolDoesNotCrashTheSet(unittest.TestCase):
+    """A symbol with no id must be a finding, never a KeyError.
+
+    load_set keys its merged symbol table on item["id"]. A document whose
+    symbol carried no id once reached status "loaded" with no findings, and
+    that unguarded subscript then raised on it -- untrusted document
+    content producing an exception, which this package rules out. The fix
+    is upstream in validation, so the document never reaches the merge.
+    """
+
+    def setUp(self):
+        self.tmp = tempfile.mkdtemp()
+
+    def tearDown(self):
+        shutil.rmtree(self.tmp, ignore_errors=True)
+
+    def _write(self, name, doc):
+        path = os.path.join(self.tmp, name)
+        with open(path, "w", encoding="utf-8") as handle:
+            handle.write(json.dumps(doc))
+        return path
+
+    def _idless(self, binding_id):
+        doc = doc_for(binding_id)
+        del doc["symbols"][0]["id"]
+        return doc
+
+    def test_set_load_reports_instead_of_raising(self):
+        paths = {
+            BINDING_A: self._write("a.json", self._idless(BINDING_A)),
+            BINDING_B: self._write("b.json", doc_for(BINDING_B)),
+        }
+        result = graphset.load_set(config(), paths)
+        self.assertEqual(result["bindings"][BINDING_A]["status"], "malformed")
+        self.assertIn(
+            "E_SG_MISSING_FIELD",
+            [f["code"] for f in result["findings"]],
+        )
+
+    def test_the_healthy_binding_survives_the_malformed_one(self):
+        # FC-4: one binding failing to load leaves the others intact.
+        paths = {
+            BINDING_A: self._write("a.json", self._idless(BINDING_A)),
+            BINDING_B: self._write("b.json", doc_for(BINDING_B)),
+        }
+        result = graphset.load_set(config(), paths)
+        self.assertEqual(result["bindings"][BINDING_B]["status"], "loaded")
+        self.assertEqual(
+            sorted(result["facts"]["symbols"]), [BINDING_B + "::sym-1"]
+        )
+
+    def test_set_level_finding_is_binding_qualified(self):
+        paths = {BINDING_A: self._write("a.json", self._idless(BINDING_A))}
+        result = graphset.load_set(config(), paths)
+        for found in result["findings"]:
+            self.assertEqual(found["binding_id"], BINDING_A)
+            self.assertEqual(
+                sorted(found.keys()),
+                ["binding_id", "code", "field", "index", "message"],
+            )
+
+
 if __name__ == "__main__":
     unittest.main()

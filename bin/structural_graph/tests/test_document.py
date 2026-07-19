@@ -665,5 +665,141 @@ class TestFileLoad(unittest.TestCase):
         self.assertEqual(sorted(os.listdir(self.tmp)), before)
 
 
+class TestAbsolutePathInIncidentalString(unittest.TestCase):
+    """A non-home absolute path in a diagnostic is redacted, fact kept."""
+
+    def test_generic_absolute_path_is_scrubbed_from_a_diagnostic(self):
+        doc = minimal_document()
+        doc["diagnostics"] = [
+            {"message": "failed reading /opt/acme-internal/secret/x.py"}
+        ]
+        result = document.load_object(doc, config())
+        self.assertEqual(result["status"], "loaded")
+        message = result["facts"]["diagnostics"][0]["message"]
+        self.assertNotIn("acme-internal", message)
+        self.assertIn("[redacted:absolute-path]", message)
+
+    def test_redacting_an_incidental_string_records_no_finding(self):
+        # Redaction of an incidental string is the normal successful path,
+        # not a defect in the document. Only an unredactable *anchor* fails
+        # a document closed.
+        doc = minimal_document()
+        doc["diagnostics"] = [{"message": "wrote /opt/acme-internal/out"}]
+        self.assertEqual(document.load_object(doc, config())["findings"], [])
+
+    def test_relative_paths_in_diagnostics_survive_untouched(self):
+        doc = minimal_document()
+        doc["diagnostics"] = [{"message": "parsed src/app.py"}]
+        result = document.load_object(doc, config())
+        self.assertEqual(
+            result["facts"]["diagnostics"][0]["message"], "parsed src/app.py"
+        )
+
+
+class TestTildeAnchor(unittest.TestCase):
+    """A ~user path in an anchor fails the document closed.
+
+    Anchors are exempt from redaction, so a username reaching one would be
+    persisted verbatim in a fact. normalize_path refuses it, which makes
+    the document malformed before any fact is built.
+    """
+
+    def _tilde_rooted(self):
+        # Coverage must tile the declared root, and tiling is checked before
+        # anchors are. Move the prefix with the root so this exercises the
+        # anchor refusal rather than an incidental coverage gap.
+        doc = minimal_document()
+        doc["root"] = "~jane/repo"
+        doc["coverage"][0]["path_prefix"] = "~jane/repo"
+        return doc
+
+    def test_tilde_root_is_unnormalizable(self):
+        result = document.load_object(self._tilde_rooted(), config())
+        self.assertEqual(result["status"], "malformed")
+        self.assertEqual(
+            [f["code"] for f in result["findings"]],
+            ["E_SG_UNNORMALIZABLE_ANCHOR"],
+        )
+        self.assertIsNone(result["facts"])
+
+    def test_tilde_file_path_is_unnormalizable(self):
+        doc = minimal_document()
+        doc["files"][0]["path"] = "~jane/repo/app.py"
+        result = document.load_object(doc, config())
+        self.assertEqual(result["status"], "malformed")
+        self.assertIn(
+            "E_SG_UNNORMALIZABLE_ANCHOR", [f["code"] for f in result["findings"]]
+        )
+
+    def test_no_finding_carries_the_username(self):
+        for found in document.load_object(self._tilde_rooted(), config())["findings"]:
+            self.assertNotIn("jane", json.dumps(found))
+
+
+class TestDeepNesting(unittest.TestCase):
+    """Deeply nested content is a finding, never a RecursionError.
+
+    Redaction walks the document once per nesting level, so untrusted
+    content nested past the interpreter's stack used to raise straight
+    through load_object and load. Depth is document content, not caller
+    error, so it fails the document closed like any other malformed shape.
+    """
+
+    def _nested(self, depth):
+        node = "leaf"
+        for _ in range(depth):
+            node = {"k": node}
+        doc = minimal_document()
+        doc["optional_provider_observations"] = node
+        return doc
+
+    def test_nesting_within_the_bound_still_loads(self):
+        doc = self._nested(document.MAX_DOCUMENT_DEPTH - 5)
+        self.assertEqual(document.load_object(doc, config())["status"], "loaded")
+
+    def test_nesting_past_the_bound_is_malformed(self):
+        doc = self._nested(document.MAX_DOCUMENT_DEPTH + 50)
+        result = document.load_object(doc, config())
+        self.assertEqual(result["status"], "malformed")
+        self.assertEqual(
+            [f["code"] for f in result["findings"]],
+            ["E_SG_MALFORMED_FIELD_SHAPE"],
+        )
+        self.assertIsNone(result["facts"])
+
+    def test_pathologically_nested_content_does_not_raise(self):
+        # Far past any interpreter stack limit: the bound must be checked
+        # on the way down, not discovered by crashing.
+        result = document.load_object(self._nested(50000), config())
+        self.assertEqual(result["status"], "malformed")
+
+    def test_finding_keeps_the_house_shape(self):
+        result = document.load_object(self._nested(50000), config())
+        self.assertEqual(
+            sorted(result["findings"][0].keys()),
+            ["code", "field", "index", "message"],
+        )
+
+
+class TestDeepNestingFromDisk(unittest.TestCase):
+    """load() must not propagate json.load's own RecursionError either."""
+
+    def setUp(self):
+        self.tmp = tempfile.mkdtemp()
+
+    def tearDown(self):
+        shutil.rmtree(self.tmp, ignore_errors=True)
+
+    def test_deeply_nested_file_is_malformed_not_an_exception(self):
+        path = os.path.join(self.tmp, "deep.json")
+        with open(path, "w", encoding="utf-8") as handle:
+            handle.write("[" * 100000 + "]" * 100000)
+        result = document.load(path, config())
+        self.assertEqual(result["status"], "malformed")
+        self.assertEqual(
+            [f["code"] for f in result["findings"]], ["E_SG_MISSING_FIELD"]
+        )
+
+
 if __name__ == "__main__":
     unittest.main()

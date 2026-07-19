@@ -126,7 +126,7 @@ repos:
         always_run: true
       - id: bindle-test-structural-graph
         name: structural-graph interchange tests
-        entry: bash bin/test-structural-graph.sh
+        entry: bin/test-structural-graph.sh
         language: python
         additional_dependencies: ["jsonschema"]
         pass_filenames: false

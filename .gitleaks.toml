@@ -19,7 +19,7 @@ paths = [
   '''bin/check-private-info\.sh''',
   '''bin/structural_graph/redaction\.py''',
   '''\.gitleaks\.toml''',
-  '''testdata/structural-graph/v\d+/.*''',
+  '''testdata/structural-graph/v\d+/privacy/.*''',
 ]
 
 [[rules]]

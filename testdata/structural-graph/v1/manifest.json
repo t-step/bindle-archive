@@ -178,6 +178,22 @@
       "expect_codes": []
     },
     {
+      "id": "73",
+      "path": "privacy/73-absolute-path-in-diagnostic.json",
+      "assertion": "load_status",
+      "expect_status": "loaded",
+      "expect_freshness": "freshness_unknown",
+      "expect_codes": []
+    },
+    {
+      "id": "74",
+      "path": "privacy/74-home-relative-anchor.json",
+      "assertion": "load_status",
+      "expect_status": "malformed",
+      "expect_freshness": "freshness_unknown",
+      "expect_codes": ["E_SG_UNNORMALIZABLE_ANCHOR"]
+    },
+    {
       "id": "72",
       "assertion": "redaction_purity"
     }

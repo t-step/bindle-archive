@@ -87,10 +87,9 @@ def _anchor_findings(doc):
 
     Only reached after validate_document has returned no findings, so
     validation.py's root type check already guarantees doc["root"] is a
-    string -- no `or ""` default needed (or safe) here. #227's review
-    finding: that default used to fold every falsy root (0, False, [],
-    {}, None) into the legal "" value before this check ran, hiding the
-    malformed value from it.
+    string. Reading it without an `or ""` default is deliberate: such a
+    default would fold every falsy root (0, False, [], {}, None) into the
+    legal "" value and hide a malformed root from the check below.
     """
     out = []
     root = doc.get("root")
@@ -141,10 +140,10 @@ def _anchor_findings(doc):
     # "src/ghp_.../app.py" -- would normalize cleanly and land in facts
     # untouched without this scan.
     #
-    # Driven by schema.ANCHOR_FIELDS itself (#227 structural fix): every
-    # anchor the registry names -- root included -- gets scanned by
-    # construction, so the registry and the scan cannot drift apart the
-    # way the previous hand-listed field tuple did four times running.
+    # The scan iterates schema.ANCHOR_FIELDS itself rather than a local
+    # list, so every anchor the registry names -- root included -- is
+    # covered by construction and the registry and the scan cannot drift
+    # apart.
     for field in schema.ANCHOR_FIELDS:
         for index, value in _anchor_values(doc, field):
             scrubbed, names = redaction.redact(value)
@@ -160,13 +159,41 @@ def _anchor_findings(doc):
     return out
 
 
+# Deepest JSON nesting _redact_incidental will walk. A v1 document nests
+# four levels at most (doc -> collection -> element -> value), so this is
+# generous by orders of magnitude and no honest document approaches it. It
+# exists because the walk recurses once per level and untrusted content can
+# nest arbitrarily: without a bound, a document nested deeper than the
+# interpreter's stack allows raises RecursionError, and an exception raised
+# on document content is exactly what this package guarantees never happens.
+# A document past the bound is malformed, not partially redacted -- redaction
+# that gave up halfway would emit facts it had not scrubbed.
+MAX_DOCUMENT_DEPTH = 200
+
+
+class _TooDeep(Exception):
+    """Internal signal that a document nests past MAX_DOCUMENT_DEPTH.
+
+    Private to this module and never escapes load_object, which converts it
+    into an E_SG_MALFORMED_FIELD_SHAPE finding.
+    """
+
+
 def _redact_incidental(doc):
-    """Return a copy of doc with every non-anchor string redacted."""
-    def walk(node, path):
+    """Return a copy of doc with every non-anchor string redacted.
+
+    Raises _TooDeep when doc nests past MAX_DOCUMENT_DEPTH. Callers within
+    this module catch it; no caller outside it sees an exception.
+    """
+    def walk(node, path, depth):
+        if depth > MAX_DOCUMENT_DEPTH:
+            raise _TooDeep()
         if isinstance(node, dict):
-            return dict((k, walk(v, path + [k])) for k, v in node.items())
+            return dict(
+                (k, walk(v, path + [k], depth + 1)) for k, v in node.items()
+            )
         if isinstance(node, list):
-            return [walk(v, path + ["[]"]) for v in node]
+            return [walk(v, path + ["[]"], depth + 1) for v in node]
         if isinstance(node, str):
             field = ".".join(path).replace(".[]", "[]")
             if schema.is_anchor(field):
@@ -175,7 +202,7 @@ def _redact_incidental(doc):
             return scrubbed
         return node
 
-    return walk(doc, [])
+    return walk(doc, [], 0)
 
 
 def load_object(doc, cfg):
@@ -240,7 +267,7 @@ def load_object(doc, cfg):
         )
 
     # root: guaranteed a string by validate_document above, same as in
-    # _anchor_findings -- no `or ""` default needed or safe here (#227).
+    # _anchor_findings -- no `or ""` default needed or safe here.
     # capabilities/coverage: `or []` here is unreachable for malformed
     # input, not masking -- validate_document already returned malformed
     # above if either is present but not a list (or has a non-dict/
@@ -256,7 +283,22 @@ def load_object(doc, cfg):
     if anchors:
         return _result("malformed", "freshness_unknown", anchors, None)
 
-    facts = _redact_incidental(doc)
+    try:
+        facts = _redact_incidental(doc)
+    except _TooDeep:
+        return _result(
+            "malformed",
+            "freshness_unknown",
+            [
+                validation.finding(
+                    "E_SG_MALFORMED_FIELD_SHAPE",
+                    "document nests deeper than the maximum supported depth",
+                    None,
+                    None,
+                )
+            ],
+            None,
+        )
 
     checkout = repo.get("local_checkout_path")
     if not checkout:
@@ -289,7 +331,11 @@ def load(path, cfg):
             ],
             None,
         )
-    except (ValueError, OSError):
+    # RecursionError belongs here with ValueError and OSError: json.load
+    # recurses per nesting level, so a file whose content nests deeper than
+    # the interpreter's stack raises it. That is document content, not
+    # caller error, so it is a malformed document rather than an exception.
+    except (ValueError, OSError, RecursionError):
         return _result(
             "malformed",
             "freshness_unknown",

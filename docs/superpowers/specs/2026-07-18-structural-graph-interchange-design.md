@@ -209,8 +209,10 @@ New manifest assertion kinds beyond the existing runner's: `load_status`
 ### Privacy fixtures
 
 - absolute path in an **anchor** → `malformed`, nothing loads;
-- absolute path in a **diagnostic** → fact survives, string redacted, finding
-  recorded;
+- absolute path in a **diagnostic** → fact survives, string redacted, no finding
+  recorded (redaction of an incidental string is the normal, successful path,
+  not a defect in the document; only an unredactable *anchor* fails a document
+  closed);
 - **finding-payload purity** — no finding emitted anywhere in the corpus contains
   a string matching the private-info or gitleaks patterns. This is the regression
   test for the `evidence.normalize` defect.
