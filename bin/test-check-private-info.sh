@@ -67,9 +67,10 @@ echo "self-test coverage floor:"
 # The self-test prints "  self-test: <behaved>/<total> fixtures behaved". A
 # fixture deleted from the self-test lowers <total> while the exit code stays
 # 0 — coverage can shrink silently. Assert every fixture behaved AND that the
-# fixture count has not dropped below what #268 left in place. Raise FLOOR
-# when fixtures are added; never lower it to make a red suite green.
-FLOOR=16
+# fixture count has not dropped below what #268 left in place (16), plus the
+# three #289 message/read-fallback fixtures. Raise FLOOR when fixtures are
+# added; never lower it to make a red suite green.
+FLOOR=19
 counts="$(sed -n 's|.*self-test: \([0-9]\{1,\}\)/\([0-9]\{1,\}\) fixtures behaved.*|\1 \2|p' <<<"$selftest_out")"
 behaved="${counts% *}"
 total="${counts#* }"
@@ -121,6 +122,13 @@ mutate "case-sensitive denylist matching" \
 mutate "clean verdict stops disclosing an absent denylist" \
   's|pattern rules only — NO personal denylist loaded|no personal denylist loaded|' \
   "does not disclose that NO denylist was loaded"
+
+# The missing-denylist advice reverts to naming the RESOLVED read path, which
+# with no denylist anywhere is the deprecated ~/.claude-kit fallback (#289).
+# shellcheck disable=SC2016 # sed pattern/replacement text, not expansions
+mutate "missing-denylist advice names the deprecated read fallback" \
+  's|no personal denylist at \$DENYLIST_SUGGESTED|no personal denylist at $DENYLIST|' \
+  "does not name the notes home"
 
 # ===========================================================================
 echo
