@@ -63,9 +63,17 @@ def _find_binding(cfg, binding_id):
 
 
 def _anchor_findings(doc):
-    """Findings for anchors that cannot be normalized within the root."""
+    """Findings for anchors that cannot be normalized within the root.
+
+    Only reached after validate_document has returned no findings, so
+    validation.py's root type check already guarantees doc["root"] is a
+    string -- no `or ""` default needed (or safe) here. #227's review
+    finding: that default used to fold every falsy root (0, False, [],
+    {}, None) into the legal "" value before this check ran, hiding the
+    malformed value from it.
+    """
     out = []
-    root = doc.get("root") or ""
+    root = doc.get("root")
     if redaction.normalize_path(root, "") is None and root != "":
         out.append(
             validation.finding(
@@ -216,8 +224,15 @@ def load_object(doc, cfg):
             None,
         )
 
+    # root: guaranteed a string by validate_document above, same as in
+    # _anchor_findings -- no `or ""` default needed or safe here (#227).
+    # capabilities/coverage: `or []` here is unreachable for malformed
+    # input, not masking -- validate_document already returned malformed
+    # above if either is present but not a list (or has a non-dict/
+    # non-string element), so by this point each is a real list, and
+    # `[] or []` is `[]` when the document legitimately declares none.
     tiling = coverage.tiling_findings(
-        doc.get("root") or "", doc.get("capabilities") or [], doc.get("coverage") or []
+        doc.get("root"), doc.get("capabilities") or [], doc.get("coverage") or []
     )
     if tiling:
         return _result("malformed", "freshness_unknown", tiling, None)

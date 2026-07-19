@@ -116,6 +116,23 @@ def _shape_findings(doc):
                 "source_commit",
             )
         )
+    # A non-string root (0, False, [], {}, None) is falsy, and
+    # document.py used to fold every falsy root into "" with
+    # `doc.get("root") or ""` before checking it -- the coercion made a
+    # malformed value indistinguishable from the legal empty-string root
+    # ("whole repository") and the E_SG_UNNORMALIZABLE_ANCHOR guard never
+    # fired. #227's review finding. root is already required above; this
+    # is the type check, so it must be isinstance and never truthiness --
+    # root == "" is legal and must keep producing no finding here.
+    if "root" in doc and not isinstance(doc["root"], str):
+        out.append(
+            finding(
+                "E_SG_MALFORMED_FIELD_SHAPE",
+                "root is not a string",
+                None,
+                "root",
+            )
+        )
     return out
 
 

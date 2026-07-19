@@ -473,6 +473,81 @@ class TestSymbolNameShape(unittest.TestCase):
             self.assertNotIn("value", found)
 
 
+class TestRootShape(unittest.TestCase):
+    """root must be a string before it reaches document.py.
+
+    root is a top-level anchor, not a list element: document.py used to
+    default a missing/falsy root to "" with `doc.get("root") or ""` before
+    checking it, which folded every falsy malformed value (0, False, [],
+    {}, None) into the same value the legal empty-string root produces --
+    the E_SG_UNNORMALIZABLE_ANCHOR guard downstream could not tell them
+    apart. #227's review finding. Same bug class as coverage[].path_prefix
+    and symbols[].name above, different mechanism: truthiness coercion
+    instead of an unguarded set/string operation.
+    """
+
+    def test_empty_string_root_is_legal(self):
+        doc = minimal_document()
+        doc["root"] = ""
+        self.assertEqual(validation.validate_document(doc), [])
+
+    def test_zero_root_reported(self):
+        doc = minimal_document()
+        doc["root"] = 0
+        self.assertIn("E_SG_MALFORMED_FIELD_SHAPE", codes(validation.validate_document(doc)))
+
+    def test_false_root_reported(self):
+        doc = minimal_document()
+        doc["root"] = False
+        self.assertIn("E_SG_MALFORMED_FIELD_SHAPE", codes(validation.validate_document(doc)))
+
+    def test_empty_list_root_reported(self):
+        doc = minimal_document()
+        doc["root"] = []
+        self.assertIn("E_SG_MALFORMED_FIELD_SHAPE", codes(validation.validate_document(doc)))
+
+    def test_empty_dict_root_reported(self):
+        doc = minimal_document()
+        doc["root"] = {}
+        self.assertIn("E_SG_MALFORMED_FIELD_SHAPE", codes(validation.validate_document(doc)))
+
+    def test_none_root_reported(self):
+        doc = minimal_document()
+        doc["root"] = None
+        self.assertIn("E_SG_MALFORMED_FIELD_SHAPE", codes(validation.validate_document(doc)))
+
+    def test_truthy_non_string_root_reported(self):
+        doc = minimal_document()
+        doc["root"] = ["x"]
+        self.assertIn("E_SG_MALFORMED_FIELD_SHAPE", codes(validation.validate_document(doc)))
+
+    def test_missing_root_is_missing_field_not_malformed_field_shape(self):
+        # Absence is already E_SG_MISSING_FIELD from the required-fields
+        # check; the type check must not also fire and double-report it.
+        doc = minimal_document()
+        del doc["root"]
+        found_codes = codes(validation.validate_document(doc))
+        self.assertIn("E_SG_MISSING_FIELD", found_codes)
+        self.assertNotIn("E_SG_MALFORMED_FIELD_SHAPE", found_codes)
+
+    def test_root_finding_names_the_field(self):
+        doc = minimal_document()
+        doc["root"] = None
+        found = validation.validate_document(doc)
+        shape_findings = [
+            f
+            for f in found
+            if f["code"] == "E_SG_MALFORMED_FIELD_SHAPE" and f["field"] == "root"
+        ]
+        self.assertEqual([f["index"] for f in shape_findings], [None])
+
+    def test_findings_never_carry_a_value_key_for_root(self):
+        doc = minimal_document()
+        doc["root"] = {}
+        for found in validation.validate_document(doc):
+            self.assertNotIn("value", found)
+
+
 class TestMissingVsDuplicateSymbolId(unittest.TestCase):
     def test_two_symbols_missing_id_are_not_reported_as_duplicates(self):
         doc = minimal_document()

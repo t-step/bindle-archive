@@ -223,6 +223,85 @@ class TestRedactionIntegration(unittest.TestCase):
         self.assertNotIn("jane", json.dumps(result["findings"]))
 
 
+class TestMalformedRoot(unittest.TestCase):
+    """A non-string root must fail the document closed, not load.
+
+    document.py used to default a falsy root to "" with
+    `doc.get("root") or ""` before checking it, which folded every falsy
+    malformed value (0, False, [], {}, None) into the same value the
+    legal empty-string root produces -- the document loaded with the
+    malformed value smuggled straight into facts["root"] untouched.
+    #227's review finding.
+    """
+
+    def test_empty_string_root_still_loads(self):
+        doc = minimal_document()
+        doc["root"] = ""
+        result = document.load_object(doc, config())
+        self.assertEqual(result["status"], "loaded")
+        self.assertEqual(result["facts"]["root"], "")
+
+    def test_zero_root_is_malformed(self):
+        doc = minimal_document()
+        doc["root"] = 0
+        result = document.load_object(doc, config())
+        self.assertEqual(result["status"], "malformed")
+        self.assertIn(
+            "E_SG_MALFORMED_FIELD_SHAPE", [f["code"] for f in result["findings"]]
+        )
+        self.assertIsNone(result["facts"])
+
+    def test_false_root_is_malformed(self):
+        doc = minimal_document()
+        doc["root"] = False
+        result = document.load_object(doc, config())
+        self.assertEqual(result["status"], "malformed")
+        self.assertIn(
+            "E_SG_MALFORMED_FIELD_SHAPE", [f["code"] for f in result["findings"]]
+        )
+        self.assertIsNone(result["facts"])
+
+    def test_empty_list_root_is_malformed(self):
+        doc = minimal_document()
+        doc["root"] = []
+        result = document.load_object(doc, config())
+        self.assertEqual(result["status"], "malformed")
+        self.assertIn(
+            "E_SG_MALFORMED_FIELD_SHAPE", [f["code"] for f in result["findings"]]
+        )
+        self.assertIsNone(result["facts"])
+
+    def test_empty_dict_root_is_malformed(self):
+        doc = minimal_document()
+        doc["root"] = {}
+        result = document.load_object(doc, config())
+        self.assertEqual(result["status"], "malformed")
+        self.assertIn(
+            "E_SG_MALFORMED_FIELD_SHAPE", [f["code"] for f in result["findings"]]
+        )
+        self.assertIsNone(result["facts"])
+
+    def test_none_root_is_malformed(self):
+        doc = minimal_document()
+        doc["root"] = None
+        result = document.load_object(doc, config())
+        self.assertEqual(result["status"], "malformed")
+        self.assertIn(
+            "E_SG_MALFORMED_FIELD_SHAPE", [f["code"] for f in result["findings"]]
+        )
+        self.assertIsNone(result["facts"])
+
+    def test_truthy_non_string_root_is_malformed(self):
+        doc = minimal_document()
+        doc["root"] = ["x"]
+        result = document.load_object(doc, config())
+        self.assertEqual(result["status"], "malformed")
+        self.assertIn(
+            "E_SG_MALFORMED_FIELD_SHAPE", [f["code"] for f in result["findings"]]
+        )
+        self.assertIsNone(result["facts"])
+
+
 class TestFreshness(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.mkdtemp()
