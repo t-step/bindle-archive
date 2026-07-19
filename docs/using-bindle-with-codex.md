@@ -1,15 +1,21 @@
 # Using Bindle with Codex
 
 How a Codex session can honestly use Bindle today. The short version: Codex
-gets direct `AGENTS.md` guidance, the docs, and the shell scripts — and it
-participates in session continuity by following Markdown conventions, not by
-pretending to have Claude's skills or slash commands.
+gets direct `AGENTS.md` guidance, the skills explicitly marked Codex-eligible,
+the docs, and the shell scripts — and it participates in session continuity by
+following Markdown conventions, not by pretending to have Claude's slash
+commands or subagents.
 
 ## Install the global guidance
 
 ```bash
-bin/install.sh --provider codex --codex-home ~/.codex
+bin/install.sh --provider codex --codex-home ~/.codex --agents-skills-home ~/.agents/skills
 ```
+
+Both targets are required in a normal checkout: `--codex-home` always, and
+`--agents-skills-home` whenever any skill is Codex-eligible (which is the case
+today — see the next section). Omitting the second one exits 2 without writing
+anything, so there is no AGENTS.md-only install to run first.
 
 `--codex-home` is an **explicit target directory you choose** — Bindle does
 not claim a universal Codex global-install standard; on this machine
@@ -79,10 +85,13 @@ subagents, and hooks — just in different formats and discovered from
 different paths (`.agents/skills`, `~/.codex/agents/*.toml`,
 `~/.codex/hooks.json`) than Bindle's Claude-format assets above. "Codex has
 no runtime for these files" is not the same claim as "Codex has no such
-concept" — it doesn't. Bindle does not install to any of those Codex-native
-paths today; there is no automatic conversion from Bindle's Claude assets,
-and building one is a deliberate future decision (tracked in #57), not
-something to assume or invent mid-session.
+concept" — it doesn't. Bindle installs to exactly one of those Codex-native
+paths today: Agent Skills, via the explicit `--agents-skills-home` target, and
+only for skills marked `provider.codex: "installed"` (#57). It installs
+nothing to `~/.codex/agents/*.toml` or `~/.codex/hooks.json`, there is no
+automatic conversion of Bindle's Claude assets into any Codex format, and
+building one is a deliberate future decision — not something to assume or
+invent mid-session.
 
 ## Project guidance precedence
 

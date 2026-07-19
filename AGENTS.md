@@ -2,7 +2,9 @@
 Project memory for Bindle ITSELF — auto-loaded only when working in this
 repo. This file is NOT installed anywhere: the every-project personal
 instructions live in `global/AGENTS.md`, which `bin/install.sh --provider codex
---codex-home <dir>` symlinks to `<dir>/AGENTS.md`. Keep Bindle development
+--codex-home <dir> --agents-skills-home <dir2>` symlinks to `<dir>/AGENTS.md`
+(that same command installs Codex-eligible skills into `<dir2>/`). Keep Bindle
+development
 guidance here; keep every-project preferences in `global/AGENTS.md`. Nothing
 here leaks to other projects.
 -->

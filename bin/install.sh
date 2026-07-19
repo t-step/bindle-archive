@@ -3,8 +3,8 @@
 # install.sh — install Bindle surfaces for supported providers.
 #
 # Claude Code remains the default for backward compatibility. Codex support is
-# limited to an explicit AGENTS.md target directory; this script does not assume
-# an undocumented Codex global install path.
+# limited to explicit target directories — one for AGENTS.md, one for eligible
+# skills; this script does not assume an undocumented Codex install path.
 #
 # Claude:
 #   skills/<name>/SKILL.md  ->  ~/.claude/skills/<name>
@@ -29,7 +29,8 @@
 #   bin/install.sh --provider claude                    # Claude install
 #   bin/install.sh --provider codex --codex-home DIR --agents-skills-home DIR2
 #                                                        # Codex AGENTS.md + eligible skills
-#   bin/install.sh --provider all --codex-home DIR      # Claude + Codex
+#   bin/install.sh --provider all --codex-home DIR --agents-skills-home DIR2
+#                                                        # Claude + Codex
 #   bin/install.sh --bin-dir DIR                        # bindle executable target (default: ~/.local/bin)
 #   bin/install.sh --prune                              # prune broken owned links
 #   bin/install.sh --home DIR                           # Claude home override
@@ -134,12 +135,12 @@ case "$PROVIDER" in
   codex | all)
     if [ -z "$CODEX_HOME" ]; then
       echo "Codex install requires an explicit target: --codex-home DIR" >&2
-      echo "Example: bin/install.sh --provider codex --codex-home ~/.codex" >&2
+      echo "Example: bin/install.sh --provider codex --codex-home ~/.codex --agents-skills-home ~/.agents/skills" >&2
       exit 2
     fi
     if codex_skill_rows_present && [ -z "$AGENTS_SKILLS_HOME" ]; then
       echo "Codex skill install requires an explicit target: --agents-skills-home DIR" >&2
-      echo "Example: bin/install.sh --provider codex --agents-skills-home ~/.agents/skills" >&2
+      echo "Example: bin/install.sh --provider codex --codex-home ~/.codex --agents-skills-home ~/.agents/skills" >&2
       exit 2
     fi
     ;;

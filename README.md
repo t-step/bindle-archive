@@ -59,12 +59,19 @@ Every install also links the public `bindle` executable, defaulting to
 bin/install.sh --bin-dir ~/bin
 ```
 
-Install Codex global guidance only into an explicit target directory:
+Install Codex assets into explicit target directories — one for `AGENTS.md`,
+one for Codex-eligible skills:
 
 ```bash
-bin/install.sh --provider codex --codex-home ~/.codex
-bin/install.sh --provider all --codex-home ~/.codex
+bin/install.sh --provider codex --codex-home ~/.codex --agents-skills-home ~/.agents/skills
+bin/install.sh --provider all --codex-home ~/.codex --agents-skills-home ~/.agents/skills
 ```
+
+`--codex-home` is always required for a Codex install. `--agents-skills-home`
+is required whenever any skill is Codex-eligible (`provider.codex:
+"installed"` in `capabilities.json`) — which is the case today, so omitting it
+exits 2 without writing anything. Diagnose the same pair with
+`bindle doctor --codex-home ~/.codex --agents-skills-home ~/.agents/skills`.
 
 For tests or alternate Claude targets, `--home DIR` still means the Claude home:
 
@@ -104,7 +111,8 @@ left untouched.
   broken links left by an earlier checkout — preview and confirmation first,
   broken exact-match links only, never automatic.
 - **Provider-specific install:** Claude surfaces go under the Claude home;
-  Codex Phase 1 installs only `global/AGENTS.md` to the explicit Codex target.
+  Codex installs `global/AGENTS.md` to the explicit `--codex-home` target and
+  Codex-eligible skills to the explicit `--agents-skills-home` target.
 
 The full contract is in [docs/ownership-boundaries.md](docs/ownership-boundaries.md).
 

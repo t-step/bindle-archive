@@ -67,9 +67,11 @@ around that — it fills in *everywhere else* and loses every conflict on
 purpose. A project that ships its own skill or command with the same name wins
 inside that project.
 
-Codex Phase 1 support is direct `AGENTS.md` guidance. Bindle installs
-`global/AGENTS.md` only to an explicit `--codex-home` target and does not assume
-Claude skills, agents, or commands have Codex equivalents.
+Codex support is explicit-target-only. Bindle installs `global/AGENTS.md` to a
+`--codex-home` target, and the skills marked `provider.codex: "installed"` in
+`capabilities.json` to an `--agents-skills-home` target. Eligibility is
+per-skill and opt-in: Bindle does not assume Claude skills, agents, or commands
+have Codex equivalents, and installs no Codex agents or commands at all.
 
 ## Interaction with plugins, MCP, and DomI-style setups
 
