@@ -51,6 +51,10 @@ build_repo() {
   chmod +x "$r/bin/check.sh" "$r/bin/check-private-info.sh"
   printf '0.1.0\n' >"$r/VERSION"
   printf '# Changelog\n\n## [Unreleased]\n\n- nothing yet\n' >"$r/CHANGELOG.md"
+  # The boundary document is required (see check.sh section 5b); its minor must
+  # keep pace with VERSION's. Fixtures start affirmed at their own VERSION.
+  mkdir -p "$r/docs"
+  printf '# Product boundary\n\nAffirmed through: v0.1\n' >"$r/docs/product-boundary.md"
   (cd "$r" && git init -q && git symbolic-ref HEAD refs/heads/main)
   git_commit "$r" "init"
 }
@@ -214,6 +218,80 @@ git_commit "$REPO" "drop Unreleased, Release Please configured"
 out="$(cd "$REPO" && bin/check.sh 2>&1)"
 
 check "does not require Unreleased when Release Please is configured" not_contains "missing '## [Unreleased]' section" "$out"
+
+# ===========================================================================
+echo "product-boundary staleness gate:"
+# The boundary document names the minor it was last affirmed against. It goes
+# stale silently otherwise — the #283 failure, where a v0.3–v0.4 document sat
+# unrevised across ~200 issues with no event to announce its expiry.
+
+# Affirmed minor == VERSION's minor → current, nothing flagged.
+REPO="$TMP/repo-boundary-current"
+build_repo "$REPO"
+out="$(cd "$REPO" && bin/check.sh 2>&1)"
+
+check "accepts a boundary affirmed through VERSION's minor" not_contains "affirmed through" "$out"
+
+# A patch bump must NOT demand re-affirmation — a boundary document has nothing
+# to say about a patch release.
+REPO="$TMP/repo-boundary-patch"
+build_repo "$REPO"
+printf '0.1.7\n' >"$REPO/VERSION"
+git_commit "$REPO" "patch bump"
+out="$(cd "$REPO" && bin/check.sh 2>&1)"
+
+check "does not demand re-affirmation on a patch bump" not_contains "affirmed through" "$out"
+
+# Affirmed minor behind VERSION's minor → the document has lapsed.
+REPO="$TMP/repo-boundary-stale"
+build_repo "$REPO"
+printf '0.2.0\n' >"$REPO/VERSION"
+git_commit "$REPO" "minor bump without re-affirming the boundary"
+out="$(cd "$REPO" && bin/check.sh 2>&1)"
+
+check "flags a boundary affirmed behind VERSION's minor" contains "affirmed through v0.1, but VERSION is 0.2.0" "$out"
+
+# A major bump is a minor bump too, as far as staleness goes.
+REPO="$TMP/repo-boundary-major"
+build_repo "$REPO"
+printf '1.0.0\n' >"$REPO/VERSION"
+git_commit "$REPO" "major bump without re-affirming the boundary"
+out="$(cd "$REPO" && bin/check.sh 2>&1)"
+
+check "flags a boundary left behind by a major bump" contains "affirmed through v0.1, but VERSION is 1.0.0" "$out"
+
+# Present but unaffirmed → the line is the whole mechanism, so its absence is a
+# failure, not a skip.
+REPO="$TMP/repo-boundary-noline"
+build_repo "$REPO"
+printf '# Product boundary\n\nNo affirmation line here.\n' >"$REPO/docs/product-boundary.md"
+git_commit "$REPO" "drop the affirmation line"
+out="$(cd "$REPO" && bin/check.sh 2>&1)"
+
+check "flags a boundary document with no 'Affirmed through:' line" contains "no 'Affirmed through:' line" "$out"
+
+# Malformed affirmation → don't silently treat an unparseable value as current.
+REPO="$TMP/repo-boundary-malformed"
+build_repo "$REPO"
+printf '# Product boundary\n\nAffirmed through: soon\n' >"$REPO/docs/product-boundary.md"
+git_commit "$REPO" "malformed affirmation"
+out="$(cd "$REPO" && bin/check.sh 2>&1)"
+
+check "flags a malformed 'Affirmed through:' value" contains "not vMAJOR.MINOR" "$out"
+
+# Missing document → skip, don't fail. check.sh is copied into fixture repos by
+# several suites; requiring this file would couple every fixture builder to it.
+# Deletion in the real repo is caught by bin/check-inventory.py instead, which
+# resolves the capabilities.json related_docs entries that name this file.
+REPO="$TMP/repo-boundary-missing"
+build_repo "$REPO"
+rm "$REPO/docs/product-boundary.md"
+git_commit "$REPO" "delete the boundary document"
+out="$(cd "$REPO" && bin/check.sh --content-only 2>&1)"
+status=$?
+
+check "skips cleanly when docs/product-boundary.md is absent" contains "skipping (inventory owns its existence)" "$out"
+check "does not fail the run when the boundary document is absent" test "$status" -eq 0
 
 # --- result ----------------------------------------------------------------
 echo

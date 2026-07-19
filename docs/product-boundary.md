@@ -1,11 +1,21 @@
-# Product boundary (v0.3–v0.4)
+# Product boundary
 
-The near-term product-boundary decision for Bindle, resolving issue #34.
-Scope: the next one or two minor releases. This is a decision document —
-when a proposed change conflicts with a line here, the change waits or the
-boundary is revisited explicitly (see "Revisit triggers"). It builds on the
-standing contracts in [provider-interop.md](provider-interop.md) and
+Affirmed through: v0.8
+
+The standing product-boundary decision for Bindle, resolving issue #34 and
+refreshed 2026-07-19 per issue #283. This is a decision document — when a
+proposed change conflicts with a line here, the change waits or the boundary
+is revisited explicitly (see "Revisit triggers"). It builds on the standing
+contracts in [provider-interop.md](provider-interop.md) and
 [ownership-boundaries.md](ownership-boundaries.md) and does not restate them.
+
+**This document does not expire on a release schedule.** It carried the scope
+"v0.3–v0.4" until 2026-07-19, and that range expired silently — no event
+announced it, and roughly 200 issues were filed against a document that had
+stopped applying. It is now amended only when a Revisit trigger fires, and the
+`Affirmed through:` line above records the minor release it was last checked
+against. `bin/check.sh` fails when that line falls behind `VERSION`'s minor, so
+the lapse cannot recur unnoticed.
 
 ## Decision
 
@@ -96,7 +106,7 @@ Bindle owns, and its releases are accountable for:
   assets — no longer a mere adapter. See the 2026-07-14 revisit below, which
   fired the Codex-primitives trigger and moved this stance.
 
-## Explicit non-goals (v0.3–v0.4)
+## Explicit non-goals
 
 Tempting directions that are out of scope until a revisit trigger fires:
 
@@ -149,7 +159,42 @@ Tempting directions that are out of scope until a revisit trigger fires:
   needs (e.g. rerun cost, cross-model comparison, regression detection),
   and then enters as plain scripts over fixtures, not a platform.
 
-## Near-term sequence
+### Upstream deferral
+
+**Deferring to an upstream that owns a policy is in scope and preferred.
+Reimplementing that policy locally is out of scope.**
+
+Deferral preserves the capability and the boundary at once. Reimplementation is
+the actual failure mode worth forbidding — the slow accretion by which a kit
+that *uses* an upstream's policy becomes a second, worse copy of it.
+
+Worked example, measured 2026-07-19 (issue #283):
+
+| Skill | DomI references |
+| --- | --- |
+| `package-release-integrity` | 66 |
+| `domi-consumer` | 63 |
+| `release-captain` | 50 |
+| the other 11 shipped skills | 0 |
+
+Those references are deferral seams — Bindle declining to own semver governance
+where a well-formed `.domi-pin` marks it inherited, and routing to the upstream
+that does own it. **They are in scope and protected by this rule.** Naming them
+explicitly matters because the risk here runs the direction this document does
+*not* want: 50 references in one skill, added during a period no scope document
+covered, read as creep to a future session or a dispatched subagent, and nothing
+on paper contradicted that reading until now. A stale boundary does not restrain
+this functionality; it leaves it undefended.
+
+Corollary, consistent with the single-user decision above: Bindle serving a repo
+owner who *works in* upstream-consuming repos is in scope; Bindle taking that
+upstream's needs as a second product owner is not.
+
+## Near-term sequence (v0.3–v0.4, historical)
+
+A completed plan, retained as a record of what this boundary was used to
+sequence. It is not a live plan; what is next is a milestone question, and
+milestones are live where this document is standing.
 
 For the next one or two minor releases, in order:
 
@@ -186,7 +231,32 @@ practice. This near-term sequence is complete; no successor v0.5 sequence
 has been declared yet (see the refreshed triage below for what's actually
 open).
 
-## Backlog triage (2026-07-12)
+## Backlog triage
+
+**This document does not triage issues individually.**
+
+Per-issue state lives in GitHub labels — `status:` and `priority:`, defined in
+[issue-tracking.md](issue-tracking.md). Those labels are the live record, they
+are maintained as work moves, and the dashboard reads them. A static table here
+would restate that live state in a form that goes stale on the next merge, which
+is what happened twice below.
+
+What this document supplies is the **admission rule** those labels are applied
+against — see "Admission criteria" — plus rulings on contested calls only.
+
+Retired 2026-07-19 per issue #283. The two dated tables below are historical:
+evidence of past reasoning, not current state. They are kept because the
+rationale in them is still worth reading; they are not maintained.
+
+### Contested calls
+
+Rulings on scope questions that were genuinely disputed — recorded so they are
+not re-litigated. Routine classification does not belong here; this section
+grows only when a call is actually contested, and is empty until then.
+
+*(none yet)*
+
+## Backlog triage (2026-07-12, historical)
 
 Refreshes the 2026-07-10 triage below against current issue state. Of that
 snapshot's 18 classified issues, 14 are now closed (all of Now and Next,
@@ -437,6 +507,18 @@ Concrete evidence that justifies reopening this boundary:
 - **The safety contract (#30) proves insufficient** for a hook Bindle
   actually wants — justifies rethinking whether automation belongs in the
   kit at all.
+- **This document falls behind the release line** — the `Affirmed through:`
+  line at the top names a minor older than `VERSION`'s. Unlike every trigger
+  above, this one is *enforced* rather than noticed: `bin/check.sh` fails until
+  the document is re-read and the line updated, or the document is amended.
+  It exists because the failure it guards is the **absence** of an event —
+  the other six all require something to happen, and nothing happening for
+  four months is exactly how this document lapsed (#283).
+
+  Cutting a minor release is therefore a prompt to re-read this document. A
+  patch release is not; a boundary has nothing to say about a patch. Affirming
+  *ahead* of `VERSION` is fine and is the intended order — `VERSION` lags
+  merged work (#265), so the gate can fire late, but it cannot fire wrongly.
 
 When a trigger fires, revise this document in its own PR with the evidence
 cited — don't stretch the boundary silently.

@@ -151,9 +151,27 @@ Placement rules, both load-bearing:
   document has nothing to say about a patch.
 
 Coverage added to `bin/test-check.sh`: affirmed == VERSION minor passes; affirmed behind
-fails; a missing or malformed `Affirmed through:` line fails. Per #279's lesson the gate
+fails; a malformed or missing `Affirmed through:` line fails. Per #279's lesson the gate
 is **proven failable in a scratch copy** before landing — bump `VERSION`'s minor in a
 scratch tree, confirm red, restore.
+
+### Amended during implementation — a missing document skips, it does not fail
+
+This design originally specified that an absent `docs/product-boundary.md` should fail the
+check, on the reasoning that the gate should not be dodgeable by deleting what it guards.
+Implementing it proved that wrong, and `bin/test-check-frontmatter.sh` caught it: several
+suites copy `check.sh` into throwaway fixture repos that have no `docs/` tree at all, and
+that suite's regression floor asserts a clean `--content-only` exit. Requiring the file
+would have coupled every fixture builder in the repo to it — the "maintain two lists"
+defect (#227's lesson: derive, don't duplicate).
+
+The original concern turns out to be already covered. Three `capabilities.json` entries
+(`delegation-profiles`, `workflow-composition`, `workflow-eval`) name this file under
+`related_docs`, so deleting it fails `bin/check-inventory.py` in section 6b with three
+errors. Verified by moving the file aside and running the validator.
+
+So section 5b skips when the file is absent and says why. Existence is the inventory's
+invariant; freshness is this section's. Neither duplicates the other.
 
 ### Known weakness, recorded deliberately
 
