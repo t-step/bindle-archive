@@ -111,6 +111,57 @@ class TestSetLoad(unittest.TestCase):
         )
 
 
+def duplicate_config():
+    return {
+        "schema_version": 1,
+        "repositories": [
+            {"alias": "a", "binding_id": BINDING_A, "provider": "github"},
+            {"alias": "b", "binding_id": BINDING_A, "provider": "github"},
+        ],
+    }
+
+
+class TestDuplicateBindingIdIsCallerError(unittest.TestCase):
+    """A config with two repositories sharing a binding_id is caller error.
+
+    context_graph.validation already rejects this shape at config-validation
+    time (E_CONFIG_DUPLICATE_BINDING_ID), so a validated config can never
+    reach load_set with a duplicate. load_set's own precondition is that the
+    config is already valid; a duplicate reaching it anyway is a malformed
+    argument from the caller, not untrusted document content, so it raises
+    rather than silently collapsing the second entry into the first.
+    """
+
+    def setUp(self):
+        self.tmp = tempfile.mkdtemp()
+
+    def tearDown(self):
+        shutil.rmtree(self.tmp, ignore_errors=True)
+
+    def _write(self, name, doc):
+        path = os.path.join(self.tmp, name)
+        with open(path, "w", encoding="utf-8") as handle:
+            handle.write(json.dumps(doc))
+        return path
+
+    def test_duplicate_binding_id_raises_instead_of_collapsing(self):
+        paths = {BINDING_A: self._write("a.json", doc_for(BINDING_A))}
+        with self.assertRaises(ValueError):
+            graphset.load_set(duplicate_config(), paths)
+
+    def test_ordinary_valid_config_still_loads_unchanged(self):
+        paths = {
+            BINDING_A: self._write("a.json", doc_for(BINDING_A)),
+            BINDING_B: self._write("b.json", doc_for(BINDING_B)),
+        }
+        result = graphset.load_set(config(), paths)
+        self.assertEqual(sorted(result["bindings"]), [BINDING_A, BINDING_B])
+        self.assertEqual(result["bindings"][BINDING_A]["status"], "loaded")
+        self.assertEqual(result["bindings"][BINDING_B]["status"], "loaded")
+        self.assertEqual(len(result["facts"]["files"]), 2)
+        self.assertEqual(result["findings"], [])
+
+
 class TestAggregateCoverage(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.mkdtemp()

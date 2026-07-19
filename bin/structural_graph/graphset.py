@@ -24,6 +24,23 @@ def load_set(cfg, paths_by_binding):
     paths_by_binding maps binding_id -> document path. A configured binding
     with no entry, or whose document is absent, is reported unavailable.
 
+    Precondition: cfg must already be valid per context_graph.validation's
+    rules -- in particular, no two entries in cfg["repositories"] share a
+    binding_id (context_graph.validation's E_CONFIG_DUPLICATE_BINDING_ID
+    rejects that at config-validation time). This function does not
+    re-validate the config; that would duplicate a rule that already lives
+    in context_graph.validation, which is the drift #227 spent four review
+    rounds unlearning. What it does do is protect its own invariant: it
+    keys `bindings` on binding_id, so two configured entries sharing one
+    would silently collapse into a single loaded document with no finding
+    and no error -- a malformed config passing unnoticed. A project config
+    is a caller-supplied argument, not untrusted document content, so under
+    the #227 contract (the never-raise guarantee covers document content;
+    a malformed argument is caller error) a duplicate here is caller error
+    and load_set raises ValueError, the same precedent
+    context_graph.evidence.MalformedIdentityError sets for a malformed
+    --project-id.
+
     Findings gain a fifth key here. Inside a document, a finding is the
     four-key {"code", "message", "index", "field"} shape that
     validation.finding builds and validation.py enforces; a set spans
@@ -41,7 +58,23 @@ def load_set(cfg, paths_by_binding):
     configured = [
         repo.get("binding_id") for repo in (cfg or {}).get("repositories") or []
     ]
-    for binding_id in sorted(b for b in configured if b):
+    seen_at = {}
+    ordered = []
+    for i, binding_id in enumerate(configured):
+        if not binding_id:
+            continue
+        if binding_id in seen_at:
+            raise ValueError(
+                "load_set: config repositories[%d] has binding_id %r, "
+                "already used at repositories[%d] -- caller must pass a "
+                "config already valid per context_graph.validation "
+                "(E_CONFIG_DUPLICATE_BINDING_ID)"
+                % (i, binding_id, seen_at[binding_id])
+            )
+        seen_at[binding_id] = i
+        ordered.append(binding_id)
+
+    for binding_id in sorted(ordered):
         path = (paths_by_binding or {}).get(binding_id)
         if not path:
             bindings[binding_id] = {
