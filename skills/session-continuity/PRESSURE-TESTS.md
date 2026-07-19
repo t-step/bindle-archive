@@ -395,14 +395,27 @@ written. `docs/session-notes-format.md` was amended in the same change only to
 keep the two in agreement (its own stated rule): `breadcrumbs.log` added to the
 tree, and the installer's preview-until-`--apply` behavior spelled out.
 
-**Method note.** These reps ran **pre-merge**. `~/.claude/skills/session-continuity/SKILL.md`
-is a **hardlink** to the file in the primary checkout (same inode), so editing
-the working tree changes what every session and subagent loads immediately —
-there is no post-merge install step for *content* edits to an already-installed
-skill, and no branch isolation either. Verified here with `stat`/`diff` before
-dispatching. Grade only after a rep's completion notification: an in-flight
-transcript grep missed a `Skill` call that a later re-grep found, which would
-have voided a valid rep.
+**Method note.** These reps ran **pre-merge**. `~/.claude/skills/<name>` is a
+**symlink to the directory** `<bindle>/skills/<name>` in the **primary
+checkout** (`bin/install.sh` uses `ln -s`), so the files a subagent loads are
+the working tree's own files on whatever branch is checked out there. Editing a
+`SKILL.md` in the primary checkout is therefore live immediately, with no
+post-merge install step for *content* edits and no branch isolation — which is
+what made a single-PR RED→GREEN possible here. The inverse holds too: the same
+edit made in a **linked worktree** is invisible to the harness, because the
+symlink resolves to the primary checkout path, not to yours.
+
+**Corrected 2026-07-19:** this note first described the mechanism as a
+*hardlink*, inferred from `stat` reporting the same inode for the installed and
+working-tree paths. `stat` follows symlinks — the matching inode was the link
+being resolved, not a second name for one file. `ls -ld` and `readlink` on the
+skill *directory* settle it. The conclusion above is unchanged; only the stated
+mechanism was wrong, and it was wrong in a way that predicted worktree edits
+would be live, which they are not.
+
+Grade only after a rep's completion notification: an in-flight transcript grep
+missed a `Skill` call that a later re-grep found, which would have voided a
+valid rep.
 
 ## Closed mechanically (not a subagent claim)
 
