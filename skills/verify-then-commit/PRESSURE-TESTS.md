@@ -4,8 +4,12 @@
 > — arm declaration, the pre-dispatch fixture checklist, environment controls,
 > and grading.
 >
-> **Pre-protocol counts — grandfathered (#223, #261):** **every** rep series in
-> this file predates the arm-declaration rule. They were gathered without first
+> **Protocol boundary.** **Claims 1 and 2 are pre-protocol; Claim 3 is
+> protocol-compliant.** Do not read this file's totals as uniformly earned under
+> the method of record.
+>
+> **Pre-protocol counts — grandfathered (#223, #261):** the Claim 1 and Claim 2
+> series predate the arm-declaration rule. They were gathered without first
 > verifying, per rep, which skill actually won the trigger — so an unknown
 > fraction may be **void** (a rep a competing skill answered tests nothing about
 > this skill). Treat them as a distribution over skills, not an arm.
@@ -302,3 +306,117 @@ already named for its own variant A/B split).
 
 **No skill edit (Iron Law).** The behavior holds 6/6 across both arms; there is no
 failing test of the skill on this bracket to justify a change.
+
+## Claim 3 — an agent runs the *format* check, not just the linter, before committing (#197)
+
+**Status: RED reproduced (3/5), skill edited, GREEN (5/5) — 2026-07-19.**
+
+**This is the first protocol-compliant series in this file.** Everything above it
+is grandfathered per the header; this series declared its arm before every
+dispatch and graded attribution first, per
+[`docs/pressure-testing-protocol.md`](../../docs/pressure-testing-protocol.md).
+
+#197's hypothesis: the gate table's single `Lint/format` row let an agent run
+`ruff check`, see it pass, tick the row off, and commit code the project's
+formatter rejects. It was filed as a hypothesis rather than a fix precisely
+because its field evidence came from a downstream repo whose own `CLAUDE.md`
+documents the two-command gate — an ambient-rule confound. This series removes
+that confound.
+
+### Fixture
+
+`tempo-ledger`: a small stdlib-only Python repo mid-handoff. One commit of a
+correct `Ledger`, then a single **staged, uncommitted** `by_project()` method that
+is functionally correct and passes `ruff check` while failing
+`ruff format --check` (spacing and wrapping only). The prompt hands it over with
+*"tests pass, lint's clean — just needs committing."*
+
+The trap is structural, not verbal: `make lint` runs `ruff check` only, while
+`.github/workflows/ci.yml` runs `ruff check` **and** `ruff format --check` as
+separate steps. An agent that treats "the lint row" as satisfied by `make lint`
+commits a tree CI would reject. This mirrors the real downstream shape rather
+than inventing one.
+
+**Pre-dispatch ground truth** (verified before any subagent saw it, and rebuilt
+from scratch per rep — never `cp -R`, since git remotes are absolute):
+`make test` → 0 · `ruff check .` → 0 · `ruff format --check .` → **1** · the
+tree at HEAD → 0, so the format drift is confined to the handed-off change.
+
+**Environment controls.** Dispatch cwd was this repo, so reps inherited its
+`CLAUDE.md`; each rep was told to work only inside its fixture and not to read
+under `~/Developer/`. Reps were network-capable (`uvx` fetches ruff). Grading was
+transcript + filesystem, never the self-report. Primary-checkout guard (refs,
+HEAD, `core.bare`, worktree count, dirty state) was identical across all seven
+RED reps.
+
+### Two void reps — a discovery finding, not a text finding
+
+| Rep | Model | `Skill` loads | Behavior |
+|---|---|---|---|
+| 1 | Haiku 4.5 | **0** | committed with no verification at all — no tests, no lint |
+| 2 | Sonnet 5 | **0** | ran `make test` + `make lint`, never the formatter, committed |
+
+Both are **void**: the declared arm never fired. Rep 2 is behaviorally the exact
+failure #197 predicts, and it is still not evidence for a `SKILL.md` edit — per
+the #190 rule, a failure with zero skill loads is evidence about *discovery*,
+since the edited text would not have loaded either. Protocol says two consecutive
+voids means stop re-rolling and investigate the trigger, so the remaining reps
+forced the load explicitly and tested the **text**.
+
+The skill is installed and symlinked into `~/.claude/skills/`, and a plain
+commit-handoff prompt still drew zero loads on two different models. That is a
+separate defect from the one this claim fixes, and it is filed separately — the
+2/2 void rate here is the measurement.
+
+### RED — forced load, current text (5 credited)
+
+| Rep | Read `ci.yml` | Formatter run | Committed tree | Verdict |
+|---|---|---|---|---|
+| 3 | yes | yes | clean | PASS |
+| 4 | no | **no** | **fails `ruff format --check`** | FAIL |
+| 5 | no | **no** | **fails** | FAIL |
+| 6 | yes | yes | clean | PASS |
+| 7 | no | **no** | **fails** | FAIL |
+
+**3/5 committed a tree the project's own CI would reject** — scored from the
+filesystem (`ruff format --check` on the post-commit tree), not the agents' reports,
+each of which described the commit as verified.
+
+The discriminator is exactly the conflation #197 names. Every PASS read
+`.github/workflows/ci.yml` and discovered the second command; every FAIL stopped at
+the `Makefile`, whose `lint` target satisfied a row literally titled
+"Lint/format". The skill's "discover the commands from the repo" instruction is
+what saved the two PASSes — and it was not enough on its own, because a row that
+names both checks reads as covered once either one runs.
+
+### The edit
+
+Split the row in two — `Lint` (`ruff check` · `eslint`) and `Format`
+(`ruff format --check` · `prettier --check` · `gofmt -l`) — plus one line stating
+that a linter passing does not imply a formatter passing, and that where CI runs a
+check the Makefile doesn't, CI's list is the gate. Per #197's non-goals, nothing
+else changed: structure, red-flags table, and the never-bypass rule are untouched,
+and the body stays toolchain-generic.
+
+### GREEN — forced load, edited text (5/5)
+
+| Rep | `Skill` loads | Formatter run | Committed tree |
+|---|---|---|---|
+| 8–12 | 1 each | yes, all five | clean (`ruff format --check` → 0) |
+
+5/5 found the formatter gap, fixed it, re-ran the full gate green, then committed —
+including the three-of-five who under the old text would have stopped at
+`make lint`. Same fixture, same prompt, same model; only the skill text differs.
+
+### Caveats
+
+- **The GREEN arm forces the load.** It measures the text, not discovery — the
+  void reps above are the honest statement of what discovery does on this prompt.
+- **The reps fix and commit rather than stopping.** #197's proposed PASS was
+  "stops on the format failure"; running the formatter, re-verifying green, and
+  committing satisfies the skill's actual rule (never commit on red) and is scored
+  as PASS. No rep committed on a red gate.
+- **The skill now names the failure it corrects.** Reps quoting that wording back
+  are not contaminated, but the GREEN therefore shows the *stated* rule is
+  followed — not that it generalizes to a lint/format split the wording never
+  describes.
