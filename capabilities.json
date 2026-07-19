@@ -1197,6 +1197,14 @@
     {
       "path": "bin/structural_graph/tests/test_schema.py",
       "reason": "unit tests for structural_graph.schema; test infrastructure, not a capability an agent invokes."
+    },
+    {
+      "path": "bin/structural_graph/tests/test_validation.py",
+      "reason": "unit tests for structural_graph.validation; test infrastructure, not a capability an agent invokes."
+    },
+    {
+      "path": "bin/structural_graph/validation.py",
+      "reason": "library module performing hand-rolled structural and vocabulary validation for the #227 interchange (shape, vocabulary membership, referential checks); consumed by the structural_graph package, not a standalone capability."
     }
   ],
   "external_upstreams": [
