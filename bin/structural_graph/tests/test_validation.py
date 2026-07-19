@@ -548,6 +548,94 @@ class TestRootShape(unittest.TestCase):
             self.assertNotIn("value", found)
 
 
+class TestProviderShape(unittest.TestCase):
+    """provider must be an object with string name/version before it reaches
+    document.py.
+
+    Task 5's review found provider was never shape-checked here -- only its
+    presence was required. `doc["provider"] = "not-a-dict"` and
+    `doc["provider"] = ["a", "b"]` both reached status="loaded" with the
+    malformed value passed straight into facts["provider"]. The JSON Schema
+    in schemas/structural-graph/v1/document.schema.json does constrain
+    provider to an object with required string name/version, so a silent
+    native validator here would let the schema reject documents the native
+    validator accepts -- the exact divergence invariant-coverage.json exists
+    to prevent. #227 Task 7 carried finding.
+    """
+
+    def test_valid_provider_has_no_finding(self):
+        doc = minimal_document()
+        self.assertEqual(validation.validate_document(doc), [])
+
+    def test_string_provider_reported(self):
+        doc = minimal_document()
+        doc["provider"] = "not-a-dict"
+        self.assertIn(
+            "E_SG_MALFORMED_FIELD_SHAPE", codes(validation.validate_document(doc))
+        )
+
+    def test_list_provider_reported(self):
+        doc = minimal_document()
+        doc["provider"] = ["a", "b"]
+        self.assertIn(
+            "E_SG_MALFORMED_FIELD_SHAPE", codes(validation.validate_document(doc))
+        )
+
+    def test_missing_name_reported(self):
+        doc = minimal_document()
+        doc["provider"] = {"version": "1.0.0"}
+        self.assertIn(
+            "E_SG_MALFORMED_FIELD_SHAPE", codes(validation.validate_document(doc))
+        )
+
+    def test_non_string_name_reported(self):
+        doc = minimal_document()
+        doc["provider"] = {"name": 42, "version": "1.0.0"}
+        self.assertIn(
+            "E_SG_MALFORMED_FIELD_SHAPE", codes(validation.validate_document(doc))
+        )
+
+    def test_missing_version_reported(self):
+        doc = minimal_document()
+        doc["provider"] = {"name": "reference-json"}
+        self.assertIn(
+            "E_SG_MALFORMED_FIELD_SHAPE", codes(validation.validate_document(doc))
+        )
+
+    def test_non_string_version_reported(self):
+        doc = minimal_document()
+        doc["provider"] = {"name": "reference-json", "version": 1}
+        self.assertIn(
+            "E_SG_MALFORMED_FIELD_SHAPE", codes(validation.validate_document(doc))
+        )
+
+    def test_missing_provider_is_missing_field_not_malformed_field_shape(self):
+        # Absence is already E_SG_MISSING_FIELD from the required-fields
+        # check; the type check must not also fire and double-report it.
+        doc = minimal_document()
+        del doc["provider"]
+        found_codes = codes(validation.validate_document(doc))
+        self.assertIn("E_SG_MISSING_FIELD", found_codes)
+        self.assertNotIn("E_SG_MALFORMED_FIELD_SHAPE", found_codes)
+
+    def test_provider_finding_names_the_field(self):
+        doc = minimal_document()
+        doc["provider"] = "nope"
+        found = validation.validate_document(doc)
+        shape_findings = [
+            f
+            for f in found
+            if f["code"] == "E_SG_MALFORMED_FIELD_SHAPE" and f["field"] == "provider"
+        ]
+        self.assertEqual([f["index"] for f in shape_findings], [None])
+
+    def test_findings_never_carry_a_value_key_for_provider(self):
+        doc = minimal_document()
+        doc["provider"] = ["a", "b"]
+        for found in validation.validate_document(doc):
+            self.assertNotIn("value", found)
+
+
 class TestMissingVsDuplicateSymbolId(unittest.TestCase):
     def test_two_symbols_missing_id_are_not_reported_as_duplicates(self):
         doc = minimal_document()

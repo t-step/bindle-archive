@@ -302,6 +302,44 @@ class TestMalformedRoot(unittest.TestCase):
         self.assertIsNone(result["facts"])
 
 
+class TestMalformedProvider(unittest.TestCase):
+    """A malformed provider must fail the document closed, not load.
+
+    Before the fix, validation.py only checked that "provider" was present,
+    never its shape: a string or list provider passed straight through into
+    facts["provider"] with status="loaded". #227 Task 7 carried finding
+    (Task 5's review).
+    """
+
+    def test_string_provider_is_malformed(self):
+        doc = minimal_document()
+        doc["provider"] = "not-a-dict"
+        result = document.load_object(doc, config())
+        self.assertEqual(result["status"], "malformed")
+        self.assertIn(
+            "E_SG_MALFORMED_FIELD_SHAPE", [f["code"] for f in result["findings"]]
+        )
+        self.assertIsNone(result["facts"])
+
+    def test_list_provider_is_malformed(self):
+        doc = minimal_document()
+        doc["provider"] = ["a", "b"]
+        result = document.load_object(doc, config())
+        self.assertEqual(result["status"], "malformed")
+        self.assertIn(
+            "E_SG_MALFORMED_FIELD_SHAPE", [f["code"] for f in result["findings"]]
+        )
+        self.assertIsNone(result["facts"])
+
+    def test_valid_provider_still_loads(self):
+        doc = minimal_document()
+        result = document.load_object(doc, config())
+        self.assertEqual(result["status"], "loaded")
+        self.assertEqual(
+            result["facts"]["provider"], {"name": "reference-json", "version": "1.0.0"}
+        )
+
+
 class TestFreshness(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.mkdtemp()

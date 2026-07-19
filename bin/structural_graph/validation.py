@@ -133,6 +133,42 @@ def _shape_findings(doc):
                 "root",
             )
         )
+    # provider used to be checked for presence only: a string or list value
+    # sailed straight through into facts["provider"] with status="loaded".
+    # The JSON Schema constrains provider to an object with required string
+    # name/version, so a silent native validator here would let the schema
+    # reject documents the native validator accepts -- #227 Task 7 carried
+    # finding (Task 5's review).
+    if "provider" in doc:
+        provider = doc["provider"]
+        if not isinstance(provider, dict):
+            out.append(
+                finding(
+                    "E_SG_MALFORMED_FIELD_SHAPE",
+                    "provider is not an object",
+                    None,
+                    "provider",
+                )
+            )
+        else:
+            if not isinstance(provider.get("name"), str):
+                out.append(
+                    finding(
+                        "E_SG_MALFORMED_FIELD_SHAPE",
+                        "provider.name is not a string",
+                        None,
+                        "provider.name",
+                    )
+                )
+            if not isinstance(provider.get("version"), str):
+                out.append(
+                    finding(
+                        "E_SG_MALFORMED_FIELD_SHAPE",
+                        "provider.version is not a string",
+                        None,
+                        "provider.version",
+                    )
+                )
     return out
 
 

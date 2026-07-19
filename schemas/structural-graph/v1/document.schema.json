@@ -1,0 +1,133 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://bindle/schemas/structural-graph/v1/document.schema.json",
+  "title": "Structural-graph interchange document",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "binding_id",
+    "source_commit",
+    "provider",
+    "capabilities",
+    "root",
+    "coverage",
+    "files",
+    "symbols",
+    "edges"
+  ],
+  "properties": {
+    "schema_version": { "const": 1 },
+    "binding_id": { "type": "string", "pattern": "^repository-binding:[0-9a-f]{32}$" },
+    "source_commit": { "type": "string", "pattern": "^[0-9a-f]{40}$" },
+    "root": { "type": "string" },
+    "provider": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "version"],
+      "properties": {
+        "name": { "type": "string" },
+        "version": { "type": "string" }
+      }
+    },
+    "capabilities": {
+      "type": "array",
+      "items": {
+        "enum": [
+          "contains",
+          "imports",
+          "depends_on",
+          "calls",
+          "tests",
+          "has_export_visibility"
+        ]
+      }
+    },
+    "coverage": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["path_prefix", "capability", "status"],
+        "properties": {
+          "path_prefix": { "type": "string" },
+          "capability": {
+            "enum": [
+              "contains",
+              "imports",
+              "depends_on",
+              "calls",
+              "tests",
+              "has_export_visibility"
+            ]
+          },
+          "status": {
+            "enum": ["observed", "unsupported", "partial_parse_failure"]
+          }
+        }
+      }
+    },
+    "files": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["path"],
+        "properties": { "path": { "type": "string" } }
+      }
+    },
+    "symbols": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "name", "kind", "path"],
+        "properties": {
+          "id": { "type": "string" },
+          "name": { "type": "string" },
+          "path": { "type": "string" },
+          "kind": {
+            "enum": [
+              "module",
+              "class",
+              "function",
+              "method",
+              "field",
+              "constant",
+              "type_alias",
+              "interface",
+              "other"
+            ]
+          },
+          "is_exported": { "type": "boolean" }
+        }
+      }
+    },
+    "edges": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["type", "source", "target"],
+        "properties": {
+          "type": { "enum": ["contains", "imports", "depends_on", "calls", "tests"] },
+          "source": { "type": "string" },
+          "target": { "type": "string" }
+        }
+      }
+    },
+    "diagnostics": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["message"],
+        "properties": { "message": { "type": "string" } }
+      }
+    },
+    "optional_provider_observations": {
+      "type": "object",
+      "description": "Provider conclusions. Capability-gated hints, never authoritative, never anchors."
+    }
+  }
+}

@@ -1223,6 +1223,10 @@
       "reason": "unit tests for structural_graph.schema; test infrastructure, not a capability an agent invokes."
     },
     {
+      "path": "bin/structural_graph/tests/test_schema_conformance.py",
+      "reason": "conformance tests binding structural_graph.validation's hand-rolled findings to the published JSON Schema and invariant-coverage classification (#227); test infrastructure, not a capability an agent invokes."
+    },
+    {
       "path": "bin/structural_graph/tests/test_validation.py",
       "reason": "unit tests for structural_graph.validation; test infrastructure, not a capability an agent invokes."
     },
