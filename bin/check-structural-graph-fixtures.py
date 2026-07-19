@@ -66,6 +66,22 @@ def assert_set_load(fixture, base, config):
             "file count %d, expected %d"
             % (len(result["facts"]["files"]), expected_files)
         )
+    expected_file_keys = fixture.get("expect_file_keys")
+    if expected_file_keys is not None:
+        actual_file_keys = sorted(result["facts"]["files"].keys())
+        if actual_file_keys != sorted(expected_file_keys):
+            problems.append(
+                "file keys %s, expected %s"
+                % (actual_file_keys, sorted(expected_file_keys))
+            )
+    expected_symbol_keys = fixture.get("expect_symbol_keys")
+    if expected_symbol_keys is not None:
+        actual_symbol_keys = sorted(result["facts"]["symbols"].keys())
+        if actual_symbol_keys != sorted(expected_symbol_keys):
+            problems.append(
+                "symbol keys %s, expected %s"
+                % (actual_symbol_keys, sorted(expected_symbol_keys))
+            )
     return problems
 
 

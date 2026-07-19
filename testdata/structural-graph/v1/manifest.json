@@ -89,6 +89,18 @@
       "expect_codes": ["E_SG_UNKNOWN_FIELD"]
     },
     {
+      "id": "23",
+      "path": "malformed/23-multi-finding.json",
+      "assertion": "load_status",
+      "expect_status": "malformed",
+      "expect_freshness": "freshness_unknown",
+      "expect_codes": [
+        "E_SG_DANGLING_EDGE_ENDPOINT",
+        "E_SG_UNKNOWN_FIELD",
+        "E_SG_UNKNOWN_SYMBOL_KIND"
+      ]
+    },
+    {
       "id": "40",
       "path": "bindings/40-foreign-binding.json",
       "assertion": "load_status",
@@ -115,7 +127,15 @@
         "repository-binding:00000000000000000000000000000001": "loaded",
         "repository-binding:00000000000000000000000000000002": "loaded"
       },
-      "expect_file_count": 2
+      "expect_file_count": 2,
+      "expect_file_keys": [
+        "repository-binding:00000000000000000000000000000001::src/app.py",
+        "repository-binding:00000000000000000000000000000002::src/app.py"
+      ],
+      "expect_symbol_keys": [
+        "repository-binding:00000000000000000000000000000001::sym-1",
+        "repository-binding:00000000000000000000000000000002::sym-1"
+      ]
     },
     {
       "id": "61",
