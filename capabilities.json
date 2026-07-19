@@ -1179,12 +1179,20 @@
       "reason": "package marker for the #227 structural-graph interchange library; consumed by the projection engine, not a standalone capability."
     },
     {
+      "path": "bin/structural_graph/redaction.py",
+      "reason": "library module performing path normalization and secret redaction for the #227 interchange reader; consumed by the structural_graph package, not a standalone capability."
+    },
+    {
       "path": "bin/structural_graph/schema.py",
       "reason": "library module holding the frozen interchange vocabularies and anchor-field registry (#227); consumed by the structural_graph package, not a standalone capability."
     },
     {
       "path": "bin/structural_graph/tests/__init__.py",
       "reason": "test package marker for structural_graph; test infrastructure, not a capability an agent invokes."
+    },
+    {
+      "path": "bin/structural_graph/tests/test_redaction.py",
+      "reason": "unit tests for structural_graph.redaction; test infrastructure, not a capability an agent invokes."
     },
     {
       "path": "bin/structural_graph/tests/test_schema.py",
