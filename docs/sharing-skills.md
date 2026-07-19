@@ -84,9 +84,12 @@ into your kit:
    it), note its origin in the file and treat it as a fork you now maintain.
    This is the last resort, not the default.
 
-For Codex, Phase 1 has no Bindle-defined skill/command/agent install format.
-Share direct `AGENTS.md` guidance or docs until a real Codex-compatible format
-is intentionally designed.
+For Codex, a skill can be shared only if it is Codex-eligible — marked
+`provider.codex: "installed"` in `capabilities.json`, which installs
+`skills/<name>/SKILL.md` to an explicit `--agents-skills-home` target. Anything
+not marked eligible has no Codex install format: share it as direct `AGENTS.md`
+guidance or docs instead. Bindle defines no Codex command or agent format at
+all.
 
 ## Publishing from your personal kit
 

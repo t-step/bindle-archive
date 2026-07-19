@@ -96,13 +96,17 @@ Per-surface, the five distinctions issue #56 requires:
    the open agent skills standard ([agentskills.io](https://agentskills.io)) —
    but not verified byte-compatible; Codex also supports an optional
    `agents/openai.yaml` metadata file Claude does not use.
-3. Bindle installs/supports today: no. `bin/install.sh --provider codex`
-   installs only `global/AGENTS.md`.
-4. Adapter required: yes — Codex discovers skills at `$CWD/.agents/skills`,
-   `$REPO_ROOT/.agents/skills`, `$HOME/.agents/skills`, `/etc/codex/skills`
-   (admin), or bundled system skills — never `~/.claude/skills` or a bare
-   `skills/` repo dir. An install target would need to place (copy or
-   symlink) compatible skills under one of those paths.
+3. Bindle installs/supports today: partially. `bin/install.sh --provider
+   codex` installs `global/AGENTS.md` plus every skill marked
+   `provider.codex: "installed"` in `capabilities.json` — eligibility is
+   per-skill and opt-in, not a blanket claim that Claude skills run on Codex.
+4. Adapter required: no longer, for the install path — Codex discovers skills
+   at `$CWD/.agents/skills`, `$REPO_ROOT/.agents/skills`,
+   `$HOME/.agents/skills`, `/etc/codex/skills` (admin), or bundled system
+   skills — never `~/.claude/skills` or a bare `skills/` repo dir, so the
+   installer symlinks eligible skills under the explicit
+   `--agents-skills-home` target instead. No format conversion happens: a
+   skill is eligible only because it was audited as portable as written.
 5. Tested: partially — the issue #61 audit
    ([skill-portability-audit.md](skill-portability-audit.md)) ran a
    read-only Codex discovery probe on 2026-07-11: two Bindle skills
@@ -223,19 +227,25 @@ Bindle supports Codex where the mapping is real:
 - repo-local `AGENTS.md`;
 - global/user `AGENTS.md` only when an explicit target directory is
   configured;
+- Codex-eligible skills — those marked `provider.codex: "installed"` in
+  `capabilities.json` — only when an explicit Agent Skills target is
+  configured;
 - provider guidance expressed as direct instructions;
 - provider-neutral workflow docs and scripts, followed manually — see
   [using-bindle-with-codex.md](using-bindle-with-codex.md).
 
-Bindle does not assume Claude skills, slash commands, or agents are Codex
-features, and does not introduce a Codex plugin system or claim support for
-undocumented Codex install paths.
+Bindle does not assume Claude slash commands or agents are Codex features,
+does not treat skill eligibility as automatic (each one is audited and marked
+individually), and does not introduce a Codex plugin system or claim support
+for undocumented Codex install paths.
 
-When installing Codex global guidance, the installer requires an explicit
-target such as `--codex-home <dir>`. On this machine, lowercase `~/.codex` is
-the local Codex configuration convention, so examples may use `--codex-home
-~/.codex`. That is an explicit target directory, not a claim that Codex has a
-standard managed global `AGENTS.md` path.
+Both Codex targets are explicit. `--codex-home <dir>` is always required for a
+Codex install; `--agents-skills-home <dir>` is required whenever any
+Codex-eligible skill exists, and the installer exits 2 without writing if it
+is missing. On this machine, lowercase `~/.codex` is the local Codex
+configuration convention and `~/.agents/skills` the Agent Skills convention,
+so examples use them — those are explicit target directories, not a claim that
+Codex has standard managed paths Bindle may assume.
 
 ## Shared concepts
 
@@ -259,8 +269,8 @@ The installer supports:
 
 ```bash
 bin/install.sh --provider claude
-bin/install.sh --provider codex --codex-home ~/.codex
-bin/install.sh --provider all --codex-home ~/.codex
+bin/install.sh --provider codex --codex-home ~/.codex --agents-skills-home ~/.agents/skills
+bin/install.sh --provider all --codex-home ~/.codex --agents-skills-home ~/.agents/skills
 bin/install.sh --bin-dir ~/.local/bin
 ```
 
@@ -277,10 +287,14 @@ Claude:
 
 Codex:
 
-- install only `global/AGENTS.md` as `<codex-home>/AGENTS.md`;
-- require `--codex-home <dir>` for `--provider codex` and `--provider all`;
-- document that `--codex-home` is an explicit target directory;
-- do not install Claude-only `skills/`, `agents/`, or `commands/`.
+- install `global/AGENTS.md` as `<codex-home>/AGENTS.md`;
+- install each skill marked `provider.codex: "installed"` as
+  `<agents-skills-home>/<name>`;
+- require `--codex-home <dir>` for `--provider codex` and `--provider all`,
+  and `--agents-skills-home <dir>` whenever a Codex-eligible skill exists;
+- document that both are explicit target directories;
+- do not install Claude-only `agents/` or `commands/`, or any skill not
+  marked eligible.
 
 Executable:
 

@@ -1,8 +1,10 @@
 <!--
 Global personal instructions for Codex-compatible AGENTS.md surfaces.
-`bin/install.sh --provider codex --codex-home <dir>` symlinks this file to
-`<dir>/AGENTS.md`. The target directory is explicit; Bindle does not claim an
-undocumented Codex global install standard.
+`bin/install.sh --provider codex --codex-home <dir> --agents-skills-home <dir2>`
+symlinks this file to `<dir>/AGENTS.md`, and any Codex-eligible skill into
+`<dir2>/`. Both targets are explicit; Bindle does not claim an undocumented
+Codex install standard. `--agents-skills-home` is required whenever a
+Codex-eligible skill exists, so omitting it fails the install outright.
 
 Keep every rule here either (a) universally safe, or (b) gated on an observable
 repo signal. Bindle's own dev guidance lives in the repo-root AGENTS.md, which

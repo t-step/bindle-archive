@@ -9,8 +9,10 @@ read this file and the [README](README.md) before adding or changing anything.
 See the [README](README.md) for what Bindle is and how `bin/install.sh`
 installs provider-specific surfaces. Claude Code remains the mature path: each
 `skills/<name>/SKILL.md`, `agents/<name>.md`, and `commands/<name>.md` becomes a
-Claude user-level capability under `~/.claude/`. Codex Phase 1 support is direct
-`AGENTS.md` guidance installed only to an explicit `--codex-home` target.
+Claude user-level capability under `~/.claude/`. Codex support is narrower and
+fully explicit: `global/AGENTS.md` installs to a `--codex-home` target, and
+skills marked `provider.codex: "installed"` in `capabilities.json` install to
+an `--agents-skills-home` target.
 
 ## Branch & commit discipline
 
