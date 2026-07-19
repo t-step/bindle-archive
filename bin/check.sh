@@ -215,6 +215,13 @@ done
 [ "$fail" -eq 0 ] && ok "${fm_checked} item(s) have valid frontmatter"
 
 # --- 3. formatting ---------------------------------------------------------
+# DELIBERATE ASYMMETRY (#279): this flags trailing whitespace on every line,
+# while pre-commit's `trailing-whitespace` hook runs with
+# --markdown-linebreak-ext=md and permits it at the end of a Markdown line
+# (intentional hard breaks). So `make check` is STRICTER than the commit hook
+# and CI on .md. Left as-is rather than aligned: local-stricter hides no defect
+# from a contributor who runs the gates in order, and the stricter rule is the
+# one worth keeping visible. Do not "fix" the difference by loosening this.
 if ! $content_only; then
   echo "formatting:"
   fmt_problems=0
@@ -440,6 +447,16 @@ done < <(git ls-files 'skills/*/SKILL.md' 'commands/*.md' 'agents/*.md')
 # Personal-info guard (relay emails, home paths, transcripts, denylist terms).
 # Skipped in --content-only: the dedicated pre-commit hook runs it on staged
 # files at commit time; here it sweeps every tracked file.
+#
+# Who runs which half (#279) — the two halves reach different gates:
+#   --self-test  also runs from bin/test-check-private-info.sh, which
+#                `bindle-test-suites` discovers, so it reaches the commit hook
+#                and CI. That suite and this call site invoke the SAME
+#                entrypoint, so they cannot silently diverge; the suite adds a
+#                coverage floor and mutation cases this call site can't express.
+#   full sweep   stays here and in the `bindle-private-info` hook. Deliberately
+#                NOT in the suite: a tree sweep per suite run would execute it
+#                twice at commit time for no added coverage.
 if ! $content_only; then
   echo "private info:"
   if bin/check-private-info.sh --self-test >/dev/null 2>&1 &&
