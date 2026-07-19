@@ -11,6 +11,17 @@ exactly one entry at root per advertised capability, plus zero or more
 strictly-nested entries with distinct prefixes. The root entry covers
 everything not otherwise claimed, so a gap is impossible by construction and
 a repeated prefix within one capability is the overlap case.
+
+tiling_findings and status_for run downstream of validate_document, which
+guarantees entries is a list of dicts with string path_prefix values and
+capabilities is a list of strings -- by the time a document reaches this
+module, malformed *document content* has already been converted to a
+finding rather than left to raise here. That guarantee covers values, not
+argument shapes: a caller that hands either function a malformed argument
+directly (capabilities as an int, entries as a string) is a programming
+mistake, not provider input, and the package already has precedent for
+letting that raise -- see context_graph.evidence.MalformedIdentityError on
+a bad project_id.
 """
 
 from structural_graph import validation
@@ -21,11 +32,11 @@ def _within(path, prefix):
 
     Non-string is not an error here -- that finding belongs to
     validation.py alone -- it is simply never a match. Both operands are
-    checked: prefix flows in from a coverage entry, path from a caller, and
-    either could be malformed independently. Guarding here is what keeps
-    this function's own contract ("never raise") true no matter what a
-    caller -- including a test calling it directly through tiling_findings
-    or status_for -- hands in.
+    checked: prefix flows in from a coverage entry (document content), path
+    from a caller. Guarding here is what keeps this function's own contract
+    ("never raise on a malformed value") true regardless of which operand
+    carries the malformed value, including when a test calls it directly
+    through tiling_findings or status_for.
     """
     if not isinstance(path, str) or not isinstance(prefix, str):
         return False
@@ -50,12 +61,13 @@ def _capability_sort_key(capability):
 def _sorted_unique_capabilities(capabilities):
     """Dedupe and sort a capabilities list without hashing or comparing.
 
-    tiling_findings is public and exercised directly by its own tests, so
-    it must not raise TypeError on a capabilities list containing an
-    unhashable element (list, dict) -- `set(...)` would raise building the
-    set -- or mutually-incomparable elements -- plain `sorted()` would raise
-    comparing them. Dedup by an equality scan instead of hashing (these
-    lists are small) and sort by the type-qualified key above.
+    capabilities is a document-derived list, so an individual element can be
+    an unhashable value (list, dict) or mutually incomparable with the
+    others even while the list itself is well-formed -- `set(...)` would
+    raise building the set, and plain `sorted()` would raise comparing them.
+    Dedup by an equality scan instead of hashing (these lists are small) and
+    sort by the type-qualified key above, so tiling_findings stays raise-free
+    on that document content even when exercised directly by its own tests.
     """
     unique = []
     for capability in capabilities or []:
@@ -65,7 +77,15 @@ def _sorted_unique_capabilities(capabilities):
 
 
 def tiling_findings(root, capabilities, entries):
-    """Return findings for coverage that fails to tile root."""
+    """Return findings for coverage that fails to tile root.
+
+    Assumes entries is a list of dicts and capabilities is a list of
+    strings, per validate_document's guarantee (see module docstring). A
+    malformed *value* inside that shape -- a None path_prefix, a capability
+    that's a list instead of a string -- is document content and cannot
+    raise here. Passing a malformed argument itself (capabilities as an
+    int, entries as a string) is caller error and is not guarded against.
+    """
     out = []
     entries = entries or []
     for capability in _sorted_unique_capabilities(capabilities):
@@ -83,10 +103,11 @@ def tiling_findings(root, capabilities, entries):
                     "coverage[].capability",
                 )
             )
-        # A list-based membership scan, not a set: path_prefix can be an
-        # unhashable value (list, dict) on a malformed entry, and this
-        # function's contract is to never raise regardless -- validation.py
-        # owns reporting the shape problem itself.
+        # A list-based membership scan, not a set: path_prefix is document
+        # content and can be an unhashable value (list, dict) on a malformed
+        # entry -- a set would raise building itself on that value. This
+        # function's contract is to never raise on that kind of value;
+        # validation.py owns reporting the shape problem itself.
         seen = []
         for index, entry in enumerate(entries):
             if entry.get("capability") != capability:
@@ -121,6 +142,11 @@ def status_for(entries, capability, path):
     Resolves by longest matching prefix. Returns None when the capability has
     no coverage at all -- the caller must treat that as unknown, never as an
     observed zero.
+
+    Like tiling_findings, this assumes entries is a list of dicts per
+    validate_document's guarantee (see module docstring): a malformed value
+    inside that shape is document content and cannot raise, but a malformed
+    entries argument itself is caller error.
     """
     best_prefix = None
     best_status = None

@@ -109,13 +109,20 @@ class TestTilingFindings(unittest.TestCase):
         self.assertEqual([f["index"] for f in overlaps], [2, 3])
 
 
-class TestDoesNotRaiseOnMalformedEntries(unittest.TestCase):
+class TestDoesNotRaiseOnMalformedDocumentContent(unittest.TestCase):
     """#227 review finding: coverage.py is called directly by its own tests,
 
-    bypassing validate_document, so its standalone contract is "never
-    raise" regardless of what a malformed entry contains. validation.py
-    owns the finding for a non-string path_prefix (see test_validation.py);
-    this module only has to survive it.
+    bypassing validate_document, so these entries and capabilities arrive
+    without the shape guarantee validate_document would normally have
+    already enforced. The contract under test is narrower than "never
+    raise on anything": these functions must not raise on a malformed
+    *value* inside an otherwise well-formed entries list or capabilities
+    list -- a None path_prefix, a capability that's a list instead of a
+    string. validation.py owns the finding for a non-string path_prefix
+    (see test_validation.py); this module only has to survive it. A
+    malformed *argument* (entries or capabilities of the wrong type
+    outright) is caller error and is out of scope here -- see the
+    contract note in coverage.py's module docstring.
     """
 
     def test_status_for_does_not_raise_on_none_path_prefix(self):
