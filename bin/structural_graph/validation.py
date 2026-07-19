@@ -59,6 +59,41 @@ def finding(code, message, index, field):
     return {"code": code, "message": message, "index": index, "field": field}
 
 
+# The whole rest of this module is one rule, applied ~ten times: some value
+# must be a string, or some value must be a list, and if it isn't, that's an
+# E_SG_MALFORMED_FIELD_SHAPE finding whose message never repeats the type
+# name twice (once for the check, once for the wording). `_check_string` and
+# `_check_list` are that rule in code: each appends the one finding to `out`
+# and reports back whether the value was safe to use, so a call site that
+# needs to skip further work on a malformed value can do
+# `if not _check_string(...): continue`, and one that doesn't need to skip
+# can just call it and move on. `description` is prose ("coverage
+# path_prefix"); `field` is the finding's machine-readable field path
+# ("coverage[].path_prefix") -- the two differ often enough (list elements,
+# loop variables) that collapsing them into one parameter would corrupt one
+# or the other at half the call sites.
+def _shape_finding(description, shape, index, field):
+    return finding(
+        "E_SG_MALFORMED_FIELD_SHAPE", description + " is not a " + shape, index, field
+    )
+
+
+def _check_string(out, value, description, index, field):
+    """Append a finding and return False unless value is a string."""
+    if isinstance(value, str):
+        return True
+    out.append(_shape_finding(description, "string", index, field))
+    return False
+
+
+def _check_list(out, value, description, index, field):
+    """Append a finding and return False unless value is a list."""
+    if isinstance(value, list):
+        return True
+    out.append(_shape_finding(description, "list", index, field))
+    return False
+
+
 def version_findings(doc):
     """Return version-gate findings only. Public on purpose.
 
@@ -122,15 +157,8 @@ def _shape_findings(doc):
     # test would collapse the two, and downstream code that then coerced
     # with `or ""` would hand a malformed value to the
     # E_SG_UNNORMALIZABLE_ANCHOR guard disguised as the legal one.
-    if "root" in doc and not isinstance(doc["root"], str):
-        out.append(
-            finding(
-                "E_SG_MALFORMED_FIELD_SHAPE",
-                "root is not a string",
-                None,
-                "root",
-            )
-        )
+    if "root" in doc:
+        _check_string(out, doc["root"], "root", None, "root")
     # The JSON Schema constrains provider to an object with required string
     # name and version. These checks mirror it, so the native validator
     # never accepts a provider the schema would reject.
@@ -146,24 +174,10 @@ def _shape_findings(doc):
                 )
             )
         else:
-            if not isinstance(provider.get("name"), str):
-                out.append(
-                    finding(
-                        "E_SG_MALFORMED_FIELD_SHAPE",
-                        "provider.name is not a string",
-                        None,
-                        "provider.name",
-                    )
-                )
-            if not isinstance(provider.get("version"), str):
-                out.append(
-                    finding(
-                        "E_SG_MALFORMED_FIELD_SHAPE",
-                        "provider.version is not a string",
-                        None,
-                        "provider.version",
-                    )
-                )
+            _check_string(out, provider.get("name"), "provider.name", None, "provider.name")
+            _check_string(
+                out, provider.get("version"), "provider.version", None, "provider.version"
+            )
     return out
 
 
@@ -195,30 +209,13 @@ def _field_shape_findings(doc):
     capabilities = doc.get("capabilities")
     if capabilities is None:
         valid["capabilities"] = []
-    elif not isinstance(capabilities, list):
-        out.append(
-            finding(
-                "E_SG_MALFORMED_FIELD_SHAPE",
-                "capabilities is not a list",
-                None,
-                "capabilities",
-            )
-        )
+    elif not _check_list(out, capabilities, "capabilities", None, "capabilities"):
         valid["capabilities"] = []
     else:
         items = []
         for index, item in enumerate(capabilities):
-            if isinstance(item, str):
+            if _check_string(out, item, "capabilities element", index, "capabilities[]"):
                 items.append((index, item))
-            else:
-                out.append(
-                    finding(
-                        "E_SG_MALFORMED_FIELD_SHAPE",
-                        "capabilities element is not a string",
-                        index,
-                        "capabilities[]",
-                    )
-                )
         valid["capabilities"] = items
 
     for field in _DICT_ELEMENT_FIELDS:
@@ -226,15 +223,7 @@ def _field_shape_findings(doc):
         if value is None:
             valid[field] = []
             continue
-        if not isinstance(value, list):
-            out.append(
-                finding(
-                    "E_SG_MALFORMED_FIELD_SHAPE",
-                    field + " is not a list",
-                    None,
-                    field,
-                )
-            )
+        if not _check_list(out, value, field, None, field):
             valid[field] = []
             continue
         items = []
@@ -294,15 +283,8 @@ def _vocabulary_findings(valid):
                     "symbols[].name",
                 )
             )
-        elif not isinstance(name, str):
-            out.append(
-                finding(
-                    "E_SG_MALFORMED_FIELD_SHAPE",
-                    "symbol name is not a string",
-                    index,
-                    "symbols[].name",
-                )
-            )
+        else:
+            _check_string(out, name, "symbol name", index, "symbols[].name")
     for index, edge in valid["edges"]:
         if edge.get("type") not in schema.EDGE_TYPES:
             out.append(
@@ -330,38 +312,27 @@ def _vocabulary_findings(valid):
         # of which raise TypeError/AttributeError on a non-string. Report
         # the shape problem here so it never reaches that module unguarded.
         path_prefix = entry.get("path_prefix")
-        if not isinstance(path_prefix, str):
-            out.append(
-                finding(
-                    "E_SG_MALFORMED_FIELD_SHAPE",
-                    "coverage path_prefix is not a string",
-                    index,
-                    "coverage[].path_prefix",
-                )
-            )
+        _check_string(
+            out, path_prefix, "coverage path_prefix", index, "coverage[].path_prefix"
+        )
         capability = entry.get("capability")
         # A capability that isn't a string can't be tested against `declared`
         # (a set): membership on a list/dict operand raises TypeError before
         # any comparison happens. Report the shape problem and skip the
         # membership check rather than let it crash.
-        if not isinstance(capability, str):
-            out.append(
-                finding(
-                    "E_SG_MALFORMED_FIELD_SHAPE",
-                    "coverage capability is not a string",
-                    index,
-                    "coverage[].capability",
+        is_string = _check_string(
+            out, capability, "coverage capability", index, "coverage[].capability"
+        )
+        if is_string:
+            if capability not in declared:
+                out.append(
+                    finding(
+                        "E_SG_COVERAGE_UNDECLARED_CAPABILITY",
+                        "coverage declares a capability the provider did not advertise",
+                        index,
+                        "coverage[].capability",
+                    )
                 )
-            )
-        elif capability not in declared:
-            out.append(
-                finding(
-                    "E_SG_COVERAGE_UNDECLARED_CAPABILITY",
-                    "coverage declares a capability the provider did not advertise",
-                    index,
-                    "coverage[].capability",
-                )
-            )
     return out
 
 
@@ -389,19 +360,11 @@ def _referential_findings(valid):
                 )
             )
             continue
-        if not isinstance(symbol_id, str):
-            # A non-string id (list, dict, int, ...) can't be hashed into
-            # `ids` or tested with `in` without risking TypeError. Report it
-            # and leave it out of `ids` -- same treatment as a missing id, so
-            # an edge pointing at it is correctly flagged dangling below.
-            out.append(
-                finding(
-                    "E_SG_MALFORMED_FIELD_SHAPE",
-                    "symbol id is not a string",
-                    index,
-                    "symbols[].id",
-                )
-            )
+        # A non-string id (list, dict, int, ...) can't be hashed into `ids`
+        # or tested with `in` without risking TypeError. Report it and leave
+        # it out of `ids` -- same treatment as a missing id, so an edge
+        # pointing at it is correctly flagged dangling below.
+        if not _check_string(out, symbol_id, "symbol id", index, "symbols[].id"):
             continue
         if symbol_id in ids:
             out.append(
@@ -421,15 +384,9 @@ def _referential_findings(valid):
             # tested with `in ids` without risking TypeError. `None` still
             # falls through to the dangling check below: a missing endpoint
             # legitimately names no symbol.
-            if value is not None and not isinstance(value, str):
-                out.append(
-                    finding(
-                        "E_SG_MALFORMED_FIELD_SHAPE",
-                        "edge " + field + " is not a string",
-                        index,
-                        "edges[]." + field,
-                    )
-                )
+            if value is not None and not _check_string(
+                out, value, "edge " + field, index, "edges[]." + field
+            ):
                 continue
             if value not in ids:
                 out.append(
