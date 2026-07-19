@@ -16,32 +16,11 @@ help:
 check:
 	bin/check.sh
 
+# Suites are discovered, not listed: any tracked bin/test-*.sh runs. Adding a
+# suite to this list by hand is what let eleven of them drift out of the commit
+# gate (#256, #257).
 test:
-	bin/test-install.sh
-	bin/test-check.sh
-	bin/test-check-frontmatter.sh
-	bin/test-check-inventory.sh
-	bin/test-manifest-lib.sh
-	bin/test-doctor.sh
-	bin/test-notes-home.sh
-	bin/test-nested-notes-guard.sh
-	bin/test-session-context.sh
-	bin/test-session-hooks.sh
-	bin/test-install-session-hooks.sh
-	bin/test-package-release-integrity.sh
-	bin/test-release-evidence.sh
-	bin/test-session-end-land.sh
-	bin/test-objective-worktree.sh
-	bin/test-release-strategy.sh
-	bin/test-release-please-sync.sh
-	bin/test-release-publish.sh
-	bin/test-map-entry-id.sh
-	bin/test-bindle-cli.sh
-	bin/test-context-graph-schema.sh
-	bin/test-context-evidence.sh
-	bin/test-context-graph-cli.sh
-	bin/test-context-graph-skill.sh
-	bin/test-structural-graph.sh
+	bin/run-test-suites.sh
 
 install:
 	bin/install.sh
