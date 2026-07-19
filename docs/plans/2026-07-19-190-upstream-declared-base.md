@@ -1,5 +1,27 @@
 # Upstream-Declared Base Branch (#190) Implementation Plan
 
+> ## ⚠️ SUPERSEDED — do not execute Tasks 3–7
+>
+> **Outcome (2026-07-19): the plan was executed through Task 2 and stopped
+> there. RED was never established, so no skill edit shipped.** Tasks 3 and 4
+> were drafted and then reverted; Tasks 5–7 were not run as written.
+>
+> Across 15 reps in three arms, the premise this plan was built on did not
+> reproduce: with `fork-pr-flow` loaded, 10/10 reps derived the upstream's
+> declared base correctly *without* the fix — including 5/5 against a fixture
+> that buries the declaration in `docs/branching.md`, exactly where the
+> motivating repo puts it. Full evidence in
+> `skills/fork-pr-flow/PRESSURE-TESTS.md`, claim "#190".
+>
+> The rep campaign did surface a real defect, filed separately: the skill has a
+> **0/5 trigger rate on Haiku 4.5** in a textbook fork-PR scenario. That is a
+> discovery problem no body edit reaches.
+>
+> This document is kept as the record of a control that refused to fail.
+> Re-deriving that costs another three rep rounds. Tasks 1 and 2 (fixture
+> construction and the RED method) remain reusable; **Task 1's script is
+> superseded by the amendment below.**
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Make `fork-pr-flow` derive the base branch and PR target from the upstream repository's declared guidance instead of hardcoding `main`.
@@ -32,6 +54,26 @@
 ### Task 1: Build the three-fixture set
 
 Three fixtures with **identical branch topology**, differing only in declared prose. If topology varies, the reps score branch-sniffing rather than guidance-reading, which is the whole point of the arm.
+
+> **Amendment (2026-07-19, after the first RED run).** The fixture below puts the
+> declaration in a bold first line of `CONTRIBUTING.md`. Run against it, RED did
+> **not** fail: 4/5 reps read `CONTRIBUTING.md` unprompted and targeted
+> `development` correctly *without* the fix (arm valid — 5/5 loaded
+> `fork-pr-flow`, 0 void). Per superpowers:writing-skills an over-clean control
+> proves nothing, so the fixture was rebuilt to be faithful rather than easy:
+>
+> - `CONTRIBUTING.md` is now **identical across all three fixtures** and names no
+>   base branch at all. The declaration moved to `docs/branching.md` — the shape
+>   the motivating repo actually has, and the case the detection step exists for.
+> - **Isolation defect fixed.** `cp -R` of a built fixture preserves *absolute*
+>   remote URLs, so all five rep copies shared one `origin.git`/`upstream.git`.
+>   Each rep fixture is now built from scratch with `remote set-url`, per the
+>   protocol's own-fixture-per-rep rule. The first run's tally still stands (each
+>   rep read its own working tree), but the run violated the rule.
+>
+> `build-fixture2.sh` supersedes the script below. Keep the original recorded:
+> "the easy fixture does not reproduce the failure" is itself a finding, and
+> re-deriving it later would cost another rep round.
 
 **Files:**
 - Create: `$SCRATCH/f-alpha/`, `$SCRATCH/f-bravo/`, `$SCRATCH/f-charlie/` (scratchpad only — never in the repo)
