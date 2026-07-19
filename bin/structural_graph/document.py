@@ -62,6 +62,26 @@ def _find_binding(cfg, binding_id):
     return None
 
 
+def _anchor_values(doc, field):
+    """Yield (index, value) for every value doc holds at an anchor field path.
+
+    field is one of schema.ANCHOR_FIELDS: either a top-level scalar
+    ("root", index None) or a per-element scalar within a list-valued
+    collection ("<collection>[].<key>", index is the element's position,
+    document order). This is the single place a dotted anchor path is
+    turned into the values it names -- the secret scan below drives off
+    schema.ANCHOR_FIELDS itself rather than a hand-listed copy of it, so a
+    field added to the registry is walked here by construction; there is
+    nowhere else it could still go unscanned.
+    """
+    if "[]." not in field:
+        yield None, doc.get(field)
+        return
+    collection, key = field.split("[].", 1)
+    for index, item in enumerate(doc.get(collection) or []):
+        yield index, item.get(key)
+
+
 def _anchor_findings(doc):
     """Findings for anchors that cannot be normalized within the root.
 
@@ -120,15 +140,14 @@ def _anchor_findings(doc):
     # its *content*, so a relative path smuggling a secret -- e.g.
     # "src/ghp_.../app.py" -- would normalize cleanly and land in facts
     # untouched without this scan.
-    for collection, key, field in (
-        ("symbols", "id", "symbols[].id"),
-        ("symbols", "name", "symbols[].name"),
-        ("files", "path", "files[].path"),
-        ("symbols", "path", "symbols[].path"),
-        ("coverage", "path_prefix", "coverage[].path_prefix"),
-    ):
-        for index, item in enumerate(doc.get(collection) or []):
-            scrubbed, names = redaction.redact(item.get(key))
+    #
+    # Driven by schema.ANCHOR_FIELDS itself (#227 structural fix): every
+    # anchor the registry names -- root included -- gets scanned by
+    # construction, so the registry and the scan cannot drift apart the
+    # way the previous hand-listed field tuple did four times running.
+    for field in schema.ANCHOR_FIELDS:
+        for index, value in _anchor_values(doc, field):
+            scrubbed, names = redaction.redact(value)
             if names:
                 out.append(
                     validation.finding(
@@ -136,18 +155,6 @@ def _anchor_findings(doc):
                         "anchor matches a secret pattern and cannot be redacted",
                         index,
                         field,
-                    )
-                )
-    for index, edge in enumerate(doc.get("edges") or []):
-        for key in ("source", "target"):
-            scrubbed, names = redaction.redact(edge.get(key))
-            if names:
-                out.append(
-                    validation.finding(
-                        "E_SG_UNNORMALIZABLE_ANCHOR",
-                        "anchor matches a secret pattern and cannot be redacted",
-                        index,
-                        "edges[]." + key,
                     )
                 )
     return out

@@ -11,6 +11,7 @@ import unittest
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", ".."))
 
 from structural_graph import document
+from structural_graph import schema
 
 BINDING = "repository-binding:" + "0" * 31 + "1"
 OTHER_BINDING = "repository-binding:" + "0" * 31 + "2"
@@ -277,6 +278,130 @@ class TestPathAnchorSecretScan(unittest.TestCase):
         result = document.load_object(doc, config())
         self.assertEqual(result["status"], "loaded")
         self.assertEqual(result["facts"]["files"][0]["path"], "src/app.py")
+
+
+class TestRootAnchorSecretScan(unittest.TestCase):
+    """root is the eighth entry in schema.ANCHOR_FIELDS and, until this
+    fix, the one the secret scan never reached: _anchor_findings hand-listed
+    the fields it scanned instead of deriving them from the registry, and
+    root was never added to that list across four review rounds. A root of
+    "src/ghp_..." normalizes cleanly (normalize_path only judges a path's
+    *shape*) and is exempt from redaction as an anchor, so without this scan
+    it would land in facts with the secret intact. #227.
+    """
+
+    def test_secret_in_root_is_malformed(self):
+        doc = minimal_document()
+        doc["root"] = "src/" + "ghp_" + "A" * 36  # private-ok: not a real credential
+        doc["files"] = []
+        doc["symbols"] = []
+        doc["edges"] = []
+        doc["coverage"] = [
+            {
+                "path_prefix": doc["root"],
+                "capability": "contains",
+                "status": "observed",
+            }
+        ]
+        result = document.load_object(doc, config())
+        self.assertEqual(result["status"], "malformed")
+        self.assertIn(
+            "E_SG_UNNORMALIZABLE_ANCHOR", [f["code"] for f in result["findings"]]
+        )
+        self.assertIsNone(result["facts"])
+        self.assertNotIn("ghp_", json.dumps(result["findings"]))
+
+
+class TestAnchorRegistryDriftGuard(unittest.TestCase):
+    """schema.ANCHOR_FIELDS is meant to be the single source of truth for
+    what document.py's anchor secret scan covers (#227 structural fix,
+    following four rounds of one-field-at-a-time patches). This test
+    enumerates the registry itself -- not a hand-copied list of its current
+    members -- and builds a document with a secret sitting at each entry's
+    value(s), so a future field added to ANCHOR_FIELDS without matching
+    scan coverage fails this suite instead of shipping unpoliced.
+    """
+
+    SECRET = "ghp_" + "A" * 36  # private-ok: not a real credential
+
+    @classmethod
+    def _inject_secret(cls, field):
+        """Return a document with a secret at every value `field` names.
+
+        Mirrors document._anchor_values's own dotted-path parsing (a
+        top-level scalar, or "<collection>[].<key>") so a newly registered
+        field is exercised without touching this method -- except where the
+        schema's own cross-field invariants (coverage must tile root; an
+        edge endpoint must resolve to a real symbol id) would otherwise get
+        the document rejected by validate_document or coverage tiling
+        before the anchor scan is ever reached. Those two collections are
+        special-cased by name, not by which key is under test, so a new
+        anchor key added to either one is still handled here unchanged.
+        """
+        doc = minimal_document()
+        if field == "root":
+            doc["root"] = cls.SECRET
+            doc["files"] = []
+            doc["symbols"] = []
+            doc["edges"] = []
+            doc["coverage"] = [
+                {
+                    "path_prefix": cls.SECRET,
+                    "capability": "contains",
+                    "status": "observed",
+                }
+            ]
+            return doc
+        collection, key = field.split("[].", 1)
+        if collection == "coverage":
+            entry = {
+                "path_prefix": "",
+                "capability": "contains",
+                "status": "observed",
+            }
+            entry[key] = cls.SECRET
+            doc["coverage"].append(entry)
+            return doc
+        if collection == "edges":
+            entry = {"type": "calls", "source": "sym-1", "target": "sym-1"}
+            entry[key] = cls.SECRET
+            doc["symbols"].append(
+                {
+                    "id": cls.SECRET,
+                    "name": "other",
+                    "kind": "function",
+                    "path": "src/app.py",
+                }
+            )
+            doc["edges"].append(entry)
+            return doc
+        doc[collection][0][key] = cls.SECRET
+        return doc
+
+    def test_every_registered_anchor_field_is_secret_scanned(self):
+        for field in schema.ANCHOR_FIELDS:
+            with self.subTest(field=field):
+                doc = self._inject_secret(field)
+                result = document.load_object(doc, config())
+                self.assertEqual(
+                    result["status"],
+                    "malformed",
+                    "%s: secret anchor loaded instead of failing closed" % field,
+                )
+                self.assertTrue(
+                    any(
+                        found["code"] == "E_SG_UNNORMALIZABLE_ANCHOR"
+                        and found["field"] == field
+                        for found in result["findings"]
+                    ),
+                    "%s: no E_SG_UNNORMALIZABLE_ANCHOR finding for this field"
+                    % field,
+                )
+                self.assertNotIn("ghp_", json.dumps(result["findings"]))
+
+    def test_ordinary_document_still_loads_clean(self):
+        result = document.load_object(minimal_document(), config())
+        self.assertEqual(result["status"], "loaded")
 
 
 class TestPrivacyFixtureRegressions(unittest.TestCase):
