@@ -1175,6 +1175,10 @@
       "reason": "unit tests for context_graph.projection; test infrastructure, not a capability an agent invokes."
     },
     {
+      "path": "bin/check-structural-graph-fixtures.py",
+      "reason": "manifest-driven fixture corpus runner for the #227 structural-graph interchange, invoked by bin/test-structural-graph.sh / make check machinery, exactly like bin/check-context-graph-fixtures.py; not itself a capability an agent invokes."
+    },
+    {
       "path": "bin/structural_graph/__init__.py",
       "reason": "package marker for the #227 structural-graph interchange library; consumed by the projection engine, not a standalone capability."
     },

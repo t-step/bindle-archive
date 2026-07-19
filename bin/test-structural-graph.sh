@@ -33,6 +33,14 @@ check() {
 echo "structural-graph:"
 check "unit tests" python3 -m unittest discover -s bin/structural_graph/tests -t .
 
+check "fixture corpus" python3 bin/check-structural-graph-fixtures.py \
+  --manifest testdata/structural-graph/v1/manifest.json
+
+# Determinism: two runs must produce byte-identical output.
+first="$(python3 bin/check-structural-graph-fixtures.py --manifest testdata/structural-graph/v1/manifest.json)"
+second="$(python3 bin/check-structural-graph-fixtures.py --manifest testdata/structural-graph/v1/manifest.json)"
+check "deterministic output" test "$first" = "$second"
+
 echo ""
 if [ "$fail" -gt 0 ]; then
   echo "structural-graph: $fail check(s) failed, $pass passed"
