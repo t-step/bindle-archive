@@ -1069,6 +1069,12 @@ value."
 - Consumes: `validation.finding`.
 - Produces: `coverage.tiling_findings(root, capabilities, entries)` → list of findings; `coverage.status_for(entries, capability, path)` → status str or `None`.
 
+**Container shapes are already guaranteed here.** `document.py` runs
+`validate_document` first and returns `malformed` on any
+`E_SG_MALFORMED_FIELD_SHAPE`, so by the time this module sees `entries` it is
+a list of dicts. Do not re-guard element types — that check belongs in
+`validation.py` and duplicating it would put the same rule in two places.
+
 **Tiling is realized as root-anchored longest-prefix override.** Exhaustively tiling an unknown filesystem is not decidable from a document alone, so tiling means: for each advertised capability there is **exactly one** entry at `root`, plus zero or more strictly-nested entries with distinct prefixes. The root entry covers everything not otherwise claimed, which makes gaps structurally impossible; a duplicate prefix for one capability is the overlap case. `status_for` resolves by longest matching prefix.
 
 - [ ] **Step 1: Write the failing test**
@@ -1346,6 +1352,12 @@ subtree can never read as an observed zero."
 - Produces: `document.load(path, cfg)` → result dict `{"status", "freshness", "findings", "facts"}`; `document.load_object(doc, cfg)` → same, for an already-parsed document.
 
 The pipeline order is contractual: fail-closed precedes everything.
+
+**That ordering is also what makes the anchor and redaction passes safe.**
+`validate_document` runs before them and returns `malformed` on any
+`E_SG_MALFORMED_FIELD_SHAPE`, so `_anchor_findings` can assume `files`,
+`symbols`, `edges`, and `coverage` are lists of dicts. Do not re-guard element
+types here — that rule lives in `validation.py`.
 
 - [ ] **Step 1: Write the failing test**
 
@@ -2547,6 +2559,7 @@ Create `schemas/structural-graph/v1/invariant-coverage.json`. Every code in `val
     "E_SG_UNKNOWN_FIELD": "schema-and-native",
     "E_SG_MALFORMED_BINDING_ID": "schema-and-native",
     "E_SG_MALFORMED_COMMIT": "schema-and-native",
+    "E_SG_MALFORMED_FIELD_SHAPE": "schema-and-native",
     "E_SG_UNKNOWN_SYMBOL_KIND": "schema-and-native",
     "E_SG_UNKNOWN_EDGE_TYPE": "schema-and-native",
     "E_SG_UNKNOWN_CAPABILITY": "schema-and-native",
