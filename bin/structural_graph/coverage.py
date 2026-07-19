@@ -17,17 +17,58 @@ from structural_graph import validation
 
 
 def _within(path, prefix):
-    """True when path is prefix or lies under it on a segment boundary."""
+    """True when path is prefix or lies under it on a segment boundary.
+
+    Non-string is not an error here -- that finding belongs to
+    validation.py alone -- it is simply never a match. Both operands are
+    checked: prefix flows in from a coverage entry, path from a caller, and
+    either could be malformed independently. Guarding here is what keeps
+    this function's own contract ("never raise") true no matter what a
+    caller -- including a test calling it directly through tiling_findings
+    or status_for -- hands in.
+    """
+    if not isinstance(path, str) or not isinstance(prefix, str):
+        return False
     if prefix == "":
         return True
     return path == prefix or path.startswith(prefix + "/")
+
+
+def _capability_sort_key(capability):
+    """Total, deterministic order that never raises.
+
+    Keying on (type name, repr) rather than the value itself sidesteps two
+    ways plain sorting can raise on a malformed capabilities list: Python 3
+    refuses to compare mutually-incomparable types (e.g. str vs int)
+    directly, and this key never needs one element comparable to another's
+    native type. repr() also never raises, unlike hashing an unhashable
+    value would.
+    """
+    return (type(capability).__name__, repr(capability))
+
+
+def _sorted_unique_capabilities(capabilities):
+    """Dedupe and sort a capabilities list without hashing or comparing.
+
+    tiling_findings is public and exercised directly by its own tests, so
+    it must not raise TypeError on a capabilities list containing an
+    unhashable element (list, dict) -- `set(...)` would raise building the
+    set -- or mutually-incomparable elements -- plain `sorted()` would raise
+    comparing them. Dedup by an equality scan instead of hashing (these
+    lists are small) and sort by the type-qualified key above.
+    """
+    unique = []
+    for capability in capabilities or []:
+        if capability not in unique:
+            unique.append(capability)
+    return sorted(unique, key=_capability_sort_key)
 
 
 def tiling_findings(root, capabilities, entries):
     """Return findings for coverage that fails to tile root."""
     out = []
     entries = entries or []
-    for capability in sorted(set(capabilities or [])):
+    for capability in _sorted_unique_capabilities(capabilities):
         prefixes = [
             entry.get("path_prefix")
             for entry in entries
@@ -42,7 +83,11 @@ def tiling_findings(root, capabilities, entries):
                     "coverage[].capability",
                 )
             )
-        seen = set()
+        # A list-based membership scan, not a set: path_prefix can be an
+        # unhashable value (list, dict) on a malformed entry, and this
+        # function's contract is to never raise regardless -- validation.py
+        # owns reporting the shape problem itself.
+        seen = []
         for index, entry in enumerate(entries):
             if entry.get("capability") != capability:
                 continue
@@ -56,7 +101,8 @@ def tiling_findings(root, capabilities, entries):
                         "coverage[].path_prefix",
                     )
                 )
-            seen.add(prefix)
+            else:
+                seen.append(prefix)
             if not _within(prefix, root):
                 out.append(
                     validation.finding(

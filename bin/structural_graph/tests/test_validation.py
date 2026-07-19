@@ -347,6 +347,68 @@ class TestUnhashableFieldValues(unittest.TestCase):
             self.assertNotIn("value", found)
 
 
+class TestCoveragePathPrefixShape(unittest.TestCase):
+    """coverage[].path_prefix must be a string before it reaches coverage.py.
+
+    path_prefix never feeds a set -- it feeds string concatenation and
+    .startswith() in structural_graph.coverage -- so it was missed by the
+    isinstance guards added for capability/id/source/target, which exist
+    because *those* fields feed set membership. Same bug class (unguarded
+    scalar field value type), different mechanism: TypeError from `+`
+    instead of from hashing. Reported here as #227's review finding.
+    """
+
+    def test_none_path_prefix_reported(self):
+        doc = minimal_document()
+        doc["coverage"][0]["path_prefix"] = None
+        found = validation.validate_document(doc)
+        self.assertIn("E_SG_MALFORMED_FIELD_SHAPE", codes(found))
+
+    def test_int_path_prefix_reported(self):
+        doc = minimal_document()
+        doc["coverage"][0]["path_prefix"] = 5
+        found = validation.validate_document(doc)
+        self.assertIn("E_SG_MALFORMED_FIELD_SHAPE", codes(found))
+
+    def test_list_path_prefix_reported(self):
+        doc = minimal_document()
+        doc["coverage"][0]["path_prefix"] = ["src"]
+        found = validation.validate_document(doc)
+        self.assertIn("E_SG_MALFORMED_FIELD_SHAPE", codes(found))
+
+    def test_dict_path_prefix_reported(self):
+        doc = minimal_document()
+        doc["coverage"][0]["path_prefix"] = {"src": True}
+        found = validation.validate_document(doc)
+        self.assertIn("E_SG_MALFORMED_FIELD_SHAPE", codes(found))
+
+    def test_path_prefix_finding_names_the_field_and_index(self):
+        doc = minimal_document()
+        doc["coverage"][0]["path_prefix"] = None
+        found = validation.validate_document(doc)
+        shape_findings = [
+            f
+            for f in found
+            if f["code"] == "E_SG_MALFORMED_FIELD_SHAPE"
+            and f["field"] == "coverage[].path_prefix"
+        ]
+        self.assertEqual([f["index"] for f in shape_findings], [0])
+
+    def test_validate_document_never_raises_on_non_string_path_prefix(self):
+        doc = minimal_document()
+        doc["coverage"][0]["path_prefix"] = None
+        try:
+            validation.validate_document(doc)
+        except Exception as exc:  # pragma: no cover - documents a non-raise
+            self.fail("validate_document raised %r" % (exc,))
+
+    def test_findings_never_carry_a_value_key_for_path_prefix(self):
+        doc = minimal_document()
+        doc["coverage"][0]["path_prefix"] = {"nested": True}
+        for found in validation.validate_document(doc):
+            self.assertNotIn("value", found)
+
+
 class TestMissingVsDuplicateSymbolId(unittest.TestCase):
     def test_two_symbols_missing_id_are_not_reported_as_duplicates(self):
         doc = minimal_document()

@@ -250,6 +250,21 @@ def _vocabulary_findings(valid):
                     "coverage[].status",
                 )
             )
+        # A non-string path_prefix isn't tested against a set here -- this
+        # module never resolves prefixes -- but structural_graph.coverage
+        # concatenates it onto strings and calls .startswith() on it, both
+        # of which raise TypeError/AttributeError on a non-string. Report
+        # the shape problem here so it never reaches that module unguarded.
+        path_prefix = entry.get("path_prefix")
+        if not isinstance(path_prefix, str):
+            out.append(
+                finding(
+                    "E_SG_MALFORMED_FIELD_SHAPE",
+                    "coverage path_prefix is not a string",
+                    index,
+                    "coverage[].path_prefix",
+                )
+            )
         capability = entry.get("capability")
         # A capability that isn't a string can't be tested against `declared`
         # (a set): membership on a list/dict operand raises TypeError before
