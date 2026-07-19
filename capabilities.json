@@ -1187,6 +1187,10 @@
       "reason": "library module running the contractual single-document load pipeline for the #227 interchange; consumed by the structural_graph package, not a standalone capability."
     },
     {
+      "path": "bin/structural_graph/graphset.py",
+      "reason": "library module loading a multi-document binding set into one combined fact view and aggregating coverage across bindings for the #227 interchange; consumed by the structural_graph package, not a standalone capability."
+    },
+    {
       "path": "bin/structural_graph/redaction.py",
       "reason": "library module performing path normalization and secret redaction for the #227 interchange reader; consumed by the structural_graph package, not a standalone capability."
     },
@@ -1205,6 +1209,10 @@
     {
       "path": "bin/structural_graph/tests/test_document.py",
       "reason": "unit tests for structural_graph.document; test infrastructure, not a capability an agent invokes."
+    },
+    {
+      "path": "bin/structural_graph/tests/test_graphset.py",
+      "reason": "unit tests for structural_graph.graphset; test infrastructure, not a capability an agent invokes."
     },
     {
       "path": "bin/structural_graph/tests/test_redaction.py",
