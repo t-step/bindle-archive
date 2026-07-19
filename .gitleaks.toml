@@ -20,6 +20,13 @@ paths = [
   '''bin/structural_graph/redaction\.py''',
   '''\.gitleaks\.toml''',
   '''testdata/structural-graph/v\d+/privacy/.*''',
+  # Quotes redaction.py's pattern source and the adversarial privacy fixtures
+  # verbatim (a fictional /Users/jane path, a fake ghp_ token). Every hit
+  # carries an inline `private-ok` marker, which bin/check-private-info.sh
+  # honors and gitleaks has no equivalent for. Allowlisted as one file, not as
+  # docs/superpowers/plans/**: a blanket tree exemption is what #227's
+  # narrowing moved away from.
+  '''docs/superpowers/plans/2026-07-18-structural-graph-interchange\.md''',
 ]
 
 [[rules]]
