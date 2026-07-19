@@ -22,6 +22,19 @@ Claude user-level capability under `~/.claude/`. Codex Phase 1 support is direct
 - **Verify before committing:** `make check` must pass. Never bypass hooks.
 - Small, single-purpose commits over one large blob.
 
+### Test suites are discovered, not registered
+
+Any tracked `bin/test-<name>.sh` is a suite. `make test` and the commit gate
+both run every one of them via `bin/run-test-suites.sh` — there is no list to
+add yourself to, in the `Makefile` or in `.pre-commit-config.yaml`.
+
+Name a new suite to the convention and it is covered from the moment it is
+tracked. This is deliberate: hand-registration is how eleven suites ended up
+running under `make test` while never reaching the commit gate (#256, #257).
+Python hooks under `global/hooks/` are covered the same way, through the
+shell suites that exercise them (`bin/test-nested-notes-guard.sh`,
+`bin/test-session-hooks.sh`).
+
 ## Delegating implementation work
 
 Handing an approved issue to a subagent (or a future session) uses the

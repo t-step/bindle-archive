@@ -851,6 +851,10 @@
       "reason": "privacy scanner sourced by bin/check.sh and the pre-commit hook; internal machinery, not a standalone capability."
     },
     {
+      "path": "bin/run-test-suites.sh",
+      "reason": "discovers and runs every tracked bin/test-*.sh; gate machinery invoked by make test and the commit hook, not a capability an agent invokes for its own sake."
+    },
+    {
       "path": "bin/install-hooks.sh",
       "reason": "installs the pre-commit git hook framework; install/hook machinery, not a capability."
     },

@@ -51,96 +51,20 @@ repos:
         language: script
         pass_filenames: false
         always_run: true
-      - id: bindle-install-test
-        name: install.sh link/conflict/prune tests
-        entry: bin/test-install.sh
-        language: script
-        pass_filenames: false
-        always_run: true
-      - id: bindle-check-test
-        name: check.sh script/self-test discovery tests
-        entry: bin/test-check.sh
-        language: script
-        pass_filenames: false
-        always_run: true
-      - id: bindle-frontmatter-test
-        name: check.sh frontmatter parser tests
-        entry: bin/test-check-frontmatter.sh
-        language: script
-        pass_filenames: false
-        always_run: true
-      - id: bindle-doctor-test
-        name: doctor.sh diagnostic tests
-        entry: bin/test-doctor.sh
-        language: script
-        pass_filenames: false
-        always_run: true
-      - id: bindle-notes-home-test
-        name: notes-home.sh configuration tests
-        entry: bin/test-notes-home.sh
-        language: script
-        pass_filenames: false
-        always_run: true
-      - id: bindle-test-package-release-integrity
-        name: package release-integrity helper tests
-        entry: bin/test-package-release-integrity.sh
-        language: script
-        pass_filenames: false
-        always_run: true
-      - id: bindle-test-issue-dedup-scan
-        name: issue-dedup-scan.sh helper tests
-        entry: bin/test-issue-dedup-scan.sh
-        language: script
-        pass_filenames: false
-        always_run: true
-      - id: bindle-test-session-end-land
-        name: session-end-land.sh helper tests
-        entry: bin/test-session-end-land.sh
-        language: script
-        pass_filenames: false
-        always_run: true
-      - id: bindle-test-objective-worktree
-        name: objective-worktree.sh helper tests
-        entry: bin/test-objective-worktree.sh
-        language: script
-        pass_filenames: false
-        always_run: true
-      - id: bindle-test-release-strategy
-        name: release-strategy seam tests
-        entry: bin/test-release-strategy.sh
-        language: script
-        pass_filenames: false
-        always_run: true
-      - id: bindle-test-release-please-sync
-        name: release-please-sync tests
-        entry: bin/test-release-please-sync.sh
-        language: script
-        pass_filenames: false
-        always_run: true
-      - id: bindle-test-context-graph-schema
-        name: context-graph schema/fixture/canonicalization tests
-        entry: bin/test-context-graph-schema.sh
+      # One hook, every suite. Suites are DISCOVERED (any tracked
+      # bin/test-*.sh), not registered here one at a time — hand-registration
+      # is what let eleven suites run under `make test` while never reaching
+      # the commit gate (#256, #257). Adding a suite requires no edit to this
+      # file; it is covered the moment it is tracked.
+      #
+      # language: python (not script) because two discovered suites —
+      # test-context-graph-schema.sh and test-structural-graph.sh — import
+      # jsonschema, and pre-commit only provisions it for a python hook.
+      - id: bindle-test-suites
+        name: test suites (discovered bin/test-*.sh)
+        entry: bin/run-test-suites.sh
         language: python
         additional_dependencies: ["jsonschema"]
-        pass_filenames: false
-        always_run: true
-      - id: bindle-test-structural-graph
-        name: structural-graph interchange tests
-        entry: bin/test-structural-graph.sh
-        language: python
-        additional_dependencies: ["jsonschema"]
-        pass_filenames: false
-        always_run: true
-      - id: bindle-test-context-evidence
-        name: context-evidence normalizer tests
-        entry: bin/test-context-evidence.sh
-        language: script
-        pass_filenames: false
-        always_run: true
-      - id: bindle-test-context-graph-skill
-        name: context-graph skill ontology-safety graduation gate
-        entry: bin/test-context-graph-skill.sh
-        language: script
         pass_filenames: false
         always_run: true
       - id: bindle-link
