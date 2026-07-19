@@ -113,11 +113,19 @@ def _anchor_findings(doc):
                 )
             )
     # Anchors are exempt from redaction -- rewriting a symbol id would break
-    # the edges that reference it. So a non-path anchor carrying a secret has
-    # no safe outcome and fails the document closed instead.
+    # the edges that reference it. So an anchor carrying a secret has no
+    # safe outcome and fails the document closed instead. This covers the
+    # path-shaped anchors too: normalize_path above only judges a path's
+    # *shape* (absolute, traversal, out-of-root, ...) and has no opinion on
+    # its *content*, so a relative path smuggling a secret -- e.g.
+    # "src/ghp_.../app.py" -- would normalize cleanly and land in facts
+    # untouched without this scan.
     for collection, key, field in (
         ("symbols", "id", "symbols[].id"),
         ("symbols", "name", "symbols[].name"),
+        ("files", "path", "files[].path"),
+        ("symbols", "path", "symbols[].path"),
+        ("coverage", "path_prefix", "coverage[].path_prefix"),
     ):
         for index, item in enumerate(doc.get(collection) or []):
             scrubbed, names = redaction.redact(item.get(key))

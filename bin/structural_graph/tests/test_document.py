@@ -223,6 +223,62 @@ class TestRedactionIntegration(unittest.TestCase):
         self.assertNotIn("jane", json.dumps(result["findings"]))
 
 
+class TestPathAnchorSecretScan(unittest.TestCase):
+    """A relative path only fails normalize_path's *shape* check (absolute,
+    drive letter, traversal, query string, out-of-root) -- it has no
+    opinion on the path's *content*. Anchors are exempt from redaction (it
+    would break the references that point at them), so a relative path
+    that carries a secret needs the same fail-closed secret scan the other
+    anchors (symbols[].id, symbols[].name, edges[].source/target) already
+    get. #227 review finding: files[].path, symbols[].path, and
+    coverage[].path_prefix were left out of that scan.
+    """
+
+    def test_secret_in_a_file_path_anchor_is_malformed(self):
+        doc = minimal_document()
+        doc["files"][0]["path"] = "src/" + "ghp_" + "A" * 36 + "/app.py"
+        result = document.load_object(doc, config())
+        self.assertEqual(result["status"], "malformed")
+        self.assertIn(
+            "E_SG_UNNORMALIZABLE_ANCHOR", [f["code"] for f in result["findings"]]
+        )
+        self.assertIsNone(result["facts"])
+
+    def test_secret_in_a_symbol_path_anchor_is_malformed(self):
+        doc = minimal_document()
+        doc["symbols"][0]["path"] = "src/" + "sk-" + "A" * 24 + "/app.py"
+        result = document.load_object(doc, config())
+        self.assertEqual(result["status"], "malformed")
+        self.assertIn(
+            "E_SG_UNNORMALIZABLE_ANCHOR", [f["code"] for f in result["findings"]]
+        )
+        self.assertIsNone(result["facts"])
+
+    def test_secret_in_a_coverage_path_prefix_anchor_is_malformed(self):
+        doc = minimal_document()
+        doc["coverage"].append(
+            {
+                "path_prefix": "src/" + "AKIA" + "1234567890ABCDEF",
+                "capability": "contains",
+                "status": "observed",
+            }
+        )
+        result = document.load_object(doc, config())
+        self.assertEqual(result["status"], "malformed")
+        self.assertIn(
+            "E_SG_UNNORMALIZABLE_ANCHOR", [f["code"] for f in result["findings"]]
+        )
+        self.assertIsNone(result["facts"])
+
+    def test_ordinary_relative_path_still_loads_clean(self):
+        doc = minimal_document()
+        doc["files"][0]["path"] = "src/app.py"
+        doc["symbols"][0]["path"] = "src/app.py"
+        result = document.load_object(doc, config())
+        self.assertEqual(result["status"], "loaded")
+        self.assertEqual(result["facts"]["files"][0]["path"], "src/app.py")
+
+
 class TestPrivacyFixtureRegressions(unittest.TestCase):
     """Mirrors testdata/structural-graph/v1/privacy/*.json at the unit level.
 
@@ -235,12 +291,20 @@ class TestPrivacyFixtureRegressions(unittest.TestCase):
     """
 
     def test_absolute_path_anchor_is_malformed_and_finding_carries_no_value(self):
+        # This path is both an absolute path (normalize_path shape check)
+        # and a home-path secret (anchor secret scan, #227), so it now
+        # legitimately produces two E_SG_UNNORMALIZABLE_ANCHOR findings
+        # instead of one -- dedup by code the same way
+        # check-structural-graph-fixtures.py's assert_load_status does,
+        # rather than asserting an exact count of a code that can fire more
+        # than once for independent reasons on the same value.
         doc = minimal_document()
         doc["files"][0]["path"] = "/Users" + "/jane/repo/src/app.py"
         result = document.load_object(doc, config())
         self.assertEqual(result["status"], "malformed")
         self.assertEqual(
-            [f["code"] for f in result["findings"]], ["E_SG_UNNORMALIZABLE_ANCHOR"]
+            sorted(set(f["code"] for f in result["findings"])),
+            ["E_SG_UNNORMALIZABLE_ANCHOR"],
         )
         self.assertIsNone(result["facts"])
         self.assertNotIn("jane", json.dumps(result["findings"]))
