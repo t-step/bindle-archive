@@ -53,6 +53,20 @@ else
   DENYLIST="$HOME/.claude-kit/private-denylist.txt"
 fi
 
+# Where a MISSING denylist should be created. This is advertising, not
+# resolution: ~/.claude-kit stays readable above but is never suggested (#289),
+# because a reader who acts on it loses the denylist the moment a notes home is
+# set or moved. An explicit override names itself — you asked for that path.
+if [ -n "${BINDLE_DENYLIST:-}" ] || [ -n "${CLAUDE_KIT_DENYLIST:-}" ]; then
+  DENYLIST_SUGGESTED="$DENYLIST"
+elif [ -n "${BINDLE_NOTES_DIR:-}" ]; then
+  DENYLIST_SUGGESTED="$BINDLE_NOTES_DIR/private-denylist.txt"
+elif [ -n "${CLAUDE_KIT_NOTES_DIR:-}" ]; then
+  DENYLIST_SUGGESTED="$CLAUDE_KIT_NOTES_DIR/private-denylist.txt"
+else
+  DENYLIST_SUGGESTED="$HOME/.bindle/private-denylist.txt"
+fi
+
 # Files allowed to contain the patterns below, because documenting/encoding
 # them is their job. Keep this list short and literal.
 SKIP_FILES=(
@@ -127,7 +141,7 @@ scan_verdict() {
 }
 
 self_test() {
-  local t pass=0 failed=0 f
+  local t pass=0 failed=0 f advice
   t="$(mktemp -d)"
   # each fixture must be FLAGGED
   printf 'contact me: abc.123@privaterelay.appleid.com\n' >"$t/relay.md"
@@ -241,8 +255,39 @@ self_test() {
     printf '  ✗ self-test: clean verdict does not disclose that a denylist WAS loaded\n'
     failed=1
   fi
+  # The path the message ADVERTISES is where a denylist should be created, not
+  # the deprecated ~/.claude-kit read fallback (#289) — a reader who follows it
+  # must land somewhere that survives setting or moving $BINDLE_NOTES_DIR.
+  # Captured, not piped: with pipefail a `grep -q` that matches early SIGPIPEs
+  # the scanner, and the pipeline then reports 141 even though the match hit.
+  advice="$(env -u BINDLE_DENYLIST -u CLAUDE_KIT_DENYLIST -u CLAUDE_KIT_NOTES_DIR \
+    BINDLE_NOTES_DIR="$t/nohome" HOME="$t/nohome" "$0" "$t/clean.md" 2>&1)"
+  if grep -qF "no personal denylist at $t/nohome/private-denylist.txt" <<<"$advice"; then
+    pass=$((pass + 1))
+  else
+    printf '  ✗ self-test: missing-denylist message does not name the notes home\n'
+    failed=1
+  fi
+  advice="$(env -u BINDLE_DENYLIST -u CLAUDE_KIT_DENYLIST -u CLAUDE_KIT_NOTES_DIR \
+    -u BINDLE_NOTES_DIR HOME="$t/nohome" "$0" "$t/clean.md" 2>&1)"
+  if grep -qF "no personal denylist at $t/nohome/.bindle/private-denylist.txt" <<<"$advice"; then
+    pass=$((pass + 1))
+  else
+    printf '  ✗ self-test: missing-denylist message does not default to ~/.bindle\n'
+    failed=1
+  fi
+  # ...and the deprecated location stays READABLE while never being advertised.
+  mkdir -p "$t/kithome/.claude-kit"
+  cp "$t/deny.txt" "$t/kithome/.claude-kit/private-denylist.txt"
+  if env -u BINDLE_DENYLIST -u CLAUDE_KIT_DENYLIST -u CLAUDE_KIT_NOTES_DIR \
+    -u BINDLE_NOTES_DIR HOME="$t/kithome" "$0" "$t/denylist.md" >/dev/null 2>&1; then
+    printf '  ✗ self-test: deprecated ~/.claude-kit denylist NOT resolved\n'
+    failed=1
+  else
+    pass=$((pass + 1))
+  fi
   rm -rf "$t"
-  printf '  self-test: %d/16 fixtures behaved\n' "$pass"
+  printf '  self-test: %d/19 fixtures behaved\n' "$pass"
   return "$failed"
 }
 
@@ -286,7 +331,7 @@ if [ -f "$DENYLIST" ]; then
   DENYLIST_VERDICT="$denylist_terms denylist terms checked"
 else
   DENYLIST_VERDICT="pattern rules only — NO personal denylist loaded"
-  echo "  - no personal denylist at $DENYLIST (optional; one term per line)"
+  echo "  - no personal denylist at $DENYLIST_SUGGESTED (optional; one term per line)"
   echo "    it belongs at the notes home root — \$BINDLE_NOTES_DIR when set,"
   echo "    else ~/.bindle — or point \$BINDLE_DENYLIST at it directly"
 fi
