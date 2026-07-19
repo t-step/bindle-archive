@@ -19,6 +19,17 @@ Every task's requirements implicitly include all of these. They are house conven
 - **Findings are `{"code", "message", "index", "field"}` dicts.** No other keys. Never a `value` key.
 - **Findings never contain an unredacted provider string.** Redaction runs before any finding is constructed.
 - **Validators return finding lists and never raise.** Exceptions are reserved for caller error only.
+- **Where that line falls (decided after four fix rounds on Task 4).** The
+  guarantee is about *document content*, not *arguments*. Any value an untrusted
+  JSON document can carry — a `null` `path_prefix`, a list-valued `id`, a
+  string where an array belongs — must produce a finding, never an exception.
+  A malformed **argument** from a programmer (`capabilities=5`, `entries=None`)
+  is caller error and may raise; the package already sets this precedent with
+  `evidence.MalformedIdentityError` on a bad `project_id`.
+  Module functions downstream of `validate_document` may state their
+  preconditions in a docstring and rely on them. **Do not re-guard a shape that
+  `validation.py` already checks** — duplicating a rule across modules is how it
+  drifts, and it was the cause of, not the cure for, the Task 4 fix loop.
 - **The package writes nothing.** No `atomic_io.write_*` import anywhere in `bin/structural_graph/`.
 - **Network access is never required or attempted.**
 - **Determinism:** sorted keys, no timestamps in any output, repeated runs byte-identical.
