@@ -183,3 +183,58 @@ interactive choice; sequential is the default and the recommendation.
 
 Counts predating this protocol carry a caveat line saying so — they were
 gathered without arm attribution, and an unknown fraction may be void.
+
+A file that contains **both** pre- and post-protocol series carries a **boundary**
+rather than a blanket caveat: name which series are protocol-compliant and which
+are not. A blanket caveat over a file with a compliant series appended is wrong
+in the other direction — it buries evidence that was actually earned.
+`skills/package-release-integrity/PRESSURE-TESTS.md` and
+`skills/release-captain/PRESSURE-TESTS.md` are the two worked examples.
+
+## Grandfathered pre-protocol counts (#261)
+
+Rep counts gathered before this protocol are **grandfathered, not voided**. They
+stand as recorded and are not owed a re-run — re-running roughly a hundred reps
+costs far more than the uncertainty they carry. The hazard being managed is not
+the uncertainty itself but an *unmarked* count: a future session reads "5/5 PASS"
+and assumes it was earned under this protocol.
+
+The split is **temporal and per-series**, not per-file. Every series recorded
+before the protocol landed is pre-protocol, including series in the two files
+that also carry compliant ones — and including a same-day series that predates
+the finding it produced. The discriminator is whether the series **declared its
+arm before dispatch**, not its date.
+
+### What this does to #212's targets
+
+#212 tracks topping under-repped skills up to the ~5-reps/variant standard. Its
+per-skill numbers are quoted from the `PRESSURE-TESTS.md` files, so they are
+counts of *grandfathered* reps. Restated against the labelling:
+
+| Skill | #212's recorded shortfall | Restated |
+|---|---|---|
+| `package-release-integrity` | 1–2 reps/axis across 6 axes; data-only track unexercised by a Claude subagent | Pre-protocol except the 3-rep E-series. The defer axis is the only one with protocol-credited evidence |
+| `license-compliance-auditor` | 3/arm on both claims; Issue-Creation Gate inspected, never run live | All pre-protocol; the gate's live run is owed regardless |
+| `repo-hygiene-init` | 3/arm original, 3–4/arm on the #65 rerun | All pre-protocol |
+| `maintain-claude-md` | Claims 5–6 at 3/arm | All pre-protocol |
+| `scoped-sequential-prs` | Claim 5 at 3/arm, Claim 6 at 3/bracket | All pre-protocol |
+| `release-captain` | restraint GREEN re-test at 4 reps; dry-run → gate → apply never exercised end-to-end | Pre-protocol except the F-series. The unexercised positive path is owed regardless |
+| `context-graph` | closed — topped to 5 live-discovery reps/scenario | All pre-protocol despite its 2026-07-18 date: no arm was predeclared |
+| `issue-work-loop` | PT3 and PT8 at inline `n=1` | All pre-protocol |
+| `domi-consumer`, `fork-pr-flow`, `hands-on-keyboard` | excluded as already at bar (5/arm or 5/variant) | All pre-protocol — at bar on count, not on method |
+
+`session-continuity` and `verify-then-commit` were not enumerated by #212; both
+are wholly pre-protocol.
+
+Two consequences for anyone picking #212 up:
+
+1. **A topped-up skill ends with a mixed record.** Top-up reps run today are
+   protocol-credited; the base they are added to is not. "5 reps" on such a skill
+   means *n* credited plus *5 − n* grandfathered, and the file must say which.
+   Do not report a mixed total as though the whole of it were earned under this
+   protocol.
+2. **Reaching 5 is no longer the same claim it was when #212 was filed.** For a
+   skill whose entire record is grandfathered, "already at bar" means at bar on
+   count only. Whether that is worth converting into protocol-credited reps is a
+   per-skill judgement #212 should make explicitly, not an automatic debt — the
+   grandfather decision exists precisely to avoid re-running the corpus wholesale.

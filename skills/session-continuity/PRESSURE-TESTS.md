@@ -4,11 +4,17 @@
 > — arm declaration, the pre-dispatch fixture checklist, environment controls,
 > and grading.
 >
-> **Caveat on the counts below (#223):** they predate the arm-declaration rule.
-> They were gathered without first verifying, per rep, which skill actually won
-> the trigger — so an unknown fraction may be **void** (a rep a competing skill
-> answered tests nothing about this skill). Treat them as a distribution, not an
-> arm, until re-attributed.
+> **Pre-protocol counts — grandfathered (#223, #261):** **every** rep series in
+> this file predates the arm-declaration rule. They were gathered without first
+> verifying, per rep, which skill actually won the trigger — so an unknown
+> fraction may be **void** (a rep a competing skill answered tests nothing about
+> this skill). Treat them as a distribution over skills, not an arm.
+>
+> Per the #261 decision they are **grandfathered, not voided**: they stand as
+> recorded and are **not** owed a re-run — re-running roughly a hundred reps
+> costs far more than the uncertainty they carry. They are not evidence that the
+> current protocol was met. Any *new* series appended below runs under the method
+> of record above and must declare its arm.
 
 Per CONTRIBUTING's RED → GREEN → REFACTOR loop (superpowers:writing-skills), a
 skill isn't done until an agent has been watched failing without it. This log
