@@ -342,6 +342,123 @@ else
   # double-report it here.
 fi
 
+# --- 5c. Codex provider-doc drift -------------------------------------------
+# capabilities.json is the source of truth for which skills Codex installs;
+# hand-written prose is not, and drifted from it (#290/#291): README.md's
+# GENERATED block said Codex installs skills two lines above a hand-written
+# paragraph still saying it installs `global/AGENTS.md` and nothing else.
+# bin/check-inventory.py can't catch that — it only governs text inside
+# `<!-- GENERATED:... -->` markers, and the stale line sat outside them.
+#
+# So: while any skill carries provider.codex "installed", every user-facing
+# install doc that exists must name `--agents-skills-home`, and no live doc may
+# carry a current-state AGENTS.md-only claim. Narrow by construction — a fixed
+# doc list and two literal claim patterns, not a prose linter.
+#
+# Deliberately NOT behind --content-only: pure text + one json read, no
+# external tool beyond python3, so it must reach the pre-commit hook and CI,
+# not only a local `make check` (the #279 lesson).
+#
+# Skips on a missing capabilities.json for the section-5b reason: check.sh is
+# copied into throwaway fixture repos by several suites, and requiring the
+# manifest would couple every fixture builder to it.
+
+# Docs a reader consults to learn how a Codex install works. Each is checked
+# only if present.
+CODEX_INSTALL_DOCS=(
+  README.md
+  CONTRIBUTING.md
+  AGENTS.md
+  global/AGENTS.md
+  docs/using-bindle-with-codex.md
+  docs/provider-interop.md
+  docs/ownership-boundaries.md
+  docs/sharing-skills.md
+)
+
+# Paths that describe what WAS true. A changelog entry and a dated design or
+# plan record are supposed to preserve the old claim verbatim; rewording them
+# would falsify the record.
+CODEX_DRIFT_SKIP_PATHS=(
+  CHANGELOG.md
+  'docs/design/'
+  'docs/plans/'
+  'docs/superpowers/plans/'
+)
+
+# Lines that mention the old behavior correctly — by negating it — and so are
+# not stale claims. Match is a plain substring. Keep narrow and comment every
+# entry with why, same discipline as PATH_REF_ALLOW.
+CODEX_DRIFT_ALLOW=(
+  # using-bindle-with-codex tells the reader the two-target install is the only
+  # one: "Omitting the second one exits 2 ... so there is no AGENTS.md-only
+  # install to run first." The phrase is the correction, not the drift.
+  "no AGENTS.md-only install"
+)
+
+echo "codex provider docs:"
+codex_installed=0
+if [ -f capabilities.json ]; then
+  codex_installed="$(python3 -c '
+import json, sys
+try:
+    caps = json.load(open("capabilities.json")).get("capabilities", [])
+except Exception:
+    print(0); sys.exit()
+print(sum(1 for c in caps
+          if c.get("type") == "skill"
+          and c.get("provider", {}).get("codex") == "installed"))
+' 2>/dev/null || echo 0)"
+fi
+
+if [ ! -f capabilities.json ]; then
+  echo "  - no capabilities.json; skipping (inventory owns its existence)"
+elif [ "$codex_installed" -eq 0 ]; then
+  echo "  - no Codex-installed skills; skipping"
+else
+  codex_doc_problems=0
+  for doc in "${CODEX_INSTALL_DOCS[@]}"; do
+    [ -f "$doc" ] || continue
+    if ! grep -qF -- '--agents-skills-home' "$doc"; then
+      problem "$doc: no mention of --agents-skills-home, but $codex_installed skill(s) are Codex-installed"
+      codex_doc_problems=$((codex_doc_problems + 1))
+    fi
+  done
+
+  while IFS= read -r mdfile; do
+    [ -f "$mdfile" ] || continue
+    # Length-guard both array expansions: under `set -u`, bash 3.2 (macOS)
+    # treats "${arr[@]}" on an empty array as unbound and aborts the run.
+    skip=0
+    if [ "${#CODEX_DRIFT_SKIP_PATHS[@]}" -gt 0 ]; then
+      for p in "${CODEX_DRIFT_SKIP_PATHS[@]}"; do
+        case "$mdfile" in "$p"* | "./$p"*) skip=1 && break ;; esac
+      done
+    fi
+    [ "$skip" -eq 1 ] && continue
+    lineno=0
+    while IFS= read -r line; do
+      lineno=$((lineno + 1))
+      allowed=0
+      if [ "${#CODEX_DRIFT_ALLOW[@]}" -gt 0 ]; then
+        for a in "${CODEX_DRIFT_ALLOW[@]}"; do
+          case "$line" in *"$a"*) allowed=1 && break ;; esac
+        done
+      fi
+      [ "$allowed" -eq 1 ] && continue
+      # Two literal claim shapes, both meaning "Codex gets AGENTS.md and
+      # nothing else": the prose form and the compound-adjective form.
+      if grep -qiE 'installs? only [^.]{0,20}AGENTS\.md|AGENTS\.md-only' <<<"$line"; then
+        problem "$mdfile:$lineno: stale Codex claim — skills are Codex-installed now; reword or move it to a historical record"
+        codex_doc_problems=$((codex_doc_problems + 1))
+      fi
+    done <"$mdfile"
+  done < <(git ls-files '*.md')
+
+  [ "$codex_doc_problems" -eq 0 ] &&
+    ok "codex provider docs consistent with capabilities.json ($codex_installed installed skill(s))"
+fi
+
 # --- 6. skill scripts (python selftests) -----------------------------------
 # Convention, not configuration: any tracked skills/<name>/scripts/selftest.py
 # runs automatically — adding a new scripted skill needs no edit here.
