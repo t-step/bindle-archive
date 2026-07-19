@@ -29,7 +29,10 @@ Run, in order, whatever the project actually uses. Discover the commands from th
 |-------|-----------------------------------|
 | Tests | `pytest` · `npm test` · `vitest run` |
 | Types | `tsc --noEmit` · `mypy` · `pyright` · a `lint:type` script |
-| Lint/format | `ruff check` · `eslint` · `npm run lint` |
+| Lint | `ruff check` · `eslint` · `npm run lint` |
+| Format | `ruff format --check` · `prettier --check` · `gofmt -l` |
+
+**A linter passing does not imply a formatter passing.** They are separate commands with separate verdicts — `ruff check` passes on code `ruff format --check` rejects, and the same split exists as eslint vs prettier and as `go vet` vs `gofmt -l`. Where a toolchain separates them, both run before the gate is green, even when a `make lint` target covers only one of them. If the repo's CI runs a check its Makefile doesn't, CI's list is the gate.
 
 **All green → commit. Any red → fix, re-run the full gate, then commit. Never commit on red.**
 
