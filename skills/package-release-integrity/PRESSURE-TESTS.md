@@ -317,6 +317,13 @@ declined to use that suspicion as grounds to certify. E3 found that the fixture
 has no CI wired to run the authoritative check, so *"the pin exists but isn't
 wired to an enforcement path."* E2's find became checklist item 8.
 
+**Caveat added 2026-07-18 (#225): item 9 was not checked on these reps.** The
+knowledge-contamination check — voiding a rep that reads this repo's own
+`PRESSURE-TESTS.md` and so the grading rubric — did not exist when E1–E3 ran.
+They were graded for arm attribution and behavior, not for rubric reads, and a
+#225 rep under identical conditions did read the rubric. The E-series PASSes are
+not withdrawn, but they are unverified on this axis.
+
 **Environment.** Network-capable; fresh `general-purpose` (sonnet) subagents;
 each rep in its own fixture outside every real checkout; subagents inherited this
 repo's `CLAUDE.md` via the session cwd (recorded as an input, per #212). Fixture
