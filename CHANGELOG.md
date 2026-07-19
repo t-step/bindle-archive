@@ -15,6 +15,40 @@ Conventional Commit messages at release time — there is no hand-maintained
 Unreleased section. (`bin/release.sh` survives only as legacy/fallback
 publication tooling and does not regenerate these entries.)
 
+## [0.8.0](https://github.com/thomas-estep/bindle/compare/v0.7.0...v0.8.0) (2026-07-19)
+
+
+### Features
+
+* **#223:** add the pressure-testing protocol as the method of record ([1a65cd1](https://github.com/thomas-estep/bindle/commit/1a65cd1c1ed4eb24276fb9ee0d46c5ac1813bb6d)), closes [#223](https://github.com/thomas-estep/bindle/issues/223)
+* **#227:** adversarial privacy fixtures and finding-payload purity ([3a12f41](https://github.com/thomas-estep/bindle/commit/3a12f41ad97c98ab941c15b7c57d21ffad5f046b))
+* **#227:** coverage tiling and longest-prefix status lookup ([dbd20b9](https://github.com/thomas-estep/bindle/commit/dbd20b9102425bf0d265d9d162c1fc6ca4c59939))
+* **#227:** fixture corpus and manifest-driven runner ([2841a6e](https://github.com/thomas-estep/bindle/commit/2841a6e9f10040c1e8303bae8381bf9810ee167d))
+* **#227:** hand-rolled structural validation ([fe4459c](https://github.com/thomas-estep/bindle/commit/fe4459c645cdab0a4604d8990f8ba4328af8d554))
+* **#227:** JSON Schema mirror and invariant-coverage classification ([c115f33](https://github.com/thomas-estep/bindle/commit/c115f3341cfa05804dbaf7d5627178cd4c65f980))
+* **#227:** multi-document set load and coverage aggregation ([abc2180](https://github.com/thomas-estep/bindle/commit/abc2180a4a93e7c2a75bc282096630a36cd21d1c))
+* **#227:** path normalization and secret redaction ([6c92e5a](https://github.com/thomas-estep/bindle/commit/6c92e5a89abfbc85c299acc2d5c7f7744b4fa2db))
+* **#227:** single-document load pipeline ([318b3fb](https://github.com/thomas-estep/bindle/commit/318b3fbee66c041a2106e5ac94a6147f7e705189))
+* **#227:** structural-graph package skeleton and frozen vocabularies ([20f522a](https://github.com/thomas-estep/bindle/commit/20f522aa43a7ac9fb802d69e8b15882b543b7814))
+* add stable bindle CLI entry point ([acce7e8](https://github.com/thomas-estep/bindle/commit/acce7e81948d60da9927a995e5eed47a7da8eaa6))
+
+
+### Bug Fixes
+
+* **#224:** repair the defer fixture's placeholder pin and record the E-series ([1c6e155](https://github.com/thomas-estep/bindle/commit/1c6e15506e61590fa6913398d98ed2d36412f737)), closes [#224](https://github.com/thomas-estep/bindle/issues/224)
+* **#224:** repair the defer fixture's placeholder pin and record the E-series diagnosis ([4fbfc3a](https://github.com/thomas-estep/bindle/commit/4fbfc3acbf8e5c31fdb9706131263c244821453f))
+* **#225:** carry the inherited-policy defer into release-captain ([021c8d5](https://github.com/thomas-estep/bindle/commit/021c8d558591cae5175c753b3ec8adfa772b9629))
+* **#225:** carry the inherited-policy defer into release-captain's SKILL.md ([81a9267](https://github.com/thomas-estep/bindle/commit/81a926709e5fad899d9d995cbf9eea3070e89040))
+* **#227:** classify non-dict documents, type-check symbols[].name, close test fds ([c8443fb](https://github.com/thomas-estep/bindle/commit/c8443fb59f4ea91ac861aef9413ceb75fd873ab5))
+* **#227:** close never-raise, redaction, and contract gaps ([3b6d714](https://github.com/thomas-estep/bindle/commit/3b6d7144c76c838488ca33a36852354085d0ea24))
+* **#227:** derive redaction-purity gate from REDACTION_PATTERNS, scan whole corpus ([3de2686](https://github.com/thomas-estep/bindle/commit/3de2686d00f8cecf68a5b4509437c4859119d200))
+* **#227:** guard coverage[].path_prefix shape, harden coverage.py ([37b0153](https://github.com/thomas-estep/bindle/commit/37b015321e4683d0ea0239a129f35b3ad21d5223))
+* **#227:** guard root type in validation.py, drop the falsy-coercion mask ([e0f3e44](https://github.com/thomas-estep/bindle/commit/e0f3e44f516e42c49448701c7f3b0ab4125d480f))
+* **#227:** guard set-membership checks against non-string field values ([edaf903](https://github.com/thomas-estep/bindle/commit/edaf9037951e40b37fef7d6c7e404bd4c2ba8cab))
+* **#227:** secret-scan path-shaped anchors before persistence ([f4558d3](https://github.com/thomas-estep/bindle/commit/f4558d36fdeded6e9ae0deaf92120acd62bb9cea))
+* **#227:** stop validate_document from raising on malformed containers ([e75794a](https://github.com/thomas-estep/bindle/commit/e75794ad1a8b2fb14c9f754c41beb4e547c58308))
+* **#250:** raise on duplicate binding_id instead of silently collapsing it ([443cd7d](https://github.com/thomas-estep/bindle/commit/443cd7dec9565bf4091c41026914d3c60cafb23d)), closes [#250](https://github.com/thomas-estep/bindle/issues/250)
+
 ## [0.7.0](https://github.com/thomas-estep/bindle/compare/v0.6.0...v0.7.0) (2026-07-18)
 
 
