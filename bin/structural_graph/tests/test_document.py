@@ -63,6 +63,53 @@ class TestFailClosedOrder(unittest.TestCase):
         self.assertIsNone(result["facts"])
 
 
+class TestNonDictDocument(unittest.TestCase):
+    """A non-dict document (list, int, string, None) is legal JSON that
+    json.load will happily hand to load_object. Before the fix, the version
+    gate substituted an empty dict for it, reported a missing schema_version,
+    and mislabeled the document "unsupported_version" -- a corrupt document
+    is not one that merely needs a version migration. validate_document's
+    dedicated "document is not a JSON object" finding is the accurate one.
+    #227's review finding.
+    """
+
+    def test_list_document_is_malformed_not_unsupported_version(self):
+        result = document.load_object([1, 2, 3], config())
+        self.assertEqual(result["status"], "malformed")
+        self.assertEqual(
+            [f["code"] for f in result["findings"]], ["E_SG_MISSING_FIELD"]
+        )
+        self.assertIsNone(result["facts"])
+
+    def test_int_document_is_malformed_not_unsupported_version(self):
+        result = document.load_object(42, config())
+        self.assertEqual(result["status"], "malformed")
+        self.assertEqual(
+            [f["code"] for f in result["findings"]], ["E_SG_MISSING_FIELD"]
+        )
+
+    def test_string_document_is_malformed_not_unsupported_version(self):
+        result = document.load_object("hello", config())
+        self.assertEqual(result["status"], "malformed")
+        self.assertEqual(
+            [f["code"] for f in result["findings"]], ["E_SG_MISSING_FIELD"]
+        )
+
+    def test_none_document_is_malformed_not_unsupported_version(self):
+        result = document.load_object(None, config())
+        self.assertEqual(result["status"], "malformed")
+        self.assertEqual(
+            [f["code"] for f in result["findings"]], ["E_SG_MISSING_FIELD"]
+        )
+
+    def test_non_dict_document_never_raises(self):
+        for doc in ([1, 2, 3], 42, "hello", None, True, 3.14):
+            try:
+                document.load_object(doc, config())
+            except Exception as exc:  # pragma: no cover - documents a non-raise
+                self.fail("load_object raised %r on %r" % (exc, doc))
+
+
 class TestBindingResolution(unittest.TestCase):
     def test_malformed_binding_id_is_malformed(self):
         doc = minimal_document()
@@ -137,6 +184,19 @@ class TestRedactionIntegration(unittest.TestCase):
             "E_SG_UNNORMALIZABLE_ANCHOR", [f["code"] for f in result["findings"]]
         )
 
+    def test_secret_in_a_list_shaped_symbol_name_is_malformed(self):
+        # A non-string name bypasses redaction.redact's pattern match (it
+        # no-ops on anything but a string), so this only fails closed if
+        # validation.py's symbols[].name type-check catches the shape first.
+        doc = minimal_document()
+        doc["symbols"][0]["name"] = ["ghp_" + "A" * 36]
+        result = document.load_object(doc, config())
+        self.assertEqual(result["status"], "malformed")
+        self.assertIn(
+            "E_SG_MALFORMED_FIELD_SHAPE", [f["code"] for f in result["findings"]]
+        )
+        self.assertIsNone(result["facts"])
+
     def test_secret_in_an_edge_endpoint_anchor_is_malformed(self):
         doc = minimal_document()
         doc["symbols"].append(
@@ -187,7 +247,8 @@ class TestFreshness(unittest.TestCase):
         subprocess.check_call(
             ["git", "-C", self.tmp, "config", "user.name", "t"], env=env
         )
-        open(os.path.join(self.tmp, "f.txt"), "w").write("x\n")
+        with open(os.path.join(self.tmp, "f.txt"), "w") as handle:
+            handle.write("x\n")
         subprocess.check_call(["git", "-C", self.tmp, "add", "f.txt"], env=env)
         subprocess.check_call(
             ["git", "-C", self.tmp, "commit", "-q", "-m", "init"], env=env
@@ -232,20 +293,23 @@ class TestFileLoad(unittest.TestCase):
 
     def test_unparseable_file_is_malformed(self):
         path = os.path.join(self.tmp, "bad.json")
-        open(path, "w").write("{not json")
+        with open(path, "w") as handle:
+            handle.write("{not json")
         result = document.load(path, config())
         self.assertEqual(result["status"], "malformed")
 
     def test_valid_file_loads(self):
         path = os.path.join(self.tmp, "good.json")
-        open(path, "w").write(json.dumps(minimal_document()))
+        with open(path, "w") as handle:
+            handle.write(json.dumps(minimal_document()))
         result = document.load(path, config())
         self.assertEqual(result["status"], "loaded")
         self.assertEqual(result["facts"]["binding_id"], BINDING)
 
     def test_load_writes_nothing(self):
         path = os.path.join(self.tmp, "good.json")
-        open(path, "w").write(json.dumps(minimal_document()))
+        with open(path, "w") as handle:
+            handle.write(json.dumps(minimal_document()))
         before = sorted(os.listdir(self.tmp))
         document.load(path, config())
         self.assertEqual(sorted(os.listdir(self.tmp)), before)

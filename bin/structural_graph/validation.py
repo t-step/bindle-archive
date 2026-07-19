@@ -229,6 +229,24 @@ def _vocabulary_findings(valid):
                     "symbols[].kind",
                 )
             )
+        # name is an anchor field (schema.ANCHOR_FIELDS): document.py feeds
+        # it to redaction.redact, which silently no-ops on a non-string
+        # value instead of matching a secret pattern. Without this guard a
+        # secret hidden in a list-shaped name produces no
+        # E_SG_UNNORMALIZABLE_ANCHOR and the document loads instead of
+        # failing closed -- #227's review finding. Missing (None) is left
+        # alone, same treatment as symbol id above: there is no string to
+        # mistype.
+        name = symbol.get("name")
+        if name is not None and not isinstance(name, str):
+            out.append(
+                finding(
+                    "E_SG_MALFORMED_FIELD_SHAPE",
+                    "symbol name is not a string",
+                    index,
+                    "symbols[].name",
+                )
+            )
     for index, edge in valid["edges"]:
         if edge.get("type") not in schema.EDGE_TYPES:
             out.append(

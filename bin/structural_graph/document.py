@@ -157,7 +157,17 @@ def _redact_incidental(doc):
 
 def load_object(doc, cfg):
     """Load an already-parsed document. Returns a result dict."""
-    gate = validation.version_findings(doc if isinstance(doc, dict) else {})
+    # A non-dict document (list, int, string, None -- all legal JSON) must be
+    # classified before the version gate runs: the gate has no schema_version
+    # key to find on anything but a dict and would report a missing-version
+    # finding, mislabeling a corrupt document as merely needing a migration.
+    # validate_document already has the accurate finding for this shape.
+    if not isinstance(doc, dict):
+        return _result(
+            "malformed", "freshness_unknown", validation.validate_document(doc), None
+        )
+
+    gate = validation.version_findings(doc)
     for found in gate:
         if found["code"] in (
             "E_SG_MISSING_SCHEMA_VERSION",

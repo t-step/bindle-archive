@@ -409,6 +409,70 @@ class TestCoveragePathPrefixShape(unittest.TestCase):
             self.assertNotIn("value", found)
 
 
+class TestSymbolNameShape(unittest.TestCase):
+    """symbols[].name must be a string before it reaches document.py.
+
+    name is an anchor field (schema.ANCHOR_FIELDS): document._anchor_findings
+    feeds it to redaction.redact, which silently reports "no match" on a
+    non-string value instead of catching a secret. Without this guard a
+    secret hidden in a list-shaped name produced no E_SG_UNNORMALIZABLE_ANCHOR
+    and the document loaded instead of failing closed -- #227's review
+    finding. Same bug class as coverage[].path_prefix above, different field.
+    """
+
+    def test_list_name_reported(self):
+        doc = minimal_document()
+        doc["symbols"][0]["name"] = ["ghp_" + "A" * 36]
+        found = validation.validate_document(doc)
+        self.assertIn("E_SG_MALFORMED_FIELD_SHAPE", codes(found))
+
+    def test_int_name_reported(self):
+        doc = minimal_document()
+        doc["symbols"][0]["name"] = 42
+        found = validation.validate_document(doc)
+        self.assertIn("E_SG_MALFORMED_FIELD_SHAPE", codes(found))
+
+    def test_dict_name_reported(self):
+        doc = minimal_document()
+        doc["symbols"][0]["name"] = {"nested": True}
+        found = validation.validate_document(doc)
+        self.assertIn("E_SG_MALFORMED_FIELD_SHAPE", codes(found))
+
+    def test_missing_name_not_reported(self):
+        # Absence, unlike a wrong type, is not a shape violation: with no
+        # string present there is nothing a secret could hide inside.
+        doc = minimal_document()
+        del doc["symbols"][0]["name"]
+        found = validation.validate_document(doc)
+        self.assertEqual(found, [])
+
+    def test_name_finding_names_the_field_and_index(self):
+        doc = minimal_document()
+        doc["symbols"][0]["name"] = ["not-a-string"]
+        found = validation.validate_document(doc)
+        shape_findings = [
+            f
+            for f in found
+            if f["code"] == "E_SG_MALFORMED_FIELD_SHAPE"
+            and f["field"] == "symbols[].name"
+        ]
+        self.assertEqual([f["index"] for f in shape_findings], [0])
+
+    def test_validate_document_never_raises_on_non_string_name(self):
+        doc = minimal_document()
+        doc["symbols"][0]["name"] = ["not-a-string"]
+        try:
+            validation.validate_document(doc)
+        except Exception as exc:  # pragma: no cover - documents a non-raise
+            self.fail("validate_document raised %r" % (exc,))
+
+    def test_findings_never_carry_a_value_key_for_name(self):
+        doc = minimal_document()
+        doc["symbols"][0]["name"] = ["ghp_" + "A" * 36]
+        for found in validation.validate_document(doc):
+            self.assertNotIn("value", found)
+
+
 class TestMissingVsDuplicateSymbolId(unittest.TestCase):
     def test_two_symbols_missing_id_are_not_reported_as_duplicates(self):
         doc = minimal_document()
