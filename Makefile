@@ -41,6 +41,7 @@ test:
 	bin/test-context-evidence.sh
 	bin/test-context-graph-cli.sh
 	bin/test-context-graph-skill.sh
+	bin/test-structural-graph.sh
 
 install:
 	bin/install.sh

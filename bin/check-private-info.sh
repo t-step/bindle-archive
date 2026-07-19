@@ -41,8 +41,9 @@ fi
 # Files allowed to contain the patterns below, because documenting/encoding
 # them is their job. Keep this list short and literal.
 SKIP_FILES=(
-  "bin/check-private-info.sh"
   ".gitleaks.toml"
+  "bin/check-private-info.sh"
+  "bin/structural_graph/redaction.py"
 )
 
 # label<TAB>extended-regex — the content patterns. Edit freely.

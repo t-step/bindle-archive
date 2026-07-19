@@ -1,0 +1,17 @@
+{
+  "schema_version": 1,
+  "binding_id": "repository-binding:00000000000000000000000000000001",
+  "source_commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "provider": { "name": "reference-json", "version": "1.0.0" },
+  "capabilities": ["contains"],
+  "root": "",
+  "coverage": [
+    { "path_prefix": "", "capability": "contains", "status": "observed" },
+    { "path_prefix": "", "capability": "contains", "status": "observed" }
+  ],
+  "files": [{ "path": "src/app.py" }],
+  "symbols": [
+    { "id": "sym-1", "name": "app", "kind": "module", "path": "src/app.py" }
+  ],
+  "edges": []
+}

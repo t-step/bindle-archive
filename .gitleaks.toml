@@ -17,7 +17,9 @@ useDefault = true
 description = "files whose job is to document/encode these patterns"
 paths = [
   '''bin/check-private-info\.sh''',
+  '''bin/structural_graph/redaction\.py''',
   '''\.gitleaks\.toml''',
+  '''testdata/structural-graph/v\d+/privacy/.*''',
 ]
 
 [[rules]]

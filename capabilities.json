@@ -979,6 +979,14 @@
       "reason": "a point-in-time implementation plan for the release-please-sync fix (#137), paired with its design spec; planning artifact, not itself a capability."
     },
     {
+      "path": "docs/superpowers/specs/2026-07-18-structural-graph-interchange-design.md",
+      "reason": "a point-in-time brainstorming spec for the #227 structural-graph interchange and reference provider (#141 child); planning artifact, not itself a capability."
+    },
+    {
+      "path": "docs/superpowers/plans/2026-07-18-structural-graph-interchange.md",
+      "reason": "a point-in-time implementation plan for the #227 structural-graph interchange, paired with its design spec; planning artifact, not itself a capability."
+    },
+    {
       "path": "docs/superpowers/plans/2026-07-16-context-graph-schema-implementation.md",
       "reason": "a point-in-time implementation plan for the #180 context-graph schema/fixture implementation; planning artifact, not itself a capability."
     },
@@ -1165,6 +1173,70 @@
     {
       "path": "bin/context_graph/tests/test_projection.py",
       "reason": "unit tests for context_graph.projection; test infrastructure, not a capability an agent invokes."
+    },
+    {
+      "path": "bin/check-structural-graph-fixtures.py",
+      "reason": "manifest-driven fixture corpus runner for the #227 structural-graph interchange, invoked by bin/test-structural-graph.sh / make check machinery, exactly like bin/check-context-graph-fixtures.py; not itself a capability an agent invokes."
+    },
+    {
+      "path": "bin/structural_graph/__init__.py",
+      "reason": "package marker for the #227 structural-graph interchange library; consumed by the projection engine, not a standalone capability."
+    },
+    {
+      "path": "bin/structural_graph/coverage.py",
+      "reason": "library module performing coverage tiling and longest-prefix status lookup for the #227 interchange; consumed by the structural_graph package, not a standalone capability."
+    },
+    {
+      "path": "bin/structural_graph/document.py",
+      "reason": "library module running the contractual single-document load pipeline for the #227 interchange; consumed by the structural_graph package, not a standalone capability."
+    },
+    {
+      "path": "bin/structural_graph/graphset.py",
+      "reason": "library module loading a multi-document binding set into one combined fact view and aggregating coverage across bindings for the #227 interchange; consumed by the structural_graph package, not a standalone capability."
+    },
+    {
+      "path": "bin/structural_graph/redaction.py",
+      "reason": "library module performing path normalization and secret redaction for the #227 interchange reader; consumed by the structural_graph package, not a standalone capability."
+    },
+    {
+      "path": "bin/structural_graph/schema.py",
+      "reason": "library module holding the frozen interchange vocabularies and anchor-field registry (#227); consumed by the structural_graph package, not a standalone capability."
+    },
+    {
+      "path": "bin/structural_graph/tests/__init__.py",
+      "reason": "test package marker for structural_graph; test infrastructure, not a capability an agent invokes."
+    },
+    {
+      "path": "bin/structural_graph/tests/test_coverage.py",
+      "reason": "unit tests for structural_graph.coverage; test infrastructure, not a capability an agent invokes."
+    },
+    {
+      "path": "bin/structural_graph/tests/test_document.py",
+      "reason": "unit tests for structural_graph.document; test infrastructure, not a capability an agent invokes."
+    },
+    {
+      "path": "bin/structural_graph/tests/test_graphset.py",
+      "reason": "unit tests for structural_graph.graphset; test infrastructure, not a capability an agent invokes."
+    },
+    {
+      "path": "bin/structural_graph/tests/test_redaction.py",
+      "reason": "unit tests for structural_graph.redaction; test infrastructure, not a capability an agent invokes."
+    },
+    {
+      "path": "bin/structural_graph/tests/test_schema.py",
+      "reason": "unit tests for structural_graph.schema; test infrastructure, not a capability an agent invokes."
+    },
+    {
+      "path": "bin/structural_graph/tests/test_schema_conformance.py",
+      "reason": "conformance tests binding structural_graph.validation's hand-rolled findings to the published JSON Schema and invariant-coverage classification (#227); test infrastructure, not a capability an agent invokes."
+    },
+    {
+      "path": "bin/structural_graph/tests/test_validation.py",
+      "reason": "unit tests for structural_graph.validation; test infrastructure, not a capability an agent invokes."
+    },
+    {
+      "path": "bin/structural_graph/validation.py",
+      "reason": "library module performing hand-rolled structural and vocabulary validation for the #227 interchange (shape, vocabulary membership, referential checks); consumed by the structural_graph package, not a standalone capability."
     }
   ],
   "external_upstreams": [
