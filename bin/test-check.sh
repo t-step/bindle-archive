@@ -293,6 +293,151 @@ status=$?
 check "skips cleanly when docs/product-boundary.md is absent" contains "skipping (inventory owns its existence)" "$out"
 check "does not fail the run when the boundary document is absent" test "$status" -eq 0
 
+# ===========================================================================
+echo "codex provider-doc drift gate:"
+# The manifest already knows which skills Codex installs; hand-written prose
+# did not (#290/#291 — README.md's generated block said one thing two lines
+# above a hand-written paragraph saying "AGENTS.md only"). This gate binds the
+# two: while any skill carries provider.codex "installed", the user-facing docs
+# must name --agents-skills-home and must not carry a current-state
+# AGENTS.md-only claim.
+
+# codex_fixture DIR — a repo with one Codex-installed skill and correct prose.
+codex_fixture() {
+  local r="$1"
+  build_repo "$r"
+  cat >"$r/capabilities.json" <<'EOF'
+{"capabilities": [
+  {"name": "demo", "type": "skill", "path": "skills/demo",
+   "provider": {"claude": "installed", "codex": "installed"}}
+]}
+EOF
+  cat >"$r/docs/using-bindle-with-codex.md" <<'EOF'
+# Using Bindle with Codex
+
+Pass `--agents-skills-home DIR`.
+EOF
+  git_commit "$r" "codex-installed skill with matching docs"
+}
+
+REPO="$TMP/repo-codex-ok"
+codex_fixture "$REPO"
+out="$(cd "$REPO" && bin/check.sh 2>&1)"
+
+check "accepts docs that name --agents-skills-home" contains "codex provider docs consistent" "$out"
+
+# A doc in the required set that never names the flag is the #291 defect.
+REPO="$TMP/repo-codex-missing-flag"
+codex_fixture "$REPO"
+cat >"$REPO/docs/using-bindle-with-codex.md" <<'EOF'
+# Using Bindle with Codex
+
+Run the installer.
+EOF
+git_commit "$REPO" "drop the flag from a required doc"
+out="$(cd "$REPO" && bin/check.sh 2>&1)"
+
+check "flags a required doc that omits --agents-skills-home" contains "docs/using-bindle-with-codex.md: no mention of --agents-skills-home" "$out"
+
+# The #290 defect proper: a live current-state claim that Codex gets AGENTS.md
+# and nothing else, sitting in a doc that also names the flag correctly.
+REPO="$TMP/repo-codex-stale-claim"
+codex_fixture "$REPO"
+cat >"$REPO/docs/using-bindle-with-codex.md" <<'EOF'
+# Using Bindle with Codex
+
+Pass `--agents-skills-home DIR`.
+
+A Codex install installs only `global/AGENTS.md`.
+EOF
+git_commit "$REPO" "add a stale AGENTS.md-only claim"
+out="$(cd "$REPO" && bin/check.sh 2>&1)"
+
+check "flags a current-state AGENTS.md-only claim" contains "docs/using-bindle-with-codex.md:5: stale Codex claim" "$out"
+
+# Historical and design records describe what WAS true; they are allowlisted by
+# path, not by rewording.
+REPO="$TMP/repo-codex-historical"
+codex_fixture "$REPO"
+mkdir -p "$REPO/docs/design"
+cat >"$REPO/docs/design/old.md" <<'EOF'
+# Design
+
+Today `bin/install.sh --provider codex` installs only `global/AGENTS.md`.
+EOF
+cat >"$REPO/CHANGELOG.md" <<'EOF'
+# Changelog
+
+## [Unreleased]
+
+- before #57, `--provider codex` installs only `global/AGENTS.md`
+EOF
+git_commit "$REPO" "historical records keep the old claim"
+out="$(cd "$REPO" && bin/check.sh 2>&1)"
+
+check "does not flag docs/design/** for a historical claim" not_contains "docs/design/old.md" "$out"
+check "does not flag CHANGELOG.md for a historical claim" not_contains "CHANGELOG.md:5" "$out"
+
+# A negated mention ("there is no AGENTS.md-only install") is correct prose.
+REPO="$TMP/repo-codex-negated"
+codex_fixture "$REPO"
+cat >"$REPO/docs/using-bindle-with-codex.md" <<'EOF'
+# Using Bindle with Codex
+
+Pass `--agents-skills-home DIR`.
+
+Omitting it exits 2, so there is no AGENTS.md-only install to run first.
+EOF
+git_commit "$REPO" "negated mention of the old behavior"
+out="$(cd "$REPO" && bin/check.sh 2>&1)"
+
+check "does not flag an allowlisted negated mention" not_contains "stale Codex claim" "$out"
+
+# No Codex-installed skill → nothing to be stale about; the gate stands down
+# rather than policing prose about a provider state that no longer exists.
+REPO="$TMP/repo-codex-not-installed"
+codex_fixture "$REPO"
+cat >"$REPO/capabilities.json" <<'EOF'
+{"capabilities": [
+  {"name": "demo", "type": "skill", "path": "skills/demo",
+   "provider": {"claude": "installed", "codex": "manual"}}
+]}
+EOF
+cat >"$REPO/docs/using-bindle-with-codex.md" <<'EOF'
+# Using Bindle with Codex
+
+A Codex install installs only `global/AGENTS.md`.
+EOF
+git_commit "$REPO" "no codex-installed skills"
+out="$(cd "$REPO" && bin/check.sh 2>&1)"
+
+check "stands down when no skill is Codex-installed" contains "no Codex-installed skills; skipping" "$out"
+check "does not flag prose when the gate stands down" not_contains "stale Codex claim" "$out"
+
+# Missing capabilities.json → skip, don't fail. Every other fixture repo in
+# this suite (and in test-check-frontmatter.sh) is built without one.
+REPO="$TMP/repo-codex-no-manifest"
+build_repo "$REPO"
+out="$(cd "$REPO" && bin/check.sh --content-only 2>&1)"
+status=$?
+
+check "skips cleanly when capabilities.json is absent" contains "no capabilities.json; skipping" "$out"
+check "does not fail the run when capabilities.json is absent" test "$status" -eq 0
+
+# The gate must reach the commit hook and CI, not just a local `make check`
+# (the #279 lesson) — so it must survive --content-only.
+REPO="$TMP/repo-codex-content-only"
+codex_fixture "$REPO"
+cat >"$REPO/docs/using-bindle-with-codex.md" <<'EOF'
+# Using Bindle with Codex
+
+Run the installer.
+EOF
+git_commit "$REPO" "drop the flag again"
+out="$(cd "$REPO" && bin/check.sh --content-only 2>&1)"
+
+check "runs under --content-only" contains "no mention of --agents-skills-home" "$out"
+
 # --- result ----------------------------------------------------------------
 echo
 echo "tests: ${pass} passed, ${fail} failed"

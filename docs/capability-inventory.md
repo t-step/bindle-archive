@@ -158,6 +158,24 @@ diagnostic until it's added.
    validator itself against small pass/fail fixtures (not the real
    `capabilities.json`).
 
+### What the validator does *not* cover: hand-written prose
+
+The validator governs generated text only — what sits inside
+`<!-- GENERATED:... -->` markers. Prose outside those markers can contradict
+the inventory indefinitely, and did (#290/#291): a hand-written README
+paragraph said a Codex install ships `global/AGENTS.md` and nothing else, two
+lines below a generated block listing the Codex-installed skills.
+
+One narrow cross-check now closes that specific class — `bin/check.sh`'s
+"codex provider docs" section. While any skill carries
+`provider.codex: "installed"`, it requires the user-facing install docs to
+name `--agents-skills-home`, and forbids the contrary claim — that a Codex
+install ships `global/AGENTS.md` and nothing else — as a statement of current
+behavior in any tracked Markdown outside the historical records (`CHANGELOG.md`,
+`docs/design/**`, `docs/plans/**`, `docs/superpowers/plans/**`). It is a fixed
+doc list plus two literal claim patterns, deliberately not a prose linter; the
+allow/skip lists live at the top of `bin/check.sh` with a comment per entry.
+
 ## Deferred follow-ups
 
 Named explicitly as out of scope for v1, not forgotten:
