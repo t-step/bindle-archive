@@ -7,6 +7,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from unittest import mock
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", ".."))
 
@@ -782,7 +783,21 @@ class TestDeepNesting(unittest.TestCase):
 
 
 class TestDeepNestingFromDisk(unittest.TestCase):
-    """load() must not propagate json.load's own RecursionError either."""
+    """load() must not propagate json.load's own RecursionError either.
+
+    A written-to-disk 100000-deep document no longer proves this: on
+    CPython 3.14 the C-accelerated json decoder absorbs that depth without
+    raising, so json.load returns a parsed list and load() takes the
+    pre-existing "document is not a JSON object" path instead -- same
+    finding code, different reason, and the test would keep passing even if
+    RecursionError were dropped from load()'s except tuple. Relying on a
+    bigger depth doesn't fix this either: the threshold is an interpreter
+    and decoder-implementation detail (C accelerator vs. the pure-Python
+    fallback), not something a test should have to chase. Patching
+    json.load to raise RecursionError directly exercises load()'s except
+    clause deterministically, independent of what any interpreter's decoder
+    actually does with real nested input.
+    """
 
     def setUp(self):
         self.tmp = tempfile.mkdtemp()
@@ -790,11 +805,12 @@ class TestDeepNestingFromDisk(unittest.TestCase):
     def tearDown(self):
         shutil.rmtree(self.tmp, ignore_errors=True)
 
-    def test_deeply_nested_file_is_malformed_not_an_exception(self):
+    def test_json_load_recursion_error_is_malformed_not_an_exception(self):
         path = os.path.join(self.tmp, "deep.json")
         with open(path, "w", encoding="utf-8") as handle:
-            handle.write("[" * 100000 + "]" * 100000)
-        result = document.load(path, config())
+            handle.write("{}")
+        with mock.patch.object(document.json, "load", side_effect=RecursionError):
+            result = document.load(path, config())
         self.assertEqual(result["status"], "malformed")
         self.assertEqual(
             [f["code"] for f in result["findings"]], ["E_SG_MISSING_FIELD"]
