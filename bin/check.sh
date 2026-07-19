@@ -286,6 +286,55 @@ if [ ! -f release-please-config.json ] &&
   problem "CHANGELOG.md missing '## [Unreleased]' section"
 fi
 
+# --- 5b. product boundary (staleness) ---------------------------------------
+# docs/product-boundary.md is the scope gate every "deliberately out of scope"
+# call rests on. It lapsed once (#283) by carrying a version range in its title
+# that expired with no event to announce it — ~200 issues accumulated against a
+# document that had quietly stopped applying. The `Affirmed through:` line
+# replaces that silent expiry with a mechanical one: the document must name a
+# minor at least as new as VERSION's, so cutting a minor forces an explicit
+# re-affirm-or-amend. Patch releases are exempt — a boundary document has
+# nothing to say about a patch.
+#
+# Affirmed AHEAD of VERSION passes: VERSION lags merged work (#265), and
+# affirming the boundary before the cut is the desired order, not a defect.
+#
+# Deliberately NOT behind --content-only: a cheap text comparison with no
+# external tool dependency, so it must reach the pre-commit hook and CI, not
+# only a local `make check` (the #279 lesson).
+echo "product boundary:"
+boundary_doc="docs/product-boundary.md"
+if [ ! -f "$boundary_doc" ]; then
+  # Absent = nothing to affirm. NOT a failure here: check.sh is copied into
+  # throwaway fixture repos by several test suites, and requiring this file
+  # would couple every one of those fixture builders to it — the "maintain two
+  # lists" defect. Deletion in the real repo is already loud: three
+  # capabilities.json entries list this file under related_docs, so
+  # bin/check-inventory.py (section 6b) fails if it disappears.
+  echo "  - no $boundary_doc; skipping (inventory owns its existence)"
+elif ! grep -q '^Affirmed through:' "$boundary_doc"; then
+  problem "$boundary_doc has no 'Affirmed through:' line (see its Revisit triggers)"
+else
+  affirmed="$(sed -n 's/^Affirmed through:[[:space:]]*//p' "$boundary_doc" | head -1 | tr -d '[:space:]')"
+  if ! [[ "$affirmed" =~ ^v[0-9]+\.[0-9]+$ ]]; then
+    problem "$boundary_doc: 'Affirmed through: $affirmed' is not vMAJOR.MINOR"
+  elif [ -f VERSION ] && [[ "$(cat VERSION)" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+    a_rest="${affirmed#v}"
+    a_maj="${a_rest%%.*}"
+    a_min="${a_rest#*.}"
+    v_maj="$(cut -d. -f1 <VERSION)"
+    v_min="$(cut -d. -f2 <VERSION)"
+    if [ "$a_maj" -lt "$v_maj" ] ||
+      { [ "$a_maj" -eq "$v_maj" ] && [ "$a_min" -lt "$v_min" ]; }; then
+      problem "$boundary_doc affirmed through $affirmed, but VERSION is $(cat VERSION) — re-read the boundary, then update 'Affirmed through:' or amend the document"
+    else
+      ok "boundary current for VERSION $(cat VERSION) (affirmed $affirmed)"
+    fi
+  fi
+  # A missing/malformed VERSION is already reported by section 5; don't
+  # double-report it here.
+fi
+
 # --- 6. skill scripts (python selftests) -----------------------------------
 # Convention, not configuration: any tracked skills/<name>/scripts/selftest.py
 # runs automatically — adding a new scripted skill needs no edit here.
