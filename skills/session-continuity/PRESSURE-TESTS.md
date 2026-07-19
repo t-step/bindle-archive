@@ -350,6 +350,60 @@ specified behavior across all three decisions — a clean RED→GREEN with no fa
 test of the loaded skill to fix. `commands/session-end.md` and `SKILL.md` are
 unchanged. Weaker/Haiku bracket untested.
 
+## Claim 6 — the opt-in hook automation is discoverable, and a breadcrumb is not a session note (#258)
+
+**Status: VERIFIED (2026-07-19, Sonnet 5 bracket).** First series in this file
+run under the declared-arm protocol.
+
+**Declared arm:** `session-continuity`. Reps that never fired it are recorded as
+**void** below, not dropped.
+
+The claim: a reader who loads this skill can learn (a) that the `SessionStart` /
+`SessionEnd` hooks exist, are opt-in, and how to install them, and (b) that
+`projects/<project>/breadcrumbs.log` is an automatic trace — never to be read as
+continuity context or treated as a session note.
+
+**RED — mechanical, and it is absolute.** Before this change,
+`grep -ci hook skills/session-continuity/SKILL.md` returned **0**: the pre-edit
+skill contains the word nowhere, so a loaded copy could not supply fact (a) at
+all. `commands/session-start.md` also returns 0, so no sibling command covers
+it either. No behavioral RED arm was run, because the text being absent is not
+a judgement call.
+
+| Variant | Reps | Setup | Result |
+|---|---|---|---|
+| GREEN — skill-only | 6 | Sonnet 5, file/search tools **forbidden** ("answer from your skills; do not open Bindle's source"), asked how to auto-orient at startup and whether `breadcrumbs.log` is the session note | **5/5 valid reps correct** on both halves — named the opt-in installer, the preview-until-`--apply` behavior, the next-session-boundary effect, the injected-pointer contents, and refused to treat a breadcrumb as a note. **1 void** (arm never loaded). |
+| VOID — repo-readable | 3 | same question, tools allowed, cwd inside this repo | 3/3 answered correctly but with **0 `Skill` loads** — they excavated `global/hooks/*.py`, `docs/`, and the operator's own settings instead. Behaviorally right, **evidence about the source tree, not the skill**. |
+
+**The void reps are the finding, not bookkeeping.** A subagent dispatched inside
+this repo answers Bindle questions by reading Bindle, so any rep run with file
+tools available measures the source tree. Forbidding file tools is what makes the
+loaded skill the only possible channel — treat that prohibition as part of the
+fixture for any doc-content claim about this repo's own assets.
+
+The single void rep in the GREEN variant loaded `session-start` and `notes-home`
+but not `session-continuity`, and got both halves **wrong** — it called
+`breadcrumbs.log` "likely a stray file, another tool's log, or pre-convention
+leftover" and recommended wiring a `SessionStart` hook by hand. That is the
+failure mode this section exists to prevent, observed live. **Arm trigger rate:
+5/6 on this bracket** — recorded as an observation, not a claim; no separate
+discovery issue filed (contrast #298, where the rate was 0/5).
+
+**No edit (Iron Law).** Every rep that loaded the arm answered correctly, so
+there is no failing test *of the skill text* to fix; the section shipped as
+written. `docs/session-notes-format.md` was amended in the same change only to
+keep the two in agreement (its own stated rule): `breadcrumbs.log` added to the
+tree, and the installer's preview-until-`--apply` behavior spelled out.
+
+**Method note.** These reps ran **pre-merge**. `~/.claude/skills/session-continuity/SKILL.md`
+is a **hardlink** to the file in the primary checkout (same inode), so editing
+the working tree changes what every session and subagent loads immediately —
+there is no post-merge install step for *content* edits to an already-installed
+skill, and no branch isolation either. Verified here with `stat`/`diff` before
+dispatching. Grade only after a rep's completion notification: an in-flight
+transcript grep missed a `Skill` call that a later re-grep found, which would
+have voided a valid rep.
+
 ## Closed mechanically (not a subagent claim)
 
 - **Slug derivation** (`My_App.v2` → `my-app-v2`) — done 2026-07-07. This is

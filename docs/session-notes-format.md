@@ -35,6 +35,7 @@ Not everything here is equally load-bearing. Each section is labeled:
     profile.md                        # durable facts: gates, commands, safety notes
     sessions/YYYY-MM-DD-<slug>.md     # one note per session
     handoffs/YYYY-MM-DD-<slug>.md     # paste-ready prompts for future sessions
+    breadcrumbs.log                   # opt-in SessionEnd hook only — NOT a note
     context.md                        # NEW — regenerable projection, #185 apply
     .bindle/context/
       config.json                     # NEW — authoritative, #191
@@ -196,7 +197,9 @@ layout are not part of this contract.
 **Current Claude automation**, and explicitly opt-in (never part of the
 default `bin/install.sh` — see
 [ownership-boundaries.md](ownership-boundaries.md)):
-`bin/install-session-hooks.sh install` wires a `SessionStart` hook
+`bin/install-session-hooks.sh install` (preview-only until `--apply`, or a `y`
+at the prompt; idempotent, and effective at the next session boundary) wires a
+`SessionStart` hook
 (`global/hooks/session-start-context.py`) that runs
 [`bin/session-context.sh`](../bin/session-context.sh) and injects its compact
 output — notes-home resolution, latest session-note/handoff *paths* (never

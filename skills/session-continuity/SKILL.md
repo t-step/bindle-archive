@@ -27,6 +27,7 @@ one `git add -A` away from being published.
     profile-proposals.md              # pending profile.md Add/Defer/Reject queue
     sessions/YYYY-MM-DD-<slug>.md     # one note per session
     handoffs/YYYY-MM-DD-<slug>.md     # paste-ready prompts for future sessions
+    breadcrumbs.log                   # opt-in SessionEnd hook only — NOT a note
 ```
 
 - `<project>` = the repo's directory basename, kebab-cased: lowercase, every
@@ -45,6 +46,36 @@ one `git add -A` away from being published.
   note appear in the vault — plain Markdown is all Obsidian needs. Nothing here
   may *require* Obsidian (no plugin syntax, no sync assumptions).
 - Create directories on demand (`mkdir -p`). Plain Markdown only.
+
+## Opt-in hook automation
+
+Two hooks can carry part of this without anyone running a command. They are
+**opt-in**: `<bindle>/bin/install.sh` never installs them, because wiring means
+writing to `~/.claude/settings.json` — foreign territory per Bindle's
+`docs/ownership-boundaries.md`. `<bindle>/bin/install-session-hooks.sh` is the
+explicit installer (`status`, `install`, `uninstall`; `install`/`uninstall`
+only PREVIEW until you pass `--apply` or answer the prompt, and both are
+idempotent). Wiring takes effect at the next session boundary, not immediately.
+
+- **`SessionStart` → `global/hooks/session-start-context.py`** runs
+  `<bindle>/bin/session-context.sh` and injects a compact orientation block:
+  notes-home resolution, the *paths* of the latest session note and handoff
+  (never their contents), open `status: in-progress` issues, and a one-line
+  git summary. It is a budget-capped pointer, not a substitute — `/session-start`
+  is still the deep version.
+- **`SessionEnd` → `global/hooks/session-end-breadcrumb.py`** appends one line
+  to `projects/<project>/breadcrumbs.log` — timestamp, repo, branch, commits
+  made — even when a session never runs `/session-end`.
+
+A breadcrumb is **not** a session note. It lives outside `sessions/*.md` on
+purpose, so a later `/session-start` can never mistake a thin automatic trace
+for a real, model-authored note: don't read `breadcrumbs.log` as continuity
+context, and never let a breadcrumb stand in for writing the note. Both hooks
+are pure scripts with no model involvement, and both degrade silently — a
+missing notes home or a non-git directory never blocks session start or end.
+
+There is deliberately no `Stop`-hook nag about unwritten session notes. The
+breadcrumb is the honest floor; running `/session-end` stays a choice.
 
 ## Profile proposals queue
 
