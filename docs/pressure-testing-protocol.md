@@ -87,11 +87,28 @@ graded after the rep, from its transcript):
    read the rubric" — regardless of how correct its behavior looks. #225 is the
    worked case: two of four reps read into the real checkout unprompted, and one
    landed on the exact sentence defining PASS for its own axis, so a
-   behaviorally-perfect rep had to be voided. Grade every rep for this
-   (`grep -c 'PRESSURE-TESTS\.md'` over the transcript, plus the issue number
-   and any rubric phrasing) and void on a hit. Sandboxing the cwd would also
+   behaviorally-perfect rep had to be voided. Sandboxing the cwd would also
    close it, at the cost of the `CLAUDE.md` inheritance that makes reps
    comparable across campaigns.
+
+   **Grade on content reaching the rep, not on filename matches.** A bare
+   `grep -c 'PRESSURE-TESTS\.md'` over the transcript false-positives: the path
+   turns up in ordinary `grep`/`find` output without the rep ever opening the
+   file. Confirm an actual read — a `Read`/`file_path` call on it, or rubric
+   phrasing and distinctive content appearing in the transcript — before voting
+   a rep void. A #225 GREEN rep tripped the naive grep twice on directory
+   listings alone and was clean on inspection.
+
+   **The issue number is only a usable signal while the artifact under test
+   doesn't contain it.** Once a fix cites its own tracking issue in `SKILL.md`
+   — as #225's does — every rep matches, and the grep says nothing. Fall back to
+   evidence-file content and rubric phrasing.
+
+   **Distinguish this from the artifact under test naming its own failure.** A
+   skill that describes the behavior it corrects is doing its job, and reps
+   quoting that wording back are not contaminated — but the resulting GREEN then
+   shows only that the *stated* rule is followed, not that the fix generalizes to
+   a case the wording never describes. Say which one the reps earned.
 
 Adding this checklist mid-campaign caught a fourth defect before dispatch — a
 shell quoting bug where `git init` silently never ran while the script still
