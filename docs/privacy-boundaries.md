@@ -92,8 +92,28 @@ Run Gitleaks manually when you want a history-wide sweep:
 
 ```bash
 brew install gitleaks
-gitleaks detect --source . --redact
+gitleaks git . --redact       # history; `gitleaks detect --source .` is the
+                              # older spelling and still works
+gitleaks dir . --redact       # working tree
 ```
+
+`gitleaks dir` does **not** respect `.gitignore` — it will report `__pycache__`
+and any stale `.claude/worktrees/` copies. Intersect its findings with
+`git ls-files` before believing a large number. `gitleaks git` scans history
+and does respect tracking, so it is the honest one.
+
+**Verified 2026-07-19** (gitleaks 8.30.1, `useDefault = true`): 405 commits and
+the tracked working tree, **no leaks**. The built-in ruleset contributed zero
+findings; the only hits were from the three custom personal-info rules, all in
+one plan document that quotes `redaction.py`'s patterns and the adversarial
+privacy fixtures verbatim — now allowlisted by path in `.gitleaks.toml`.
+
+That run also settled #259: `#227` narrowed the fixture allowlist from
+`testdata/structural-graph/v\d+/.*` to `.../privacy/.*`, and the narrowing is
+safe. The unprotected fixture directories (`bindings/`, `core/`, `coverage/`,
+`malformed/`, `versions/`, `manifest.json`) produce no findings under the full
+default ruleset, and every fixture that does contain a personal-info pattern
+lives in `privacy/`, which is still allowlisted.
 
 Pre-commit remains optional for basic use of the repo, but `bin/install-hooks.sh`
 enables everything above in one step. The scanner needs no network access and
