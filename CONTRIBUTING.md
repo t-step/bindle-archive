@@ -91,7 +91,9 @@ legacy/fallback local cutter (and never pushes — you review first).
 - [ ] On a branch, not `main`.
 - [ ] `make check` passes.
 - [ ] New skill went through (or is marked draft pending) the writing-skills loop.
-- [ ] `CHANGELOG [Unreleased]` updated.
+- [ ] Commits carry Conventional Commit prefixes (`feat:`, `fix:`, `docs:`, …)
+      so Release Please can generate the changelog entry — `CHANGELOG.md` has no
+      hand-maintained Unreleased section to edit.
 - [ ] New/renamed capability recorded in `capabilities.json` (see the
       [capability-inventory doc](docs/capability-inventory.md)); `make check`
       reconciles it.
