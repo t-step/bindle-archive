@@ -285,7 +285,7 @@ class ApplyWriteTest(unittest.TestCase):
         # Every artifact was written on the first apply, and the lock released.
         self.assertTrue(all(w["written"] for w in res["writes"]))
         self.assertFalse(os.path.exists(
-            lock.lock_path(config.context_dir(self.nh, self.slug))))
+            lock.lock_path(config.project_dir(self.nh, self.slug))))
 
     def test_second_unchanged_apply_zero_writes(self):
         apply.apply(self.nh, self.slug)
@@ -317,14 +317,14 @@ class ApplyWriteTest(unittest.TestCase):
     def test_stale_lock_broken_then_apply_reconstructs_full_state(self):
         """Incomplete-apply detection and safe retry (design section 12): a
         stale `.lock` (operation:"apply", old acquired_at) is left by a crashed
-        writer. After `lock.break_lock(cdir)` a fresh apply re-derives the whole
+        writer. After `lock.break_lock(project_dir)` a fresh apply re-derives the whole
         state from sources -- proving retry is a clean re-derivation, not a
         resume of partial work. (apply's lock uses the default 10s contention
         window, so we do not block on it here; break_lock is the operator path.)
         """
-        cdir = config.context_dir(self.nh, self.slug)
-        os.makedirs(cdir, exist_ok=True)
-        lpath = lock.lock_path(cdir)
+        pdir_ = config.project_dir(self.nh, self.slug)
+        lpath = lock.lock_path(pdir_)
+        os.makedirs(os.path.dirname(lpath), exist_ok=True)
         stale = {
             "pid": 999999, "hostname": "crashed-host", "operation": "apply",
             "acquired_at": time.strftime(
@@ -334,7 +334,7 @@ class ApplyWriteTest(unittest.TestCase):
             fh.write(json.dumps(stale, sort_keys=True))
 
         # The stale lock is present and carries the crashed writer's metadata.
-        owner = lock.break_lock(cdir)
+        owner = lock.break_lock(pdir_)
         self.assertEqual(owner["operation"], "apply")
         self.assertEqual(owner["hostname"], "crashed-host")
         self.assertFalse(os.path.exists(lpath))

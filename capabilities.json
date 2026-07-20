@@ -1041,7 +1041,7 @@
     },
     {
       "path": "bin/context_graph/lock.py",
-      "reason": "library module for single-writer project lock (atomic create-exclusive, bounded exponential backoff, contention timeouts) in the context_graph contract; foundation module consumed by init/config/confirm/apply operations, not a standalone capability."
+      "reason": "library module for the single-writer project lock (atomic create-exclusive, bounded exponential backoff, contention timeouts, thread-local re-entrancy) scoped at project_dir so one lock covers both the context and architecture surfaces (#228); foundation module consumed by init/config/confirm/apply and their arch_* counterparts, not a standalone capability."
     },
     {
       "path": "bin/context_graph/ids.py",

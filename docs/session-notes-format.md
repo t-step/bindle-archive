@@ -37,11 +37,12 @@ Not everything here is equally load-bearing. Each section is labeled:
     handoffs/YYYY-MM-DD-<slug>.md     # paste-ready prompts for future sessions
     breadcrumbs.log                   # opt-in SessionEnd hook only — NOT a note
     context.md                        # NEW — regenerable projection, #185 apply
-    .bindle/context/
-      config.json                     # NEW — authoritative, #191
-      judgments.jsonl                 # NEW — append-only ledger, #184
-      index.json                      # NEW — rebuildable materialized graph, #185
-      .lock                           # NEW — single-writer lock
+    .bindle/
+      .lock                           # NEW — single-writer lock, project-scoped (#228)
+      context/
+        config.json                   # NEW — authoritative, #191
+        judgments.jsonl               # NEW — append-only ledger, #184
+        index.json                    # NEW — rebuildable materialized graph, #185
 ```
 
 Everything is plain Markdown. There is no database, daemon, or init step;

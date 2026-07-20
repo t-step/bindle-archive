@@ -17,12 +17,17 @@ New Bindle names prefer:
     sessions/YYYY-MM-DD-<slug>.md
     handoffs/YYYY-MM-DD-<slug>.md
     context.md                       # NEW — regenerable projection, #185 apply
-    .bindle/context/
-      config.json                    # NEW — authoritative, #191
-      judgments.jsonl                # NEW — append-only ledger, #184
-      index.json                     # NEW — rebuildable materialized graph, #185
-      .lock                          # NEW — single-writer lock
+    .bindle/
+      .lock                          # NEW — single-writer lock, project-scoped (#228)
+      context/
+        config.json                  # NEW — authoritative, #191
+        judgments.jsonl              # NEW — append-only ledger, #184
+        index.json                   # NEW — rebuildable materialized graph, #185
 ```
+
+The lock sits at the `.bindle/` root, not inside `context/`, so one lock
+covers every surface under it — a context-graph apply and an architecture
+apply are serialized rather than interleaved (#228).
 
 Everything is plain Markdown with safe kebab-case filenames. There is no
 database, daemon, app, or initialization step.

@@ -75,7 +75,7 @@ def confirm(notes_home, slug, candidate_key, decision, proposal=None,
     path = ledger.judgments_path(notes_home, slug)
     is_anchor = candidate_key.startswith(ANCHOR_KEY_PREFIX)
 
-    with lock.ProjectLock(cdir, "confirm"):
+    with lock.ProjectLock(config.project_dir(notes_home, slug), "confirm"):
         existing = ledger.load_judgments(path)
         reduced = ledger.reduce_judgments(existing)
 

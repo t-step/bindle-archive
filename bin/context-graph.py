@@ -132,13 +132,17 @@ def cmd_config_status(args):
         _emit({"findings": e.findings}, args.format)
         return 1
     cdir = config.context_dir(args.notes_home, args.project)
-    owner = lock.read_owner(lock.lock_path(cdir))
+    pdir = config.project_dir(args.notes_home, args.project)
+    owner = lock.read_owner(lock.lock_path(pdir))
     owner_live = None
     if isinstance(owner, dict) and "pid" in owner and owner.get("hostname") == socket.gethostname():
         owner_live = lock.pid_is_running(owner["pid"])
-    pdir = config.project_dir(args.notes_home, args.project)
+    # A lock file orphaned at the pre-#228 path is reported, never removed
+    # here; `config break-lock --force` is the only thing that clears it.
+    legacy_owner = lock.read_owner(lock.legacy_lock_path(pdir))
     orphaned_temp_files = _find_orphaned_temp_files((pdir, cdir))
     _emit({"config": cfg, "lock": owner, "lock_owner_live": owner_live,
+           "legacy_lock": legacy_owner,
            "orphaned_temp_files": orphaned_temp_files}, args.format)
     return 0
 
@@ -320,16 +324,22 @@ def cmd_apply(args):
 
 
 def cmd_config_break_lock(args):
-    cdir = config.context_dir(args.notes_home, args.project)
+    pdir = config.project_dir(args.notes_home, args.project)
     if not args.force:
-        owner = lock.read_owner(lock.lock_path(cdir))
+        owner = lock.read_owner(lock.lock_path(pdir))
+        legacy_owner = lock.read_owner(lock.legacy_lock_path(pdir))
         _emit({"findings": _error_findings(
             "E_LOCK_BREAK_NOT_CONFIRMED",
-            "config break-lock requires --force to confirm (current owner: %r)" % (owner,),
-            owner=owner)}, args.format)
+            "config break-lock requires --force to confirm (current owner: %r, "
+            "legacy owner: %r)" % (owner, legacy_owner),
+            owner=owner, legacy_owner=legacy_owner)}, args.format)
         return 1
-    owner = lock.break_lock(cdir)
-    _emit({"removed_owner": owner}, args.format)
+    owner = lock.break_lock(pdir)
+    # Also clear a lock stranded at the pre-#228 context path, reported
+    # separately so the operator can see which one was actually present.
+    legacy_owner = lock.break_legacy_lock(pdir)
+    _emit({"removed_owner": owner, "removed_legacy_owner": legacy_owner},
+          args.format)
     return 0
 
 

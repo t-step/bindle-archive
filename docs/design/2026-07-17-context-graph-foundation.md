@@ -283,11 +283,13 @@ existing `.lock` rather than acquiring one (§15).
   map.md                          # existing — knowledge-promotion
   sessions/, handoffs/            # existing — session-continuity
   context.md                      # NEW — regenerable projection, #185 apply
-  .bindle/context/
-    config.json                   # NEW — authoritative, #191
-    judgments.jsonl                # NEW — append-only ledger, #184
-    index.json                     # NEW — rebuildable materialized graph, #185
+  .bindle/
     .lock                          # NEW — single-writer lock, §15
+                                   #   (moved here from context/ by #228)
+    context/
+      config.json                 # NEW — authoritative, #191
+      judgments.jsonl              # NEW — append-only ledger, #184
+      index.json                   # NEW — rebuildable materialized graph, #185
 ```
 
 **This resolves the one ambiguity in #182's and #191's own bodies.** #182's
@@ -900,8 +902,15 @@ per #182's required-decision §10, #191's own Locking section, and #184's
 Command boundary, all three of which name exactly these three participants
 and never `propose`.
 
-- **Location:** `<notes-home>/projects/<project-slug>/.bindle/context/.lock`
-  (§5).
+- **Location:** ~~`<notes-home>/projects/<project-slug>/.bindle/context/.lock`~~
+  (§5). **AMENDED by #228:** the lock moved up one level, to
+  `<notes-home>/projects/<project-slug>/.bindle/.lock`, so a single lock
+  covers both `.bindle/context` and `.bindle/architecture`. Two
+  directory-scoped locks would let a context apply and an architecture apply
+  interleave. `VALID_OPERATIONS` gained `arch_init`, `arch_config`,
+  `arch_confirm`, `arch_apply` at the same time. This is a deliberate edit to
+  a frozen surface, authorized by #228's `## Owns` bullet; everything else in
+  this section stands.
 - **Acquisition:** atomic `os.open(path, O_CREAT | O_EXCL | O_WRONLY)`; on
   success, write owner metadata as JSON — `{"pid": <int>, "hostname": <str>,
   "operation": "init"|"config"|"confirm"|"apply", "acquired_at":
