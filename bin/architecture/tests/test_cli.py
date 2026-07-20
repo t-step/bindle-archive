@@ -203,6 +203,148 @@ class ConfigCommandTests(CliTestCase):
         self.assertEqual(before_mtime, os.stat(path).st_mtime_ns)
 
 
+BINDING = "repository-binding:" + "0" * 31 + "1"
+
+
+class PreviewCommandTests(CliTestCase):
+
+    def write_graph(self):
+        doc = {
+            "schema_version": 1,
+            "binding_id": BINDING,
+            "source_commit": "a" * 40,
+            "provider": {"name": "reference-json", "version": "1.0.0"},
+            "capabilities": ["contains"],
+            "root": "",
+            "coverage": [{"path_prefix": "", "capability": "contains",
+                          "status": "observed"}],
+            "files": [{"path": "src/app.py"}],
+            "symbols": [{"id": "sym-1", "name": "app", "kind": "module",
+                         "path": "src/app.py"}],
+            "edges": [],
+        }
+        path = os.path.join(self.notes_home, "graph.json")
+        with open(path, "w", encoding="utf-8") as handle:
+            json.dump(doc, handle)
+        return path
+
+    def configured(self):
+        self.init()
+        self.run_json("config", "add-binding", "--notes-home",
+                      self.notes_home, "--project", SLUG, "--alias", "main",
+                      "--binding-id", BINDING)
+        return self.write_graph()
+
+    def preview(self, graph):
+        return self.run_json(
+            "preview", "--notes-home", self.notes_home, "--project", SLUG,
+            "--graph", "%s=%s" % (BINDING, graph),
+            "--decided-at", "2026-07-20T00:00:00Z")
+
+    def test_preview_exits_zero_and_plans(self):
+        proc, payload = self.preview(self.configured())
+        self.assertEqual(0, proc.returncode, proc.stderr)
+        self.assertTrue(payload["ok"])
+        self.assertTrue(payload["entries"])
+
+    def test_preview_prints_a_fingerprint(self):
+        _, payload = self.preview(self.configured())
+        self.assertTrue(payload["fingerprint"].startswith("arch-plan:sha256:"))
+
+    def test_two_cli_previews_agree_on_the_fingerprint(self):
+        """Across two real processes, which is how preview and apply will
+        actually be invoked."""
+        graph = self.configured()
+        _, first = self.preview(graph)
+        _, second = self.preview(graph)
+        self.assertEqual(first["fingerprint"], second["fingerprint"])
+
+    def test_preview_writes_nothing_to_the_notes_home(self):
+        graph = self.configured()
+        before = _read_bytes(state.config_path(self.notes_home, SLUG))
+        self.preview(graph)
+        self.assertEqual(
+            before, _read_bytes(state.config_path(self.notes_home, SLUG)))
+        self.assertFalse(os.path.exists(
+            state.index_path(self.notes_home, SLUG)))
+        self.assertFalse(os.path.exists(
+            state.judgments_path(self.notes_home, SLUG)))
+
+    def test_preview_before_init_is_a_findings_list(self):
+        proc, payload = self.run_json(
+            "preview", "--notes-home", self.notes_home, "--project", SLUG)
+        self.assertEqual(1, proc.returncode)
+        self.assertEqual(["E_ARCH_PREVIEW_CONFIG_MISSING"],
+                         [f["code"] for f in payload["findings"]])
+        self.assertNotIn("Traceback", proc.stderr)
+
+    def test_a_malformed_graph_argument_is_a_usage_finding(self):
+        self.configured()
+        proc, payload = self.run_json(
+            "preview", "--notes-home", self.notes_home, "--project", SLUG,
+            "--graph", "no-equals-sign")
+        self.assertEqual(1, proc.returncode)
+        self.assertEqual(["E_USAGE"],
+                         [f["code"] for f in payload["findings"]])
+
+    def test_text_format_shows_the_plan_not_just_ok(self):
+        """A successful preview carries `findings: []`, which the generic
+        empty-findings branch would render as "ok: no findings" -- hiding
+        the whole plan. Asserting the returncode alone passes vacuously
+        against exactly that bug."""
+        graph = self.configured()
+        proc = self.run_cli(
+            "preview", "--notes-home", self.notes_home, "--project", SLUG,
+            "--graph", "%s=%s" % (BINDING, graph), "--format", "text")
+        self.assertEqual(0, proc.returncode, proc.stderr)
+        self.assertNotIn("ok: no findings", proc.stdout)
+        self.assertIn("architecture preview", proc.stdout)
+        self.assertIn("fingerprint: arch-plan:sha256:", proc.stdout)
+        self.assertIn("Codebase Map.md", proc.stdout)
+
+
+class AddBindingCommandTests(CliTestCase):
+
+    def test_add_binding_exits_zero(self):
+        self.init()
+        proc, payload = self.run_json(
+            "config", "add-binding", "--notes-home", self.notes_home,
+            "--project", SLUG, "--alias", "main")
+        self.assertEqual(0, proc.returncode, proc.stderr)
+        self.assertEqual("main", payload["binding"]["alias"])
+
+    def test_add_binding_before_init_is_a_findings_list(self):
+        proc, payload = self.run_json(
+            "config", "add-binding", "--notes-home", self.notes_home,
+            "--project", SLUG, "--alias", "main")
+        self.assertEqual(1, proc.returncode)
+        self.assertEqual(["E_ARCH_CONFIG_MISSING"],
+                         [f["code"] for f in payload["findings"]])
+        self.assertNotIn("Traceback", proc.stderr)
+
+    def test_a_supplied_binding_id_survives_to_the_config(self):
+        self.init()
+        self.run_json("config", "add-binding", "--notes-home",
+                      self.notes_home, "--project", SLUG, "--alias", "main",
+                      "--binding-id", BINDING)
+        _, payload = self.run_json(
+            "config", "status", "--notes-home", self.notes_home,
+            "--project", SLUG)
+        self.assertEqual([{"binding_id": BINDING, "alias": "main"}],
+                         payload["config"]["bindings"])
+
+    def test_a_duplicate_alias_is_a_findings_list(self):
+        self.init()
+        self.run_json("config", "add-binding", "--notes-home",
+                      self.notes_home, "--project", SLUG, "--alias", "main")
+        proc, payload = self.run_json(
+            "config", "add-binding", "--notes-home", self.notes_home,
+            "--project", SLUG, "--alias", "main")
+        self.assertEqual(1, proc.returncode)
+        self.assertEqual(["E_ARCH_CONFIG_BAD_BINDING"],
+                         [f["code"] for f in payload["findings"]])
+
+
 class SurfaceTests(CliTestCase):
 
     def test_the_cli_file_is_executable(self):
@@ -214,10 +356,11 @@ class SurfaceTests(CliTestCase):
         self.assertEqual(2, proc.returncode)
 
     def test_unimplemented_verbs_are_absent_rather_than_stubbed(self):
-        """preview/confirm/apply land in the next slice. A stub that
-        accepted them and did nothing would be worse than a usage error --
-        it would look like a working projection loop."""
-        for verb in ("preview", "confirm", "apply"):
+        """confirm/apply land in the next slice. A stub that accepted them
+        and did nothing would be worse than a usage error -- it would look
+        like a working projection loop. `preview` landed in D5b and is
+        deliberately no longer in this list."""
+        for verb in ("confirm", "apply"):
             proc = self.run_cli(verb, "--notes-home", self.notes_home,
                                 "--project", SLUG)
             self.assertEqual(2, proc.returncode,

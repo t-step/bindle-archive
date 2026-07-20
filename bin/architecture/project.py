@@ -53,6 +53,7 @@ DEFAULT_DIFF_SIZE_CONFIRMATION_LIMIT = 200
 E_CONFIG_MISSING = "E_ARCH_CONFIG_MISSING"
 E_CONFIG_UNREADABLE = "E_ARCH_CONFIG_UNREADABLE"
 E_CONFIG_SLUG_MISMATCH = "E_ARCH_CONFIG_SLUG_MISMATCH"
+E_CONFIG_BAD_BINDING = "E_ARCH_CONFIG_BAD_BINDING"
 
 
 def _finding(code, message, **extra):
@@ -183,6 +184,83 @@ def init_project(notes_home, project_slug, display_name=None, max_nodes=None,
         os.makedirs(os.path.dirname(path), exist_ok=True)
         atomic_io.write_json_atomic(path, cfg)
         return cfg, True
+
+
+def allocate_binding_id():
+    return ctx_ids.format_repository_binding_id(secrets.token_hex(16))
+
+
+def add_binding(notes_home, project_slug, alias, binding_id=None,
+                contention_timeout=None):
+    """Append one repository binding. Returns (config, binding).
+
+    Required for `preview` to do anything at all: `graphset.load_set`
+    iterates the CONFIGURED bindings and looks each interchange document up
+    by binding_id, so a project with no bindings can never load a graph no
+    matter what document is handed to it. `init` deliberately starts
+    `bindings` empty -- which repositories participate is an operator
+    decision, not a default.
+
+    `binding_id` IS ACCEPTED, NOT ONLY MINTED. An interchange document
+    carries its own binding_id, and `structural_graph.document.load` returns
+    status `deconfigured` with NO facts when that id is absent from the
+    config (`E_SG_BINDING_NOT_CONFIGURED`). So a project that could only
+    mint a fresh random id could never read a document produced anywhere
+    else -- the ids would never match and every preview would silently see
+    an empty graph. Minting stays the default for a binding whose document
+    does not exist yet.
+
+    Unlike `init` this IS a mutation verb, so it validates the result
+    before writing and refuses a duplicate alias rather than silently
+    creating a second binding the operator cannot tell apart."""
+    if not alias or not isinstance(alias, str) or not alias.strip():
+        raise ConfigInvalidError([_finding(
+            E_CONFIG_BAD_BINDING, "alias must be a non-empty string, got %r"
+            % (alias,), field="alias")])
+
+    path = state.config_path(notes_home, project_slug)
+    pdir = project_dir(notes_home, project_slug)
+    lock_kwargs = ({} if contention_timeout is None
+                   else {"contention_timeout": contention_timeout})
+    with lock.ProjectLock(pdir, "arch_config", **lock_kwargs):
+        cfg = load_config(path)
+        if cfg is None:
+            raise ConfigInvalidError([_finding(
+                E_CONFIG_MISSING,
+                "no architecture configuration at %r; run `init` first"
+                % (path,))])
+        findings = state.validate_config(cfg)
+        if findings:
+            raise ConfigInvalidError(findings)
+
+        existing = [b.get("alias") for b in cfg.get("bindings") or []]
+        if alias in existing:
+            raise ConfigInvalidError([_finding(
+                E_CONFIG_BAD_BINDING,
+                "alias %r is already bound; aliases must be unique so an "
+                "operator can tell two bindings apart" % (alias,),
+                field="alias")])
+
+        if binding_id is None:
+            binding_id = allocate_binding_id()
+        elif binding_id in [b.get("binding_id")
+                            for b in cfg.get("bindings") or []]:
+            # graphset.load_set keys paths on binding_id and RAISES on a
+            # duplicate rather than silently collapsing two bindings into
+            # one loaded document.
+            raise ConfigInvalidError([_finding(
+                E_CONFIG_BAD_BINDING,
+                "binding_id %r is already configured" % (binding_id,),
+                field="binding_id")])
+
+        binding = {"binding_id": binding_id, "alias": alias}
+        updated = dict(cfg)
+        updated["bindings"] = list(cfg.get("bindings") or []) + [binding]
+        findings = state.validate_config(updated)
+        if findings:
+            raise ConfigInvalidError(findings)
+        atomic_io.write_json_atomic(path, updated)
+        return updated, binding
 
 
 def validate(notes_home, project_slug):
