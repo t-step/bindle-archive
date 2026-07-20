@@ -1406,6 +1406,14 @@
     {
       "path": "bin/architecture/tests/test_links.py",
       "reason": "unit tests for architecture.links' allowlist matching (scheme, exact-netloc, subdomain and suffix traps, case folding on both sides, malformed entries) and its two rendered forms, asserting the denied form positively as a code span so an implementation emitting a bare autolink cannot pass; test infrastructure, not a capability an agent invokes."
+    },
+    {
+      "path": "bin/architecture/planner.py",
+      "reason": "library module building D's projection plan and its fingerprint (#230 slice D3, epic #141): mint/refresh/no-op dispositions from C3's banded diff readings, over-cap candidates retained as explicit no-op entries rather than omitted, whole-plan rejection when any planned path escapes the notes home, and a domain-tagged sha256 over the five terms a confirmation binds (per-binding source commits, provider name and version, the validated config document, the candidate set, the write manifest) so apply can recompute it and abort as stale_preview; writes nothing and consumed by the architecture package, not a standalone capability."
+    },
+    {
+      "path": "bin/architecture/tests/test_planner.py",
+      "reason": "unit tests for architecture.planner's fingerprint and plan: a pinned known-answer digest vector, the terms that must move it (binding commits, provider name and version, cap, manifest) against the edits that must not (config key order, candidate order, a raw metric moving inside its band, candidate binding membership), dispositions, cap marking, and whole-plan containment rejection reporting every offender; asserts plan determinism only and never cross-adapter equivalence, which is PT7b's combined D+E release gate. Test infrastructure, not a capability an agent invokes."
     }
   ],
   "external_upstreams": [
