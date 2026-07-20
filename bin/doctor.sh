@@ -301,6 +301,73 @@ executable_section() {
   fi
 }
 
+# hooks_section — report the hooks Bindle ships (#264).
+#
+# Two independent things can be wrong, so both are reported: the SYMLINK into
+# $CLAUDE_HOME/hooks may be missing or dangling (a moved checkout), and
+# settings.json may reference a path that no longer resolves — the silent
+# failure this section exists to surface. A hook that is simply unwired is not
+# an error: the session hooks are opt-in by design.
+hooks_section() {
+  echo
+  echo "claude hooks ($CLAUDE_HOME/hooks):"
+  local src dest name settings wired target
+  settings="$CLAUDE_HOME/settings.json"
+  if [ ! -d "$REPO_ROOT/global/hooks" ]; then
+    echo "  - no hooks in this checkout"
+    return 0
+  fi
+  for src in "$REPO_ROOT"/global/hooks/*.py; do
+    [ -e "$src" ] || continue
+    name="$(basename "$src")"
+    dest="$CLAUDE_HOME/hooks/$name"
+    check_item "hook: $name" "$src" "$dest"
+  done
+
+  # Wiring: every hook path settings.json names must resolve. A configured but
+  # unreachable hook is the case #264 was filed on.
+  if [ ! -f "$settings" ]; then
+    echo "  - settings.json absent; no hooks wired (opt-in — bin/install-session-hooks.sh)"
+    return 0
+  fi
+  wired="$(
+    python3 - "$settings" <<'PY' 2>/dev/null || true
+import json, re, sys
+try:
+    data = json.load(open(sys.argv[1]))
+except Exception:
+    sys.exit(0)
+seen = []
+for entries in (data.get("hooks") or {}).values():
+    for entry in entries or []:
+        for hook in entry.get("hooks") or []:
+            cmd = hook.get("command") or ""
+            for m in re.findall(r"(\S+\.py)", cmd):
+                if m not in seen:
+                    seen.append(m)
+print("\n".join(seen))
+PY
+  )"
+  if [ -z "$wired" ]; then
+    echo "  - no Bindle hooks wired in settings.json (opt-in)"
+    return 0
+  fi
+  while IFS= read -r target; do
+    [ -n "$target" ] || continue
+    # shellcheck disable=SC2088 # matching a LITERAL tilde in a settings.json path, not expanding one
+    case "$target" in "~/"*) target="$HOME/${target#\~/}" ;; esac
+    if [ -e "$target" ]; then
+      printf '  \xe2\x9c\x93 wired: %s — resolves\n' "$target"
+    else
+      printf '  \xe2\x9c\x97 wired: %s — configured but NOT reachable\n' "$target"
+      printf '      \xe2\x86\x92 re-run bin/install.sh to repair the hook symlink\n'
+      broken_count=$((broken_count + 1))
+    fi
+  done <<EOF
+$wired
+EOF
+}
+
 notes_section() {
   echo
   echo "notes home:"
@@ -397,6 +464,7 @@ if $HAVE_AGENTS_SKILLS_HOME; then
   codex_skills_section
 fi
 executable_section
+hooks_section
 notes_section
 tools_section
 

@@ -330,6 +330,46 @@ before_agents="$(snapshot "$AGENTS_SKILLS_HOME")"
 after_agents="$(snapshot "$AGENTS_SKILLS_HOME")"
 check "agent-skills home byte-identical before/after" test "$before_agents" = "$after_agents"
 
+# ===========================================================================
+echo "14. hooks section (#264):"
+REPO="$TMP/repo14"
+HOME_DIR="$TMP/home14"
+build_repo "$REPO"
+mkdir -p "$REPO/global/hooks"
+printf '#!/usr/bin/env python3\nprint("guard")\n' >"$REPO/global/hooks/demo-guard.py"
+"$REPO/bin/install.sh" --home "$HOME_DIR" >/dev/null 2>&1
+
+out="$("$REPO/bin/doctor.sh" --home "$HOME_DIR" 2>&1)"
+check "hooks section present" contains "claude hooks (" "$out"
+check "installed hook reported current" contains "hook: demo-guard.py — current" "$out"
+
+# The failure #264 exists to surface: settings.json names a hook path that no
+# longer resolves. Silent before this check; a finding now.
+echo "15. hook configured but not reachable (#264):"
+cat >"$HOME_DIR/settings.json" <<JSON
+{"hooks":{"PreToolUse":[{"matcher":"Bash","hooks":[{"type":"command","command":"python3 $TMP/gone/nested-notes-guard.py"}]}]}}
+JSON
+out="$("$REPO/bin/doctor.sh" --home "$HOME_DIR" 2>&1)"
+status=$?
+check "unreachable wired hook is reported" contains "configured but NOT reachable" "$out"
+check "unreachable wired hook names the fix" contains "re-run bin/install.sh" "$out"
+check "unreachable wired hook is a finding" test "$status" -ne 0
+
+# A hook whose wired path resolves is not a finding.
+#
+# Mutation note: with hooks_section's wiring loop disabled, cases 15 and the
+# first assertion of 16 flip to failing, so they are load-bearing. The
+# "not flagged" assertion below passes vacuously under that mutation — an
+# absence assertion cannot detect a missing check. Kept as a regression guard
+# against a future over-eager flag, not counted as failability evidence.
+echo "16. hook wired to a resolving path is clean (#264):"
+cat >"$HOME_DIR/settings.json" <<JSON
+{"hooks":{"PreToolUse":[{"matcher":"Bash","hooks":[{"type":"command","command":"python3 $HOME_DIR/hooks/demo-guard.py"}]}]}}
+JSON
+out="$("$REPO/bin/doctor.sh" --home "$HOME_DIR" 2>&1)"
+check "resolving wired hook reported ok" contains "resolves" "$out"
+check "resolving wired hook is not flagged" not_contains "configured but NOT reachable" "$out"
+
 # --- result ----------------------------------------------------------------
 echo
 echo "tests: ${pass} passed, ${fail} failed"
