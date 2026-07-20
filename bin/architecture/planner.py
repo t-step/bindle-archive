@@ -49,10 +49,10 @@ that no surface mentions, waiting on child G (#236, unstarted) to stale it.
 Same reasoning #230 settled on for `orphaned_by_resume`: classification is
 the honest MVP outcome.
 
-Ranking spells the flag `over_cap` and so does this module, matching both
-the frozen `caps.over_cap_behavior` config key and merged C3 output. G's
-issue body spells it `below_cap_threshold`; that is a naming disagreement in
-the contract, not two flags.
+Ranking spells the flag `over_cap` and so does this module. #372 settled that
+as the authoritative spelling, declared on the `caps.over_cap_behavior`
+description in `schemas/architecture/v1/config.schema.json`; the retired
+`below_cap_threshold` named the same flag, not another one.
 """
 import hashlib
 import json

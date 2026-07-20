@@ -18,11 +18,11 @@ THE FLAG IS RUN-SCOPED, NOT PERSISTED STATE. Child B's `index.json` node is a
 closed schema with no home for this, and correctly so: the classification is
 recomputed from banded metrics and the cap on every run, so it is a property
 of the run rather than a durable bit. The epic assigns the flag to D's
-preview layer, which is where it lands. NOTE the frozen text spells it two
-ways -- `over_cap` in the epic's section 3, `below_cap_threshold` in #229's
-and G's issue bodies. This module uses `over_cap`, matching both the
-reporting surface it feeds and `over_cap_behavior` in the frozen config
-schema.
+preview layer, which is where it lands. THE SPELLING IS SETTLED: `over_cap`
+is authoritative per #372, declared on the `caps.over_cap_behavior`
+description in `schemas/architecture/v1/config.schema.json`. The retired
+second spelling `below_cap_threshold` (once carried by #229's and G's issue
+bodies) named the same flag, not another one; do not produce or consume it.
 
 `unknown` RANKS LOWEST. An unobserved metric must never win a cap slot over
 an observed zero: that is the fabricated-zero failure inverted, absence read
