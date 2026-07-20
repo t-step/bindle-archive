@@ -15,6 +15,25 @@ Conventional Commit messages at release time — there is no hand-maintained
 Unreleased section. (`bin/release.sh` survives only as legacy/fallback
 publication tooling and does not regenerate these entries.)
 
+## [0.9.0](https://github.com/thomas-estep/bindle/compare/v0.8.0...v0.9.0) (2026-07-20)
+
+
+### Features
+
+* **#283:** unversion the product boundary and gate its staleness ([9d2e913](https://github.com/thomas-estep/bindle/commit/9d2e91334cd70162b8f9807e030e183870c6a65c)), closes [#283](https://github.com/thomas-estep/bindle/issues/283)
+* **#309:** enforce the CodeGraph rule with a PreToolUse chaining guard ([c246abf](https://github.com/thomas-estep/bindle/commit/c246abf0fe623e26466c9d4b7b08acc6225f07e9)), closes [#309](https://github.com/thomas-estep/bindle/issues/309)
+
+
+### Bug Fixes
+
+* **#197:** split the lint and format rows in the verify-then-commit gate ([e4acf44](https://github.com/thomas-estep/bindle/commit/e4acf441d3df14bcb15c39b1fb60b0d0fdf84ff8))
+* **#197:** split the lint and format rows in the verify-then-commit gate ([8d89ff6](https://github.com/thomas-estep/bindle/commit/8d89ff69a25667ff08058ebfef2a7d9be4598330)), closes [#197](https://github.com/thomas-estep/bindle/issues/197)
+* **#258:** document the opt-in session hooks in the skill ([c7caa84](https://github.com/thomas-estep/bindle/commit/c7caa8491e3f255dffbb50d601137722cf30a5d2))
+* **#264:** close the guard's MCP bypass and the hardcoded-path disable ([25fa936](https://github.com/thomas-estep/bindle/commit/25fa936c9a8d4442c7a630a36c8ee67c58d7e295))
+* **#264:** close the guard's MCP bypass and the hardcoded-path disable ([ce2331d](https://github.com/thomas-estep/bindle/commit/ce2331d179f2c4d7a507bc0a5f5203438d77e82b)), closes [#264](https://github.com/thomas-estep/bindle/issues/264)
+* **#268:** resolve the privacy denylist from the notes home ([2042f31](https://github.com/thomas-estep/bindle/commit/2042f3167111a35eeb2e8dfe6151b3d62f555062))
+* **#289:** advertise where a denylist belongs, not the read fallback ([e813b32](https://github.com/thomas-estep/bindle/commit/e813b326f234366c3409b688b2ba8229392c8921))
+
 ## [0.8.0](https://github.com/thomas-estep/bindle/compare/v0.7.0...v0.8.0) (2026-07-19)
 
 
