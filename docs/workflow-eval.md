@@ -141,13 +141,20 @@ Grounded in this repo's actual practice, not an invented number:
   contract was tracking as a deficit, so a campaign could be simultaneously
   compliant here and in debt there. One floor, 5.
 
-  This is in tension with this doc's opening complaint that low-risk tooling
-  gets over-tested, and the tension is resolved deliberately: risk scaling
-  lives in the **coverage matrix** above — which *categories* a tier owes —
-  not in the rep count. A C0 workflow still owes far less evaluation than a
-  C4 one; it just runs the same number of reps for whatever it does owe.
-  Tiering is not collapsed either: C5 still differs by requiring unanimity
-  and carrying the 10-rep ceiling below.
+  This does over-test low-risk tooling, which this doc opens by complaining
+  about. That cost is **accepted, not denied: observability is what it buys.**
+  A uniform rep count makes campaigns comparable — across tiers, across model
+  brackets, and across vendors — so a result can be read against any other
+  result instead of being discounted for having been gathered at a different
+  bar. A 3-rep C1 series and a 5-rep C3 series answer questions of different
+  strength; that difference is invisible at the point someone cites them side
+  by side. Paying a few extra low-risk reps to keep every number legible is
+  the trade this repo chooses.
+
+  Risk scaling still exists, in the two places it belongs: the **coverage
+  matrix** above decides which *categories* a tier owes, and C5 alone requires
+  unanimity and carries the 10-rep ceiling below. What is gone is a discount
+  on the rep *count*.
 - **5 reps/variant minimum, unanimous required at 5,** for C5-tier or
   negative-trigger scenarios; a split result adds reps up to a **10-rep
   ceiling** (matching `verify-then-commit`'s existing 10/10 log) before
