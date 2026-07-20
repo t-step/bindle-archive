@@ -93,6 +93,55 @@ expect_contains "no test-cmd -> uncertain" "verification_gate: uncertain"
 run python3 "$HELPER" check --repo "$FIX/consistent" --test-cmd "definitely-not-a-real-cmd-xyz"
 expect_contains "broken test-cmd -> uncertain (degraded)" "verification_gate: uncertain"
 
+# VERSION-file / release-please-manifest discovery (#217). Bindle is a bash +
+# markdown kit whose version source of truth is the VERSION file plus
+# .release-please-manifest.json, neither of which the helper used to read.
+echo "VERSION-file + manifest discovery (#217):"
+run python3 "$HELPER" check --repo "$FIX/version-file"
+expect_contains "VERSION + manifest agree -> pass" "version_source_consistency: pass"
+expect_contains "resolved version reaches changelog check" "changelog_present: pass"
+run python3 "$HELPER" check --repo "$FIX/version-file" --tag v2.4.0
+expect_contains "VERSION-file repo, matching tag -> pass" "tag_consistency: pass"
+
+# The v0.9.0 shape: release-please advanced the manifest, the chained sync never
+# wrote VERSION. This fixture is the discriminating one — drop EITHER new source
+# and only one value remains, so the disagreement becomes an vacuous "pass".
+run python3 "$HELPER" check --repo "$FIX/version-file-drift"
+expect_contains "VERSION behind manifest -> fail" "version_source_consistency: fail"
+expect_rc "VERSION behind manifest -> rc 1" 1
+
+run python3 "$HELPER" check --repo "$FIX/version-file-nonsemver"
+expect_contains "non-semver VERSION is not a source -> pass" "version_source_consistency: pass"
+expect_contains "non-semver VERSION -> manifest still resolves" "changelog_present: pass"
+
+# The same guard, mirrored on the manifest value. Without this fixture the
+# manifest's semver guard is an untested branch: no other fixture carries a
+# manifest value that could fail it.
+run python3 "$HELPER" check --repo "$FIX/manifest-nonsemver"
+expect_contains "non-semver manifest value is not a source -> pass" "version_source_consistency: pass"
+expect_contains "non-semver manifest -> VERSION still resolves" "changelog_present: pass"
+
+# Only the root "." key is a source. A monorepo's per-package versions differ by
+# design; treating them as peers would fail a healthy repo.
+run python3 "$HELPER" check --repo "$FIX/monorepo-manifest"
+expect_contains "monorepo manifest -> only root key is a source" "version_source_consistency: pass"
+
+# Sources are peers — no precedence. A python source disagreeing with VERSION is
+# a genuine inconsistency.
+run python3 "$HELPER" check --repo "$FIX/mixed-disagreement"
+expect_contains "pyproject vs VERSION disagree -> fail" "version_source_consistency: fail"
+
+# A check that could not run must not report failure. Before #217 this probed
+# CHANGELOG.md for the literal string "[None]" and returned fail, which was the
+# entire cause of Bindle's structural red.
+echo "changelog check with no resolvable version (#217):"
+run python3 "$HELPER" check --repo "$FIX/no-version-source"
+expect_contains "no version source -> changelog uncertain, not fail" "changelog_present: uncertain"
+expect_contains "no version source -> no [None] probe in detail" "no version resolved"
+expect_rc "no version source -> rc 0" 0
+run python3 "$HELPER" check --repo "$FIX/unreleased-only"
+expect_contains "no version but [Unreleased] present -> pass" "changelog_present: pass"
+
 echo "DomI defer path:"
 run python3 "$HELPER" check --repo "$FIX/domi-governed"
 expect_contains "domi-governed -> defer mode" "mode: defer"

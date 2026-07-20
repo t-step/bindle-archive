@@ -61,11 +61,29 @@ def _verdict(check, verdict, detail):
     return {"check": check, "verdict": verdict, "detail": detail}
 
 
+def _semver_source(raw):
+    """A stripped version string, or None when it is not MAJOR.MINOR.PATCH.
+
+    `VERSION` is a generic filename that may hold a commit sha, a codename, or
+    nothing at all; content that is not a strict semver is simply not a version
+    source rather than a spurious disagreement (#217). Applied to the manifest
+    value too, so one rule governs both non-Python sources.
+    """
+    if raw is None:
+        return None
+    value = str(raw).strip()
+    return value if SEMVER_RE.match(value) else None
+
+
 def discover_version_sources(repo):
     """Find declared package versions. Maps a source label -> raw version str.
 
-    Sources: pyproject.toml [project].version, [tool.poetry].version, and any
-    top-level package `__init__.py` defining `__version__`.
+    Sources: pyproject.toml [project].version, [tool.poetry].version, any
+    top-level package `__init__.py` defining `__version__`, the `VERSION` file,
+    and `.release-please-manifest.json`'s root key.
+
+    All sources are peers — no precedence. A repo declaring two different
+    versions is inconsistent, and saying so is the point of the check.
     """
     repo = Path(repo)
     sources = {}
@@ -85,6 +103,26 @@ def discover_version_sources(repo):
         m = ver_re.search(init.read_text())
         if m:
             sources[f"module:{init.relative_to(repo)}"] = m.group(2)
+    # Non-Python version sources (#217). A bash/markdown kit released by
+    # release-please declares its version in a bare VERSION file plus the
+    # manifest; neither is a package, so neither was discoverable before.
+    version_file = repo / "VERSION"
+    if version_file.is_file():
+        declared = _semver_source(version_file.read_text())
+        if declared is not None:
+            sources["version-file:VERSION"] = declared
+    manifest = repo / ".release-please-manifest.json"
+    if manifest.is_file():
+        try:
+            data = json.loads(manifest.read_text())
+        except ValueError:
+            data = None
+        if isinstance(data, dict):
+            # Root key only. A monorepo's per-package versions differ by
+            # design; treating them as peers would fail a healthy repo.
+            declared = _semver_source(data.get("."))
+            if declared is not None:
+                sources["manifest:.release-please-manifest.json[.]"] = declared
     return sources
 
 
@@ -131,9 +169,20 @@ def check_changelog_present(repo, pkg_version, required):
         verdict = "fail" if required else "uncertain"
         return _verdict("changelog_present", verdict, "CHANGELOG.md not found")
     text = changelog.read_text()
-    if (pkg_version is not None and f"[{pkg_version}]" in text) or "[Unreleased]" in text:
+    versioned = pkg_version is not None and f"[{pkg_version}]" in text
+    if versioned:
+        return _verdict("changelog_present", "pass", f"section for {pkg_version}")
+    if "[Unreleased]" in text:
+        return _verdict("changelog_present", "pass", "section for [Unreleased]")
+    if pkg_version is None:
+        # A check that could not run must not report failure (#217). Building
+        # the probe as f"[{pkg_version}]" used to search for the literal text
+        # "[None]", which failed on every repo whose version the helper cannot
+        # discover — the whole of Bindle's structural red.
         return _verdict(
-            "changelog_present", "pass", f"section for {pkg_version} or [Unreleased]"
+            "changelog_present", "uncertain",
+            "no version resolved; cannot look for a versioned section, and "
+            "there is no [Unreleased] section",
         )
     verdict = "fail" if required else "uncertain"
     return _verdict(
