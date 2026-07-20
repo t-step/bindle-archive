@@ -164,6 +164,33 @@ that leaves an automatic breadcrumb even if `/session-end` is never run.
 Preview first, `--apply` to write; `uninstall` reverses it. See
 [docs/session-notes-format.md](docs/session-notes-format.md#opt-in-hook-automation-breadcrumbs).
 
+### Hook wiring convention
+
+`bin/install.sh` symlinks every `global/hooks/*.py` into `~/.claude/hooks/`.
+A `settings.json` hook entry must name **that** path, expanded, and must not
+swallow the exit code:
+
+```jsonc
+{ "type": "command",
+  "command": "python3 /Users/<you>/.claude/hooks/nested-notes-guard.py",
+  "timeout": 10 }
+```
+
+Two rules, both learned the hard way (#264, #312):
+
+- **Never point an entry into the checkout.** It resolves today and silently
+  stops running the moment the repo moves or is renamed. Via the symlink, a
+  move leaves a dangling link that reports itself.
+- **Never wrap the command in `test -f … || true`.** For `PreToolUse` only exit
+  code 2 blocks a tool call, so a missing or broken hook already fails visibly
+  without wedging the session — suppressing that only hides the breakage.
+
+`bin/doctor.sh` checks both: a wired path that does not resolve, and one that
+resolves *but bypasses* `~/.claude/hooks`, are each reported as findings rather
+than shown green. Guards other than the two session hooks are hand-wired —
+`settings.json` is yours, so Bindle diagnoses it and never writes it unasked
+(see [docs/ownership-boundaries.md](docs/ownership-boundaries.md)).
+
 ## Hands-on-keyboard mode
 
 A collaboration mode that keeps the user driving — hands on the code,

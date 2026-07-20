@@ -81,6 +81,7 @@ while [ $# -gt 0 ]; do
 done
 
 current_count=0 missing_count=0 stale_count=0 broken_count=0 conflict_count=0 earlier_count=0
+drift_count=0
 CODEX_ITEMS=0
 AGENTS_SKILLS_ITEMS=0
 expected_dests=""
@@ -357,7 +358,24 @@ PY
     # shellcheck disable=SC2088 # matching a LITERAL tilde in a settings.json path, not expanding one
     case "$target" in "~/"*) target="$HOME/${target#\~/}" ;; esac
     if [ -e "$target" ]; then
-      printf '  \xe2\x9c\x93 wired: %s — resolves\n' "$target"
+      # Resolving is not the same as wired correctly (#312). A path into the
+      # checkout resolves today and disappears the moment the repo moves —
+      # the exact silent disable the $CLAUDE_HOME/hooks symlink exists to
+      # prevent. Only hooks Bindle ships are judged; a third party's guard
+      # living elsewhere is none of doctor's business.
+      name="$(basename "$target")"
+      case "$target" in
+        "$CLAUDE_HOME"/hooks/*) printf '  \xe2\x9c\x93 wired: %s — resolves\n' "$target" ;;
+        *)
+          if [ -e "$REPO_ROOT/global/hooks/$name" ]; then
+            printf '  \xe2\x9c\x97 wired: %s — resolves, but bypasses %s/hooks\n' "$target" "$CLAUDE_HOME"
+            printf '      \xe2\x86\x92 point settings.json at %s/hooks/%s (bin/install.sh maintains that symlink; a checkout move otherwise disables the hook silently)\n' "$CLAUDE_HOME" "$name"
+            drift_count=$((drift_count + 1))
+          else
+            printf '  \xe2\x9c\x93 wired: %s — resolves\n' "$target"
+          fi
+          ;;
+      esac
     else
       printf '  \xe2\x9c\x97 wired: %s — configured but NOT reachable\n' "$target"
       printf '      \xe2\x86\x92 re-run bin/install.sh to repair the hook symlink\n'
@@ -470,10 +488,10 @@ tools_section
 
 # --- summary -------------------------------------------------------------
 echo
-printf 'summary: %d current, %d missing, %d stale, %d broken, %d conflict, %d earlier-checkout\n' \
-  "$current_count" "$missing_count" "$stale_count" "$broken_count" "$conflict_count" "$earlier_count"
+printf 'summary: %d current, %d missing, %d stale, %d broken, %d conflict, %d earlier-checkout, %d hook-wiring drift\n' \
+  "$current_count" "$missing_count" "$stale_count" "$broken_count" "$conflict_count" "$earlier_count" "$drift_count"
 
-total_findings=$((missing_count + stale_count + broken_count + conflict_count + earlier_count + path_findings))
+total_findings=$((missing_count + stale_count + broken_count + conflict_count + earlier_count + drift_count + path_findings))
 if [ "$total_findings" -eq 0 ]; then
   exit 0
 else

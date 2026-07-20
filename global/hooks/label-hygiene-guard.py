@@ -35,6 +35,9 @@ link that bin/doctor.sh reports:
     "hooks": [ { "type": "command",
     "command": "python3 ~/.claude/hooks/label-hygiene-guard.py",
     "timeout": 10 } ] } ] }
+Spell the path out with $HOME expanded (no leading ~);
+settings.json is JSON, so an unexpanded ~ survives only if the shell that
+runs the command expands it — do not rely on that (#312).
 Do not wrap the command in `|| true`: for PreToolUse only exit code 2 blocks a
 tool call, so a missing hook already fails visibly without blocking anything.
 

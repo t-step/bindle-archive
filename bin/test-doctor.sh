@@ -369,6 +369,25 @@ JSON
 out="$("$REPO/bin/doctor.sh" --home "$HOME_DIR" 2>&1)"
 check "resolving wired hook reported ok" contains "resolves" "$out"
 check "resolving wired hook is not flagged" not_contains "configured but NOT reachable" "$out"
+check "hook wired via the stable symlink is not drift" not_contains "bypasses" "$out"
+
+# The drift #312 was filed on: settings.json names a path that RESOLVES, but
+# into the checkout rather than the $CLAUDE_HOME/hooks symlink. Doctor showed
+# this green — indistinguishable from correct wiring — which is why the entry
+# sat on the pre-#264 form for two releases after the relocation shipped.
+#
+# Mutation note: with the checkout-path branch removed, both assertions below
+# flip to failing (the line reverts to a plain "resolves" and the run exits 0).
+echo "17. hook wired to a checkout-absolute path is drift (#312):"
+cat >"$HOME_DIR/settings.json" <<JSON
+{"hooks":{"PreToolUse":[{"matcher":"Bash","hooks":[{"type":"command","command":"python3 $REPO/global/hooks/demo-guard.py"}]}]}}
+JSON
+out="$("$REPO/bin/doctor.sh" --home "$HOME_DIR" 2>&1)"
+status=$?
+check "checkout-absolute wired hook is reported" contains "bypasses $HOME_DIR/hooks" "$out"
+check "checkout-absolute wired hook names the fix" contains "point settings.json at" "$out"
+check "checkout-absolute wired hook is a finding" test "$status" -ne 0
+check "checkout-absolute drift counted in the summary" contains "1 hook-wiring drift" "$out"
 
 # --- result ----------------------------------------------------------------
 echo

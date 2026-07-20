@@ -48,6 +48,14 @@ violate a line here, the change is wrong.
   `global/hooks/session-end-breadcrumb.py` — every other hook entry, e.g. the
   `nested-notes-guard` `PreToolUse` hook, is left untouched).
 
+  Hand-wired hook entries (every guard except those two) still have a
+  convention Bindle *diagnoses* without writing: the `command` names
+  `$HOME/.claude/hooks/<hook>.py` — the symlink `bin/install.sh` maintains —
+  expanded, and is not wrapped in `test -f … || true`. A checkout-absolute
+  path resolves until the repo moves, and the suppression turns a broken hook
+  into a silent no-op. `bin/doctor.sh` reports both as findings (#312); fixing
+  them is your edit to make.
+
 ## What it must never touch
 
 - Foreign files or symlinks in any installed provider surface — anything a
