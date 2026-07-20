@@ -162,15 +162,19 @@ cut is safe.
 
 ### Show the resolved strategy
 
-Before either approval gate, display the exact strategy that will run:
+Before either approval gate, display the exact strategy that will run. Run it
+**from inside the repo being released** — the seam resolves
+`release-captain.toml` from the current repo, not from Bindle's checkout, so
+the working directory selects which repo is answered for:
 
 ```bash
-<bindle>/bin/release-strategy.sh which
+cd <target repo> && <bindle>/bin/release-strategy.sh which
 ```
 
-Show the resolved `strategy=` and `script=` to the human. If it exits non-zero
-(fail-closed: missing `release-captain.toml`, missing `strategy` key, or an
-unknown strategy), **stop** — do not proceed to a dry-run.
+Show the resolved `strategy=`, `config=`, and `script=` to the human, and check
+that `config=` names the repo being released. If it exits non-zero (fail-closed:
+missing `release-captain.toml`, missing `strategy` key, unknown strategy, or not
+inside a git repository), **stop** — do not proceed to a dry-run.
 
 ### First approval gate
 
