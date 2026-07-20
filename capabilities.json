@@ -1414,6 +1414,22 @@
     {
       "path": "bin/architecture/tests/test_planner.py",
       "reason": "unit tests for architecture.planner's fingerprint and plan: a pinned known-answer digest vector, the terms that must move it (binding commits, provider name and version, cap, manifest) against the edits that must not (config key order, candidate order, a raw metric moving inside its band, candidate binding membership), dispositions, cap marking, and whole-plan containment rejection reporting every offender; asserts plan determinism only and never cross-adapter equivalence, which is PT7b's combined D+E release gate. Test infrastructure, not a capability an agent invokes."
+    },
+    {
+      "path": "bin/architecture/notes.py",
+      "reason": "library module deciding the create/update/no-op/conflict lifecycle for one architecture note (#230 slice D4, epic #141): the architecture-surface half of the region lifecycle, delegating marker mechanics to the shared core in context_graph.regions and the first-ever bytes to render.compose_new_note so the create and update paths cannot drift, with a markerless or malformed-marker file refused by code rather than spliced on a guess; pure, no I/O, consumed by the architecture package, not a standalone capability."
+    },
+    {
+      "path": "bin/architecture/tests/test_notes.py",
+      "reason": "unit tests for architecture.notes' lifecycle decision: the create round trip that pins compose_new_note against the update path (create then re-plan the same body must be a no-op, or every note is rewritten on the run after its creation), byte-identical survival of user prose outside the region, and both conflict classes including a note managed by the context surface's marker pair; test infrastructure, not a capability an agent invokes."
+    },
+    {
+      "path": "bin/architecture/apply.py",
+      "reason": "library module orchestrating D's projection writes and their resume (#230 slice D4, epic #141): re-plans under B's cross-surface lock and aborts as stale_preview when the recomputed fingerprint differs from the confirmed token, commits identity allocations through judgments.commit_identity_then before the ledger and the first note byte, creates apply-state.json only for a non-empty changed set and clears it by removal, resumes by re-planning against current inputs and disk rather than replaying stored bytes, and classifies a note the fresh plan no longer contains as partial with orphaned_by_resume, bytes untouched; consumed by the architecture package, not a standalone capability."
+    },
+    {
+      "path": "bin/architecture/tests/test_apply.py",
+      "reason": "unit tests for architecture.apply against a real filesystem fixture: first projection against an empty judgments log, zero-byte rerun and provenance-only commits that rewrite no note, changed-only refresh, the stale_preview abort, ledger shape and advance with before and after hashes, identity committed before the first note byte, resume completing an interrupted apply without duplicating or clobbering, a hand edit made during the interruption surviving, and orphan classification that neither deletes nor stales; test infrastructure, not a capability an agent invokes."
     }
   ],
   "external_upstreams": [

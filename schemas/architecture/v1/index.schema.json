@@ -142,9 +142,18 @@
         "split_from": { "$ref": "#/definitions/arch_id" },
         "split_into": { "type": "array", "items": { "$ref": "#/definitions/arch_id" } },
         "superseded_by": { "type": "array", "items": { "$ref": "#/definitions/arch_id" } },
-        "last_projected_at": { "type": "string", "format": "date-time" }
+        "last_projected_at": { "type": "string", "format": "date-time" },
+        "orphaned_by_resume": {
+          "type": "boolean",
+          "description": "A resume found this note orphaned: the crashed run wrote it and the fresh re-plan does not contain it. Its bytes are left untouched -- D may neither delete it (never-auto-delete) nor stale it (that is G's AC16), so classification is the outcome."
+        }
       },
       "allOf": [
+        {
+          "description": "The orphan flag is a claim about a note's bytes and binds to `partial`; a node still reading `current` while carrying it would assert the projection stands behind bytes the re-plan disowned.",
+          "if": { "properties": { "orphaned_by_resume": { "const": true } }, "required": ["orphaned_by_resume"] },
+          "then": { "properties": { "projection_status": { "const": "partial" } }, "required": ["projection_status"] }
+        },
         {
           "description": "superseded is defined as replaced by a confirmed split or merge, with superseded_by naming the successors; without it a reverted split is unrecoverable.",
           "if": { "properties": { "projection_status": { "const": "superseded" } }, "required": ["projection_status"] },

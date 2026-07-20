@@ -25,6 +25,8 @@
     "E_ARCH_INDEX_MALFORMED_NOTE_PATH": "schema-and-native",
     "E_ARCH_INDEX_BAD_ENUM": "schema-and-native",
     "E_ARCH_INDEX_SUPERSEDED_WITHOUT_SUCCESSOR": "schema-and-native",
+    "E_ARCH_INDEX_BAD_ORPHAN_FLAG": "schema-and-native",
+    "E_ARCH_INDEX_ORPHAN_WITHOUT_PARTIAL": "schema-and-native",
     "E_ARCH_INDEX_BAD_NODES": "schema-and-native",
     "E_ARCH_INDEX_BAD_REFERENCES": "schema-and-native",
     "E_ARCH_INDEX_NOT_AN_OBJECT": "schema-and-native",
@@ -76,6 +78,10 @@
     "E_ARCH_CANDIDATE_UNKNOWN_FIELD": "matcher caller-input validation: the hard abort that refuses provider-specific fields rather than ignoring them.",
     "E_ARCH_THRESHOLDS_BAD_ORDER": "matcher caller-input validation: thresholds arrive as an argument; config.thresholds itself is covered by E_ARCH_CONFIG_BAD_THRESHOLDS.",
     "E_ARCH_THRESHOLDS_BAD_VALUE": "matcher caller-input validation: same argument-boundary check as above.",
-    "E_ARCH_THRESHOLDS_OUT_OF_RANGE": "matcher caller-input validation: same argument-boundary check as above."
+    "E_ARCH_THRESHOLDS_OUT_OF_RANGE": "matcher caller-input validation: same argument-boundary check as above.",
+    "E_ARCH_APPLY_UNCONFIRMED": "apply-run outcome: reports that no confirmed plan fingerprint was supplied to this invocation. Ephemeral invocation state by design (the fingerprint travels as a token, never as a persisted field), so no document exists for a schema to govern.",
+    "E_ARCH_APPLY_STALE_PREVIEW": "apply-run outcome: reports that inputs moved between preview and apply. A comparison between a run's recomputed digest and a token held by the caller, not a property of any file on disk.",
+    "E_ARCH_APPLY_PLAN_REJECTED": "apply-run outcome: surfaces a planner PlanInputError (unrankable records, an unplaceable slug, a planned path escaping the notes home) at the apply boundary. The underlying documents have their own codes; this one names the run that refused.",
+    "E_ARCH_APPLY_IDENTITY_REFUSED": "apply-run outcome: an identity_allocation record the caller supplied would not read back, so the append was refused and nothing was written. The record's own invalidity is E_ARCH_JUDGMENTS_INVALID_RECORD; this code reports the aborted run."
   }
 }
