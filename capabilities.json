@@ -1310,6 +1310,14 @@
     {
       "path": "bin/architecture/tests/test_schema_conformance.py",
       "reason": "fixture-corpus conformance test cross-checking architecture.state's native validators against schemas/architecture/v1/*.schema.json; test infrastructure, not a capability an agent invokes."
+    },
+    {
+      "path": "bin/architecture/matcher.py",
+      "reason": "library module holding the confidence-gated continuity matcher (#228): the bipartite assignment between a run's candidates and the live confirmed identities, its four exhaustive outcomes, and the liveness derivation that keeps the judgments log the sole authority for meaning; consumed by the architecture package, not a standalone capability."
+    },
+    {
+      "path": "bin/architecture/tests/test_matcher.py",
+      "reason": "unit tests for architecture.matcher's four outcomes, provider-independent scoring, threshold gating, determinism, and write-nothing guarantee, over a hand-authored synthetic cluster corpus; test infrastructure, not a capability an agent invokes."
     }
   ],
   "external_upstreams": [
