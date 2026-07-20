@@ -1334,6 +1334,22 @@
     {
       "path": "bin/architecture/tests/test_metrics.py",
       "reason": "unit tests for architecture.metrics' absence-is-never-zero guarantee per entity, cross-binding aggregation, absolute band cut points, monotonic capability degradation, and exclusion integration, over a hand-authored synthetic graph corpus; test infrastructure, not a capability an agent invokes."
+    },
+    {
+      "path": "bin/architecture/clustering.py",
+      "reason": "library module holding candidate planning's monotonically-degrading component grouping and deterministic naming (#229 slice C2): the path-dominant, edge-refined boundary rule under which a lost capability can only coarsen a partition, cluster-level boundary-crossing metrics, and the dominant-path naming that keeps model assistance out of the first name; consumed by the architecture package, not a standalone capability."
+    },
+    {
+      "path": "bin/architecture/candidates.py",
+      "reason": "library module holding the bounded codebase-map and component candidate records (#229 slice C2): engine-derived entry points from provider-independent facts, candidate provenance, dominant-path candidate keys, and the projection down to the matcher's frozen input shape; consumed by the architecture package, not a standalone capability."
+    },
+    {
+      "path": "bin/architecture/tests/test_clustering.py",
+      "reason": "unit tests for architecture.clustering's monotonic degradation (a degraded partition is a union of full clusters, never a re-partition), evidence floor, boundary-crossing cluster metrics, and deterministic collision-disambiguated naming, over a hand-authored synthetic graph corpus; test infrastructure, not a capability an agent invokes."
+    },
+    {
+      "path": "bin/architecture/tests/test_candidates.py",
+      "reason": "unit tests for architecture.candidates' record shape, provenance, candidate-key stability across ordinary edits, observability-gated entry points, and the integration guard asserting the #228 matcher accepts this package's own output; test infrastructure, not a capability an agent invokes."
     }
   ],
   "external_upstreams": [

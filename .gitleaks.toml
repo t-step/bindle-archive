@@ -27,6 +27,13 @@ paths = [
   # docs/superpowers/plans/**: a blanket tree exemption is what #227's
   # narrowing moved away from.
   '''docs/superpowers/plans/2026-07-18-structural-graph-interchange\.md''',
+  # Exercises architecture.exclusions' refusal to normalize a home-relative
+  # path, and its redaction of the rejected value in the exclusion report.
+  # The rule under test IS the pattern, so a fictional /Users/someone fixture
+  # is unavoidable; each hit carries an inline `private-ok` marker that
+  # bin/check-private-info.sh honors and gitleaks has no equivalent for.
+  # Same self-exemption redaction.py already holds, one file wide.
+  '''bin/architecture/tests/test_exclusions\.py''',
 ]
 
 [[rules]]

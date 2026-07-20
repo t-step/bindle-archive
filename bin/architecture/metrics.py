@@ -208,6 +208,37 @@ def _closure(seeds, adjacency):
     return seen
 
 
+def combine_coverage(statuses):
+    """Combine coverage statuses: observed only when all of them are.
+
+    Public because clustering aggregates member entities into one cluster
+    reading and must reach the same verdict this module does — two copies of
+    the absence-vs-zero rule is one copy too many.
+    """
+    return _combine_statuses(statuses)
+
+
+def dependency_pairs(graph, kept):
+    """Distinct (dependent, dependency) bare-path pairs, exclusions applied.
+
+    Deduped across edge type, self-pairs dropped, both endpoints resolved
+    from symbol or file facts. Public because clustering measures a
+    directory's internal cohesion in these pairs, and re-deriving them there
+    would mean a second resolution rule that could disagree with this one.
+    """
+    resolved = _resolve(graph)
+    pairs = set()
+    for edge in ((graph.get("facts") or {}).get("edges") or ()):
+        if edge.get("type") not in DEPENDENCY_EDGE_TYPES:
+            continue
+        source = resolved.get(edge.get("source"))
+        target = resolved.get(edge.get("target"))
+        if source not in kept or target not in kept or source == target:
+            continue
+        pairs.add((source, target))
+    return sorted(pairs)
+
+
 def compute(graph, configured=(), gitignore=(), denylist=(), defaults=True,
             root=""):
     """Structural metrics per surviving repository-relative path.
