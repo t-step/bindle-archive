@@ -475,6 +475,33 @@ check "codex skills home header prints even with zero eligible skills" contains 
 check "codex skills home prune sweeps orphan with zero eligible skills" not_exists "$AGENTS_SKILLS_HOME/gone"
 check "codex skills home empty-eligibility prune is reported" contains "pruned" "$out"
 
+echo "hooks are symlinked into CLAUDE_HOME/hooks (#264):"
+REPO="$TMP/repo-hooks"
+CLAUDE_HOME="$TMP/hooks-claude"
+build_repo "$REPO"
+mkdir -p "$REPO/global/hooks"
+printf '#!/usr/bin/env python3\nprint("guard")\n' >"$REPO/global/hooks/demo-guard.py"
+printf '#!/usr/bin/env python3\nprint("ctx")\n' >"$REPO/global/hooks/demo-context.py"
+out="$("$REPO/bin/install.sh" --provider claude --home "$CLAUDE_HOME" --bin-dir "$TMP/hooks-bin" 2>&1)"
+check "hooks header prints" contains "Claude hooks:" "$out"
+check "guard hook symlinked" links_to "$REPO/global/hooks/demo-guard.py" "$CLAUDE_HOME/hooks/demo-guard.py"
+check "context hook symlinked" links_to "$REPO/global/hooks/demo-context.py" "$CLAUDE_HOME/hooks/demo-context.py"
+
+# The point of the indirection: the stable path survives a checkout move as a
+# DANGLING link that reports itself, rather than a settings.json path that
+# silently points at nothing. Re-running install from the moved checkout
+# repairs it.
+echo "hook symlink after a checkout move (#264):"
+REPO_MOVED="$TMP/repo-hooks-moved"
+mv "$REPO" "$REPO_MOVED"
+check "hook link dangles after the move" test ! -e "$CLAUDE_HOME/hooks/demo-guard.py"
+check "hook link still present as a broken symlink" test -L "$CLAUDE_HOME/hooks/demo-guard.py"
+out="$("$REPO_MOVED/bin/install.sh" --provider claude --home "$CLAUDE_HOME" --bin-dir "$TMP/hooks-bin" 2>&1)"
+check "moved-checkout hook link is adopted, not a conflict" contains "adopted" "$out"
+check "moved-checkout hook link is not reported as a conflict" not_contains "CONFLICT  demo-guard.py" "$out"
+check "reinstall repairs the hook link" links_to "$REPO_MOVED/global/hooks/demo-guard.py" "$CLAUDE_HOME/hooks/demo-guard.py"
+check "repaired hook resolves" test -e "$CLAUDE_HOME/hooks/demo-guard.py"
+
 # --- result ----------------------------------------------------------------
 echo
 echo "tests: ${pass} passed, ${fail} failed"

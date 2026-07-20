@@ -32,12 +32,18 @@
 #
 set -euo pipefail
 
-REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-START_HOOK="$REPO_ROOT/global/hooks/session-start-context.py"
-END_HOOK="$REPO_ROOT/global/hooks/session-end-breadcrumb.py"
 CLAUDE_HOME="${HOME}/.claude"
 SUBCMD=""
 APPLY=false
+
+# Hook paths written into settings.json point at $CLAUDE_HOME/hooks/, the stable
+# symlinks bin/install.sh creates — not into this checkout (#264). A repo move
+# then leaves a dangling symlink that reports itself instead of silently
+# disabling the hook. Resolved after --home parsing, since CLAUDE_HOME is a flag.
+set_hook_paths() {
+  START_HOOK="$CLAUDE_HOME/hooks/session-start-context.py"
+  END_HOOK="$CLAUDE_HOME/hooks/session-end-breadcrumb.py"
+}
 
 usage_error() {
   echo "install-session-hooks.sh: $1" >&2
@@ -68,6 +74,7 @@ while [ $# -gt 0 ]; do
 done
 [ -n "$SUBCMD" ] || SUBCMD="status"
 SETTINGS="$CLAUDE_HOME/settings.json"
+set_hook_paths
 
 settings_valid_or_die() {
   if [ -f "$SETTINGS" ] && ! python3 -c 'import json,sys; json.load(open(sys.argv[1]))' "$SETTINGS" 2>/dev/null; then

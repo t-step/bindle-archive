@@ -395,6 +395,49 @@ _file_group() {
   if $PRUNE; then prune_path "$home_file"; fi
 }
 
+# _hook_group — symlink global/hooks/*.py into $CLAUDE_HOME/hooks/ (#264).
+#
+# Hooks are not capabilities, so they are absent from install-manifest.tsv and
+# linked explicitly here. The point is the indirection: settings.json can then
+# name a stable ~/.claude/hooks/<name>.py path instead of a checkout-absolute
+# one, so moving or renaming this repo no longer silently disables a hook — it
+# leaves a dangling symlink that the hook's own nonzero exit and bin/doctor.sh
+# both report. Wiring settings.json stays out of scope here: that file is the
+# user's, and only bin/install-session-hooks.sh --apply writes it.
+_hook_group() {
+  local src dest
+  [ -d "$REPO_ROOT/global/hooks" ] || return 0
+  echo "Claude hooks:"
+  mkdir -p "$CLAUDE_HOME/hooks"
+  for src in "$REPO_ROOT"/global/hooks/*.py; do
+    [ -e "$src" ] || continue
+    dest="$CLAUDE_HOME/hooks/$(basename "$src")"
+    # Self-adopt a hook link left behind by a moved checkout. link_item would
+    # call it "owned elsewhere" (it points outside this REPO_ROOT), and the
+    # --adopt pass can't reach it either: that scan walks install-manifest.tsv,
+    # and hooks are not capabilities, so they have no manifest row. Ownership
+    # here is recognizable without one — a symlink whose target path ends in
+    # global/hooks/<same basename> is a Bindle hook link from an older
+    # checkout, so re-point it instead of reporting a conflict a re-run can
+    # never clear.
+    if [ -L "$dest" ]; then
+      local cur
+      cur="$(readlink "$dest")"
+      case "$cur" in
+        "$REPO_ROOT"/*) : ;; # ours already; link_item handles current vs stale
+        */global/hooks/"$(basename "$src")")
+          rm "$dest"
+          ln -s "$src" "$dest"
+          echo "  adopted   $(basename "$dest")"
+          adopted=$((adopted + 1))
+          continue
+          ;;
+      esac
+    fi
+    link_item "$src" "$dest"
+  done
+}
+
 install_surfaces() {
   case "$PROVIDER" in
     claude | all)
@@ -402,6 +445,7 @@ install_surfaces() {
       _dir_group claude agent "Claude agents:" "$CLAUDE_HOME" agents
       _dir_group claude command "Claude commands:" "$CLAUDE_HOME" commands
       _file_group claude "Claude global instructions:" "$CLAUDE_HOME/CLAUDE.md"
+      _hook_group
       ;;
   esac
   case "$PROVIDER" in

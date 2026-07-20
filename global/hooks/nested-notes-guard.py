@@ -13,10 +13,23 @@ is the compliance signal. Escape hatches (the skill's carve-outs):
   - an explicit `<!-- nested-notes-exempt -->` marker in the body;
   - unreadable --body-file targets (can't judge -> allow; CLAUDE.md still governs).
 
-Wire-up in ~/.claude/settings.json:
-  "hooks": { "PreToolUse": [ { "matcher": "Bash", "hooks": [ { "type": "command",
-    "command": "python3 /path/to/bindle/global/hooks/nested-notes-guard.py",
+Covers two write paths: Bash `gh` invocations, and GitHub MCP write tools
+(#264), which carry structured tool_input fields instead of a command string.
+The MCP path fails CLOSED — a write-shaped tool whose body/owner cannot be read
+is denied, since an unrecognized write shape is exactly the gap this guard was
+missing.
+
+Wire-up in ~/.claude/settings.json — note the ~/.claude/hooks path, a symlink
+bin/install.sh maintains. Pointing settings.json into a checkout means moving
+the repo silently disables the hook; via the symlink, a move leaves a dangling
+link that this hook's own nonzero exit and bin/doctor.sh both report:
+  "hooks": { "PreToolUse": [ { "matcher": "Bash|mcp__.*github.*",
+    "hooks": [ { "type": "command",
+    "command": "python3 ~/.claude/hooks/nested-notes-guard.py",
     "timeout": 10 } ] } ] }
+Do not wrap the command in `|| true`: for PreToolUse only exit code 2 blocks a
+tool call, so a missing hook already fails visibly without blocking anything,
+and suppressing that is what made a moved repo undetectable.
 
 Self-test: bin/test-nested-notes-guard.sh
 """
@@ -40,6 +53,8 @@ API_PROSE_PATH = re.compile(r"\b(?:issues|pulls)/")
 BODY_FLAG = re.compile(r"(?:--body(?:-file)?\b|-b\s|-[fF]\s*body=)")
 REPO_FLAG = re.compile(r"(?:-R|--repo)[=\s]+['\"]?([A-Za-z0-9_.-]+)/")
 API_REPO = re.compile(r"\brepos/([A-Za-z0-9_.-]+)/")
+MCP_GITHUB = re.compile(r"^mcp__.*github.*", re.I)
+MCP_WRITE = re.compile(r"(?:create|update|comment|review|edit|add|reply)", re.I)
 BODY_FILE = re.compile(r"--body-file[=\s]+['\"]?([^\s'\"]+)|-[fF]\s*body=@([^\s'\"]+)")
 INLINE_BODY = re.compile(r"(?:--body|-b)\b(.*)$|-[fF]\s*body=(.*)$", re.S)
 FOOTER_LINE = re.compile(r"claude\.ai/code|Generated with \[?Claude Code")
@@ -58,6 +73,19 @@ def deny(reason: str) -> None:
         )
     )
     sys.exit(0)
+
+
+def deny_prose() -> None:
+    """The shared unstructured-prose denial, used by both the Bash and MCP paths."""
+    deny(
+        f"nested-notes guard: this writes maintainer-facing prose to a {OWNER} "
+        "repo without nested-notes structure. Re-render the body with the "
+        "nested-notes skill in inline mode (bold L1 '-' concepts, '▸' "
+        "attributes, literal enumerator glyphs, '↪' prose leaves, blank "
+        "lines between siblings; keep tables/code intact and footers verbatim). "
+        "Genuine carve-outs (bot-template fixed fields, single-fact one-liners) "
+        "may include <!-- nested-notes-exempt --> in the body instead."
+    )
 
 
 def repo_owner(cmd: str, cwd: str) -> str | None:
@@ -88,12 +116,63 @@ def effective_length(text: str) -> int:
     return len("\n".join(kept).strip())
 
 
+def mcp_owner(tool_input: dict) -> str | None:
+    """Owner from an MCP payload: an explicit `owner`, else an `owner/name` repo."""
+    owner = tool_input.get("owner")
+    if isinstance(owner, str) and owner:
+        return owner
+    repo = tool_input.get("repo")
+    if isinstance(repo, str) and "/" in repo:
+        return repo.split("/", 1)[0]
+    return None
+
+
+def check_mcp(data: dict, tool_name: str) -> None:
+    """GitHub MCP write path (#264). Bash carries a command string; MCP carries
+    structured fields, so normalize to (owner, body) and share every downstream
+    rule with the Bash path.
+
+    Fails CLOSED: a write-shaped tool whose body or owner can't be found is
+    denied, not waved through. Unlike an unreadable --body-file — a `gh` command
+    the guard did parse — an unrecognized write shape is the hole #264 was filed
+    on, so silence there is the failure, not a safe default.
+    """
+    if not MCP_WRITE.search(tool_name):
+        return  # read-shaped: nothing to judge
+    tool_input = data.get("tool_input") or {}
+    if not isinstance(tool_input, dict):
+        tool_input = {}
+    body = tool_input.get("body")
+    owner = mcp_owner(tool_input)
+    if not isinstance(body, str) or owner is None:
+        deny(
+            f"nested-notes guard: `{tool_name}` looks like a GitHub write but the "
+            "guard could not read its body and target owner, so it cannot tell "
+            "whether the nested-notes rule applies. Use the `gh` CLI path via "
+            "Bash (which the guard understands), or add "
+            "<!-- nested-notes-exempt --> to the body if this is a genuine "
+            "carve-out. If this tool's payload shape is legitimate, teach the "
+            "guard about it in global/hooks/nested-notes-guard.py."
+        )
+    if owner.lower() != OWNER:
+        return
+    if EXEMPT in body or MARKER in body:
+        return
+    if effective_length(body) < SHORT_BODY:
+        return
+    deny_prose()
+
+
 def main() -> None:
     try:
         data = json.load(sys.stdin)
     except Exception:  # noqa: BLE001
         return
-    if data.get("tool_name") != "Bash":
+    tool_name = data.get("tool_name") or ""
+    if MCP_GITHUB.search(tool_name):
+        check_mcp(data, tool_name)
+        return
+    if tool_name != "Bash":
         return
     cmd = (data.get("tool_input") or {}).get("command") or ""
     if "gh" not in cmd:
@@ -129,15 +208,7 @@ def main() -> None:
         if effective_length(zone) < SHORT_BODY:
             return
 
-    deny(
-        f"nested-notes guard: this writes maintainer-facing prose to a {OWNER} "
-        "repo without nested-notes structure. Re-render the body with the "
-        "nested-notes skill in inline mode (bold L1 '-' concepts, '▸' "
-        "attributes, literal enumerator glyphs, '↪' prose leaves, blank "
-        "lines between siblings; keep tables/code intact and footers verbatim). "
-        "Genuine carve-outs (bot-template fixed fields, single-fact one-liners) "
-        "may include <!-- nested-notes-exempt --> in the body instead."
-    )
+    deny_prose()
 
 
 if __name__ == "__main__":
