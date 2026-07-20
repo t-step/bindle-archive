@@ -15,8 +15,9 @@ explicit and machine-readable.
 
 ## Label taxonomy (load-bearing — the dashboard parses these exactly)
 
-Every open issue should carry one `type:` label and one `status:` label.
-Label names include the space after the colon.
+Every open issue should carry one `type:` label and one `status:` label, and —
+unless it is in `status: triage` — one `priority:` label. Label names include the
+space after the colon.
 
 | Facet    | Labels                                                                                                                       | Meaning                                            |
 | -------- | ---------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------- |
@@ -25,7 +26,26 @@ Label names include the space after the colon.
 | priority | `priority: now`, `priority: normal`, `priority: someday`                                                                     | Urgency (high / normal / low)                      |
 | —        | `question`                                                                                                                   | Marks an open question, not a work item            |
 
-Done is expressed by **closing** the issue, not by a label.
+### Label lifecycle
+
+Done is expressed by **closing** the issue, not by a label. Three rules follow
+from that, stated here because leaving them implicit is what let 62 stale labels
+accumulate before the sweep in `#227`, and two more after it (`#279`, `#309`).
+
+1. **`status:` labels scope to open issues.** Closing an issue — directly, or by
+   merging a PR whose body references it with a closing keyword — must remove its
+   `status:` label. A closed issue still advertising `status: ready` is a false
+   row on a dashboard that reads these labels live.
+2. **There is no `status: done`.** Closure already carries that information, and
+   a second way to say it is a second thing to keep in sync. The label was
+   retired in `#287`.
+3. **Every open issue outside `status: triage` carries a `priority:` label.**
+   Triage is where an issue waits to be assessed, so it is the one state where
+   having no priority is honest. Anywhere else, a missing priority makes the
+   queue unsortable and is invisible until someone notices.
+
+Rule 1's merge case is the one that actually fires: both `#279` and `#309` closed
+through a `Resolves #N` keyword rather than `gh issue close`.
 
 ## Conventions
 
