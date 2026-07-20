@@ -84,8 +84,11 @@ inferred one — satisfied by A rather than by either gate.
 A `PreToolUse` guard on `Bash`, in the shape of the two guards already shipped.
 
 **Gating.** `docs/issue-tracking.md` absent from the repo root → `sys.exit(0)`.
-The guard enforces the label **prefixes** `status:` and `priority:`, never
-specific values.
+The guard enforces the label **prefixes** `status:` and `priority:` rather than
+specific values — with exactly one exception, `status: triage` in R3, which the
+rule is definitionally about ("outside triage, carry a priority"). That is the
+only literal value the guard knows, and it is named as a constant rather than
+inlined.
 
 Prefix-only matters twice. It keeps the vocabulary free to grow — adding
 `status: parked` needs no guard edit — and it keeps the guard honest about what
@@ -104,11 +107,23 @@ rules mean something.
 | Rule | Trigger | Refuses when | Message |
 | --- | --- | --- | --- |
 | R1 | `gh issue close N` | `#N` carries `status:*` and the command has no matching `--remove-label` | the exact `--remove-label` flag to append |
-| R2 | `gh pr merge N` | the PR body's closing keywords resolve to issues carrying `status:*` | one `gh issue edit --remove-label` per issue |
+| R2 | `gh pr merge N` | the PR body **or any commit message in the PR** carries a closing keyword resolving to an issue with `status:*` | one `gh issue edit --remove-label` per issue |
 | R3 | `gh issue edit N --add-label "status: <non-triage>"` | `#N` carries no `priority:*` | add a `priority:` label first |
 
-R1 needs one label read. R2 needs a PR-body read plus a label read per referenced
-issue. R3 needs one label read.
+R1 needs one label read. R2 needs a PR body-and-commits read plus a label read
+per referenced issue. R3 needs one label read.
+
+**Amendment, 2026-07-20.** R2 originally read "the PR body's closing keywords".
+That was incomplete, and it was demonstrated so within the hour: the commit
+message for this very document contained the parenthetical `(closes #266)` while
+describing what unit C would do, and merging `#317` closed `#266` three PRs
+early. GitHub parses closing keywords in commit messages, not only in PR bodies.
+
+Two things follow. R2 scans commit messages as well as the body — as originally
+written, the guard would not have caught the drift its own design PR created.
+And the working rule this repo already had ("never put a closing keyword adjacent
+to an issue ref you don't want closed") needs restating to name the commit
+message as a covered surface, not just the PR body.
 
 Every refusal names the exact command that satisfies it. A guard that says no
 without saying what yes looks like is a guard people learn to route around.
