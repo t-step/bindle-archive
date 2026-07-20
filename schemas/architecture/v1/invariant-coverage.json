@@ -70,6 +70,14 @@
     "E_ARCH_PROJECT_ID_MISMATCH": "native-only"
   },
   "excluded_codes": {
+    "E_ARCH_CONFIG_BAD_BINDING": "architecture.project rejects a binding ARGUMENT at mutation time -- a duplicate alias, a duplicate binding_id, or a malformed alias. The document that would result is always schema-valid; what is refused is the request to create it, which no schema can state.",
+    "E_ARCH_PREVIEW_CONFIG_MISSING": "architecture.preview reports the ABSENCE of config.json. There is no document for a schema to validate.",
+    "E_ARCH_PREVIEW_CONFIG_INVALID": "a wrapper announcing that preview refuses to plan against a config that failed validation; the per-field findings accompanying it carry their own classified codes, so the invariant itself is covered there rather than here.",
+    "E_ARCH_PREVIEW_GRAPH_UNUSABLE": "graphset.load_set refused the structural-graph config preview derived from the architecture config. A caller-argument failure, not an invariant of a persisted architecture document.",
+    "E_ARCH_PREVIEW_BINDING_UNKNOWN": "a --graph argument names a binding_id absent from the config. A property of the INVOCATION, not of either document.",
+    "E_ARCH_PREVIEW_ALLOCATION_REFUSED": "the allocator refused a batch (slug collision, or a name from which no slug can be derived). A refusal to create identities, not a defect in a stored document.",
+    "E_ARCH_PREVIEW_IDENTITY_UNPLACEABLE": "the judgments log knows an identity that index.json records no note_path for, and neither the log nor the identity_allocation payload stores one. A cross-file reachability gap rather than a property of either file; see the open question on #374 about making the log self-sufficient.",
+    "E_ARCH_PREVIEW_PLAN_REJECTED": "planner.plan rejected this run's inputs. Reports a planning OUTCOME -- the same family as the excluded E_ARCH_APPLY_* run outcomes.",
     "E_ARCH_CONFIG_MISSING": "architecture.project reports the ABSENCE of config.json, not a property of one. There is no document for a schema to validate, and a missing config is a legitimate pre-init state rather than a defect, so neither validator can or should express it.",
     "E_ARCH_CONFIG_UNREADABLE": "architecture.project reports bytes that could not be read or parsed as JSON. A schema validates a parsed document; there is no parsed document here, and the recovery is an operator looking at the file rather than a validation fix.",
     "E_ARCH_CANDIDATE_BAD_PROJECTION_TYPE": "matcher caller-input validation: a candidate is planning state a caller passes in, never a persisted document, so no JSON Schema governs it.",

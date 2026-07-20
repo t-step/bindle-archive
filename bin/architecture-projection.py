@@ -44,6 +44,7 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
+from architecture import preview
 from architecture import project
 from architecture import state
 from context_graph import config as ctx_config
@@ -58,6 +59,13 @@ def _emit(obj, fmt):
 
 
 def _emit_text(obj):
+    # The preview shape is checked BEFORE the findings shape. A successful
+    # preview carries `findings: []`, which the empty-findings branch below
+    # would render as "ok: no findings" -- hiding the entire plan behind a
+    # cheerful one-liner.
+    if "fingerprint" in obj and "entries" in obj:
+        _emit_text_preview(obj)
+        return
     findings = obj.get("findings")
     if findings:
         for f in findings:
@@ -73,6 +81,39 @@ def _emit_text(obj):
         _emit_text_config(obj)
     else:
         print(json.dumps(obj, indent=2, sort_keys=True))
+
+
+def _emit_text_preview(obj):
+    if not obj["ok"]:
+        for f in obj["findings"]:
+            print("%s: %s" % (f["code"], f["message"]))
+        return
+    print("architecture preview (project %s)" % obj["project_id"])
+    print("fingerprint: %s" % obj["fingerprint"])
+    print("entries: %d, deferred: %d, over-cap: %d"
+          % (len(obj["entries"]), len(obj["deferred"]),
+             len(obj["over_cap"])))
+    print("bindings:")
+    for binding_id, info in sorted(obj["graph"]["bindings"].items()):
+        print("  %s: %s (%s)"
+              % (binding_id, info["status"], info["freshness"]))
+    if obj["entries"]:
+        print("plan:")
+        for entry in obj["entries"]:
+            print("  [%s/%s] %s -> %s%s"
+                  % (entry["identity_outcome"], entry["note_state"],
+                     entry["candidate_key"], entry["note_path"],
+                     " (over cap)" if entry["over_cap"] else ""))
+    if obj["deferred"]:
+        print("deferred (reported, never projected):")
+        for entry in obj["deferred"]:
+            print("  [%s] %s: %s"
+                  % (entry["outcome"], entry["candidate_key"],
+                     entry["reason"]))
+    if obj["findings"]:
+        print("findings:")
+        for f in obj["findings"]:
+            print("  %s: %s" % (f["code"], f["message"]))
 
 
 def _emit_text_config(obj):
@@ -158,6 +199,51 @@ def cmd_config_validate(args):
     return 1 if findings else 0
 
 
+def cmd_config_add_binding(args):
+    try:
+        cfg, binding = project.add_binding(
+            args.notes_home, args.project, args.alias,
+            binding_id=args.binding_id)
+    except state.ArchStateError as exc:
+        _emit({"findings": exc.findings}, args.format)
+        return 1
+    except lock.LockContention as exc:
+        _emit({"findings": _error_findings(
+            "E_LOCK_CONTENTION", str(exc), owner=exc.owner)}, args.format)
+        return 1
+    _emit({"binding": binding, "config": cfg}, args.format)
+    return 0
+
+
+def _parse_graphs(pairs):
+    graphs = {}
+    for pair in pairs or []:
+        binding_id, sep, path = pair.partition("=")
+        if not sep:
+            raise ValueError(
+                "--graph must be BINDING_ID=PATH, got %r" % (pair,))
+        graphs[binding_id] = path
+    return graphs
+
+
+def cmd_preview(args):
+    try:
+        graphs = _parse_graphs(args.graph)
+    except ValueError as exc:
+        _emit({"findings": _error_findings("E_USAGE", str(exc))}, args.format)
+        return 1
+    out = preview.build_preview(
+        args.notes_home, args.project, graphs,
+        provider=({"name": args.provider_name,
+                   "version": args.provider_version}
+                  if args.provider_name else None),
+        decided_at=args.decided_at)
+    _emit(out, args.format)
+    # Deferred (contested/routed) candidates are REPORTED, not a run
+    # failure -- the same stance bin/context-graph.py takes on conflicts.
+    return 0 if out["ok"] else 1
+
+
 def _positive_int(text):
     value = int(text)
     if value < 1:
@@ -207,6 +293,30 @@ def main(argv=None):
         "validate", help="read-only config validation")
     _add_common_args(p_validate)
     p_validate.set_defaults(func=cmd_config_validate)
+
+    p_add = config_sub.add_parser(
+        "add-binding", help="add one repository binding")
+    _add_common_args(p_add)
+    p_add.add_argument("--alias", required=True)
+    p_add.add_argument(
+        "--binding-id", default=None,
+        help="the interchange document's own binding_id; minted when "
+             "omitted. A document whose binding_id is not configured loads "
+             "as `deconfigured` with no facts.")
+    p_add.set_defaults(func=cmd_config_add_binding)
+
+    p_preview = sub.add_parser(
+        "preview", help="read-only projection preview; writes nothing")
+    _add_common_args(p_preview)
+    p_preview.add_argument(
+        "--graph", action="append", default=[], metavar="BINDING_ID=PATH",
+        help="repeatable; BINDING_ID must be a configured binding")
+    p_preview.add_argument("--provider-name", default=None)
+    p_preview.add_argument("--provider-version", default=None)
+    p_preview.add_argument(
+        "--decided-at", default=None, metavar="TIMESTAMP",
+        help="UTC timestamp recorded on any identity allocated by this run")
+    p_preview.set_defaults(func=cmd_preview)
 
     args = parser.parse_args(argv)
     return args.func(args)
