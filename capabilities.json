@@ -1358,6 +1358,22 @@
     {
       "path": "bin/architecture/tests/test_candidates.py",
       "reason": "unit tests for architecture.candidates' record shape, provenance, candidate-key stability across ordinary edits, observability-gated entry points, and the integration guard asserting the #228 matcher accepts this package's own output; test infrastructure, not a capability an agent invokes."
+    },
+    {
+      "path": "bin/architecture/ranking.py",
+      "reason": "library module holding candidate planning's note-count bound (#229 slice C3): banded ranking over blast radius and fan in/out, cap enforcement that marks rather than deletes an over-cap candidate, unknown-ranks-lowest so absence never wins a slot, and the codebase map's cap exemption; consumed by the architecture package, not a standalone capability."
+    },
+    {
+      "path": "bin/architecture/diffs.py",
+      "reason": "library module holding candidate planning's deterministic diff and minimal changed-set primitive (#229 slice C3): a semantic fingerprint that compares metrics as bands and excludes per-run provenance, so an ordinary commit yields no spurious changed candidates; consumed by the architecture package, not a standalone capability."
+    },
+    {
+      "path": "bin/architecture/tests/test_ranking.py",
+      "reason": "unit tests for architecture.ranking's banded (never raw) rank order, over-cap retention and marking, rank-swap stability at the cap boundary, unknown-ranks-lowest, and the codebase map's exemption from the cap, over a hand-authored candidate corpus; test infrastructure, not a capability an agent invokes."
+    },
+    {
+      "path": "bin/architecture/tests/test_diffs.py",
+      "reason": "unit tests for architecture.diffs' fingerprint field set, band-only metric comparison, provenance exclusion, per-field changed reporting, and the minimal changed-set an unchanged rerun must produce, over a hand-authored candidate corpus; test infrastructure, not a capability an agent invokes."
     }
   ],
   "external_upstreams": [
