@@ -196,7 +196,10 @@ and the authority boundaries above both. The handoff must:
   Bindle's bare, unannotated `VERSION` file, so this step closes that gap
   locally, before the PR is reviewed; the `local-release-please` strategy's
   `apply` verb chains this sync onto the same invocation automatically
-  (issue #152), so it is no longer a separately-remembered manual step;
+  (issue #152), so it is no longer a separately-remembered manual step, and
+  then verifies it with `bin/release-please-sync.sh check` — a release PR whose
+  `VERSION` and manifest disagree fails the `apply` (issue #265) instead of
+  being caught, or not, by a human afterwards;
 - run release-integrity verification (`package-release-integrity` / `#59`)
   before any publication;
 - when GitHub Actions cannot run `release.yml` (e.g. a billing block) and
@@ -252,7 +255,8 @@ not guess a class or a number to produce a tidier output.
   not regenerate Release-Please-owned artifacts. Bindle's bare `VERSION` file is
   kept current automatically: `bin/release-please-sync.sh` syncs it onto the
   release PR branch as part of Step 6 (issue #137), chained automatically by
-  the `local-release-please` strategy's `apply` verb (issue #152). Manual
+  the `local-release-please` strategy's `apply` verb (issue #152) and gated by
+  that verb's post-sync `check` (issue #265). Manual
   publication (while GitHub Actions cannot run `release.yml`) uses
   `bin/release-publish.sh`, which additionally relabels the merged release PR
   `autorelease: pending` → `autorelease: tagged` so the next `release-pr` run

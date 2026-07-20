@@ -205,7 +205,12 @@ later, separate approval request. No approval / no token → stop.
 `apply` creates or updates the release PR, then (for the `local-release-please`
 strategy) chains `<bindle>/bin/release-please-sync.sh apply` onto that same PR
 branch with the same token — issue #152 — so `VERSION` never disagrees with the
-manifest on the release PR without a separately-remembered step. It never
+manifest on the release PR without a separately-remembered step. It then runs
+`<bindle>/bin/release-please-sync.sh check` (read-only, no token) and fails the
+whole `apply` if the two still disagree — issue #265, because the sync can run
+before the PR is labeled `autorelease: pending`, report "nothing to sync", and
+exit 0, which is how v0.7.0 shipped with a stale `VERSION`. A mismatch is now a
+failed release step, not a rule someone has to remember to check. It never
 merges, tags, publishes, or deploys. The resulting release PR is a
 **proposal**; its merge is a separate human decision.
 

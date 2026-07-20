@@ -173,6 +173,51 @@ code=$?
   ok "apply fails when the chained sync fails" ||
   bad "apply-sync-failure ($code): $out"
 
+# --- apply: the post-sync VERSION/manifest gate (#265) -----------------------
+# The sync can no-op against a PR that is not visible or labeled yet and leave
+# the release branch with VERSION and the manifest disagreeing. apply must
+# therefore VERIFY, not assume: it chains `check` after `apply`, and a failing
+# check fails the whole apply.
+: >"$RP_STUB_LOG"
+: >"$SYNC_STUB_LOG"
+out="$(cd "$FIX" && GITHUB_TOKEN=faketoken RC_CONFIG="$TMP/good.toml" RELEASE_PLEASE_CMD="$STUB" \
+  RELEASE_PLEASE_SYNC_CMD="$SYNC_STUB" \
+  "$SEL" apply --approval-token "eph-789" 2>&1)"
+code=$?
+{ [ "$code" -eq 0 ] && grep -q 'STUB-SYNC check' "$SYNC_STUB_LOG"; } &&
+  ok "apply chains release-please-sync.sh check after the sync (#265)" ||
+  bad "apply-chains-check ($code): log=$(cat "$SYNC_STUB_LOG")"
+
+# Ordering matters: verifying before syncing would gate the pre-sync state.
+{
+  [ "$(grep -n 'STUB-SYNC apply' "$SYNC_STUB_LOG" | tail -n1 | cut -d: -f1)" -lt \
+    "$(grep -n 'STUB-SYNC check' "$SYNC_STUB_LOG" | tail -n1 | cut -d: -f1)" ]
+} &&
+  ok "check runs after apply, not before" ||
+  bad "check-ordering: log=$(cat "$SYNC_STUB_LOG")"
+
+# A sync that succeeds but leaves the branch inconsistent must still fail the
+# apply — the v0.7.0 failure mode, caught by the gate rather than by memory.
+GATE_STUB="$TMP/sync-gate-stub.sh"
+cat >"$GATE_STUB" <<'EOF'
+#!/usr/bin/env bash
+echo "STUB-SYNC $*" >>"$SYNC_STUB_LOG"
+if [ "$1" = "check" ]; then
+  echo "release-please-sync: VERSION 0.6.0 != manifest 0.7.0" >&2
+  exit 12
+fi
+echo "release-please-sync stub: nothing to sync"
+EOF
+chmod +x "$GATE_STUB"
+: >"$SYNC_STUB_LOG"
+out="$(cd "$FIX" && GITHUB_TOKEN=faketoken RC_CONFIG="$TMP/good.toml" RELEASE_PLEASE_CMD="$STUB" \
+  RELEASE_PLEASE_SYNC_CMD="$GATE_STUB" \
+  "$SEL" apply --approval-token "eph-790" 2>&1)"
+code=$?
+[ "$code" -ne 0 ] &&
+  ok "apply fails when the post-sync check reports a VERSION/manifest mismatch" ||
+  bad "apply-gate-failure ($code): $out"
+
 # --- Release Please config: simple type, component-less tag, manifest is semver ---
 # The manifest version is NOT hardcoded — it advances every release (0.4.0 at
 # seed, 0.5.0 after the first cut, ...); assert it's a valid semver, not a value.
