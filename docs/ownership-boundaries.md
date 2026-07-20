@@ -49,13 +49,15 @@ violate a line here, the change is wrong.
   Wiring is opt-in per hook and a bare `install` selects only the session
   hooks, so no guard begins intercepting tool calls without being named (#323).
 
-  Hand-wired hook entries (every guard except those two) still have a
-  convention Bindle *diagnoses* without writing: the `command` names
+  Every hook Bindle ships now has an installer path, so no wiring needs to be
+  hand-edited. An entry you *do* write by hand still has a convention Bindle
+  *diagnoses* without writing: the `command` names
   `$HOME/.claude/hooks/<hook>.py` — the symlink `bin/install.sh` maintains —
   expanded, and is not wrapped in `test -f … || true`. A checkout-absolute
   path resolves until the repo moves, and the suppression turns a broken hook
-  into a silent no-op. `bin/doctor.sh` reports both as findings (#312); fixing
-  them is your edit to make.
+  into a silent no-op. `bin/doctor.sh` reports both as findings (#312), plus
+  any hook that is installed but wired nowhere (#323); fixing them is your
+  edit to make.
 
 ## What it must never touch
 
