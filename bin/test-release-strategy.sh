@@ -57,6 +57,63 @@ run "$TMP/good.toml" which
 run "$TMP/good.toml" bogus-verb
 [ "$code" -eq 2 ] && ok "unknown verb -> exit 2" || bad "unknown verb ($code)"
 
+# --- target-repo config resolution (#246) ------------------------------------
+# The seam must resolve release-captain.toml from the repo it is OPERATING ON
+# (the cwd's git root), not from Bindle's own checkout. Every assertion above
+# passes RC_CONFIG explicitly, which is why this went unnoticed: only an
+# invocation with NO RC_CONFIG exercises the default path.
+
+# A target repo whose own config names a strategy Bindle does not ship: the
+# error must quote the TARGET's value, proving the target's file was read.
+TGT="$TMP/target"
+git init -q "$TGT"
+printf 'strategy = "target-only-strategy"\n' >"$TGT/release-captain.toml"
+out="$(cd "$TGT" && "$SEL" which 2>&1)"
+code=$?
+{ [ "$code" -eq 64 ] && printf '%s' "$out" | grep -q 'target-only-strategy'; } &&
+  ok "resolves release-captain.toml from the target repo, not Bindle (#246)" ||
+  bad "target-config ($code): $out"
+
+# A target repo with NO config must fail closed and NAME the path it looked in
+# — the pre-#246 behavior silently succeeded by finding Bindle's own config.
+BARE="$TMP/bare"
+git init -q "$BARE"
+out="$(cd "$BARE" && "$SEL" which 2>&1)"
+code=$?
+{
+  [ "$code" -eq 64 ] &&
+    printf '%s' "$out" | grep -q "$(basename "$BARE")/release-captain.toml"
+} &&
+  ok "target repo without a config fails closed, naming the path searched" ||
+  bad "bare-target ($code): $out"
+
+# Outside a git repo entirely: still fail closed, never fall back to Bindle's.
+NOGIT="$TMP/nogit"
+mkdir -p "$NOGIT"
+out="$(cd "$NOGIT" && "$SEL" which 2>&1)"
+code=$?
+{ [ "$code" -eq 64 ] && printf '%s' "$out" | grep -qi 'not inside a git'; } &&
+  ok "outside a git repo fails closed" || bad "nogit ($code): $out"
+
+# `which` must report the config it resolved, not just the strategy name: the
+# #246 failure mode is a `which` whose answer looks perfectly plausible while
+# naming a config from the wrong repo.
+printf 'strategy = "local-release-please"\n' >"$TGT/release-captain.toml"
+out="$(cd "$TGT" && "$SEL" which 2>&1)"
+code=$?
+{
+  [ "$code" -eq 0 ] &&
+    printf '%s' "$out" | grep -q "^config=.*$(basename "$TGT")/release-captain.toml$"
+} &&
+  ok "which reports the resolved config path" || bad "which-config ($code): $out"
+
+# RC_CONFIG stays an explicit override of the target-repo default.
+out="$(cd "$TGT" && RC_CONFIG="$TMP/good.toml" "$SEL" which 2>&1)"
+code=$?
+{ [ "$code" -eq 0 ] && printf '%s' "$out" | grep -q 'local-release-please'; } &&
+  ok "RC_CONFIG overrides the target-repo default" ||
+  bad "rc-config-override ($code): $out"
+
 # A stub release-please that records its argv and mutates NOTHING.
 STUB="$TMP/rp-stub.sh"
 cat >"$STUB" <<'EOF'
