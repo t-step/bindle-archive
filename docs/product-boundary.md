@@ -65,6 +65,17 @@ Bindle owns, and its releases are accountable for:
 6. **The session-continuity data model** — the notes home (`~/.bindle`),
    its layout and formats.
 7. **The issue-tracking label contract** — `docs/issue-tracking.md`.
+8. **Executable automation** — `global/hooks/`, the only surface Bindle
+   ships that runs without user initiation. Listed separately from the
+   Claude-native assets above because that is what governs it: admission
+   is the "executable automation" criterion below, not the workflow one;
+   non-goal 6 gates it on the safety contract in
+   [runtime-security-privacy.md](runtime-security-privacy.md); and its
+   install path is separate in both directions — `bin/install.sh`
+   symlinks the scripts but never wires them, and wiring into
+   `~/.claude/settings.json` is opt-in per hook. A release is accountable
+   for hook *behavior*, not merely for the files being present: a hook
+   that is symlinked but never wired has shipped nothing.
 
 ## Provider boundary
 
