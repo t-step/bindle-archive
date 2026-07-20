@@ -80,10 +80,12 @@ is not installed.
 <!-- CODEGRAPH_START -->
 ## CodeGraph
 
-In repositories indexed by CodeGraph (a `.codegraph/` directory exists at the repo root), reach for it BEFORE grep/find or reading files when you need to understand or locate code:
+In repositories indexed by CodeGraph (a `.codegraph/` directory exists at the repo root), CodeGraph bills a flat ~5.5k tokens per call no matter how small the question, so it only pays when one call replaces a lot of reading. Reach for it when you would otherwise open **6+ files** to orient: cross-file blast radius, dispatch tracing, or a name that collides across languages. For a single symbol or file, grep + Read costs roughly 4x less — use those.
 
-- **MCP tool** (when available): `codegraph_explore` answers most code questions in one call — the relevant symbols' verbatim source plus the call paths between them, including dynamic-dispatch hops grep can't follow. Name a file or symbol in the query to read its current line-numbered source. If it's listed but deferred, load it by name via tool search.
+- **MCP tool** (when available): `codegraph_explore` returns the relevant symbols' verbatim source plus the call paths between them, including dynamic-dispatch hops grep can't follow. Name a file or symbol in the query to read its current line-numbered source. If it's listed but deferred, load it by name via tool search.
 - **Shell** (always works): `codegraph explore "<symbol names or question>"` prints the same output.
 
-If there is no `.codegraph/` directory, skip CodeGraph entirely — indexing is the user's decision.
+Never treat the output as an exhaustive list; it truncates silently, so confirm any "find every X" sweep with grep. Don't chain CodeGraph calls — follow up on what one returned with grep + Read rather than another ~5.5k-token query.
+
+If there is no `.codegraph/` directory, or the work is in a language the index doesn't cover (shell, markdown, docs), skip CodeGraph entirely — indexing is the user's decision.
 <!-- CODEGRAPH_END -->
