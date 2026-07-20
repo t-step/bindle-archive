@@ -10,6 +10,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", ".."))
 from architecture import canonical
 from architecture import state
 from context_graph import config as cg_config
+from context_graph import lock as cg_lock
 
 PROJECT_ID = "project:" + "a" * 32
 OTHER_PROJECT_ID = "project:" + "c" * 32
@@ -541,6 +542,34 @@ class TestStateWritesNothing(unittest.TestCase):
                           "append_line_atomic", "os.replace"):
             with self.subTest(token=forbidden):
                 self.assertNotIn(forbidden, source)
+
+
+class TestCrossSurfaceLockCoversArchitecture(unittest.TestCase):
+    """#228 PT28, from the architecture side: the one project lock sits
+    above this surface's directory, so a context apply and an architecture
+    apply cannot interleave. Slice 4 ships the contract; acquisition in the
+    architecture projection loop is child D's."""
+
+    def test_the_project_lock_sits_above_the_architecture_dir(self):
+        adir = state.architecture_dir(NOTES_HOME, SLUG)
+        lpath = cg_lock.lock_path(cg_config.project_dir(NOTES_HOME, SLUG))
+        self.assertTrue(
+            adir.startswith(os.path.dirname(lpath) + os.sep),
+            "%r must live under the lock's directory %r"
+            % (adir, os.path.dirname(lpath)))
+
+    def test_the_lock_is_not_inside_either_surface(self):
+        lpath = cg_lock.lock_path(cg_config.project_dir(NOTES_HOME, SLUG))
+        self.assertFalse(
+            lpath.startswith(state.architecture_dir(NOTES_HOME, SLUG) + os.sep))
+        self.assertFalse(
+            lpath.startswith(cg_config.context_dir(NOTES_HOME, SLUG) + os.sep))
+
+    def test_architecture_operations_are_acquirable(self):
+        for operation in ("arch_init", "arch_config",
+                          "arch_confirm", "arch_apply"):
+            with self.subTest(operation=operation):
+                self.assertIn(operation, cg_lock.VALID_OPERATIONS)
 
 
 if __name__ == "__main__":

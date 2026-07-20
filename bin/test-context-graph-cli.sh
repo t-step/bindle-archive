@@ -80,12 +80,29 @@ check "context-graph.py never imports skill machinery" bash -c \
 echo "== fixture 28: lock contention surfaces owner metadata, break-lock clears it =="
 NH5="$(mktemp -d)"
 "$PY" "$CLI" init --notes-home "$NH5" --project locked >/dev/null
-LOCKDIR="$NH5/projects/locked/.bindle/context"
+# #228: the lock is project-scoped, at .bindle/.lock -- the parent of both
+# .bindle/context and .bindle/architecture, not inside either.
+LOCKDIR="$NH5/projects/locked/.bindle"
+LEGACY_LOCKDIR="$NH5/projects/locked/.bindle/context"
+check "the lock is not inside the context surface" bash -c \
+  "test ! -f '$LEGACY_LOCKDIR/.lock'"
 "$PY" -c "import json,os; open(os.path.join('$LOCKDIR','.lock'),'w').write(json.dumps({'pid':999999,'hostname':'nowhere','operation':'init','acquired_at':'x'}))"
 "$PY" "$CLI" config break-lock --notes-home "$NH5" --project locked >/dev/null 2>&1
 check "break-lock without --force is refused" test $? -ne 0
 "$PY" "$CLI" config break-lock --notes-home "$NH5" --project locked --force >/dev/null
 check "break-lock --force removes the lock" bash -c "test ! -f '$LOCKDIR/.lock'"
+
+echo "== fixture 28b: a lock orphaned at the pre-#228 path is reported, then cleared =="
+NH5B="$(mktemp -d)"
+"$PY" "$CLI" init --notes-home "$NH5B" --project stranded >/dev/null
+LEGACY5B="$NH5B/projects/stranded/.bindle/context/.lock"
+"$PY" -c "import json,os; open('$LEGACY5B','w').write(json.dumps({'pid':999999,'hostname':'crashed','operation':'apply','acquired_at':'x'}))"
+LEGACY_SEEN="$("$PY" "$CLI" config status --notes-home "$NH5B" --project stranded |
+  "$PY" -c "import json,sys; print((json.load(sys.stdin).get('legacy_lock') or {}).get('hostname'))")"
+check "config status reports the legacy lock owner" test "$LEGACY_SEEN" = "crashed"
+check "config status does not remove the legacy lock" test -f "$LEGACY5B"
+"$PY" "$CLI" config break-lock --notes-home "$NH5B" --project stranded --force >/dev/null
+check "break-lock --force clears the legacy lock too" test ! -f "$LEGACY5B"
 
 echo "== #184 process-level propose/confirm/candidates + cross-boundary endpoint-legality (§16) =="
 NH6="$(mktemp -d)"

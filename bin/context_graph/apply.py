@@ -386,7 +386,8 @@ def apply(notes_home, project_slug, repo_roots=None, adopt_context_md=False,
     lock is released on completion or exception via ProjectLock's context
     manager."""
     cdir = config.context_dir(notes_home, project_slug)
-    with lock.ProjectLock(cdir, "apply"):
+    with lock.ProjectLock(config.project_dir(notes_home, project_slug),
+                          "apply"):
         plan = build_plan(notes_home, project_slug, repo_roots,
                           adopt_context_md, github_adapter)
         if not plan["ok"]:

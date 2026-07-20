@@ -287,7 +287,9 @@ def init_project(notes_home, project_slug, display_name=None):
     repaired or replaced. Returns (config_dict, created: bool)."""
     cdir = context_dir(notes_home, project_slug)
     path = os.path.join(cdir, CONFIG_FILENAME)
-    with lock.ProjectLock(cdir, "init"):
+    # The lock is project-scoped (#228), covering context and architecture
+    # alike; the config it guards is still context-scoped.
+    with lock.ProjectLock(project_dir(notes_home, project_slug), "init"):
         existing = load_config(path)
         if existing is not None:
             findings = blocking_findings(existing)
@@ -340,7 +342,7 @@ def add_repository(notes_home, project_slug, alias, provider, coordinates=None,
     a duplicate alias -- never on an advisory local-origin disagreement, a
     local git checkout's remote is discovery input only."""
     cdir = context_dir(notes_home, project_slug)
-    with lock.ProjectLock(cdir, "config"):
+    with lock.ProjectLock(project_dir(notes_home, project_slug), "config"):
         path, cfg = _load_valid_or_raise(cdir)
         entry = {"alias": alias, "binding_id": allocate_binding_id(), "provider": provider}
         if coordinates:
@@ -366,7 +368,7 @@ def update_repository(notes_home, project_slug, binding_id, alias=None,
     `default=False` explicitly unsets it; `default=None` leaves it
     unchanged. Only supplied (non-None) fields change."""
     cdir = context_dir(notes_home, project_slug)
-    with lock.ProjectLock(cdir, "config"):
+    with lock.ProjectLock(project_dir(notes_home, project_slug), "config"):
         path, cfg = _load_valid_or_raise(cdir)
         repositories = [dict(r) for r in cfg["repositories"]]
         idx = _find_repository(repositories, binding_id)
@@ -400,7 +402,7 @@ def remove_repository(notes_home, project_slug, binding_id):
     binding whose local checkout has drifted from its configured
     coordinates can still be removed."""
     cdir = context_dir(notes_home, project_slug)
-    with lock.ProjectLock(cdir, "config"):
+    with lock.ProjectLock(project_dir(notes_home, project_slug), "config"):
         path, cfg = _load_valid_or_raise(cdir)
         repositories = list(cfg["repositories"])
         idx = _find_repository(repositories, binding_id)

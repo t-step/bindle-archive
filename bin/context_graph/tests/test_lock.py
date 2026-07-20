@@ -42,7 +42,7 @@ class TestProjectLock(unittest.TestCase):
 
     def test_contention_raises_after_timeout(self):
         path = lock.lock_path(self.tmp)
-        os.makedirs(self.tmp, exist_ok=True)
+        os.makedirs(os.path.dirname(path), exist_ok=True)
         with open(path, "w", encoding="utf-8") as f:
             f.write('{"pid": 999999, "hostname": "elsewhere", '
                      '"operation": "init", "acquired_at": "x"}')
@@ -112,6 +112,11 @@ class TestProjectLock(unittest.TestCase):
     def test_write_failure_does_not_orphan_lock_file(self):
         """Verify that if metadata write fails, the lock file is removed."""
         path = lock.lock_path(self.tmp)
+        # _try_acquire is called directly here, bypassing __enter__'s
+        # makedirs; without this the assertRaises(OSError) below would be
+        # satisfied by a FileNotFoundError instead of the simulated write
+        # failure it is meant to exercise.
+        os.makedirs(os.path.dirname(path), exist_ok=True)
 
         # Patch the fdopen to raise an exception during write
         original_fdopen = os.fdopen
@@ -138,6 +143,7 @@ class TestProjectLock(unittest.TestCase):
     def test_directory_fsync_is_called_on_acquisition(self):
         """Verify that directory fsync is called after lock file creation."""
         path = lock.lock_path(self.tmp)
+        os.makedirs(os.path.dirname(path), exist_ok=True)
 
         fsync_calls = []
 
@@ -156,6 +162,165 @@ class TestProjectLock(unittest.TestCase):
                 self.assertEqual(fsync_calls[0], os.path.dirname(path))
             finally:
                 os.unlink(path)
+
+
+class TestCrossSurfaceScope(unittest.TestCase):
+    """#228 slice 4: one lock at project_dir() covers both .bindle/context
+    and .bindle/architecture (PT28)."""
+
+    def setUp(self):
+        self.tmp = tempfile.mkdtemp()
+
+    def test_lock_path_is_under_the_bindle_root_not_the_project_root(self):
+        path = lock.lock_path(self.tmp)
+        self.assertEqual(
+            path, os.path.join(self.tmp, ".bindle", ".lock"))
+
+    def test_lock_path_is_not_scoped_to_either_surface(self):
+        path = lock.lock_path(self.tmp)
+        self.assertNotIn(os.path.join(".bindle", "context"), path)
+        self.assertNotIn(os.path.join(".bindle", "architecture"), path)
+
+    def test_architecture_operations_are_valid(self):
+        for operation in ("arch_init", "arch_config",
+                          "arch_confirm", "arch_apply"):
+            with lock.ProjectLock(self.tmp, operation) as held:
+                self.assertEqual(
+                    lock.read_owner(held.path)["operation"], operation)
+
+    def test_context_apply_and_architecture_apply_contend_for_one_lock(self):
+        """PT28: the two surfaces are serialized, not interleaved. Written
+        with a foreign owner (another process's context apply) because
+        same-process nesting is deliberately re-entrant."""
+        path = lock.lock_path(self.tmp)
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        with open(path, "w", encoding="utf-8") as f:
+            f.write(json.dumps({"pid": 999999, "hostname": "elsewhere",
+                                "operation": "apply", "acquired_at": "x"}))
+        with self.assertRaises(lock.LockContention) as ctx:
+            with lock.ProjectLock(self.tmp, "arch_apply",
+                                  contention_timeout=0.3, backoff_start=0.05,
+                                  backoff_cap=0.1):
+                pass
+        self.assertEqual(ctx.exception.owner["operation"], "apply")
+
+
+class TestReentrancy(unittest.TestCase):
+    """An architecture orchestrator holding the project lock may call into
+    context_graph.apply, which acquires the same lock. Nesting in one
+    process is a no-op, not a self-deadlock."""
+
+    def setUp(self):
+        self.tmp = tempfile.mkdtemp()
+
+    def test_nested_acquire_of_the_same_path_does_not_contend(self):
+        with lock.ProjectLock(self.tmp, "arch_apply") as outer:
+            with lock.ProjectLock(self.tmp, "apply",
+                                  contention_timeout=0.3) as inner:
+                self.assertEqual(inner.path, outer.path)
+                self.assertTrue(os.path.exists(inner.path))
+
+    def test_inner_release_does_not_release_the_outer_lock(self):
+        with lock.ProjectLock(self.tmp, "arch_apply") as outer:
+            with lock.ProjectLock(self.tmp, "apply"):
+                pass
+            self.assertTrue(os.path.exists(outer.path))
+        self.assertFalse(os.path.exists(outer.path))
+
+    def test_owner_metadata_stays_that_of_the_outermost_holder(self):
+        with lock.ProjectLock(self.tmp, "arch_apply") as outer:
+            with lock.ProjectLock(self.tmp, "apply"):
+                self.assertEqual(
+                    lock.read_owner(outer.path)["operation"], "arch_apply")
+
+    def test_reentrancy_is_per_path_not_global(self):
+        other = tempfile.mkdtemp()
+        with lock.ProjectLock(self.tmp, "arch_apply") as a:
+            with lock.ProjectLock(other, "apply") as b:
+                self.assertNotEqual(a.path, b.path)
+                self.assertTrue(os.path.exists(a.path))
+                self.assertTrue(os.path.exists(b.path))
+
+    def test_exception_inside_a_nested_hold_unwinds_the_depth(self):
+        with self.assertRaises(RuntimeError):
+            with lock.ProjectLock(self.tmp, "arch_apply"):
+                with lock.ProjectLock(self.tmp, "apply"):
+                    raise RuntimeError("boom")
+        self.assertFalse(os.path.exists(lock.lock_path(self.tmp)))
+        # the registry must be clean, so a later acquire still works
+        with lock.ProjectLock(self.tmp, "apply") as held:
+            self.assertTrue(os.path.exists(held.path))
+
+    def test_a_second_thread_still_contends_while_one_thread_nests(self):
+        """Re-entrancy is per-process bookkeeping; it must not weaken the
+        mutual exclusion the threading test already proves."""
+        outcome = {}
+        started = threading.Event()
+        release = threading.Event()
+
+        def holder():
+            with lock.ProjectLock(self.tmp, "arch_apply"):
+                with lock.ProjectLock(self.tmp, "apply"):
+                    started.set()
+                    release.wait(5.0)
+
+        def contender():
+            started.wait(5.0)
+            try:
+                with lock.ProjectLock(self.tmp, "confirm",
+                                      contention_timeout=0.3,
+                                      backoff_start=0.05, backoff_cap=0.1):
+                    outcome["result"] = "acquired"
+            except lock.LockContention:
+                outcome["result"] = "contended"
+            release.set()
+
+        threads = [threading.Thread(target=holder),
+                   threading.Thread(target=contender)]
+        for t in threads:
+            t.start()
+        for t in threads:
+            t.join(10.0)
+        self.assertEqual(outcome.get("result"), "contended")
+
+
+class TestLegacyContextLock(unittest.TestCase):
+    """A crashed pre-#228 run can leave .bindle/context/.lock behind. The
+    new code reports it and never removes it outside break-lock."""
+
+    def setUp(self):
+        self.tmp = tempfile.mkdtemp()
+        self.legacy = os.path.join(
+            self.tmp, ".bindle", "context", ".lock")
+        os.makedirs(os.path.dirname(self.legacy), exist_ok=True)
+        with open(self.legacy, "w", encoding="utf-8") as f:
+            f.write(json.dumps({"pid": 999999, "hostname": "elsewhere",
+                                "operation": "apply", "acquired_at": "x"}))
+
+    def test_legacy_lock_path_points_at_the_context_subdir(self):
+        self.assertEqual(lock.legacy_lock_path(self.tmp), self.legacy)
+
+    def test_a_legacy_lock_does_not_block_acquisition(self):
+        with lock.ProjectLock(self.tmp, "apply") as held:
+            self.assertNotEqual(held.path, self.legacy)
+
+    def test_acquiring_never_removes_a_legacy_lock(self):
+        with lock.ProjectLock(self.tmp, "apply"):
+            pass
+        self.assertTrue(os.path.exists(self.legacy))
+
+    def test_break_lock_leaves_the_legacy_lock_alone(self):
+        lock.break_lock(self.tmp)
+        self.assertTrue(os.path.exists(self.legacy))
+
+    def test_break_legacy_lock_removes_it_and_returns_the_owner(self):
+        owner = lock.break_legacy_lock(self.tmp)
+        self.assertEqual(owner["hostname"], "elsewhere")
+        self.assertFalse(os.path.exists(self.legacy))
+
+    def test_break_legacy_lock_returns_none_when_absent(self):
+        lock.break_legacy_lock(self.tmp)
+        self.assertIsNone(lock.break_legacy_lock(self.tmp))
 
 
 if __name__ == "__main__":
