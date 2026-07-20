@@ -219,5 +219,50 @@ after_sha2="$(git -C "$WORK2.bare" rev-parse "release-please--branches--main")"
   ok "apply aborts on a failing bin/check.sh, no push" ||
   bad "check-fail abort ($code): $out"
 
+# --- check: the v0.7.0 failure mode (#265) ----------------------------------
+# WORK3 is the exact shape the v0.7.0 cut was left in: the release PR branch
+# carries the bumped manifest while VERSION still holds the old value, because
+# the chained sync ran before the PR was visible and reported "nothing to sync".
+# `check` is the deterministic gate that refuses to call that a good release PR.
+WORK3="$TMP/work3"
+build_fixture "$WORK3" 0
+GH4="$TMP/gh4"
+gh_stub "$GH4" '[{"number":70,"headRefName":"release-please--branches--main","baseRefName":"main"}]'
+
+bare3_before="$(git -C "$WORK3.bare" show-ref)"
+out="$(cd "$WORK3" && PATH="$GH4:$PATH" "$SCRIPT" check 2>&1)"
+code=$?
+bare3_after="$(git -C "$WORK3.bare" show-ref)"
+{
+  [ "$code" -eq 12 ] &&
+    printf '%s' "$out" | grep -q '0.1.0' &&
+    printf '%s' "$out" | grep -q '0.2.0' &&
+    [ "$bare3_before" = "$bare3_after" ]
+} &&
+  ok "check fails (12) on a release PR whose VERSION disagrees with the manifest" ||
+  bad "check-disagree ($code): $out"
+
+printf '%s' "$out" | grep -q 'release-please-sync.sh apply' &&
+  ok "check names the recovery (re-run apply)" ||
+  bad "check-recovery-hint: $out"
+
+# check takes no approval token — it is read-only, so requiring one would
+# discourage running it. It must NOT be refused for lack of a token.
+[ "$code" -ne 3 ] && ok "check needs no approval token" || bad "check demanded a token"
+
+# --- check: passes once VERSION and the manifest agree ----------------------
+(cd "$WORK3" && PATH="$GH4:$PATH" "$SCRIPT" apply --approval-token eph-4 >/dev/null 2>&1)
+out="$(cd "$WORK3" && PATH="$GH4:$PATH" "$SCRIPT" check 2>&1)"
+code=$?
+{ [ "$code" -eq 0 ] && printf '%s' "$out" | grep -qi 'in sync'; } &&
+  ok "check passes once VERSION and the manifest agree" ||
+  bad "check-in-sync ($code): $out"
+
+# The race itself: no PR labeled 'autorelease: pending' yet. An unrun check is
+# never a passing one — this is the exit that must stop the release flow.
+out="$(cd "$WORK3" && PATH="$GH0:$PATH" "$SCRIPT" check 2>&1)"
+code=$?
+[ "$code" -eq 10 ] && ok "check with no release PR -> exit 10, not success" || bad "check-no-pr ($code): $out"
+
 printf '\n%d passed, %d failed\n' "$pass" "$fail"
 [ "$fail" -eq 0 ]

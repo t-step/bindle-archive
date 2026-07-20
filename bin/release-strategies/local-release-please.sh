@@ -95,6 +95,13 @@ case "$verb" in
     }
     rp release-pr --repo-url="$repo_url" --token="$gh_tok"
     "$RELEASE_PLEASE_SYNC_CMD" apply --approval-token "$token"
+    # Verify, don't assume (#265). The sync can run before the release PR is
+    # labeled `autorelease: pending`, report "nothing to sync", and exit 0 —
+    # leaving VERSION and the manifest disagreeing on the release branch, which
+    # is exactly how v0.7.0 shipped. `check` is read-only and needs no token;
+    # a nonzero exit here fails the apply rather than handing back a release PR
+    # nobody verified.
+    "$RELEASE_PLEASE_SYNC_CMD" check
     ;;
   *)
     echo "local-release-please: unknown verb '${verb:-<none>}'" >&2
