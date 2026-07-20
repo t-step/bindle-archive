@@ -129,10 +129,25 @@ model/provider/version and fixture-revision metadata where available.
 
 Grounded in this repo's actual practice, not an invented number:
 
-- **3 reps/variant** minimum for C0–C1-tier workflows.
-- **5 reps/variant** minimum for C2–C4-tier workflows (matching this repo's
+- **5 reps/variant** minimum for C0–C4-tier workflows (matching this repo's
   observed default across existing pressure-test logs — see, for example,
   `verify-then-commit`'s "5 reps per variant" method statement below).
+
+  C0–C1 carried a lower **3 reps/variant** floor until 2026-07-19. It was
+  raised because it contradicted the standard the repo actually enforces
+  elsewhere: `docs/pressure-testing-protocol.md` and issue #212 both treat
+  anything under ~5 reps/variant as **rep debt owed**, and #212 exists to top
+  those skills up. A policy floor of 3 legitimized the exact shortfall another
+  contract was tracking as a deficit, so a campaign could be simultaneously
+  compliant here and in debt there. One floor, 5.
+
+  This is in tension with this doc's opening complaint that low-risk tooling
+  gets over-tested, and the tension is resolved deliberately: risk scaling
+  lives in the **coverage matrix** above — which *categories* a tier owes —
+  not in the rep count. A C0 workflow still owes far less evaluation than a
+  C4 one; it just runs the same number of reps for whatever it does owe.
+  Tiering is not collapsed either: C5 still differs by requiring unanimity
+  and carrying the 10-rep ceiling below.
 - **5 reps/variant minimum, unanimous required at 5,** for C5-tier or
   negative-trigger scenarios; a split result adds reps up to a **10-rep
   ceiling** (matching `verify-then-commit`'s existing 10/10 log) before
