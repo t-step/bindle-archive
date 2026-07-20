@@ -17,6 +17,7 @@
     "E_ARCH_CONFIG_NOT_AN_OBJECT": "schema-and-native",
     "E_ARCH_CONFIG_DUPLICATE_BINDING": "native-only",
     "E_ARCH_CONFIG_BAD_THRESHOLDS": "native-only",
+    "E_ARCH_CONFIG_SLUG_MISMATCH": "native-only",
 
     "E_ARCH_INDEX_MISSING_FIELD": "schema-and-native",
     "E_ARCH_INDEX_UNKNOWN_FIELD": "schema-and-native",
@@ -69,6 +70,8 @@
     "E_ARCH_PROJECT_ID_MISMATCH": "native-only"
   },
   "excluded_codes": {
+    "E_ARCH_CONFIG_MISSING": "architecture.project reports the ABSENCE of config.json, not a property of one. There is no document for a schema to validate, and a missing config is a legitimate pre-init state rather than a defect, so neither validator can or should express it.",
+    "E_ARCH_CONFIG_UNREADABLE": "architecture.project reports bytes that could not be read or parsed as JSON. A schema validates a parsed document; there is no parsed document here, and the recovery is an operator looking at the file rather than a validation fix.",
     "E_ARCH_CANDIDATE_BAD_PROJECTION_TYPE": "matcher caller-input validation: a candidate is planning state a caller passes in, never a persisted document, so no JSON Schema governs it.",
     "E_ARCH_CANDIDATE_BAD_SIGNAL": "matcher caller-input validation: signal fields are validated at the call boundary, not on disk.",
     "E_ARCH_CANDIDATE_DUPLICATE_KEY": "matcher caller-input validation: uniqueness across the candidate list passed to match(), which is not a document.",

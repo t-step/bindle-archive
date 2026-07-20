@@ -694,6 +694,21 @@
       "version_introduced": "0.7.0"
     },
     {
+      "name": "architecture-projection",
+      "type": "script",
+      "path": "bin/architecture-projection.py",
+      "description": "CLI entry point for Bindle's architecture projection (issue #374 child D, epic #141), thin per the #180 adapter pattern \u2014 argument parsing and JSON/text rendering only, dispatching into architecture.project for all domain logic. Named architecture-projection.py rather than architecture.py because the domain package bin/architecture/ would shadow a sibling module of that name, and because bin/check-finding-codes.py governs a surface by os.walk-ing the directories in its coverage sources, so codes emitted from a plain file at that path would be silently ungoverned. `init --notes-home DIR --project SLUG [--display-name NAME] [--max-nodes N] [--threshold-high F] [--threshold-low F] [--diff-size-confirmation-limit N]` mints a project_id and creates config.json under the project's .bindle/architecture directory, reporting `{\"created\": bool, \"config\": {...}}`; it is idempotent and NON-MUTATING against an existing valid config \u2014 that config is returned unchanged with zero bytes written and every supplied setting ignored, because the file is operator-owned and carries hand-maintained exclusions. An existing malformed config raises rather than being repaired, and a config whose project_slug disagrees with the project is a hard abort. `config status --notes-home DIR --project SLUG` is read-only: reports the persisted config, its path, and the current lock owner. `config validate --notes-home DIR --project SLUG` is read-only validation via architecture.state.validate_config, printing `{\"findings\": [...]}` and exiting 1 if any finding is present, 0 otherwise; a missing config reports E_ARCH_CONFIG_MISSING. Both subcommands accept `--format json|text`. Domain errors (architecture.state.ArchStateError and its ConfigInvalidError/ConfigUnreadableError subclasses) and lock.LockContention render as findings lists and exit 1, never as a traceback. The projection loop verbs preview/confirm/apply are deliberately ABSENT rather than stubbed pending the next slice, so --help never advertises a verb that does nothing.",
+      "provider": {
+        "claude": "manual",
+        "codex": "manual"
+      },
+      "maturity": "draft",
+      "mutation": [
+        "disk"
+      ],
+      "version_introduced": "0.10.0"
+    },
+    {
       "name": "context-graph",
       "type": "script",
       "path": "bin/context-graph.py",
@@ -1438,6 +1453,18 @@
     {
       "path": "bin/architecture/tests/test_allocate.py",
       "reason": "unit tests for architecture.allocate: slug derivation against the frozen kebab-case note-slug shape including names that survive only after separator collapsing, the cross-call slug stability the preview-to-apply fingerprint depends on, record shape and ordering by candidate key, and slug-collision refusal that names the slug and every colliding candidate and mints nothing at all, so a refused batch leaves no identity a caller could still commit; test infrastructure, not a capability an agent invokes."
+    },
+    {
+      "path": "bin/architecture/project.py",
+      "reason": "library module authoring and reading the architecture surface's config.json (#374, epic #141): the FIRST writer of that document -- slices D1-D4 shipped state.py's path helpers and validator but nothing ever created the file they describe, so a first-ever projection had no configuration to read. Mints the project_id, writes defaults that validate against the frozen v1 config schema, and treats init as non-mutating: an existing valid config is returned with zero bytes written and every caller-supplied setting ignored, an existing malformed one raises rather than being repaired, and a config whose project_slug disagrees with the project being initialized is a hard abort that catches a copied notes-home directory. Takes the project-scoped lock under the arch_init operation; consumed by bin/architecture-projection.py, not a standalone capability."
+    },
+    {
+      "path": "bin/architecture/tests/test_project.py",
+      "reason": "unit tests for architecture.project: config creation against the frozen validator, idempotence asserted on filesystem bytes and mtime rather than on the created flag so a rewrite of identical content cannot pass, preservation of hand-maintained exclusions across a re-init, refusal to repair a malformed or unparseable existing config with the bytes on disk asserted unchanged, the project_slug mismatch hard abort, and lock contention raised from a genuinely concurrent holder thread because the lock is re-entrant within one thread by design; test infrastructure, not a capability an agent invokes."
+    },
+    {
+      "path": "bin/architecture/tests/test_cli.py",
+      "reason": "unit tests for bin/architecture-projection.py driven as a real subprocess from a working directory outside the repo, so the shebang, the executable bit, sys.path bootstrapping and the shell-visible exit code are all exercised rather than bypassed by an in-process main() call; covers init and config status/validate exit codes, findings-not-tracebacks rendering, cross-process idempotence, that read-only verbs write zero bytes, and that the unimplemented preview/confirm/apply verbs are absent rather than stubbed; test infrastructure, not a capability an agent invokes."
     }
   ],
   "external_upstreams": [
