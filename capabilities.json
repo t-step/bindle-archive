@@ -1288,12 +1288,20 @@
       "reason": "library module holding the frozen judgments-record envelope (#228): the canonical digest input, the content-derived record_id, and the integrity checksum; consumed by the architecture package, not a standalone capability."
     },
     {
+      "path": "bin/architecture/judgments.py",
+      "reason": "library module holding the judgments.jsonl integrity contract (#228): truncate-and-report for a torn trailing line, hard abort for corruption anywhere else, the last-write-wins fold by file order, and the identity-commit-precedes-any-write ordering primitive; consumed by the architecture package, not a standalone capability."
+    },
+    {
       "path": "bin/architecture/state.py",
       "reason": "library module holding the frozen notes-home architecture state layout, the note-path grammar, the project_id hard abort, and the four state files' native validators (#228); consumed by the projection engine, not a standalone capability."
     },
     {
       "path": "bin/architecture/tests/test_canonical.py",
       "reason": "unit tests for architecture.canonical's record_id/checksum envelope; test infrastructure, not a capability an agent invokes."
+    },
+    {
+      "path": "bin/architecture/tests/test_judgments.py",
+      "reason": "unit tests for architecture.judgments' torn-tail recovery, mid-file hard abort, last-write-wins fold, and the crash-injected identity-commit ordering; test infrastructure, not a capability an agent invokes."
     },
     {
       "path": "bin/architecture/tests/test_state.py",
