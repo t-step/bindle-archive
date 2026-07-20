@@ -17,6 +17,8 @@ applies of an unchanged graph never produce a spurious diff.
 only reads those fields; it never invents new ones.
 """
 
+from context_graph import regions
+
 BEGIN = "<!-- bindle:context-graph:generated:begin -->"
 END = "<!-- bindle:context-graph:generated:end -->"
 
@@ -163,27 +165,12 @@ def render_managed_region(final_graph):
 
 
 def _scan_markers(text):
-    """Classify the BEGIN/END marker pair in `text`. Returns a
-    ("valid", begin_idx, end_idx) / ("unmanaged", None, None) /
-    ("malformed", None, None) triple. `begin_idx`/`end_idx` are the start
-    offsets of BEGIN/END respectively, valid only for "valid".
-
-    - Zero of each -> "unmanaged" (a hand-authored file with no managed
-      region at all).
-    - Exactly one of each, BEGIN strictly before END -> "valid".
-    - Anything else (unequal counts, END before BEGIN, a duplicated or
-      nested pair, only one side present) -> "malformed".
+    """Classify this surface's BEGIN/END pair in `text` -- see
+    `regions.scan`, which owns the classification for every marker pair.
+    Kept as a named helper because the context surface's callers and tests
+    speak in terms of *its* pair, not an arbitrary one.
     """
-    begin_count = text.count(BEGIN)
-    end_count = text.count(END)
-    if begin_count == 0 and end_count == 0:
-        return ("unmanaged", None, None)
-    if begin_count == 1 and end_count == 1:
-        begin_idx = text.index(BEGIN)
-        end_idx = text.index(END)
-        if begin_idx < end_idx:
-            return ("valid", begin_idx, end_idx)
-    return ("malformed", None, None)
+    return regions.scan(text, BEGIN, END)
 
 
 def plan_context_md(existing_text, managed_body, title="Project"):
@@ -193,7 +180,7 @@ def plan_context_md(existing_text, managed_body, title="Project"):
     `render_managed_region`. Pure: no I/O. Content outside the marker pair
     is preserved byte-for-byte on update.
     """
-    wrapped_region = BEGIN + "\n" + managed_body + END
+    wrapped_region = regions.wrap(managed_body, BEGIN, END)
 
     if existing_text is None:
         text = (
@@ -204,18 +191,15 @@ def plan_context_md(existing_text, managed_body, title="Project"):
         )
         return {"action": "create", "text": text}
 
-    kind, begin_idx, end_idx = _scan_markers(existing_text)
+    kind, _, _ = _scan_markers(existing_text)
     if kind == "unmanaged":
         return {"action": "conflict", "code": "context_md_unmanaged"}
     if kind == "malformed":
         return {"action": "conflict", "code": "context_md_malformed_markers"}
 
-    end_stop = end_idx + len(END)
-    current_region = existing_text[begin_idx:end_stop]
-    if current_region == wrapped_region:
+    action, new_text = regions.splice(existing_text, managed_body, BEGIN, END)
+    if action == "noop":
         return {"action": "noop"}
-
-    new_text = existing_text[:begin_idx] + wrapped_region + existing_text[end_stop:]
     return {"action": "update", "text": new_text}
 
 
@@ -238,7 +222,7 @@ def plan_adopt_context_md(existing_text, managed_body, title="Project"):
     if kind != "unmanaged":
         return {"action": "conflict", "code": "context_md_adopt_state_changed"}
 
-    wrapped_region = BEGIN + "\n" + managed_body + END
+    wrapped_region = regions.wrap(managed_body, BEGIN, END)
     text = (
         "# %s — context\n" % title
         + wrapped_region

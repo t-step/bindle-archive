@@ -1204,6 +1204,14 @@
       "reason": "unit tests for context_graph.projection; test infrastructure, not a capability an agent invokes."
     },
     {
+      "path": "bin/context_graph/regions.py",
+      "reason": "library module holding the marker-agnostic generated-region core extracted from context_graph.projection (#230 slice D1): marker-pair scanning, region wrapping, and byte-preserving splice, parameterized by the BEGIN/END pair so the context and architecture surfaces share one scanner rather than diverging copies; consumed by both packages, not a standalone capability."
+    },
+    {
+      "path": "bin/context_graph/tests/test_regions.py",
+      "reason": "unit tests for context_graph.regions' marker classification (unmanaged/valid/malformed, including the degenerate overlap where END is prefixed by BEGIN), per-pair independence, and byte-exact preservation of content outside the region; test infrastructure, not a capability an agent invokes."
+    },
+    {
       "path": "bin/check-structural-graph-fixtures.py",
       "reason": "manifest-driven fixture corpus runner for the #227 structural-graph interchange, invoked by bin/test-structural-graph.sh / make check machinery, exactly like bin/check-context-graph-fixtures.py; not itself a capability an agent invokes."
     },
@@ -1374,6 +1382,14 @@
     {
       "path": "bin/architecture/tests/test_diffs.py",
       "reason": "unit tests for architecture.diffs' fingerprint field set, band-only metric comparison, provenance exclusion, per-field changed reporting, and the minimal changed-set an unchanged rerun must produce, over a hand-authored candidate corpus; test infrastructure, not a capability an agent invokes."
+    },
+    {
+      "path": "bin/architecture/render.py",
+      "reason": "library module rendering the two D-owned architecture note types (#230 slice D1): deterministic codebase-map and component bodies for the frozen note tree, metrics as bands only, no observed provenance and no bindings inside the byte-compared region, plus the create-only composition placing YAML frontmatter above the generated region; consumed by the architecture package, not a standalone capability."
+    },
+    {
+      "path": "bin/architecture/tests/test_render.py",
+      "reason": "unit tests for architecture.render's determinism, band-only metric rendering paired against same-band/different-value and band-change cases, provenance and bindings exclusion, candidate-key member ordering, strict record validation, and frontmatter placement outside the generated region; test infrastructure, not a capability an agent invokes."
     }
   ],
   "external_upstreams": [
