@@ -1,0 +1,156 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://bindle/schemas/architecture/v1/index.schema.json",
+  "title": "architecture v1 projection state",
+  "description": "DURABLE projection state, not a cache. Authority for OBSERVED PROVENANCE and never for meaning: it never establishes identity or a confirmed decision. Rebuildable from judgments.jsonl plus a live provider at the recorded commit -- but only while that provider is available, so deleting it while a binding is unavailable loses that binding's carried-forward contribution.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "projection_schema_version", "project_id", "nodes"],
+  "properties": {
+    "schema_version": { "const": 1 },
+    "projection_schema_version": { "type": "integer", "minimum": 1 },
+    "project_id": { "type": "string", "pattern": "^project:[0-9a-f]{32}$" },
+    "nodes": { "type": "array", "items": { "$ref": "#/definitions/node" } },
+    "references": {
+      "type": "array",
+      "description": "'This note cites <context identity>'. NOT an edge in the #140 graph: no relationship vocabulary, and it never enters the #184 ledger.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["arch_id", "context_id"],
+        "properties": {
+          "arch_id": {
+            "type": "string",
+            "pattern": "^arch-node:project:[0-9a-f]{32}:[0-9a-f]{32}$"
+          },
+          "context_id": {
+            "type": "string",
+            "pattern": "^context-node:[a-z0-9]+(-[a-z0-9]+)*:[0-9a-f]{32}$"
+          }
+        }
+      }
+    }
+  },
+  "definitions": {
+    "binding_id": {
+      "type": "string",
+      "pattern": "^repository-binding:[0-9a-f]{32}$"
+    },
+    "arch_id": {
+      "type": "string",
+      "pattern": "^arch-node:project:[0-9a-f]{32}:[0-9a-f]{32}$"
+    },
+    "node": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "arch_id",
+        "project_id",
+        "note_path",
+        "binding_ids",
+        "projection_type",
+        "projection_schema_version",
+        "confidence",
+        "projection_status"
+      ],
+      "properties": {
+        "arch_id": { "$ref": "#/definitions/arch_id" },
+        "project_id": { "type": "string", "pattern": "^project:[0-9a-f]{32}$" },
+        "note_path": {
+          "type": "string",
+          "pattern": "^(Codebase Map\\.md|(Components|Architectural Flows|Boundaries|Test Surfaces|Hotspots)/[a-z0-9]+(-[a-z0-9]+)*\\.md)$",
+          "description": "Derives from the CREATION-EVENT slug and is never recomputed from the current name, so a confirmed rename leaves it untouched."
+        },
+        "binding_ids": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/binding_id" },
+          "description": "Mutable: adding or removing a participating binding never churns arch_id."
+        },
+        "projection_type": {
+          "enum": ["arch_codebase_map", "arch_component"],
+          "description": "arch_-prefixed so it can never collide with the reserved semantic kinds in the context graph."
+        },
+        "projection_schema_version": { "type": "integer", "minimum": 1 },
+        "provider_name": { "type": "string" },
+        "provider_version": { "type": "string" },
+        "source_commits": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["binding_id", "commit"],
+            "properties": {
+              "binding_id": { "$ref": "#/definitions/binding_id" },
+              "commit": { "type": "string", "pattern": "^[0-9a-f]{40}$" }
+            }
+          }
+        },
+        "source_paths": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Repository-relative and normalized."
+        },
+        "source_symbols": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Provider structural IDs, path-normalized before persistence (one may embed an absolute path). PROVENANCE ONLY -- never a matcher signal, because provider ID formats change across provider versions."
+        },
+        "per_binding_status": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["binding_id", "status"],
+            "properties": {
+              "binding_id": { "$ref": "#/definitions/binding_id" },
+              "status": {
+                "enum": ["available", "unavailable", "stale", "deconfigured"],
+                "description": "Carry-forward applies to `unavailable` (a transient outage) but NOT to `deconfigured` (an operator decision)."
+              }
+            }
+          }
+        },
+        "per_binding_coverage": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["binding_id", "fact_class", "coverage"],
+            "properties": {
+              "binding_id": { "$ref": "#/definitions/binding_id" },
+              "fact_class": { "type": "string" },
+              "coverage": {
+                "enum": ["observed", "unsupported", "partial_parse_failure"],
+                "description": "A provider that advertises a fact class but fails to parse a subtree reads as partial_parse_failure, never as an observed zero."
+              }
+            }
+          }
+        },
+        "confidence": {
+          "enum": ["high", "medium", "low"],
+          "description": "medium is routed for confirmation, never applied."
+        },
+        "projection_status": {
+          "enum": ["current", "stale", "superseded", "merged", "partial"]
+        },
+        "prior_names": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Former names after a same-cluster rename -- names, not IDs."
+        },
+        "merged_from": { "type": "array", "items": { "$ref": "#/definitions/arch_id" } },
+        "split_from": { "$ref": "#/definitions/arch_id" },
+        "split_into": { "type": "array", "items": { "$ref": "#/definitions/arch_id" } },
+        "superseded_by": { "type": "array", "items": { "$ref": "#/definitions/arch_id" } },
+        "last_projected_at": { "type": "string", "format": "date-time" }
+      },
+      "allOf": [
+        {
+          "description": "superseded is defined as replaced by a confirmed split or merge, with superseded_by naming the successors; without it a reverted split is unrecoverable.",
+          "if": { "properties": { "projection_status": { "const": "superseded" } }, "required": ["projection_status"] },
+          "then": { "properties": { "superseded_by": { "minItems": 1 } }, "required": ["superseded_by"] }
+        }
+      ]
+    }
+  }
+}

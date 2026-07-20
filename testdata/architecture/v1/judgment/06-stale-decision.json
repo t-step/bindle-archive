@@ -1,0 +1,12 @@
+{
+  "arch_id": "arch-node:project:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+  "checksum": "sha256:171cc080d98ff08f78a68b1d5f4cf7613af4ab3e084dbe1af74a56b461b2c841",
+  "decided_at": "2026-07-20T00:00:00Z",
+  "kind": "stale",
+  "payload": {
+    "note_path": "Components/auth-service.md"
+  },
+  "project_id": "project:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "record_id": "arch-judgment:sha256:3770836f78346bb3b07068223108a1694aac6e33d05b129b72ff0c9fe648b271",
+  "schema_version": 1
+}

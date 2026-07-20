@@ -1,0 +1,9 @@
+{
+  "checksum": "sha256:4eac79e9c49cfd7378cfb61bd2d0a041400dac0c5402767f30c57987446fb535",
+  "decided_at": "2026-07-20T00:00:00Z",
+  "kind": "identity_allocation",
+  "payload": {},
+  "project_id": "project:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "record_id": "arch-judgment:sha256:7ae902a4ed158601bc27d7b4cdf80bd75a8713696e60d6cb61f423756b21db57",
+  "schema_version": 1
+}
