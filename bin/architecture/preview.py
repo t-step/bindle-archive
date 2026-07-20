@@ -198,6 +198,39 @@ def _existing_note_paths(notes_home, project_slug, config):
     return carried
 
 
+def _logged_note_paths(fold):
+    """arch_id -> note_path, re-derived from each identity's OWN allocation.
+
+    index.json is written AFTER the identity is appended, so between the
+    two a reuse has an identity nobody can place. Since #374 slice D5c the
+    allocation payload records the creation-event `slug` and
+    `projection_type`, so the path is re-derived through the same
+    `state.format_note_path` that produced it -- an exact reconstruction,
+    not a guess from the candidate's current name (which a rename would
+    move).
+
+    Records written before that slice carry neither field and are skipped:
+    they stay unplaceable, and `E_ARCH_PREVIEW_IDENTITY_UNPLACEABLE`
+    reports them. This is a fallback BENEATH index.json, never above it --
+    the index holds the path actually on disk, including one a later
+    lifecycle event moved."""
+    paths = {}
+    for arch_id, kinds in (fold.get("latest_by_kind") or {}).items():
+        payload = (kinds.get("identity_allocation") or {}).get("payload") or {}
+        slug = payload.get("slug")
+        projection_type = payload.get("projection_type")
+        if not slug or not projection_type:
+            continue
+        try:
+            paths[arch_id] = state.format_note_path(projection_type, slug)
+        except ValueError:
+            # A hand-edited payload. The log is authoritative for meaning,
+            # not for legality: an illegal path is dropped and the identity
+            # falls through to the unplaceable branch.
+            continue
+    return paths
+
+
 def _merge_identities(outcomes, minted, carried_paths):
     """Combine the matcher's reuses with the allocator's mints.
 
@@ -356,21 +389,25 @@ def build_preview(notes_home, project_slug, graph_paths, provider=None,
     projectable = [record for record in records
                    if record["candidate_key"] not in deferred_keys]
 
-    carried_paths = _existing_note_paths(notes_home, project_slug, config)
+    # Index first in precedence, log as the fallback: the index records
+    # where a note actually IS, the log where its creation event PUT it.
+    carried_paths = _logged_note_paths(fold)
+    carried_paths.update(_existing_note_paths(notes_home, project_slug, config))
 
     # A REUSED IDENTITY WHOSE NOTE PATH IS UNKNOWN CANNOT BE PLACED, and is
     # deferred rather than allowed to reject the whole plan. A reuse
     # supplies no slug -- its creation event happened in an earlier run --
-    # so `planner._note_path` can only use a path the identity carries, and
-    # the only record of that path is `index.json`. Neither the judgments
-    # log nor the allocation payload stores a slug or a note_path, so when
-    # the log knows an identity that the index does not, nothing in the kit
-    # can say where its note lives.
+    # so `planner._note_path` can only use a path the identity carries.
     #
-    # That state is REACHABLE, not hypothetical: apply appends the identity
-    # record BEFORE writing any note or the index, so a crash in between
-    # leaves exactly it. Before this guard the resulting PlanInputError
-    # rejected every candidate in the run, including unrelated ones.
+    # Since D5c there are TWO records of that path (`_logged_note_paths`
+    # and `_existing_note_paths`), which is what closed #374's
+    # unplaceable-reuse question: the allocation payload carries the
+    # creation-event slug, so the crash window between the identity append
+    # and the index write no longer strands anything. What remains here is
+    # the residue -- an allocation written BEFORE D5c, or one hand-edited
+    # into illegality. Those are deferred; before this guard the resulting
+    # PlanInputError rejected every candidate in the run, unrelated ones
+    # included.
     unplaceable = []
     for outcome in outcomes:
         if outcome["outcome"] != "reuse":
@@ -382,9 +419,9 @@ def build_preview(notes_home, project_slug, graph_paths, provider=None,
         unplaceable_set = set(unplaceable)
         unplaceable_findings.append(_finding(
             E_PREVIEW_IDENTITY_UNPLACEABLE,
-            "the judgments log knows an identity for %s but index.json "
-            "records no note path for it, and neither the log nor the "
-            "allocation payload stores one; these candidates are deferred "
+            "the judgments log knows an identity for %s but neither "
+            "index.json nor the identity's own allocation records a "
+            "usable note path for it; these candidates are deferred "
             "rather than projected to a guessed path"
             % (", ".join(repr(key) for key in sorted(unplaceable_set)),)))
         deferred.extend(

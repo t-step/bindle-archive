@@ -198,23 +198,33 @@ class WritesNothingTests(PreviewTestCase):
 
 class DeferredOutcomeTests(PreviewTestCase):
 
-    def _log_identity(self, arch_id, source_paths, symbol_names):
+    def _log_identity(self, arch_id, source_paths, symbol_names,
+                      slug=None, projection_type=None):
         """Append one identity_allocation carrying signals, so the matcher
-        has something to score against."""
+        has something to score against.
+
+        `slug`/`projection_type` are omitted by default, which is the
+        PRE-D5c record shape: those records place nothing and are what the
+        unplaceable branch reports."""
         path = state.judgments_path(self.notes_home, SLUG)
         os.makedirs(os.path.dirname(path), exist_ok=True)
         cfg = project.load_config(
             project.config_path(self.notes_home, SLUG))
+        payload = {"candidate_key": "component:.",
+                   "source_paths": sorted(source_paths),
+                   "symbol_names": sorted(symbol_names),
+                   "neighborhood": []}
+        if slug:
+            payload["slug"] = slug
+        if projection_type:
+            payload["projection_type"] = projection_type
         record = canonical.stamp({
             "schema_version": state.SCHEMA_VERSION,
             "kind": "identity_allocation",
             "project_id": cfg["project_id"],
             "decided_at": "2026-07-19T00:00:00Z",
             "arch_id": arch_id,
-            "payload": {"candidate_key": "component:.",
-                        "source_paths": sorted(source_paths),
-                        "symbol_names": sorted(symbol_names),
-                        "neighborhood": []},
+            "payload": payload,
         })
         with open(path, "a", encoding="utf-8") as handle:
             handle.write(json.dumps(record, sort_keys=True) + "\n")
@@ -273,11 +283,76 @@ class DeferredOutcomeTests(PreviewTestCase):
         self.assertEqual("Components/renamed-by-hand.md",
                          reused["note_path"])
 
+    def test_an_allocation_carrying_its_slug_places_the_note_without_an_index(self):
+        """Since D5c the allocation payload records the creation-event slug
+        and projection type, so the log alone places the note -- the state
+        a crash between the identity append and the index write leaves.
+        The path is RE-DERIVED through `state.format_note_path`, the same
+        function that produced it, not guessed from the current name."""
+        graph = self.configured()
+        first = self.preview(graph)
+        component = [e for e in first["entries"]
+                     if e["candidate_key"] == "component:."][0]
+        record = [r for r in first["records"]
+                  if r["candidate_key"] == "component:."][0]
+        self._log_identity(component["arch_id"], record["source_paths"],
+                           record["symbol_names"],
+                           slug="root", projection_type="arch_component")
+        # No index written: the crashed-mid-apply state.
+        second = self.preview(graph)
+        reused = [e for e in second["entries"]
+                  if e["candidate_key"] == "component:."][0]
+        self.assertEqual("reuse", reused["identity_outcome"])
+        self.assertEqual("Components/root.md", reused["note_path"])
+        self.assertEqual([], second["deferred"])
+
+    def test_the_index_still_outranks_the_logged_slug(self):
+        """The log says where the creation event PUT the note; the index
+        says where it IS. A lifecycle event that moved it is recorded only
+        in the index, so the index must win."""
+        graph = self.configured()
+        first = self.preview(graph)
+        component = [e for e in first["entries"]
+                     if e["candidate_key"] == "component:."][0]
+        record = [r for r in first["records"]
+                  if r["candidate_key"] == "component:."][0]
+        self._log_identity(component["arch_id"], record["source_paths"],
+                           record["symbol_names"],
+                           slug="root", projection_type="arch_component")
+        self._write_index([{"arch_id": component["arch_id"],
+                            "note_path": "Components/moved-later.md"}])
+        second = self.preview(graph)
+        reused = [e for e in second["entries"]
+                  if e["candidate_key"] == "component:."][0]
+        self.assertEqual("Components/moved-later.md", reused["note_path"])
+
+    def test_a_malformed_logged_slug_falls_through_to_deferral(self):
+        """The log is authoritative for MEANING, not for legality. A
+        hand-edited payload whose slug cannot form a legal note path is
+        dropped rather than trusted into `format_note_path`."""
+        graph = self.configured()
+        first = self.preview(graph)
+        component = [e for e in first["entries"]
+                     if e["candidate_key"] == "component:."][0]
+        record = [r for r in first["records"]
+                  if r["candidate_key"] == "component:."][0]
+        self._log_identity(component["arch_id"], record["source_paths"],
+                           record["symbol_names"],
+                           slug="Not A Slug",
+                           projection_type="arch_component")
+        second = self.preview(graph)
+        self.assertTrue(second["ok"], second["findings"])
+        deferred = [d for d in second["deferred"]
+                    if d["candidate_key"] == "component:."]
+        self.assertEqual(1, len(deferred))
+        self.assertEqual("note_path_unknown", deferred[0]["reason"])
+
     def test_a_reuse_with_no_recorded_path_is_deferred_not_fatal(self):
-        """Apply appends the identity record BEFORE writing the index, so a
-        crash in between leaves the log knowing an identity that the index
-        does not. Nothing in the kit can then say where that note lives.
-        The candidate is deferred; it must not reject the whole plan."""
+        """A PRE-D5c allocation carries neither a slug nor a projection
+        type, and apply appends the identity record BEFORE writing the
+        index -- so a crash in between leaves the log knowing an identity
+        that nothing can place. The candidate is deferred; it must not
+        reject the whole plan."""
         graph = self.configured()
         first = self.preview(graph)
         component = [e for e in first["entries"]

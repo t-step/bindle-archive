@@ -23,6 +23,14 @@ candidates, rather than disambiguated with a suffix: a suffix is a silent
 rename that moves a note path on an unrelated edit. The refusal is
 provisional in the sense that no repository has yet hit it; the reason it
 is a refusal and not a suffix is above.
+
+THE ALLOCATION RECORD IS THE CREATION EVENT, so it carries everything a
+later run needs to CONTINUE the identity rather than mint a second one --
+the slug, the projection type, and the matcher's scoring signals. See
+`_payload`. The record shape is additive: `judgment.schema.json` declares
+`payload` an open object and requires only `arch_id` on an
+identity_allocation, so records written before this slice stay valid and
+simply continue to be unplaceable and unscoreable.
 """
 import re
 import secrets
@@ -92,6 +100,8 @@ def allocate(project_id, candidates, decided_at, mint_hex=None):
         if len(keys) > 1:
             raise SlugCollisionError(slug, sorted(keys))
 
+    by_key = {candidate["candidate_key"]: candidate
+              for candidate in candidates}
     identities = {}
     records = []
     for key in sorted(slugs):
@@ -103,9 +113,43 @@ def allocate(project_id, candidates, decided_at, mint_hex=None):
             "project_id": project_id,
             "decided_at": decided_at,
             "arch_id": arch_id,
-            "payload": {"candidate_key": key},
+            "payload": _payload(key, slugs[key], by_key[key]),
         })
     return {"identities": identities, "records": records}
+
+
+def _payload(candidate_key, slug, candidate):
+    """The creation event, recorded so the LOG ALONE can continue it.
+
+    #228 makes the log the sole authority for meaning, and two later
+    readers take it at its word:
+
+    * `matcher.identity_signals` scores a candidate against the signals in
+      an identity's own records and reads nothing from the projection
+      state. An allocation carrying no signals scores zero against every
+      candidate, so the next run reports `mint` and allocates a SECOND
+      identity for code that already has one.
+    * `planner._note_path` places a reuse from a path the identity carries.
+      A reuse supplies no slug -- its creation event was an earlier run --
+      and index.json was the only record of that path, so a crash between
+      this append and the index write stranded the identity permanently
+      (#374's unplaceable-reuse question).
+
+    `slug` and `projection_type` together re-derive the creation-event
+    path EXACTLY, through the same `state.format_note_path` that produced
+    it -- as opposed to re-deriving the slug from the candidate's current
+    name, which a rename would silently move.
+
+    Every signal is sorted: the payload is content-digested into
+    `record_id`, so an unordered set would give one decision two identities.
+    """
+    payload = {"candidate_key": candidate_key, "slug": slug}
+    projection_type = candidate.get("projection_type")
+    if projection_type:
+        payload["projection_type"] = projection_type
+    for field in ("source_paths", "symbol_names", "neighborhood"):
+        payload[field] = sorted(candidate.get(field) or ())
+    return payload
 
 
 def _random_hex():
