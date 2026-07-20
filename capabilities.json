@@ -1212,6 +1212,14 @@
       "reason": "unit tests for context_graph.regions' marker classification (unmanaged/valid/malformed, including the degenerate overlap where END is prefixed by BEGIN), per-pair independence, and byte-exact preservation of content outside the region; test infrastructure, not a capability an agent invokes."
     },
     {
+      "path": "bin/context_graph/containment.py",
+      "reason": "library module deciding whether a planned write resolves below the configured notes home after symlink resolution (#230 slice D2, epic #141 R2/PT26): per-path verdicts and a whole-plan rejection reporting every offender, with both the root and the candidate resolved so a symlinked notes home and a symlinked ancestor are judged by destination rather than spelling; consumed by the architecture and context packages, not a standalone capability."
+    },
+    {
+      "path": "bin/context_graph/tests/test_containment.py",
+      "reason": "unit tests for context_graph.containment covering the cases a lexical path check gets wrong (symlink out of the root, symlinked ancestor under a not-yet-created leaf, sibling directory sharing the root name as a string prefix, notes home that is itself a symlink) plus whole-plan rejection reporting every offender in order; test infrastructure, not a capability an agent invokes."
+    },
+    {
       "path": "bin/check-structural-graph-fixtures.py",
       "reason": "manifest-driven fixture corpus runner for the #227 structural-graph interchange, invoked by bin/test-structural-graph.sh / make check machinery, exactly like bin/check-context-graph-fixtures.py; not itself a capability an agent invokes."
     },
@@ -1390,6 +1398,14 @@
     {
       "path": "bin/architecture/tests/test_render.py",
       "reason": "unit tests for architecture.render's determinism, band-only metric rendering paired against same-band/different-value and band-change cases, provenance and bindings exclusion, candidate-key member ordering, strict record validation, and frontmatter placement outside the generated region; test infrastructure, not a capability an agent invokes."
+    },
+    {
+      "path": "bin/architecture/links.py",
+      "reason": "library module applying D's external-link policy at render (#230 slice D2, epic #141 R5/FC-7): a caller-supplied, empty-by-default host allowlist matched exactly against the whole netloc over https only, malformed allowlist entries dropped, allowed links rendered with their destination previewed beside them and denied links degraded to an inert code span rather than a clickable autolink; consumed by the architecture package, not a standalone capability."
+    },
+    {
+      "path": "bin/architecture/tests/test_links.py",
+      "reason": "unit tests for architecture.links' allowlist matching (scheme, exact-netloc, subdomain and suffix traps, case folding on both sides, malformed entries) and its two rendered forms, asserting the denied form positively as a code span so an implementation emitting a bare autolink cannot pass; test infrastructure, not a capability an agent invokes."
     }
   ],
   "external_upstreams": [
