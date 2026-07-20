@@ -357,6 +357,51 @@ class TestIndexValidation(unittest.TestCase):
             "partial_parse_failure")
         self.assertEqual(state.validate_index(doc), [])
 
+    def test_an_orphan_is_representable_as_partial(self):
+        # #230 slice D4: a note the crashed run wrote that the fresh re-plan
+        # does not contain is marked partial and FLAGGED, bytes untouched.
+        # D may not delete it (never-auto-delete) and may not stale it
+        # (G's AC16), so classification is the only honest outcome -- and it
+        # needs somewhere to live. Before D4 the node schema was
+        # `additionalProperties: false` with no such property, so the
+        # classification the design doc requires was unrepresentable.
+        doc = _valid_index()
+        doc["nodes"][0]["projection_status"] = "partial"
+        doc["nodes"][0]["orphaned_by_resume"] = True
+        self.assertEqual(state.validate_index(doc), [])
+
+    def test_orphaned_by_resume_requires_partial(self):
+        # The flag means "a resume found this note orphaned". A node still
+        # reading `current` while carrying it would tell a reader the
+        # projection stands behind bytes it just disowned.
+        doc = _valid_index()
+        doc["nodes"][0]["orphaned_by_resume"] = True
+        codes = [f["code"] for f in state.validate_index(doc)]
+        self.assertIn("E_ARCH_INDEX_ORPHAN_WITHOUT_PARTIAL", codes)
+
+    def test_orphaned_by_resume_must_be_a_boolean(self):
+        doc = _valid_index()
+        doc["nodes"][0]["projection_status"] = "partial"
+        doc["nodes"][0]["orphaned_by_resume"] = "yes"
+        codes = [f["code"] for f in state.validate_index(doc)]
+        self.assertIn("E_ARCH_INDEX_BAD_ORPHAN_FLAG", codes)
+
+    def test_a_partial_node_need_not_be_an_orphan(self):
+        # `partial` predates the flag and has other causes; requiring the
+        # flag would make every partial node read as a resume casualty.
+        doc = _valid_index()
+        doc["nodes"][0]["projection_status"] = "partial"
+        self.assertEqual(state.validate_index(doc), [])
+
+    def test_the_node_schema_is_still_closed(self):
+        # The amendment adds exactly one property. If it had loosened
+        # `additionalProperties` instead, every test above would still pass
+        # while the ledger silently accepted anything.
+        doc = _valid_index()
+        doc["nodes"][0]["invented_field"] = True
+        codes = [f["code"] for f in state.validate_index(doc)]
+        self.assertIn("E_ARCH_INDEX_UNKNOWN_FIELD", codes)
+
     def test_superseded_requires_a_successor(self):
         doc = _valid_index()
         doc["nodes"][0]["projection_status"] = "superseded"

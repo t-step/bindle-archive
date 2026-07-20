@@ -121,6 +121,11 @@ _NODE_KNOWN = frozenset(_NODE_REQUIRED + (
     "source_symbols", "per_binding_status", "per_binding_coverage",
     "prior_names", "merged_from", "split_from", "split_into", "superseded_by",
     "last_projected_at",
+    # #230 slice D4: set when a resume found this note orphaned -- the
+    # crashed run wrote it and the fresh re-plan does not contain it. D may
+    # neither delete it (never-auto-delete) nor stale it (G's AC16), so the
+    # flag IS the outcome and it needs a home in the ledger.
+    "orphaned_by_resume",
 ))
 _REFERENCE_KNOWN = frozenset(["arch_id", "context_id"])
 
@@ -546,6 +551,25 @@ def _index_node_findings(node, project_id, index, seen_ids):
                 continue
             _check_enum(entry.get(key), allowed, "%s.%s" % (field, key),
                         "E_ARCH_INDEX_BAD_ENUM", findings, index=index)
+
+    # The orphan flag is a claim about a note's bytes, so it is boolean and
+    # it binds to `partial`. A node reading `current` while carrying the
+    # flag would tell a reader the projection stands behind bytes the
+    # re-plan just disowned.
+    if "orphaned_by_resume" in node:
+        if not isinstance(node["orphaned_by_resume"], bool):
+            findings.append(_finding(
+                "E_ARCH_INDEX_BAD_ORPHAN_FLAG",
+                "orphaned_by_resume must be a boolean, got %r"
+                % (node["orphaned_by_resume"],),
+                field="orphaned_by_resume", index=index))
+        elif (node["orphaned_by_resume"]
+                and node.get("projection_status") != "partial"):
+            findings.append(_finding(
+                "E_ARCH_INDEX_ORPHAN_WITHOUT_PARTIAL",
+                "orphaned_by_resume requires projection_status 'partial', "
+                "got %r" % (node.get("projection_status"),),
+                field="orphaned_by_resume", index=index))
 
     # superseded is defined as "replaced by a confirmed split or merge, and
     # superseded_by[] names the successor(s)" -- without one the lineage is
