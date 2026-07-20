@@ -1430,6 +1430,14 @@
     {
       "path": "bin/architecture/tests/test_apply.py",
       "reason": "unit tests for architecture.apply against a real filesystem fixture: first projection against an empty judgments log, zero-byte rerun and provenance-only commits that rewrite no note, changed-only refresh, the stale_preview abort, ledger shape and advance with before and after hashes, identity committed before the first note byte, resume completing an interrupted apply without duplicating or clobbering, a hand edit made during the interruption surviving, and orphan classification that neither deletes nor stales; test infrastructure, not a capability an agent invokes."
+    },
+    {
+      "path": "bin/architecture/allocate.py",
+      "reason": "library module minting identity for candidates the matcher reports as a mint (#374, epic #141): derives the creation-event slug as a pure function of the candidate name so the note paths digested by the plan fingerprint's manifest term are identical at preview and at apply, mints the node hex randomly because it enters no fingerprint term and a content-derived hex would churn identity on an ordinary edit, builds the identity_allocation records apply commits before the first note byte, and refuses a batch whose candidates derive one slug rather than suffix-disambiguating a note path; pure, no I/O, consumed by the architecture package, not a standalone capability."
+    },
+    {
+      "path": "bin/architecture/tests/test_allocate.py",
+      "reason": "unit tests for architecture.allocate: slug derivation against the frozen kebab-case note-slug shape including names that survive only after separator collapsing, the cross-call slug stability the preview-to-apply fingerprint depends on, record shape and ordering by candidate key, and slug-collision refusal that names the slug and every colliding candidate and mints nothing at all, so a refused batch leaves no identity a caller could still commit; test infrastructure, not a capability an agent invokes."
     }
   ],
   "external_upstreams": [
