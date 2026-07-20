@@ -1318,6 +1318,22 @@
     {
       "path": "bin/architecture/tests/test_matcher.py",
       "reason": "unit tests for architecture.matcher's four outcomes, provider-independent scoring, threshold gating, determinism, and write-nothing guarantee, over a hand-authored synthetic cluster corpus; test infrastructure, not a capability an agent invokes."
+    },
+    {
+      "path": "bin/architecture/exclusions.py",
+      "reason": "library module holding candidate planning's exclusion and privacy filter (#229 slice C1): default generated/vendored/dependency/cache/build patterns, configured and gitignore patterns with negation, denylist matching that never echoes the matched term, and repository-relative normalization, reported with the source that dropped each path; consumed by the architecture package, not a standalone capability."
+    },
+    {
+      "path": "bin/architecture/metrics.py",
+      "reason": "library module holding the Bindle-computed structural signals over the #227 interchange (#229 slice C1): fan-in, fan-out, neighborhood and blast radius as coverage-aware measurements that never report absence as zero, cross-binding aggregation over participating bindings, and absolute-cut-point banding; consumed by the architecture package, not a standalone capability."
+    },
+    {
+      "path": "bin/architecture/tests/test_exclusions.py",
+      "reason": "unit tests for architecture.exclusions' pattern semantics, source precedence, gitignore negation, privacy non-echo, normalization refusals, and order-independent partitioning, over hand-authored literal paths; test infrastructure, not a capability an agent invokes."
+    },
+    {
+      "path": "bin/architecture/tests/test_metrics.py",
+      "reason": "unit tests for architecture.metrics' absence-is-never-zero guarantee per entity, cross-binding aggregation, absolute band cut points, monotonic capability degradation, and exclusion integration, over a hand-authored synthetic graph corpus; test infrastructure, not a capability an agent invokes."
     }
   ],
   "external_upstreams": [
