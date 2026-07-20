@@ -46,9 +46,14 @@ python3 skills/package-release-integrity/scripts/release_integrity.py check \
    returns `{"mode": "defer", "verdicts": [], "ready": None}` and stops. See
    the defer rule below; do not run the remaining steps against a deferring
    repo.
-2. **Discover.** In `portable` mode, the helper finds every declared version
-   (`pyproject.toml [project].version`, `[tool.poetry].version`, any
-   top-level package `__init__.py`'s `__version__`).
+2. **Discover.** In `portable` mode, the helper finds every declared version:
+   `pyproject.toml [project].version`, `[tool.poetry].version`, any top-level
+   package `__init__.py`'s `__version__`, the `VERSION` file, and the root
+   key of `.release-please-manifest.json`. The last two make a non-Python
+   repo — a bash/markdown kit released by release-please — checkable rather
+   than merely undiscoverable; both must hold a strict `MAJOR.MINOR.PATCH`
+   string to count, and only the manifest's root key is read. All sources are
+   peers: no precedence, so two that disagree are a `fail`.
 3. **Mechanical checks.** Version-source consistency, tag consistency,
    changelog presence, and the repo-supplied `--build-cmd`/`--test-cmd` gates
    are computed directly — no judgment involved.
