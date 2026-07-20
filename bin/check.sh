@@ -512,6 +512,27 @@ else
   fi
 fi
 
+# --- 6b2. finding-code coverage --------------------------------------------
+# Every finding code a validator can emit must be classified in its surface's
+# invariant-coverage.json or explicitly excluded with a reason. Without this,
+# a new code is simply absent from the schema-vs-native reasoning and both
+# suites stay green while one direction of its invariant goes unasserted.
+# Same skip discipline as 6b: absent validator or python3 is a notice, not a
+# failure, so a minimal fixture repo can still run check.sh.
+echo "finding-code coverage:"
+if [ ! -f bin/check-finding-codes.py ]; then
+  echo "  - bin/check-finding-codes.py not present; skipping"
+elif ! command -v python3 >/dev/null 2>&1; then
+  echo "  - python3 not installed; skipping (CI enforces this)"
+else
+  if codes_out="$(python3 bin/check-finding-codes.py --root . 2>&1)"; then
+    ok "$codes_out"
+  else
+    printf '%s\n' "$codes_out" | sed 's/^/  /'
+    problem "finding-code coverage failed (run: python3 bin/check-finding-codes.py)"
+  fi
+fi
+
 # --- 6c. Bindle-root path refs ---------------------------------------------
 # The installed instruction assets (skills/commands/agents) run from the cwd of
 # whatever project you're working in, NOT the Bindle checkout. A run instruction

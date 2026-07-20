@@ -1348,6 +1348,14 @@
       "reason": "unit tests for architecture.clustering's monotonic degradation (a degraded partition is a union of full clusters, never a re-partition), evidence floor, boundary-crossing cluster metrics, and deterministic collision-disambiguated naming, over a hand-authored synthetic graph corpus; test infrastructure, not a capability an agent invokes."
     },
     {
+      "path": "bin/check-finding-codes.py",
+      "reason": "repo-hygiene validator run by make check: asserts every finding code a validator can emit is classified in its surface's invariant-coverage.json or explicitly excluded with a reason, and that no classification is stale; a check, not a capability an agent invokes."
+    },
+    {
+      "path": "bin/test-check-finding-codes.sh",
+      "reason": "suite for bin/check-finding-codes.py over throwaway fixture surfaces (unclassified code, stale entry, reasonless exclusion, both-classified-and-excluded, tests-only emission, declared-ungoverned surface) plus this repository itself; test infrastructure, not a capability an agent invokes."
+    },
+    {
       "path": "bin/architecture/tests/test_candidates.py",
       "reason": "unit tests for architecture.candidates' record shape, provenance, candidate-key stability across ordinary edits, observability-gated entry points, and the integration guard asserting the #228 matcher accepts this package's own output; test infrastructure, not a capability an agent invokes."
     }

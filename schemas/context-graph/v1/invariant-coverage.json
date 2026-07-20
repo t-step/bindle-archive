@@ -1,5 +1,7 @@
 {
   "schema_version": 1,
+  "sources": [],
+  "ungoverned_reason": "classifies the document-validation codes only; the runtime and CLI codes bin/context_graph emits (E_CONFIRM_*, E_PROPOSAL_*, E_CONFIG_*, E_MAP_UNREADABLE) are not yet triaged per-code — tracked in #348",
   "invariants": [
     { "code": "E_CONFIG_MALFORMED_PROJECT_ID", "classification": "schema-and-native" },
     { "code": "E_CONFIG_PROJECT_ID_REPO_SHAPED", "classification": "native-only" },
