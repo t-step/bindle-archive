@@ -995,6 +995,10 @@
       "reason": "a point-in-time brainstorming spec for #309's CodeGraph chaining guard; planning artifact, not itself a capability."
     },
     {
+      "path": "docs/superpowers/specs/2026-07-19-label-hygiene-design.md",
+      "reason": "a point-in-time brainstorming spec for #287's label-hygiene contract/guard and #266's audit leg; planning artifact, not itself a capability."
+    },
+    {
       "path": "docs/superpowers/plans/2026-07-18-structural-graph-interchange.md",
       "reason": "a point-in-time implementation plan for the #227 structural-graph interchange, paired with its design spec; planning artifact, not itself a capability."
     },
