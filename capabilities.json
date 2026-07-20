@@ -1266,6 +1266,22 @@
     {
       "path": "bin/structural_graph/validation.py",
       "reason": "library module performing hand-rolled structural and vocabulary validation for the #227 interchange (shape, vocabulary membership, referential checks); consumed by the structural_graph package, not a standalone capability."
+    },
+    {
+      "path": "bin/architecture/__init__.py",
+      "reason": "package marker for the #228 architecture-projection identity/state library; consumed by the projection engine, not a standalone capability."
+    },
+    {
+      "path": "bin/architecture/ids.py",
+      "reason": "library module holding the frozen arch-node identity grammar (#228), deliberately separate from context_graph.ids so an architecture identity can never pass context-graph node validation; consumed by the architecture package, not a standalone capability."
+    },
+    {
+      "path": "bin/architecture/tests/__init__.py",
+      "reason": "test package marker for architecture; test infrastructure, not a capability an agent invokes."
+    },
+    {
+      "path": "bin/architecture/tests/test_ids.py",
+      "reason": "unit tests for architecture.ids, including the regression test that keeps the arch-node parser out of context_graph.ids; test infrastructure, not a capability an agent invokes."
     }
   ],
   "external_upstreams": [
