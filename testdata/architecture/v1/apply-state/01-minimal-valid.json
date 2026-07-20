@@ -1,0 +1,15 @@
+{
+  "project_id": "project:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "schema_version": 1,
+  "started_at": "2026-07-20T00:00:00Z",
+  "status": "in_progress",
+  "writes": [
+    {
+      "after_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "before_hash": null,
+      "order": 0,
+      "path": "Components/auth-service.md",
+      "state": "pending"
+    }
+  ]
+}

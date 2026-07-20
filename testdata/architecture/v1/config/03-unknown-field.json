@@ -1,0 +1,25 @@
+{
+  "bindings": [
+    {
+      "alias": "bindle",
+      "binding_id": "repository-binding:dddddddddddddddddddddddddddddddd"
+    }
+  ],
+  "caps": {
+    "max_nodes": 40,
+    "over_cap_behavior": "report"
+  },
+  "diff_size_confirmation_limit": 20,
+  "exclusions": [
+    "vendor/**"
+  ],
+  "project_id": "project:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "project_slug": "bindle",
+  "projection_schema_version": 1,
+  "schema_version": 1,
+  "surprise": true,
+  "thresholds": {
+    "high": 0.9,
+    "low": 0.4
+  }
+}

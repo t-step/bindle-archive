@@ -1282,6 +1282,26 @@
     {
       "path": "bin/architecture/tests/test_ids.py",
       "reason": "unit tests for architecture.ids, including the regression test that keeps the arch-node parser out of context_graph.ids; test infrastructure, not a capability an agent invokes."
+    },
+    {
+      "path": "bin/architecture/canonical.py",
+      "reason": "library module holding the frozen judgments-record envelope (#228): the canonical digest input, the content-derived record_id, and the integrity checksum; consumed by the architecture package, not a standalone capability."
+    },
+    {
+      "path": "bin/architecture/state.py",
+      "reason": "library module holding the frozen notes-home architecture state layout, the note-path grammar, the project_id hard abort, and the four state files' native validators (#228); consumed by the projection engine, not a standalone capability."
+    },
+    {
+      "path": "bin/architecture/tests/test_canonical.py",
+      "reason": "unit tests for architecture.canonical's record_id/checksum envelope; test infrastructure, not a capability an agent invokes."
+    },
+    {
+      "path": "bin/architecture/tests/test_state.py",
+      "reason": "unit tests for architecture.state's path layout, note-path grammar, project_id hard abort, and state-file validators; test infrastructure, not a capability an agent invokes."
+    },
+    {
+      "path": "bin/architecture/tests/test_schema_conformance.py",
+      "reason": "fixture-corpus conformance test cross-checking architecture.state's native validators against schemas/architecture/v1/*.schema.json; test infrastructure, not a capability an agent invokes."
     }
   ],
   "external_upstreams": [
