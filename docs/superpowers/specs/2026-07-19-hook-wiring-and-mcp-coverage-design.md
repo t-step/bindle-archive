@@ -52,10 +52,17 @@ preview-unless-`--apply` behavior and idempotence.
 per `docs/ownership-boundaries.md`; only the explicit
 `install-session-hooks.sh --apply` does, and only with the operator's answer.
 
-**The `|| true` stays.** With a stable path plus the doctor check below, removing
-it would fire a hook error on every Bash call — noise, not safety. Loud failure
-is delegated to `doctor`, which is where a configuration problem is diagnosable
-rather than merely disruptive.
+**The `|| true` goes.** Claude Code's documented PreToolUse contract is that
+**only exit code 2 blocks** a tool call; exit 1 is an explicit *non-blocking*
+error — surfaced in the transcript, with the tool call proceeding. So a hook
+whose script has gone missing exits 1, says so visibly, and blocks nothing. That
+is exactly the "fails loudly rather than silently" #264 asks for, at no risk of a
+bricked session, so the suppression has no remaining justification. Combined with
+the stable symlink it should essentially never fire.
+
+The command becomes a bare `python3 ~/.claude/hooks/nested-notes-guard.py`.
+Doctor (§3) remains the place a configuration problem is *diagnosed*; the exit
+code is what makes it *noticed*.
 
 ### 2. Generic tool_input parsing in the guard
 
@@ -73,10 +80,25 @@ Everything downstream is shared and unchanged: the `↪` marker test, `SHORT_BOD
 the `nested-notes-exempt` marker, footer exclusion, and the `OWNER` check. The
 matcher in `settings.json` becomes `Bash|mcp__.*github.*`.
 
-Input the front-end cannot interpret — missing fields, unexpected shapes —
-**allows**, matching the guard's existing "can't judge → allow; CLAUDE.md still
-governs" stance for unreadable `--body-file` targets. A guard that denies on
-confusion would block legitimate writes in a path nobody has exercised yet.
+**Unparseable input fails closed on the write path.** If `tool_name` is a GitHub
+MCP tool whose name is write-shaped (`create`, `update`, `comment`, `review`) and
+the front-end cannot locate a body or an owner, the guard **denies**, naming the
+escape in its reason: use the `gh` path via Bash, or add the
+`nested-notes-exempt` marker. Read-shaped GitHub MCP tools and every non-GitHub
+tool allow.
+
+This deliberately departs from the guard's existing "can't judge → allow" stance
+for unreadable `--body-file` targets. That case is a `gh` command the guard *did*
+parse, where only the file was unreachable; this case is the write path #264
+exists to cover, arriving in a shape the guard does not recognize. Passing it is
+the precise failure this issue was filed about.
+
+The cost is real and worth stating: when a body cannot be parsed, the exempt
+marker inside it cannot be read either, so such a tool is hard-blocked until the
+guard learns its schema. Accepted because the blast radius today is zero (no
+GitHub MCP server is configured), the failure is loud and one commit from fixed,
+and a guard that silently passes what it cannot read is worse than one that
+stops and says so.
 
 ### 3. Doctor reporting
 
@@ -86,17 +108,20 @@ confusion would block legitimate writes in a path nobody has exercised yet.
 |---|---|
 | Configured in `settings.json`, path resolves to this checkout | OK |
 | Configured, path resolves elsewhere | warn — names the resolved target |
-| Configured, path does not resolve | warn — "re-run `bin/install.sh`" |
+| Configured, path does not resolve | warn — "re-run `bin/install.sh`" (the hook also exits 1 loudly at call time) |
 | Not configured | informational — the session hooks are opt-in by design |
 
-This is the loud-failure channel the `|| true` gives up, moved somewhere it can
-be acted on.
+Doctor is the diagnosis channel; the hook's own nonzero exit is the detection
+channel. Neither alone is sufficient — an exit-1 notice says something is wrong,
+doctor says what and how to fix it.
 
 ## Testing
 
 `bin/test-nested-notes-guard.sh` (15 cases today) gains MCP-shaped input cases:
 compliant body, bare-prose body that must be denied, exempt marker, sub-
-`SHORT_BODY` body, non-`domattioli` owner, and malformed input that must allow.
+`SHORT_BODY` body, non-`domattioli` owner, a write-shaped tool with an
+unparseable body that must be **denied** (§2's fail-closed rule), and a
+read-shaped tool that must allow.
 
 **Mutation pass, per the repo rule that a new gate must be proven failable:**
 stub out the MCP branch and confirm every new negative assertion flips to
@@ -118,5 +143,5 @@ the failure this design exists to surface.
 | #264 item | Where |
 |---|---|
 | decision recorded on MCP write-tool coverage | §2 — extend generically, with the rationale that the hole reopens silently otherwise |
-| wiring survives a repo move, or fails loudly | §1 — survives via `~/.claude/hooks/` symlink; §3 — dangling path reported |
+| wiring survives a repo move, or fails loudly | §1 — both: survives via the `~/.claude/hooks/` symlink, and a dangling path now exits 1 visibly instead of being swallowed by `\|\| true`; §3 — doctor names the fix |
 | `bin/doctor.sh` reports hook configured but not reachable | §3 |
