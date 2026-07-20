@@ -12,12 +12,17 @@ session_id (repo root, HEAD sha, start time) so the paired SessionEnd hook
 Never blocks a session: any failure here is swallowed and the hook exits 0
 with no additionalContext, exactly as if it had not run.
 
-Wire-up (opt-in — see bin/install-session-hooks.sh, never part of the
-default installer):
+Wire-up (opt-in — see bin/install-claude-hooks.sh, never part of the
+default installer) — note the ~/.claude/hooks path, a symlink bin/install.sh
+maintains, so moving the checkout leaves a dangling link bin/doctor.sh reports
+rather than silently disabling the hook (#264, #312):
   "hooks": { "SessionStart": [ { "matcher": "startup|resume", "hooks": [
     { "type": "command",
-      "command": "python3 /path/to/bindle/global/hooks/session-start-context.py",
+      "command": "python3 ~/.claude/hooks/session-start-context.py",
       "timeout": 10 } ] } ] }
+Spell the path out with $HOME expanded (no leading ~); settings.json is JSON,
+so an unexpanded ~ survives only if the shell that runs the command expands
+it — do not rely on that (#312).
 
 Self-test: bin/test-session-hooks.sh
 """

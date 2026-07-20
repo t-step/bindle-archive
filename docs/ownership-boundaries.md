@@ -42,11 +42,12 @@ violate a line here, the change is wrong.
   owns (every other key is preserved byte-for-byte), preview the exact diff,
   and require `--apply` (or an interactive `y`) before writing anything.
   Today: `bin/notes-home.sh set|reset` (the `env.BINDLE_NOTES_DIR` key) and
-  `bin/install-session-hooks.sh install|uninstall` (the `hooks.SessionStart`
-  / `hooks.SessionEnd` entries whose `command` points at
-  `global/hooks/session-start-context.py` /
-  `global/hooks/session-end-breadcrumb.py` — every other hook entry, e.g. the
-  `nested-notes-guard` `PreToolUse` hook, is left untouched).
+  `bin/install-claude-hooks.sh install|uninstall` (only the hook entries named
+  by the selection it was given — `--session` for the `hooks.SessionStart` /
+  `hooks.SessionEnd` entries, `--guard NAME` for one `hooks.PreToolUse` guard;
+  every entry it was not asked for, Bindle's own included, is left untouched).
+  Wiring is opt-in per hook and a bare `install` selects only the session
+  hooks, so no guard begins intercepting tool calls without being named (#323).
 
   Hand-wired hook entries (every guard except those two) still have a
   convention Bindle *diagnoses* without writing: the `command` names

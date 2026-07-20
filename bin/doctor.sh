@@ -302,17 +302,23 @@ executable_section() {
   fi
 }
 
-# hooks_section — report the hooks Bindle ships (#264).
+# hooks_section — report the hooks Bindle ships (#264, #312, #323).
 #
-# Two independent things can be wrong, so both are reported: the SYMLINK into
-# $CLAUDE_HOME/hooks may be missing or dangling (a moved checkout), and
-# settings.json may reference a path that no longer resolves — the silent
-# failure this section exists to surface. A hook that is simply unwired is not
-# an error: the session hooks are opt-in by design.
+# Three independent things can be wrong, so all three are reported: the SYMLINK
+# into $CLAUDE_HOME/hooks may be missing or dangling (a moved checkout);
+# settings.json may reference a path that no longer resolves, or one that
+# resolves via the checkout and so disappears on the next move; and a hook may
+# be installed but never WIRED at all.
+#
+# That last state is why #287's label-hygiene guard never fired once: it was
+# symlinked from the day it shipped, absent from settings.json, and reported as
+# fully healthy because nothing claimed it should be wired. Wiring stays opt-in
+# per hook, so an unwired hook is not an error and does not affect the exit
+# code — but it is now named rather than passed over in silence.
 hooks_section() {
   echo
   echo "claude hooks ($CLAUDE_HOME/hooks):"
-  local src dest name settings wired target
+  local src dest name settings wired target unwired
   settings="$CLAUDE_HOME/settings.json"
   if [ ! -d "$REPO_ROOT/global/hooks" ]; then
     echo "  - no hooks in this checkout"
@@ -327,12 +333,12 @@ hooks_section() {
 
   # Wiring: every hook path settings.json names must resolve. A configured but
   # unreachable hook is the case #264 was filed on.
+  wired=""
   if [ ! -f "$settings" ]; then
-    echo "  - settings.json absent; no hooks wired (opt-in — bin/install-session-hooks.sh)"
-    return 0
-  fi
-  wired="$(
-    python3 - "$settings" <<'PY' 2>/dev/null || true
+    echo "  - settings.json absent; nothing wired (opt-in — bin/install-claude-hooks.sh)"
+  else
+    wired="$(
+      python3 - "$settings" <<'PY' 2>/dev/null || true
 import json, re, sys
 try:
     data = json.load(open(sys.argv[1]))
@@ -348,10 +354,8 @@ for entries in (data.get("hooks") or {}).values():
                     seen.append(m)
 print("\n".join(seen))
 PY
-  )"
-  if [ -z "$wired" ]; then
-    echo "  - no Bindle hooks wired in settings.json (opt-in)"
-    return 0
+    )"
+    [ -n "$wired" ] || echo "  - no Bindle hooks wired in settings.json (opt-in)"
   fi
   while IFS= read -r target; do
     [ -n "$target" ] || continue
@@ -384,6 +388,26 @@ PY
   done <<EOF
 $wired
 EOF
+
+  # Installed but never wired (#323). The symlink checks above pass for a hook
+  # nothing references, so without this a guard that has never once fired looks
+  # identical to a healthy one. Reported, not counted: wiring is opt-in per
+  # hook, so choosing not to wire one is a decision, not a fault.
+  unwired=""
+  for src in "$REPO_ROOT"/global/hooks/*.py; do
+    [ -e "$src" ] || continue
+    name="$(basename "$src")"
+    case "$wired" in
+      *"$name"*) continue ;;
+    esac
+    unwired="${unwired:+$unwired }$name"
+  done
+  if [ -n "$unwired" ]; then
+    for name in $unwired; do
+      printf '  - installed, not wired: %s\n' "$name"
+    done
+    printf '      \xe2\x86\x92 wiring is opt-in per hook; bin/install-claude-hooks.sh status prints the command for each\n'
+  fi
 }
 
 notes_section() {

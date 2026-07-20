@@ -52,10 +52,12 @@ one `git add -A` away from being published.
 Two hooks can carry part of this without anyone running a command. They are
 **opt-in**: `<bindle>/bin/install.sh` never installs them, because wiring means
 writing to `~/.claude/settings.json` — foreign territory per Bindle's
-`docs/ownership-boundaries.md`. `<bindle>/bin/install-session-hooks.sh` is the
+`docs/ownership-boundaries.md`. `<bindle>/bin/install-claude-hooks.sh` is the
 explicit installer (`status`, `install`, `uninstall`; `install`/`uninstall`
 only PREVIEW until you pass `--apply` or answer the prompt, and both are
-idempotent). Wiring takes effect at the next session boundary, not immediately.
+idempotent). A bare `install` wires these two session hooks and nothing else —
+the `PreToolUse` guards it also knows about are wired only when named with
+`--guard`. Wiring takes effect at the next session boundary, not immediately.
 
 - **`SessionStart` → `global/hooks/session-start-context.py`** runs
   `<bindle>/bin/session-context.sh` and injects a compact orientation block:

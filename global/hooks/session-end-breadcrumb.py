@@ -14,12 +14,17 @@ mistake a thin auto-line for a real, model-authored session note.
 Never blocks session termination: any failure here is swallowed and the hook
 exits 0 having written nothing.
 
-Wire-up (opt-in — see bin/install-session-hooks.sh, never part of the
-default installer):
+Wire-up (opt-in — see bin/install-claude-hooks.sh, never part of the
+default installer) — note the ~/.claude/hooks path, a symlink bin/install.sh
+maintains, so moving the checkout leaves a dangling link bin/doctor.sh reports
+rather than silently disabling the hook (#264, #312):
   "hooks": { "SessionEnd": [ { "hooks": [
     { "type": "command",
-      "command": "python3 /path/to/bindle/global/hooks/session-end-breadcrumb.py",
+      "command": "python3 ~/.claude/hooks/session-end-breadcrumb.py",
       "timeout": 10 } ] } ] }
+Spell the path out with $HOME expanded (no leading ~); settings.json is JSON,
+so an unexpanded ~ survives only if the shell that runs the command expands
+it — do not rely on that (#312).
 
 Self-test: bin/test-session-hooks.sh
 """
