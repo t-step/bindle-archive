@@ -49,7 +49,7 @@
         "max_nodes": { "type": "integer", "minimum": 1 },
         "over_cap_behavior": {
           "enum": ["report"],
-          "description": "The cap binds NEW CREATION only. Existing confirmed nodes over a lowered cap are reported for an explicit operator decision; silent enforcement and silent non-enforcement are both forbidden."
+          "description": "The cap binds NEW CREATION only. Existing confirmed nodes over a lowered cap are reported for an explicit operator decision; silent enforcement and silent non-enforcement are both forbidden. AUTHORITATIVE SPELLING (#372): the run-scoped per-candidate flag this policy governs is `over_cap`. The contract previously carried a second spelling, `below_cap_threshold`, in some issue and design-doc text; it is one flag, not two, and `over_cap` wins because it is the spelling this frozen key, `state.OVER_CAP_BEHAVIORS` and merged `ranking.rank()` output all already use. `below_cap_threshold` is retired and must not be produced or consumed."
         }
       }
     },

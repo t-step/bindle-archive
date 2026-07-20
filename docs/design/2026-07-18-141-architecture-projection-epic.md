@@ -1117,7 +1117,8 @@ a changed input produces a minimal, correct changed-set.
 > is neither deleted nor staled nor planned — **51 notes on disk**, and hundreds
 > after a quarter of ordinary commits, past a cap C's acceptance calls "enforced and
 > observable." Rule: the cap binds **creation**; a projected node that falls out of
-> the ranked set is retained, marked `below_cap_threshold`, and **excluded from
+> the ranked set is retained, marked ~~`below_cap_threshold`~~ `over_cap`
+> (**AMENDED by #372**, see § "Frozen — over-cap behavior"), and **excluded from
 > further refresh** until the operator stales it via G. Additionally, **ranking uses
 > the same bucketed/banded metric values as §6-F's churn guard, not raw numbers** —
 > otherwise churn excluded from note *bytes* re-enters through note *existence*, and
@@ -1270,7 +1271,8 @@ flows/boundaries reference structural evidence without creating context-graph ed
 
 **Owns:** rename; **reappearance against a stale identity**; split; merge;
 stale/removed; **user-renamed-note conflicts** and `orphaned_by_resume` /
-`below_cap_threshold` / `excluded_but_confirmed` / `grouping_drift` resolution
+~~`below_cap_threshold`~~ `over_cap` (**AMENDED by #372**) /
+`excluded_but_confirmed` / `grouping_drift` resolution
 (§3); generated-region hand edits; missing/corrupted markers; ambiguous identity
 matching; **lifecycle** confirmation logic; **never-auto-delete**; preservation of
 user-authored content. **Depends on:** D (the `B→G` edge is implied via D and was
@@ -1727,12 +1729,24 @@ bounded, deterministic codebase-map and component candidates.
 
 ## Frozen — over-cap behavior
 The cap binds CREATION. A projected node that falls out of the ranked set is
-RETAINED, marked `below_cap_threshold`, and excluded from further refresh until
-the operator stales it via G. It is never deleted (never-auto-delete) and never
-auto-staled (that is G's AC16). RANKING USES THE SAME BUCKETED/BANDED METRIC
-VALUES as F's churn guard, not raw numbers — otherwise a rank swap at the cap
-boundary mints one note and strands another every few commits, and churn excluded
-from note BYTES re-enters through note EXISTENCE.
+RETAINED, marked ~~`below_cap_threshold`~~ `over_cap`, and excluded from further
+refresh until the operator stales it via G. It is never deleted
+(never-auto-delete) and never auto-staled (that is G's AC16). RANKING USES THE
+SAME BUCKETED/BANDED METRIC VALUES as F's churn guard, not raw numbers —
+otherwise a rank swap at the cap boundary mints one note and strands another
+every few commits, and churn excluded from note BYTES re-enters through note
+EXISTENCE.
+
+**AMENDED by #372:** the flag is spelled **`over_cap`**, and that spelling is
+authoritative wherever this document, an issue body, or code disagrees. This is
+a rename of one flag, not a choice between two — there has only ever been one.
+`over_cap` wins because it is what the frozen `caps.over_cap_behavior` key in
+`schemas/architecture/v1/config.schema.json`, `state.OVER_CAP_BEHAVIORS`, and
+merged C3 `ranking.rank()` output already emit; `below_cap_threshold` was
+produced by nothing. The authoritative declaration now lives on that schema
+key's `description`, so it sits where the flag is defined rather than only in
+this record. The other occurrences of the retired spelling in this document
+(§ over-cap rule, § G Owns ×2) are struck through in place.
 
 ## Depends on
 #141-A. MUST NOT be merged with A.
@@ -2068,11 +2082,29 @@ rename; REAPPEARANCE AGAINST A STALE IDENTITY (never auto-reused — structural
 overlap cannot distinguish a true reappearance from unrelated code later written
 at the same paths, which would otherwise inherit the dead node's arch_id,
 prior_names[], merged_from[] and every backlink); split; merge; stale/removed;
-USER-RENAMED-NOTE conflicts; resolution of D's `orphaned_by_resume`,
-`below_cap_threshold`, `excluded_but_confirmed`, and `grouping_drift` flags;
+USER-RENAMED-NOTE conflicts; ~~resolution of D's `orphaned_by_resume`,
+`below_cap_threshold`, `excluded_but_confirmed`, and `grouping_drift` flags~~;
 generated-region hand edits; missing/corrupted markers; ambiguous identity
 matching; LIFECYCLE confirmation logic; never-auto-delete; preservation of
 user-authored content.
+
+**AMENDED by #372:** that struck clause read as if D PRODUCES the four flags. It
+does not, and the sentence never said so — its subject is *resolution*, which is
+G's; the possessive only marks whose surface the flags surface on. Read quickly
+it sent two separate sessions hunting a D-side derivation that does not exist,
+most recently the D3 session, which found the cap derivation already shipped in
+C3 (`ranking.rank()`). It is restated here without the ambiguity, and with the
+retired spelling replaced per this issue:
+
+> G owns the RESOLUTION of `orphaned_by_resume`, `over_cap`,
+> `excluded_but_confirmed` and `grouping_drift`. Two have shipped producers,
+> and they are not G's to change: `over_cap` is emitted by C3 `ranking.rank()`
+> and threaded through D3 `planner.plan()` into D4 `apply()`;
+> `orphaned_by_resume` is set by D4 `apply()` (`apply.py:247`). As of this
+> amendment `excluded_but_confirmed` and `grouping_drift` have NO producer
+> anywhere in `bin/architecture/` — whoever implements them owns deciding where
+> they are derived, and that decision is not settled by this clause. In no case
+> does G derive a flag it resolves.
 
 ## May not own
 - MINTING, replacing, retiring, or inferring identity. G decides THAT a split or
