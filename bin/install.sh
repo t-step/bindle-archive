@@ -403,7 +403,9 @@ _file_group() {
 # one, so moving or renaming this repo no longer silently disables a hook — it
 # leaves a dangling symlink that the hook's own nonzero exit and bin/doctor.sh
 # both report. Wiring settings.json stays out of scope here: that file is the
-# user's, and only bin/install-session-hooks.sh --apply writes it.
+# user's, and only bin/install-claude-hooks.sh --apply writes it. A hook
+# symlinked here is inert until wired there — bin/doctor.sh names the ones
+# that are installed but unwired (#323).
 _hook_group() {
   local src dest
   [ -d "$REPO_ROOT/global/hooks" ] || return 0

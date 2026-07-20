@@ -389,6 +389,44 @@ check "checkout-absolute wired hook names the fix" contains "point settings.json
 check "checkout-absolute wired hook is a finding" test "$status" -ne 0
 check "checkout-absolute drift counted in the summary" contains "1 hook-wiring drift" "$out"
 
+# The state #323 was filed on: a hook that is installed and symlinked but that
+# settings.json never names. Every check above passes for it, so before this it
+# reported as fully healthy — which is how #287's label-hygiene guard shipped
+# and never fired once.
+#
+# Mutation note: with the unwired loop removed, every "reported" assertion below
+# flips to failing. The "not a finding" assertion passes vacuously under that
+# mutation; it guards the opt-in contract, not failability.
+echo "18. hook installed but never wired (#323):"
+REPO18="$TMP/repo18"
+HOME18="$TMP/home18"
+build_repo "$REPO18"
+mkdir -p "$REPO18/global/hooks"
+printf '#!/usr/bin/env python3\nprint("guard")\n' >"$REPO18/global/hooks/demo-guard.py"
+printf '#!/usr/bin/env python3\nprint("other")\n' >"$REPO18/global/hooks/other-guard.py"
+"$REPO18/bin/install.sh" --home "$HOME18" >/dev/null 2>&1
+cat >"$HOME18/settings.json" <<JSON
+{"hooks":{"PreToolUse":[{"matcher":"Bash","hooks":[{"type":"command","command":"python3 $HOME18/hooks/demo-guard.py"}]}]}}
+JSON
+out="$("$REPO18/bin/doctor.sh" --home "$HOME18" 2>&1)"
+status=$?
+check "unwired hook is reported" contains "installed, not wired: other-guard.py" "$out"
+check "unwired report names how to wire it" contains "bin/install-claude-hooks.sh status" "$out"
+check "the wired hook is NOT listed as unwired" not_contains "installed, not wired: demo-guard.py" "$out"
+check "unwired hook is not a finding (wiring is opt-in)" test "$status" -eq 0
+
+echo "19. no settings.json at all — every hook reports unwired (#323):"
+HOME19="$TMP/home19"
+"$REPO18/bin/install.sh" --home "$HOME19" >/dev/null 2>&1
+rm -f "$HOME19/settings.json"
+out="$("$REPO18/bin/doctor.sh" --home "$HOME19" 2>&1)"
+status=$?
+check "absent settings.json is stated" contains "settings.json absent" "$out"
+check "absent settings.json points at the installer" contains "bin/install-claude-hooks.sh" "$out"
+check "first hook reported unwired" contains "installed, not wired: demo-guard.py" "$out"
+check "second hook reported unwired" contains "installed, not wired: other-guard.py" "$out"
+check "absent settings.json is not a finding" test "$status" -eq 0
+
 # --- result ----------------------------------------------------------------
 echo
 echo "tests: ${pass} passed, ${fail} failed"

@@ -157,12 +157,19 @@ the alias, or copy with `/notes-home migrate` (never deletes the old home). See
 these commands — usable from Codex too — is
 [docs/session-notes-format.md](docs/session-notes-format.md).
 
-Opt-in (never part of `bin/install.sh`): `bin/install-session-hooks.sh install`
+Opt-in (never part of `bin/install.sh`): `bin/install-claude-hooks.sh install`
 wires a `SessionStart` hook that opens every session pre-oriented (via
 [`bin/session-context.sh`](bin/session-context.sh)) and a `SessionEnd` hook
 that leaves an automatic breadcrumb even if `/session-end` is never run.
 Preview first, `--apply` to write; `uninstall` reverses it. See
 [docs/session-notes-format.md](docs/session-notes-format.md#opt-in-hook-automation-breadcrumbs).
+
+The same command wires the `PreToolUse` guards, one at a time and only when
+named — `install --guard nested-notes|label-hygiene|codegraph`. A bare
+`install` never wires a guard, so installing Bindle cannot silently start
+intercepting your tool calls; `bin/doctor.sh` reports which shipped hooks are
+installed but unwired, so opt-in does not mean invisible. (Not to be confused
+with `bin/install-hooks.sh`, which enables this repo's *git* hooks.)
 
 ### Hook wiring convention
 

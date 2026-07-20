@@ -197,7 +197,7 @@ layout are not part of this contract.
 **Current Claude automation**, and explicitly opt-in (never part of the
 default `bin/install.sh` — see
 [ownership-boundaries.md](ownership-boundaries.md)):
-`bin/install-session-hooks.sh install` (preview-only until `--apply`, or a `y`
+`bin/install-claude-hooks.sh install` (preview-only until `--apply`, or a `y`
 at the prompt; idempotent, and effective at the next session boundary) wires a
 `SessionStart` hook
 (`global/hooks/session-start-context.py`) that runs

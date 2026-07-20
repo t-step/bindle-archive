@@ -872,8 +872,8 @@
       "reason": "installs the pre-commit git hook framework; install/hook machinery, not a capability."
     },
     {
-      "path": "bin/install-session-hooks.sh",
-      "reason": "wires the SessionStart/session-end Python hooks into ~/.claude/settings.json; install/hook machinery, not a capability."
+      "path": "bin/install-claude-hooks.sh",
+      "reason": "wires the SessionStart/SessionEnd hooks and the PreToolUse guards into ~/.claude/settings.json; install/hook machinery, not a capability."
     },
     {
       "path": "bin/lib/manifest.sh",
