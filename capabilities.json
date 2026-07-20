@@ -600,6 +600,19 @@
       "version_introduced": "0.4.0"
     },
     {
+      "name": "check-issue-labels",
+      "type": "script",
+      "path": "bin/check-issue-labels.sh",
+      "description": "Read-only audit of the label lifecycle rules in docs/issue-tracking.md against live GitHub state: no closed issue carries a `status:` label, every open issue outside `status: triage` carries a `priority:` label, and the retired `status: done` label does not exist. The audit backstop to the label-hygiene PreToolUse guard, catching drift that never passes through the harness; exits 2 (SKIPPED, distinct from 0) when gh is absent or unauthenticated, so an unrun check is never reported as a passing one.",
+      "provider": {
+        "claude": "installed",
+        "codex": "untested"
+      },
+      "maturity": "tested",
+      "mutation": [],
+      "version_introduced": "0.10.0"
+    },
+    {
       "name": "objective-worktree",
       "type": "script",
       "path": "bin/objective-worktree.sh",
