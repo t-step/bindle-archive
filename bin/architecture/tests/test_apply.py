@@ -284,6 +284,17 @@ class IdentityOrdering(_ApplyCase):
         self.assertFalse(os.path.exists(self._note_path("Components/auth.md")))
         self.assertIsNone(self._apply_state())
 
+    def test_an_identity_without_an_arch_id_is_rejected_not_raised(self):
+        """`notes.plan_note` raises NoteInputError on the create branch when
+        arch_id is falsy, and NoteInputError extends Exception rather than
+        ValueError, so it escaped apply() uncaught. Every other bad input
+        here comes back as a finding; this one must too."""
+        self.identities["component:auth"] = {"slug": "auth"}
+        result = self._apply()
+        self.assertFalse(result["ok"])
+        self.assertFalse(os.path.exists(self._note_path("Components/auth.md")))
+        self.assertIsNone(self._apply_state())
+
 
 class ZeroWriteRerun(_ApplyCase):
     """A rerun at the same commit writes zero bytes: no apply-state, no

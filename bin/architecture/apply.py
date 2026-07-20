@@ -323,8 +323,16 @@ def _apply_locked(notes_home, project_slug, project_id, project_dir, records,
     for entry in entries:
         if entry["over_cap"]:
             continue
-        absolute, decision = _decide(entry, entries, record_by_key,
-                                     identities, project_dir)
+        try:
+            absolute, decision = _decide(entry, entries, record_by_key,
+                                         identities, project_dir)
+        except arch_notes.NoteInputError as exc:
+            # An identity missing its arch_id reaches the create branch and
+            # is refused there. NoteInputError extends Exception, not
+            # ValueError, so without this it escapes apply() uncaught while
+            # every other bad input comes back as a finding.
+            return _result(_STATUS_REJECTED, False, findings=[{
+                "code": "E_ARCH_APPLY_PLAN_REJECTED", "message": str(exc)}])
         if decision["action"] == "conflict":
             conflicts.append({"code": decision["code"],
                               "note_path": entry["note_path"]})
