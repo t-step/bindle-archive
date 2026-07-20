@@ -1,6 +1,7 @@
 {
   "schema_version": 1,
   "description": "Classifies each E_SG_* finding code by whether the JSON Schema can also reject the responsible object, keeping the hand-rolled validator and the schema honest with each other.",
+  "sources": ["bin/structural_graph"],
   "codes": {
     "E_SG_MISSING_SCHEMA_VERSION": "schema-and-native",
     "E_SG_UNSUPPORTED_SCHEMA_VERSION": "schema-and-native",

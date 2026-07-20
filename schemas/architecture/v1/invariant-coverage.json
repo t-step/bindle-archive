@@ -1,6 +1,7 @@
 {
   "schema_version": 1,
   "description": "Which architecture-state finding codes a JSON Schema validator can express, and which only the native validator in bin/architecture/state.py can. `schema-and-native` codes must be rejected by BOTH; `native-only` codes are cross-object, uniqueness, ordering, or hashing invariants that draft-07 cannot state, so a fixture invalid only via one of them is legitimately schema-valid on its own. test_schema_conformance.py reads this file to decide which direction to assert.",
+  "sources": ["bin/architecture"],
   "codes": {
     "E_ARCH_CONFIG_MISSING_FIELD": "schema-and-native",
     "E_ARCH_CONFIG_UNKNOWN_FIELD": "schema-and-native",
@@ -56,6 +57,25 @@
     "E_ARCH_APPLY_STATE_BAD_WRITES": "schema-and-native",
     "E_ARCH_APPLY_STATE_NOT_AN_OBJECT": "schema-and-native",
     "E_ARCH_APPLY_STATE_BAD_ORDER": "native-only",
-    "E_ARCH_APPLY_STATE_DUPLICATE_PATH": "native-only"
+    "E_ARCH_APPLY_STATE_DUPLICATE_PATH": "native-only",
+    "E_ARCH_JUDGMENTS_BLANK_LINE": "native-only",
+    "E_ARCH_JUDGMENTS_DUPLICATE_RECORD": "native-only",
+    "E_ARCH_JUDGMENTS_INVALID_RECORD": "native-only",
+    "E_ARCH_JUDGMENTS_TORN_TAIL": "native-only",
+    "E_ARCH_JUDGMENTS_UNPARSEABLE_LINE": "native-only",
+    "E_ARCH_JUDGMENTS_UNTERMINATED_TAIL": "native-only",
+    "E_ARCH_PROJECT_ID_MISMATCH": "native-only"
+  },
+  "excluded_codes": {
+    "E_ARCH_CANDIDATE_BAD_PROJECTION_TYPE": "matcher caller-input validation: a candidate is planning state a caller passes in, never a persisted document, so no JSON Schema governs it.",
+    "E_ARCH_CANDIDATE_BAD_SIGNAL": "matcher caller-input validation: signal fields are validated at the call boundary, not on disk.",
+    "E_ARCH_CANDIDATE_DUPLICATE_KEY": "matcher caller-input validation: uniqueness across the candidate list passed to match(), which is not a document.",
+    "E_ARCH_CANDIDATE_MALFORMED_KEY": "matcher caller-input validation: candidate keys are per-run planning joins, never persisted state.",
+    "E_ARCH_CANDIDATE_MISSING_FIELD": "matcher caller-input validation: enforces CANDIDATE_REQUIRED at the call boundary.",
+    "E_ARCH_CANDIDATE_NOT_AN_OBJECT": "matcher caller-input validation: shape of an argument, not of a stored object.",
+    "E_ARCH_CANDIDATE_UNKNOWN_FIELD": "matcher caller-input validation: the hard abort that refuses provider-specific fields rather than ignoring them.",
+    "E_ARCH_THRESHOLDS_BAD_ORDER": "matcher caller-input validation: thresholds arrive as an argument; config.thresholds itself is covered by E_ARCH_CONFIG_BAD_THRESHOLDS.",
+    "E_ARCH_THRESHOLDS_BAD_VALUE": "matcher caller-input validation: same argument-boundary check as above.",
+    "E_ARCH_THRESHOLDS_OUT_OF_RANGE": "matcher caller-input validation: same argument-boundary check as above."
   }
 }
