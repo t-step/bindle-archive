@@ -459,6 +459,64 @@ else
     ok "codex provider docs consistent with capabilities.json ($codex_installed installed skill(s))"
 fi
 
+# --- 5d. CodeGraph guidance drift ------------------------------------------
+# global/CLAUDE.md and global/AGENTS.md both install into provider-specific
+# global instruction surfaces. The CodeGraph rule drifted twice (#314), once
+# toward the exact opposite behavior ("CodeGraph before grep"). The AGENTS.md
+# delimiters are useful install/update seams, but they also make clobbering the
+# fixed prose easy, so gate the shared behavioral assertions:
+#   - CodeGraph only pays off around a 6+ file orientation threshold;
+#   - for narrow follow-up, grep + Read is cheaper;
+#   - the Codex block must never say CodeGraph before grep.
+#
+# Deliberately NOT behind --content-only: pure text checks, so it must reach
+# the commit hook and CI, not only local make check.
+echo "CodeGraph guidance:"
+if [ ! -f global/CLAUDE.md ] || [ ! -f global/AGENTS.md ]; then
+  echo "  - provider guidance file(s) absent; skipping"
+else
+  codegraph_problems=0
+  claude_codegraph="$(grep -i 'CodeGraph' global/CLAUDE.md || true)"
+  agents_codegraph="$(
+    awk '
+      /<!-- CODEGRAPH_START -->/ { found_start = 1; in_block = 1; next }
+      /<!-- CODEGRAPH_END -->/ { if (in_block) { found_end = 1; in_block = 0; next } }
+      in_block { print }
+      END { if (!found_start || !found_end) exit 2 }
+    ' global/AGENTS.md
+  )"
+  agents_status=$?
+
+  if [ "$agents_status" -ne 0 ]; then
+    problem "global/AGENTS.md: missing CODEGRAPH_START/CODEGRAPH_END block"
+    codegraph_problems=$((codegraph_problems + 1))
+  fi
+
+  check_codegraph_text() { # check_codegraph_text LABEL TEXT
+    local label="$1"
+    local text="$2"
+    if ! grep -qiE '6\+[^[:alnum:]]*file|6\+ files|6\+-file' <<<"$text"; then
+      problem "$label: CodeGraph guidance must state the 6+ file threshold"
+      codegraph_problems=$((codegraph_problems + 1))
+    fi
+    if ! grep -qiE 'grep[[:space:]]*\+?[[:space:]]*Read|grep.*Read' <<<"$text"; then
+      problem "$label: CodeGraph guidance must prefer grep + Read for narrow follow-up"
+      codegraph_problems=$((codegraph_problems + 1))
+    fi
+    if grep -qiE 'codegraph[^.]{0,80}before[^.]{0,40}grep|before[^.]{0,40}grep[^.]{0,80}codegraph' <<<"$text"; then
+      problem "$label: CodeGraph guidance says CodeGraph before grep"
+      codegraph_problems=$((codegraph_problems + 1))
+    fi
+  }
+
+  check_codegraph_text "global/CLAUDE.md" "$claude_codegraph"
+  if [ "$agents_status" -eq 0 ]; then
+    check_codegraph_text "global/AGENTS.md" "$agents_codegraph"
+  fi
+  [ "$codegraph_problems" -eq 0 ] &&
+    ok "CodeGraph guidance consistent across global/CLAUDE.md and global/AGENTS.md"
+fi
+
 # --- 6. skill scripts (python selftests) -----------------------------------
 # Convention, not configuration: any tracked skills/<name>/scripts/selftest.py
 # runs automatically — adding a new scripted skill needs no edit here.
