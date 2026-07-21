@@ -7,10 +7,10 @@ WHOLE — never partially applied. This module answers that question and
 nothing else: it performs no writes, creates no directories, and reports
 rather than raises, so a caller can surface every offender at once.
 
-It lives in context_graph/ rather than architecture/ for the reason
-regions.py does: architecture already imports context_graph, and
-projection.py writes into the same notes home, so both get one enforcement
-point instead of two implementations that can drift.
+It lives in context_graph/ for the reason regions.py does: projection.py
+writes into the same notes home, so any second writer gets this enforcement
+point instead of a second implementation that can drift. The architecture
+surface that originally shared it was removed in #384.
 
 Three properties are load-bearing, and each is a case a lexical path check
 gets WRONG:

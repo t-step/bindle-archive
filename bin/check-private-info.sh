@@ -72,7 +72,6 @@ fi
 SKIP_FILES=(
   ".gitleaks.toml"
   "bin/check-private-info.sh"
-  "bin/structural_graph/redaction.py"
 )
 
 # label<TAB>extended-regex — the content patterns. Edit freely.

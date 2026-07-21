@@ -108,12 +108,14 @@ findings; the only hits were from the three custom personal-info rules, all in
 one plan document that quotes `redaction.py`'s patterns and the adversarial
 privacy fixtures verbatim — now allowlisted by path in `.gitleaks.toml`.
 
-That run also settled #259: `#227` narrowed the fixture allowlist from
-`testdata/structural-graph/v\d+/.*` to `.../privacy/.*`, and the narrowing is
-safe. The unprotected fixture directories (`bindings/`, `core/`, `coverage/`,
-`malformed/`, `versions/`, `manifest.json`) produce no findings under the full
-default ruleset, and every fixture that does contain a personal-info pattern
-lives in `privacy/`, which is still allowlisted.
+That run also settled #259: `#227` had narrowed its fixture allowlist from a
+whole-tree exemption to `.../privacy/.*`, and the narrowing was safe -- the
+unprotected fixture directories produced no findings under the full default
+ruleset, and every fixture containing a personal-info pattern lived in the one
+allowlisted subdirectory. Those fixtures and their allowlist entries were
+removed with the structural-graph surface (#384); the principle stands and is
+the rule for any future fixture corpus: allowlist the narrowest subdirectory
+that actually needs it, never the tree.
 
 Pre-commit remains optional for basic use of the repo, but `bin/install-hooks.sh`
 enables everything above in one step. The scanner needs no network access and

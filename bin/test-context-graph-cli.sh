@@ -80,8 +80,8 @@ check "context-graph.py never imports skill machinery" bash -c \
 echo "== fixture 28: lock contention surfaces owner metadata, break-lock clears it =="
 NH5="$(mktemp -d)"
 "$PY" "$CLI" init --notes-home "$NH5" --project locked >/dev/null
-# #228: the lock is project-scoped, at .bindle/.lock -- the parent of both
-# .bindle/context and .bindle/architecture, not inside either.
+# #228: the lock is project-scoped, at .bindle/.lock -- the parent of every
+# surface under .bindle/, not inside any one of them.
 LOCKDIR="$NH5/projects/locked/.bindle"
 LEGACY_LOCKDIR="$NH5/projects/locked/.bindle/context"
 check "the lock is not inside the context surface" bash -c \

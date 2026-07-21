@@ -287,8 +287,8 @@ def init_project(notes_home, project_slug, display_name=None):
     repaired or replaced. Returns (config_dict, created: bool)."""
     cdir = context_dir(notes_home, project_slug)
     path = os.path.join(cdir, CONFIG_FILENAME)
-    # The lock is project-scoped (#228), covering context and architecture
-    # alike; the config it guards is still context-scoped.
+    # The lock is project-scoped (#228), covering every surface under
+    # `.bindle/`; the config it guards is still context-scoped.
     with lock.ProjectLock(project_dir(notes_home, project_slug), "init"):
         existing = load_config(path)
         if existing is not None:
