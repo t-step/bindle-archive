@@ -1,4 +1,5 @@
 # GENERATED from capabilities.json — do not edit; run 'make manifest'
+claude	skill	architecture-projection	skills/architecture-projection	skills/architecture-projection
 claude	skill	context-graph	skills/context-graph	skills/context-graph
 claude	skill	domi-consumer	skills/domi-consumer	skills/domi-consumer
 claude	skill	fork-pr-flow	skills/fork-pr-flow	skills/fork-pr-flow
@@ -24,6 +25,7 @@ claude	command	session-end	commands/session-end.md	commands/session-end.md
 claude	command	session-start	commands/session-start.md	commands/session-start.md
 claude	command	workflow-review	commands/workflow-review.md	commands/workflow-review.md
 claude	global-guidance	claude	global/CLAUDE.md	CLAUDE.md
+codex	skill	architecture-projection	skills/architecture-projection	architecture-projection
 codex	skill	fork-pr-flow	skills/fork-pr-flow	fork-pr-flow
 codex	skill	verify-then-commit	skills/verify-then-commit	verify-then-commit
 codex	global-guidance	agents	global/AGENTS.md	AGENTS.md
