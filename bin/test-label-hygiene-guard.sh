@@ -118,6 +118,41 @@ expect_msg() { # expect_msg <substring> <name> <command> [cwd]
   fi
 }
 
+# Runs the guard's OWN remediation instead of matching its text (#364). Denies
+# whose advice cannot be followed are the recurring defect in this hook, and a
+# message-substring assertion cannot see that: it passes on advice that errors.
+expect_remediation_allows() { # expect_remediation_allows <name> <denied-command> [cwd]
+  local name="$1" cmd="$2" cwd="${3:-$REPO}"
+  local out flags fixed got
+  out="$(payload "$cmd" "$cwd" | python3 "$GUARD")"
+  flags="$(
+    python3 - "$out" <<'PY'
+import json, re, sys
+try:
+    reason = json.loads(sys.argv[1])["hookSpecificOutput"]["permissionDecisionReason"]
+except Exception:
+    sys.exit(0)
+m = re.search(r"in the same command:\s*(.+?)\.?$", reason)
+print(m.group(1).strip() if m else "")
+PY
+  )"
+  if [ -z "$flags" ]; then
+    FAIL=$((FAIL + 1))
+    echo "  FAIL: $name (guard emitted no in-command remediation to run)" >&2
+    return
+  fi
+  fixed="$cmd $flags"
+  out="$(payload "$fixed" "$cwd" | python3 "$GUARD")"
+  if grep -q '"permissionDecision": "deny"' <<<"$out"; then got=deny; else got=allow; fi
+  if [[ "$got" == allow ]]; then
+    PASS=$((PASS + 1))
+    echo "  ok: $name"
+  else
+    FAIL=$((FAIL + 1))
+    echo "  FAIL: $name (guard denied its own remediation: $fixed)" >&2
+  fi
+}
+
 echo "label-hygiene-guard self-test"
 
 # --- fixtures ---------------------------------------------------------------
@@ -161,6 +196,12 @@ expect allow "R3 add status: triage needs no priority" \
   "gh issue edit 901 --add-label 'status: triage'"
 expect allow "R3 unrelated label edit" \
   "gh issue edit 901 --add-label 'type: docs'"
+expect allow "R3 priority supplied in the SAME command (#364)" \
+  "gh issue edit 901 --add-label 'status: ready' --add-label 'priority: normal'"
+expect allow "R3 priority added, status removed and re-added in one command" \
+  "gh issue edit 901 --remove-label 'status: triage' --add-label 'status: blocked' --add-label 'priority: normal'"
+expect_remediation_allows "R3 the guard's own remediation is accepted (#364)" \
+  "gh issue edit 901 --add-label 'status: ready'"
 
 # --- fail open --------------------------------------------------------------
 # Issue 999 has no fixture, so the stub gh exits 1 — the API-unreachable shape.

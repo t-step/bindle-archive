@@ -213,6 +213,13 @@ def check_edit(num: str, cmd: str, cwd: str) -> None:
     leaving_triage = [x for x in adding if x.startswith(STATUS) and x != TRIAGE]
     if not leaving_triage:
         return
+    # A priority supplied in THIS command satisfies the rule. Checking `adding`
+    # before the API read is what makes the denial's own advice runnable: the
+    # read reports the issue's state BEFORE the edit, so a same-command
+    # --add-label can only ever be seen here (#364). It also skips a network
+    # round-trip on the common case.
+    if any(x.startswith(PRIORITY) for x in adding):
+        return
     priority = has_priority(num, cwd)
     if priority is None:
         warn(f"issue #{num}")
