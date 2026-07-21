@@ -233,13 +233,16 @@ def check_close(num: str, segs: list[str], cwd: str) -> None:
     # the real in-band escape, and the shape the denial below advertises.
     # Only a segment that IS such an edit counts (#388): reading the flag out
     # of quoted text would let inert data talk the guard out of a real deny.
+    # The set is keyed by (issue number, label), not by label alone (#399): a
+    # flat set let `gh issue edit 900 --remove-label 'status: ready'` unblock
+    # closing #266, whose label was never touched.
     removing = {
-        x
+        (m.group(1), x)
         for seg in segs
-        if ISSUE_EDIT.search(seg)
+        if (m := ISSUE_EDIT.search(seg))
         for x in label_values(REMOVE_LABEL, seg)
     }
-    left = [x for x in labels if x not in removing]
+    left = [x for x in labels if (num, x) not in removing]
     if not left:
         return
     joined = ", ".join(f"`{x}`" for x in left)
@@ -342,24 +345,30 @@ def main() -> None:
 
     segs = command_segments(cmd)
 
+    # EVERY segment is evaluated (#399). Returning after the first segment that
+    # matched any rule let a harmless leading segment consume the command line:
+    # `gh issue edit 902 --add-label 'status: ready' && gh issue close 266`
+    # matched ISSUE_EDIT, passed R3, and R1 never ran on the close. `deny`
+    # exits the process, so the first DENIAL still wins — only the early
+    # all-clear is gone.
     for seg in segs:
         m = ISSUE_CLOSE.search(seg)
         if m:
             check_close(m.group(1), segs, cwd)
-            return
+            continue
         if API_CMD.search(seg) and API_CLOSED.search(seg):
             m = API_ISSUE.search(seg)
             if m:
                 check_close(m.group(1), segs, cwd)
-            return
+            continue
         m = PR_MERGE.search(seg)
         if m:
             check_merge(m.group(1), cwd)
-            return
+            continue
         m = ISSUE_EDIT.search(seg)
         if m:
             check_edit(m.group(1), seg, cwd)
-            return
+            continue
 
 
 if __name__ == "__main__":
