@@ -23,12 +23,21 @@ it would escape the ledger. Every code this CLI renders is imported from
 errors that describe an invocation rather than a document -- the same two
 `bin/context-graph.py` renders.
 
-#374 slice D5a implements `init` and `config status|validate` -- the
-initialization and configuration boundary, which had NO implementation
-before this slice (`architecture.state` validated a config that nothing
-authored). `preview`, `confirm` and `apply` are the projection loop and
-land in the following slice; they are deliberately absent rather than
-stubbed, so `--help` never advertises a verb that does nothing.
+#374 slices D5a-D5c implement the whole loop: `init` and `config
+status|validate|add-binding` (the initialization and configuration
+boundary, which had NO implementation before D5a -- `architecture.state`
+validated a config that nothing authored), then `preview`, `confirm` and
+`apply`.
+
+THE TOKEN ROUND TRIP HAS NO PYTHON PRECEDENT IN THIS REPO.
+`bin/context-graph.py`'s `confirm` takes `--candidate-key`/`--decision`
+and its `apply` takes no token at all; the `--approval-token` idiom exists
+only in the bash release scripts, and `planner.py` cites it as an ANALOGY.
+So `preview` prints a plan fingerprint, `confirm` checks a held one
+against the current plan and reports the confirmation policy, and `apply`
+takes it back as `--approval-token`. The token is never persisted -- #230
+bars it from `apply-state.json` -- so re-running `preview` is always a
+legal way to recover one.
 
 Exit codes: 0 success (including a `config validate` run that found zero
 findings); 1 a domain error's findings list was rendered instead of a
@@ -44,6 +53,7 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
+from architecture import loop
 from architecture import preview
 from architecture import project
 from architecture import state
@@ -63,6 +73,17 @@ def _emit_text(obj):
     # preview carries `findings: []`, which the empty-findings branch below
     # would render as "ok: no findings" -- hiding the entire plan behind a
     # cheerful one-liner.
+    # Order matters: a confirm result IS a preview result plus three
+    # fields, and an apply result carries the whole preview under
+    # `preview`. Checking the preview shape first would render either one
+    # as a plain preview and drop the verdict the operator ran the verb
+    # for.
+    if "confirmed" in obj:
+        _emit_text_confirm(obj)
+        return
+    if "status" in obj and "writes" in obj:
+        _emit_text_apply(obj)
+        return
     if "fingerprint" in obj and "entries" in obj:
         _emit_text_preview(obj)
         return
@@ -116,6 +137,41 @@ def _emit_text_preview(obj):
             print("  %s: %s" % (f["code"], f["message"]))
 
 
+def _emit_text_confirm(obj):
+    print("confirmed: %s" % ("yes" if obj["confirmed"] else "NO"))
+    print("expected fingerprint: %s" % obj["expected_fingerprint"])
+    print("current fingerprint:  %s" % obj["fingerprint"])
+    if obj["requires_confirmation"]:
+        print("this plan requires explicit confirmation:")
+        for reason in obj["confirmation_reasons"]:
+            print("  %s: %s" % (reason["reason"], reason["detail"]))
+    else:
+        print("no confirmation-policy trigger fired for this plan")
+    if obj["findings"]:
+        print("findings:")
+        for f in obj["findings"]:
+            print("  %s: %s" % (f["code"], f["message"]))
+
+
+def _emit_text_apply(obj):
+    print("status: %s" % obj["status"])
+    if obj.get("resumed"):
+        print("resumed a run that did not finish")
+    print("writes: %d" % len(obj["writes"]))
+    for write in obj["writes"]:
+        print("  wrote %s" % write["note_path"])
+    for label in ("conflicts", "orphans"):
+        rows = obj.get(label) or []
+        if rows:
+            print("%s: %d" % (label, len(rows)))
+            for row in rows:
+                print("  %s" % (row.get("note_path") or row))
+    if obj.get("findings"):
+        print("findings:")
+        for f in obj["findings"]:
+            print("  %s: %s" % (f["code"], f["message"]))
+
+
 def _emit_text_config(obj):
     cfg = obj["config"]
     if "created" in obj:
@@ -149,6 +205,24 @@ def _add_common_args(p):
     p.add_argument("--notes-home", required=True, metavar="PATH")
     p.add_argument("--project", required=True, metavar="SLUG")
     p.add_argument("--format", choices=["json", "text"], default="json")
+
+
+def _add_graph_args(p):
+    """The three verbs that RUN the chain take identical inputs.
+
+    Not a stylistic dedupe: preview, confirm and apply must each be able
+    to rebuild the SAME plan, and every one of these arguments feeds a
+    fingerprint term. A flag offered to one verb and not the others would
+    make the token they exchange unreproducible."""
+    _add_common_args(p)
+    p.add_argument(
+        "--graph", action="append", default=[], metavar="BINDING_ID=PATH",
+        help="repeatable; BINDING_ID must be a configured binding")
+    p.add_argument("--provider-name", default=None)
+    p.add_argument("--provider-version", default=None)
+    p.add_argument(
+        "--decided-at", default=None, metavar="TIMESTAMP",
+        help="UTC timestamp recorded on any identity allocated by this run")
 
 
 def cmd_init(args):
@@ -244,6 +318,44 @@ def cmd_preview(args):
     return 0 if out["ok"] else 1
 
 
+def cmd_confirm(args):
+    try:
+        graphs = _parse_graphs(args.graph)
+    except ValueError as exc:
+        _emit({"findings": _error_findings("E_USAGE", str(exc))}, args.format)
+        return 1
+    out = loop.confirm(
+        args.notes_home, args.project, graphs, args.fingerprint,
+        provider=({"name": args.provider_name,
+                   "version": args.provider_version}
+                  if args.provider_name else None),
+        decided_at=args.decided_at)
+    _emit(out, args.format)
+    return 0 if out["confirmed"] else 1
+
+
+def cmd_apply(args):
+    try:
+        graphs = _parse_graphs(args.graph)
+    except ValueError as exc:
+        _emit({"findings": _error_findings("E_USAGE", str(exc))}, args.format)
+        return 1
+    try:
+        out = loop.apply_confirmed(
+            args.notes_home, args.project, graphs, args.approval_token,
+            provider=({"name": args.provider_name,
+                       "version": args.provider_version}
+                      if args.provider_name else None),
+            decided_at=args.decided_at,
+            projected_at=args.projected_at)
+    except lock.LockContention as exc:
+        _emit({"findings": _error_findings(
+            "E_LOCK_CONTENTION", str(exc), owner=exc.owner)}, args.format)
+        return 1
+    _emit(out, args.format)
+    return 0 if out["ok"] else 1
+
+
 def _positive_int(text):
     value = int(text)
     if value < 1:
@@ -307,16 +419,30 @@ def main(argv=None):
 
     p_preview = sub.add_parser(
         "preview", help="read-only projection preview; writes nothing")
-    _add_common_args(p_preview)
-    p_preview.add_argument(
-        "--graph", action="append", default=[], metavar="BINDING_ID=PATH",
-        help="repeatable; BINDING_ID must be a configured binding")
-    p_preview.add_argument("--provider-name", default=None)
-    p_preview.add_argument("--provider-version", default=None)
-    p_preview.add_argument(
-        "--decided-at", default=None, metavar="TIMESTAMP",
-        help="UTC timestamp recorded on any identity allocated by this run")
+    _add_graph_args(p_preview)
     p_preview.set_defaults(func=cmd_preview)
+
+    p_confirm = sub.add_parser(
+        "confirm",
+        help="check a preview fingerprint against the current plan and "
+             "report the confirmation policy; writes nothing")
+    _add_graph_args(p_confirm)
+    p_confirm.add_argument(
+        "--fingerprint", required=True, metavar="TOKEN",
+        help="the plan fingerprint `preview` printed")
+    p_confirm.set_defaults(func=cmd_confirm)
+
+    p_apply = sub.add_parser(
+        "apply", help="write the confirmed plan under the project lock")
+    _add_graph_args(p_apply)
+    p_apply.add_argument(
+        "--approval-token", required=True, metavar="TOKEN",
+        help="the plan fingerprint `preview` printed. apply re-plans and "
+             "aborts as stale_preview if the inputs moved since")
+    p_apply.add_argument(
+        "--projected-at", default=None, metavar="TIMESTAMP",
+        help="UTC timestamp recorded on each projected node")
+    p_apply.set_defaults(func=cmd_apply)
 
     args = parser.parse_args(argv)
     return args.func(args)

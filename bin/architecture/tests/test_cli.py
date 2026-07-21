@@ -37,6 +37,22 @@ def _read_bytes(path):
         return handle.read()
 
 
+def _snapshot(notes_home):
+    """Full path -> bytes map of the PROJECTS tree, so a write anywhere
+    under it is visible including one to a file a test never named.
+
+    Scoped to `projects/` rather than the whole notes home because these
+    fixtures keep the interchange document beside it, and a test that
+    edits the graph would otherwise read as a write to the notes home."""
+    root = os.path.join(notes_home, "projects")
+    seen = {}
+    for dirpath, _dirnames, filenames in os.walk(root):
+        for name in sorted(filenames):
+            path = os.path.join(dirpath, name)
+            seen[os.path.relpath(path, notes_home)] = _read_bytes(path)
+    return seen
+
+
 class CliTestCase(unittest.TestCase):
 
     def setUp(self):
@@ -301,6 +317,215 @@ class PreviewCommandTests(CliTestCase):
         self.assertIn("architecture preview", proc.stdout)
         self.assertIn("fingerprint: arch-plan:sha256:", proc.stdout)
         self.assertIn("Codebase Map.md", proc.stdout)
+
+
+class ConfirmCommandTests(PreviewCommandTests):
+
+    def confirm(self, graph, token, *extra):
+        return self.run_json(
+            "confirm", "--notes-home", self.notes_home, "--project", SLUG,
+            "--graph", "%s=%s" % (BINDING, graph),
+            "--decided-at", "2026-07-20T00:00:00Z",
+            "--fingerprint", token, *extra)
+
+    def test_a_current_token_confirms_and_exits_zero(self):
+        graph = self.configured()
+        _, plan = self.preview(graph)
+        proc, payload = self.confirm(graph, plan["fingerprint"])
+        self.assertEqual(0, proc.returncode, proc.stderr)
+        self.assertTrue(payload["confirmed"])
+
+    def test_a_stale_token_is_refused_and_exits_one(self):
+        """PT25, caught one step before apply. The token is checked against
+        a freshly rebuilt plan, so an input that moved since the operator
+        read the preview cannot be confirmed."""
+        graph = self.configured()
+        proc, payload = self.confirm(graph, "arch-plan:sha256:" + "0" * 64)
+        self.assertEqual(1, proc.returncode)
+        self.assertFalse(payload["confirmed"])
+        self.assertIn("E_ARCH_CONFIRM_STALE_TOKEN",
+                      [f["code"] for f in payload["findings"]])
+
+    def test_confirm_writes_nothing_to_the_notes_home(self):
+        graph = self.configured()
+        _, plan = self.preview(graph)
+        before = _snapshot(self.notes_home)
+        self.confirm(graph, plan["fingerprint"])
+        self.assertEqual(before, _snapshot(self.notes_home))
+
+    def test_a_small_first_projection_triggers_no_confirmation_policy(self):
+        """The default diff-size limit is 200 and this plan writes two
+        notes, so nothing in the static policy fires. Asserted so the
+        policy's POSITIVE cases below cannot pass vacuously."""
+        graph = self.configured()
+        _, plan = self.preview(graph)
+        _, payload = self.confirm(graph, plan["fingerprint"])
+        self.assertFalse(payload["requires_confirmation"])
+        self.assertEqual([], payload["confirmation_reasons"])
+
+    def test_a_plan_over_the_diff_size_limit_requires_confirmation(self):
+        """`diff_size_confirmation_limit` is validated by
+        `state.validate_config` but had NO consumer anywhere in the package
+        before this slice -- a configured threshold nothing enforced."""
+        self.init("--diff-size-confirmation-limit", "1")
+        self.run_json("config", "add-binding", "--notes-home",
+                      self.notes_home, "--project", SLUG, "--alias", "main",
+                      "--binding-id", BINDING)
+        graph = self.write_graph()
+        _, plan = self.preview(graph)
+        _, payload = self.confirm(graph, plan["fingerprint"])
+        self.assertTrue(payload["requires_confirmation"])
+        self.assertEqual(["diff_size_over_limit"],
+                         [r["reason"] for r in payload["confirmation_reasons"]])
+
+    def test_requiring_confirmation_is_a_report_not_a_refusal(self):
+        """A policy veto in a read-only verb would leave the operator no
+        way to approve a large-but-correct refresh."""
+        self.init("--diff-size-confirmation-limit", "1")
+        self.run_json("config", "add-binding", "--notes-home",
+                      self.notes_home, "--project", SLUG, "--alias", "main",
+                      "--binding-id", BINDING)
+        graph = self.write_graph()
+        _, plan = self.preview(graph)
+        proc, payload = self.confirm(graph, plan["fingerprint"])
+        self.assertEqual(0, proc.returncode)
+        self.assertTrue(payload["confirmed"])
+        self.assertTrue(payload["requires_confirmation"])
+
+
+class ApplyCommandTests(PreviewCommandTests):
+
+    def apply(self, graph, token):
+        return self.run_json(
+            "apply", "--notes-home", self.notes_home, "--project", SLUG,
+            "--graph", "%s=%s" % (BINDING, graph),
+            "--decided-at", "2026-07-20T00:00:00Z",
+            "--projected-at", "2026-07-20T00:00:00Z",
+            "--approval-token", token)
+
+    def test_apply_with_the_printed_token_creates_the_notes(self):
+        graph = self.configured()
+        _, plan = self.preview(graph)
+        proc, payload = self.apply(graph, plan["fingerprint"])
+        self.assertEqual(0, proc.returncode, proc.stderr)
+        self.assertEqual("applied", payload["status"])
+        for entry in plan["entries"]:
+            self.assertTrue(os.path.isfile(os.path.join(
+                self.notes_home, "projects", SLUG, entry["note_path"])))
+
+    def test_apply_with_a_stale_token_aborts_and_writes_nothing(self):
+        """PT25 at the surface that actually writes. The comparison happens
+        inside `apply.apply` under the project lock, not in the CLI."""
+        graph = self.configured()
+        before = _snapshot(self.notes_home)
+        proc, payload = self.apply(graph, "arch-plan:sha256:" + "0" * 64)
+        self.assertEqual(1, proc.returncode)
+        self.assertEqual("stale_preview", payload["status"])
+        self.assertEqual(before, _snapshot(self.notes_home))
+
+    def test_apply_with_no_token_is_a_usage_error(self):
+        graph = self.configured()
+        proc = self.run_cli(
+            "apply", "--notes-home", self.notes_home, "--project", SLUG,
+            "--graph", "%s=%s" % (BINDING, graph))
+        self.assertEqual(2, proc.returncode)
+
+
+class FullCycleTests(PreviewCommandTests):
+    """#374's headline acceptance criterion, driven end to end through the
+    real CLI as separate processes: init -> add-binding -> preview ->
+    confirm -> apply -> rerun. Every prior slice asserted its own link with
+    the next stage's input built by hand."""
+
+    def cycle(self, graph):
+        _, plan = self.preview(graph)
+        confirm_proc, confirmed = self.run_json(
+            "confirm", "--notes-home", self.notes_home, "--project", SLUG,
+            "--graph", "%s=%s" % (BINDING, graph),
+            "--decided-at", "2026-07-20T00:00:00Z",
+            "--fingerprint", plan["fingerprint"])
+        self.assertEqual(0, confirm_proc.returncode, confirm_proc.stderr)
+        self.assertTrue(confirmed["confirmed"])
+        apply_proc, applied = self.run_json(
+            "apply", "--notes-home", self.notes_home, "--project", SLUG,
+            "--graph", "%s=%s" % (BINDING, graph),
+            "--decided-at", "2026-07-20T00:00:00Z",
+            "--projected-at", "2026-07-20T00:00:00Z",
+            "--approval-token", plan["fingerprint"])
+        self.assertEqual(0, apply_proc.returncode, apply_proc.stderr)
+        return plan, applied
+
+    def test_the_full_cycle_runs_and_writes_the_projection(self):
+        graph = self.configured()
+        plan, applied = self.cycle(graph)
+        self.assertEqual("applied", applied["status"])
+        self.assertEqual(len(plan["entries"]), len(applied["writes"]))
+
+    def test_a_rerun_at_the_same_commit_writes_zero_bytes(self):
+        """THE criterion. Asserted through the real CLI over the whole
+        notes home, not through `apply()` in a fixture."""
+        graph = self.configured()
+        self.cycle(graph)
+        before = _snapshot(self.notes_home)
+        self.cycle(graph)
+        self.assertEqual(before, _snapshot(self.notes_home))
+
+    def test_the_rerun_reuses_the_identities_the_first_run_committed(self):
+        """Guards the zero-write test from passing for the wrong reason: a
+        run that re-minted every identity could still render byte-identical
+        notes, and the damage would be in the log."""
+        graph = self.configured()
+        self.cycle(graph)
+        _, committed = self.preview(graph)
+        self.assertEqual(
+            ["reuse"] * len(committed["entries"]),
+            [e["identity_outcome"] for e in committed["entries"]])
+        self.cycle(graph)
+        _, after_rerun = self.preview(graph)
+        self.assertEqual(
+            {e["candidate_key"]: e["arch_id"] for e in committed["entries"]},
+            {e["candidate_key"]: e["arch_id"] for e in after_rerun["entries"]})
+
+    def test_a_previewed_arch_id_is_provisional_until_apply_commits_one(self):
+        """A DELIBERATE, DOCUMENTED ASYMMETRY, asserted so it cannot be
+        mistaken for a bug later.
+
+        `apply` rebuilds the plan in its own process and mints its own
+        hexes, so the arch_id a first-ever `preview` displays is NOT the
+        one that gets committed. That is safe -- `arch_id` enters no
+        fingerprint term, which is exactly why the token still matches --
+        and it is unavoidable: nothing carries a minted hex between two
+        processes, because the only thing the operator carries is the
+        token, and #230 bars persisting it.
+
+        Every LATER preview is exact, because the identity is then read
+        back from the log rather than minted."""
+        graph = self.configured()
+        before_apply, _ = self.cycle(graph)
+        _, committed = self.preview(graph)
+        self.assertNotEqual(
+            {e["candidate_key"]: e["arch_id"] for e in before_apply["entries"]},
+            {e["candidate_key"]: e["arch_id"] for e in committed["entries"]})
+        self.assertEqual(
+            {e["candidate_key"]: e["note_path"]
+             for e in before_apply["entries"]},
+            {e["candidate_key"]: e["note_path"] for e in committed["entries"]})
+
+    def test_a_changed_only_refresh_rewrites_just_the_changed_note(self):
+        graph = self.configured()
+        self.cycle(graph)
+        before = _snapshot(self.notes_home)
+        with open(graph, encoding="utf-8") as handle:
+            doc = json.load(handle)
+        doc["files"] = [{"path": "src/app.py"}, {"path": "docs/readme.md"}]
+        with open(graph, "w", encoding="utf-8") as handle:
+            json.dump(doc, handle)
+        _, applied = self.cycle(graph)
+        after = _snapshot(self.notes_home)
+        changed = [path for path in sorted(set(before) | set(after))
+                   if before.get(path) != after.get(path)]
+        self.assertIn("projects/%s/Components/root.md" % SLUG, changed)
+        self.assertNotIn("projects/%s/Codebase Map.md" % SLUG, changed)
 
 
 class AddBindingCommandTests(CliTestCase):

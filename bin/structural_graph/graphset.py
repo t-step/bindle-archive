@@ -91,6 +91,15 @@ def load_set(cfg, paths_by_binding):
             "freshness": result["freshness"],
             "coverage": facts.get("coverage") or [],
             "capabilities": facts.get("capabilities") or [],
+            # The commit the document describes. Carried per binding
+            # because two consumers need it and neither can reach the
+            # document itself: `architecture.planner._binding_term`
+            # digests it into the plan fingerprint, and `architecture.
+            # apply` records it as each node's `source_commits`
+            # provenance. Omitting it made both silently degrade -- the
+            # fingerprint term read None for every binding, and no node
+            # ever carried the provenance index.json's contract promises.
+            "source_commit": facts.get("source_commit"),
         }
         for found in result["findings"]:
             entry = dict(found)

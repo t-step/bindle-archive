@@ -108,6 +108,7 @@ def _failed(findings):
         "applied": {},
         "deferred": [],
         "graph": {},
+        "bindings": {},
         "identities": {},
         "identity_records": [],
         "records": [],
@@ -485,6 +486,12 @@ def build_preview(notes_home, project_slug, graph_paths, provider=None,
         "applied": plan["applied"],
         "deferred": deferred,
         "graph": _graph_report(loaded),
+        # The bindings AS PLANNED WITH, not the human-readable report.
+        # `_binding_term` digests each binding's `source_commit`, which
+        # `_graph_report` drops -- so a caller that handed apply the report
+        # would fingerprint every binding as None and burn its own
+        # confirmation as `stale_preview`.
+        "bindings": loaded.get("bindings"),
         "identities": identities,
         "identity_records": minted["records"],
         "records": projectable,

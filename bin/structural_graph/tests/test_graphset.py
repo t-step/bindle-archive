@@ -66,6 +66,25 @@ class TestSetLoad(unittest.TestCase):
         self.assertEqual(result["bindings"][BINDING_A]["status"], "loaded")
         self.assertEqual(result["bindings"][BINDING_B]["status"], "loaded")
 
+    def test_each_loaded_binding_carries_its_source_commit(self):
+        """Two consumers need the commit and neither can reach the
+        document: the architecture planner digests it into the plan
+        fingerprint, and architecture apply records it as each projected
+        node's provenance. While it was dropped here, the fingerprint term
+        read None for every binding and no node ever carried a commit."""
+        paths = {BINDING_A: self._write("a.json", doc_for(BINDING_A))}
+        result = graphset.load_set(config(), paths)
+        self.assertEqual("a" * 40,
+                         result["bindings"][BINDING_A]["source_commit"])
+
+    def test_an_unavailable_binding_reports_no_source_commit(self):
+        """No document, so no commit to claim. A placeholder here would be
+        provenance asserted for a binding that never loaded."""
+        paths = {BINDING_A: os.path.join(self.tmp, "missing.json")}
+        result = graphset.load_set(config(), paths)
+        self.assertIsNone(
+            result["bindings"][BINDING_A].get("source_commit"))
+
     def test_same_path_in_two_bindings_stays_distinct(self):
         paths = {
             BINDING_A: self._write("a.json", doc_for(BINDING_A)),
