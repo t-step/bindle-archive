@@ -58,15 +58,28 @@ No card, no ship. A review of the card is part of the PR that introduces
 the asset. (If the capability inventory of issue #29 is adopted, these
 fields join its schema; until then the card lives in the asset's doc.)
 
-## Current inventory (2026-07-10)
+## Current inventory (2026-07-21)
 
 **Automatic assets: six hooks under `global/hooks/`** — two session hooks and
 four `PreToolUse` guards. All are opt-in: `bin/install.sh` only symlinks them,
 and nothing runs until `bin/install-claude-hooks.sh --apply` wires it.
 
-Only one carries a card today, below. The other five shipped without one,
-which this document's own gate forbids — recorded here rather than left
-implied, and the backfill is its own work.
+All six carry a card, below (#392). Five of them shipped without one and were
+carded retroactively; writing those five surfaced two facts this document had
+not recorded, both stated in the cards themselves rather than smoothed over:
+
+- **`codegraph-chaining-guard.py` reads session transcript content**, which is
+  C3 and which rule 3 below forbids outright in its first sentence. Rule 3's
+  own escape clause — "any future exception needs its own card naming exactly
+  what is read and why, and remains opt-in" — is the path it now takes, but the
+  card was written a release after the hook shipped, so the exception was in
+  force before it was sanctioned. Rule 3's blanket sentence is corrected below.
+- **`label-hygiene-guard.py` makes authenticated `gh` reads**, which is the C4
+  carve-out and requires a card naming the exact commands. It had none.
+
+Neither is a new capability — both are what the shipped code has been doing.
+What was missing was the disclosure this document makes the condition of
+shipping.
 
 ### Card — `global/hooks/git-push-merged-branch-guard.py`
 
@@ -89,6 +102,184 @@ implied, and the backfill is its own work.
   agent already initiated, and mutates nothing itself.
 - **capability class** — C4 under the read-only carve-out (one authenticated
   `gh` read per push, degrading silently). Never C5: it performs no write.
+
+### Card — `global/hooks/nested-notes-guard.py`
+
+- **trigger** — Claude Code `PreToolUse`, matcher `Bash|mcp__.*github.*`. Acts
+  on maintainer-facing GitHub prose only: a `gh pr`/`gh issue`
+  `create|edit|comment|review` (or a `gh api` call against `issues/`/`pulls/`)
+  that carries a body flag, whose owner resolves to `domattioli`, that carries
+  no exemption marker, and whose effective body exceeds 200 characters after
+  footer lines are stripped. The MCP GitHub tools are matched by tool name.
+- **inputs** — the tool call's `tool_name`, `cwd`, `command`, and for the MCP
+  path `tool_input.body`, `owner` and `repo`. The owner is inferred with
+  `git remote -v` when no `-R/--repo` flag is present. When `--body-file` is
+  used, **it reads that file** — the prose about to be published, supplied by
+  the same tool call. It opens no transcript, no notes-home file, and no
+  repository file.
+- **outputs** — a deny decision with a reason, or nothing. No stderr. Exits 0
+  either way.
+- **storage** — none.
+- **retention** — none.
+- **failure behavior** — asymmetric by design, and the asymmetry is the point.
+  The **Bash** path fails OPEN: malformed stdin, a failed `git remote -v`, an
+  unresolved owner, or an unreadable `--body-file` all allow the call. The
+  **MCP** path fails CLOSED: a missing or unreadable body, or an unresolved
+  owner, denies — the MCP tools take the body inline, so an unreadable one
+  means the guard is being bypassed rather than defeated by the environment.
+- **disable / uninstall** —
+  `bin/install-claude-hooks.sh uninstall --guard nested-notes --apply`.
+- **confirmation** — none required; it denies or allows a call the agent
+  already initiated and mutates nothing.
+- **capability class** — C0. It reads only local files handed to it by the
+  call it is judging, writes nothing, and makes no network request: the `gh`
+  and MCP commands it inspects are never executed by the hook.
+
+### Card — `global/hooks/session-start-context.py`
+
+- **trigger** — Claude Code `SessionStart`, matcher `startup|resume`. The
+  matcher is enforced by the wiring; the hook itself only checks that the event
+  is `SessionStart`.
+- **inputs** — stdin's `hook_event_name`, `cwd` and `session_id`; the current
+  commit and repo root via `git rev-parse HEAD` and
+  `git rev-parse --show-toplevel`; the existence of `bin/session-context.sh`,
+  which it then runs with `--cwd <cwd>` and whose stdout becomes the injected
+  context. Per rule 2 that script yields **pointers** — notes-home resolution,
+  the *paths* of the latest session note and handoff, open issue lines, a git
+  summary. Neither the hook nor its marker ever opens a note or a transcript.
+- **outputs** — a `SessionStart` `additionalContext` block on stdout, and only
+  when the context is non-empty. No stderr. Always exits 0.
+- **storage** — one marker file, `<tmpdir>/bindle-session-<session_id>.json`,
+  holding exactly the repo root, the head SHA, and a start timestamp. No note
+  content, no transcript, no command history.
+- **retention** — the marker is consumed and deleted by
+  `session-end-breadcrumb.py` at the end of the same session. If the session
+  never ends cleanly the file remains in the system temp directory, where the
+  OS reclaims it; it is plain JSON, user-owned, and safe to delete by hand at
+  any time.
+- **failure behavior** — fails OPEN and silently, always. Malformed stdin, a
+  non-git `cwd`, an absent `session-context.sh`, a subprocess error, a 5- or
+  10-second timeout, or an unwritable temp directory each end in a silent
+  return with no context injected and the session fully usable.
+- **disable / uninstall** — `bin/install-claude-hooks.sh uninstall --apply`
+  (the bare form manages both session hooks).
+- **confirmation** — none required; it injects context and writes one temp
+  marker, both inside owned surfaces.
+- **capability class** — C1: a temp-file write plus local reads. Not C3 — it
+  handles note *paths* only, never contents, which is rule 2 holding exactly
+  where it was written to hold.
+
+### Card — `global/hooks/session-end-breadcrumb.py`
+
+- **trigger** — Claude Code `SessionEnd`, no matcher. Acts only when `cwd` is
+  inside a git repository; anywhere else it returns, since there is nothing
+  durable to record.
+- **inputs** — stdin's `hook_event_name`, `cwd`, `session_id` and `reason`; the
+  repo root and branch via `git`; the commit count for the session via
+  `git rev-list --count <head_sha>..HEAD`; the project slug via
+  `bin/slugify.sh`; and its own start marker from the temp directory. It
+  resolves the notes home from `BINDLE_NOTES_DIR`, then the deprecated
+  `CLAUDE_KIT_NOTES_DIR`, then `env.BINDLE_NOTES_DIR` in
+  `~/.claude/settings.json` (read-only, for that one key), then `~/.bindle`. It
+  opens no session note, no handoff, and no transcript.
+- **outputs** — none at all: no stdout, no stderr, always exit 0.
+- **storage** — appends **one line** to
+  `<notes-home>/projects/<project>/breadcrumbs.log`: timestamp, repo, branch,
+  commits made. This is the only file any Bindle hook writes outside the temp
+  directory, and it is inside the user's own notes home.
+- **retention** — append-only and never rotated or truncated by Bindle: the log
+  grows one line per session and is deleted only by you. It is plain text in a
+  directory you own. The session-continuity skill states the boundary this
+  depends on — a breadcrumb is not a session note, and `/session-start` does
+  not read it back as context.
+- **failure behavior** — fails OPEN and silently. Malformed stdin, a non-git
+  `cwd`, a missing `slugify.sh` (a lowercase fallback is used), a missing or
+  corrupt marker (the commit count becomes `unknown`), or an unwritable notes
+  home each end in a silent return. It never blocks session termination.
+- **disable / uninstall** — `bin/install-claude-hooks.sh uninstall --apply`.
+- **confirmation** — none required; the single write lands in the notes home,
+  an owned surface, and its shape is fixed by this card.
+- **capability class** — C1: one append to an owned surface, plus local reads.
+  Not C3 — it records *that* a session happened, never anything said in it.
+
+### Card — `global/hooks/label-hygiene-guard.py`
+
+- **trigger** — Claude Code `PreToolUse`, matcher `Bash`. Acts only when the
+  command contains `gh `, carries no `label-hygiene-guard: inert` marker, and
+  runs in a repo whose root holds `docs/issue-tracking.md` (the contract gate —
+  in any other repo the hook returns silently). The command is split at shell
+  command positions and each segment matched against `gh issue close`,
+  `gh pr merge`, `gh issue edit`, or a `gh api` call setting `state=closed`.
+- **inputs** — the tool call's `tool_name`, `command` and `cwd`; the repo root
+  via `git rev-parse --show-toplevel`; the existence (never the contents) of
+  `docs/issue-tracking.md`. Then, over the network:
+  `gh issue view <n> --json labels,state` and
+  `gh pr view <n> --json body,commits`. The second reads PR body text and
+  commit messages to find closing keywords. Nothing local is transmitted
+  beyond the issue or PR number. It opens no transcript and no notes-home file.
+- **outputs** — a deny decision with a reason, or a one-line stderr warning
+  (`could not verify … — labels NOT checked. Run bin/check-issue-labels.sh
+  afterward.`) on any fail-open path. Silent on a clean allow. Exits 0 either
+  way; the decision travels in the JSON, not the exit code.
+- **storage** — none.
+- **retention** — none; there is nothing to delete.
+- **failure behavior** — fails OPEN, loudly. Malformed stdin, a non-git `cwd`,
+  a repo without the contract file, an absent or unauthenticated `gh`, a
+  non-zero `gh` exit, unparseable JSON, or a 15-second timeout all allow the
+  call; every verification failure prints the stderr warning above. The
+  doctrine is stated in the hook: a false allow is a stale label, a false deny
+  is an unmergeable PR during a GitHub outage.
+- **disable / uninstall** —
+  `bin/install-claude-hooks.sh uninstall --guard label-hygiene --apply`. A
+  single call can also be exempted with the `label-hygiene-guard: inert`
+  marker, which disarms the guard for that command only and leaves a greppable
+  record.
+- **confirmation** — none required; it denies or allows a call the agent
+  already initiated and mutates nothing.
+- **capability class** — C4 under the read-only carve-out: the two `gh`
+  commands named above, both reads, degrading silently. Never C5 — it makes no
+  `gh` write. **Note the ceiling:** as a `PreToolUse` hook it can only see
+  agent-initiated closes, so a merge performed in the GitHub web UI never
+  reaches it. That is a coverage limit, not a failure mode — the sweep in
+  `bin/check-issue-labels.sh` exists because of it (#355), and #395 moves the
+  correction to PR-open.
+
+### Card — `global/hooks/codegraph-chaining-guard.py`
+
+- **trigger** — Claude Code `PreToolUse`, matcher `Bash|mcp__.*codegraph.*`.
+  Acts on a CodeGraph call — an `mcp__*codegraph*` tool, or a Bash command
+  matching `codegraph … explore` — that carries no `cg-chain-ok` marker, and
+  only when the immediately preceding tool use in the transcript was itself a
+  CodeGraph call.
+- **inputs** — the tool call's `tool_name`, `tool_input`, and
+  `transcript_path`. **It opens the transcript**: the last 256 KB of the file,
+  decoded and reduced to the final 400 lines. From that tail it parses
+  `tool_use` blocks and uses only their `name` and `input`; no message prose,
+  thinking block, or file content is surfaced to its decision or its output.
+  The read is nonetheless of transcript *content*, not a path — see the class
+  line below. Nothing leaves the machine.
+- **outputs** — a deny decision with a reason, or nothing. No stderr. Exits 0
+  either way.
+- **storage** — none.
+- **retention** — none.
+- **failure behavior** — fails OPEN. A missing, non-string, or unreadable
+  `transcript_path`, an unreadable file, malformed stdin, or a malformed JSONL
+  line all allow the call (bad lines are skipped individually). It imports no
+  `subprocess` at all, so it has no subprocess failure mode, and the bounded
+  read means transcript size does not affect its cost.
+- **disable / uninstall** —
+  `bin/install-claude-hooks.sh uninstall --guard codegraph --apply`. A single
+  intended chain can be allowed with the `cg-chain-ok` marker.
+- **confirmation** — none required; it denies or allows a call the agent
+  already initiated and mutates nothing.
+- **capability class** — **C3**, and the only C3 automatic asset Bindle ships.
+  Rule 3 below forbids an automatic asset from opening a transcript and admits
+  exceptions only by card; this is that card, and it is the reason rule 3's
+  first sentence is now qualified. What makes the exception defensible is the
+  scope: a bounded tail, only `tool_use` names and inputs consumed, nothing
+  stored, nothing transmitted, and the whole hook opt-in. What makes it worth
+  re-examining is that the hook shipped in v0.9.0 and this card was written
+  after — the exception was taken before it was granted.
 
 Executable-on-request assets, classified:
 
@@ -114,10 +305,15 @@ the scripts above, that script's class applies.
 2. **Pointers, not payloads.** A hook may pass *paths* to notes, handoffs,
    or transcripts; it must never inject or copy their *contents*. Reading
    contents is the in-session agent's decision, visible to the user.
-3. **Transcripts are off-limits.** Even where the provider hands a hook a
-   transcript path, Bindle hooks do not open it. Any future exception
-   needs its own card naming exactly what is read and why, and remains
-   opt-in.
+3. **Transcripts are off-limits, with one carded exception.** Where the
+   provider hands a hook a transcript path, a Bindle hook does not open it —
+   except `codegraph-chaining-guard.py`, whose card above states exactly what
+   it reads (a bounded 256 KB tail, `tool_use` names and inputs only), why
+   (the preceding call is the only place the chaining state exists), and that
+   it stores and transmits nothing. Any further exception needs the same:
+   its own card naming exactly what is read and why, and it remains opt-in.
+   Read the card before adding the second one — this exception was taken a
+   release before it was granted, which is not the order this gate assumes.
 4. **No network, with the C4 carve-out above** (documented, read-only,
    authenticated-CLI queries that fail silent).
 5. **Fail open, quietly.** A hook that errors must leave the session fully
