@@ -182,13 +182,15 @@ expect deny "still denied with slots available" PreToolUse Agent \
   "$TMP/session-x/subagents/agent-nested.jsonl"
 
 echo
-echo "5. PostToolUse for a nested call is a no-op:"
+echo "5. PostToolUse for a nested call is a no-op, even if its own tool_use id collides with a real held slot:"
+transcript "$TMP/session-x/subagents/agent-nested-collide.jsonl" \
+  "Agent:toolu_F={\"subagent_type\":\"general-purpose\"}"
 before="$(slot_count)"
-run PostToolUse Agent "$TMP/session-x/subagents/agent-nested.jsonl" >/dev/null
+run PostToolUse Agent "$TMP/session-x/subagents/agent-nested-collide.jsonl" >/dev/null
 after="$(slot_count)"
 if [[ "$after" == "$before" ]]; then
   PASS=$((PASS + 1))
-  echo "  ok: slot count unchanged ($before -> $after), nothing released"
+  echo "  ok: slot count unchanged ($before -> $after), real slot toolu_F survived a colliding nested id"
 else
   FAIL=$((FAIL + 1))
   echo "  FAIL: slot count changed ($before -> $after) — nested PostToolUse released a real slot" >&2
