@@ -47,6 +47,8 @@ check() { # check "description" command...
 
 # shellcheck disable=SC2329 # invoked indirectly, by name, via check
 contains() { grep -qF -- "$1" <<<"$2"; } # contains NEEDLE HAYSTACK
+# shellcheck disable=SC2329 # invoked indirectly, by name, via check
+not_contains() { ! grep -qF -- "$1" <<<"$2"; } # not_contains NEEDLE HAYSTACK
 
 TMP="$(mktemp -d)"
 trap 'rm -rf "$TMP"' EXIT
@@ -78,6 +80,84 @@ total="${counts#* }"
 check "self-test reports a fixture count" [ -n "$counts" ]
 check "every fixture behaved ($behaved/$total)" [ "$behaved" = "$total" ]
 check "fixture coverage has not shrunk (>= $FLOOR)" [ "${total:-0}" -ge "$FLOOR" ]
+
+# ===========================================================================
+# The tree sweep enumerates with `git ls-files`, so an untracked file is
+# invisible to it — and the clean verdict said only "no private info found".
+# In PR #345 that verdict was true and useless: the three offending files were
+# untracked when it ran. Same shape as the denylist disclosure directly above
+# it — "nothing matched" and "nothing was checked" must never print the same
+# line (#347).
+echo "sweep discloses its own scope (#347):"
+
+# scope_repo DIR — a throwaway git repo holding a copy of the scanner, so the
+# sweep runs against fixture content only. The scanner derives its repo root
+# from its own location, hence bin/.
+scope_repo() {
+  local r="$1"
+  mkdir -p "$r/bin"
+  cp "$SCANNER" "$r/bin/check-private-info.sh"
+  chmod +x "$r/bin/check-private-info.sh"
+  printf 'clean content\n' >"$r/tracked.md"
+  (cd "$r" && git init -q && git symbolic-ref HEAD refs/heads/main &&
+    git add -A && git -c user.email=test@example.com -c user.name=test commit -q -m init)
+}
+
+D="$TMP/scope-untracked"
+scope_repo "$D"
+printf 'clean content\n' >"$D/untracked.md"
+out="$(cd "$D" && bin/check-private-info.sh 2>&1)"
+rc=$?
+
+check "sweep reports how many tracked files it scanned" contains "files scanned" "$out"
+check "sweep flags a partial scan when files are untracked" contains "PARTIAL" "$out"
+check "sweep names the untracked file" contains "untracked.md" "$out"
+check "sweep tells the caller to stage first" contains "git add" "$out"
+check "a partial sweep still exits 0 when nothing was found" [ "$rc" -eq 0 ]
+
+D="$TMP/scope-clean"
+scope_repo "$D"
+out="$(cd "$D" && bin/check-private-info.sh 2>&1)"
+
+check "a fully tracked tree is not called PARTIAL" not_contains "PARTIAL" "$out"
+check "a fully tracked tree still reports the clean verdict" \
+  contains "no private info found" "$out"
+
+D="$TMP/scope-ignored"
+scope_repo "$D"
+printf 'build/\n' >"$D/.gitignore"
+(cd "$D" && git add -A && git -c user.email=test@example.com -c user.name=test commit -q -m ignore)
+mkdir -p "$D/build"
+printf 'clean content\n' >"$D/build/out.md"
+out="$(cd "$D" && bin/check-private-info.sh 2>&1)"
+
+check "an ignored file does not make the sweep PARTIAL" not_contains "PARTIAL" "$out"
+
+# Pre-commit passes an explicit file list: the scope IS the argument list, so
+# there is nothing to disclose and a banner would fire on every commit.
+D="$TMP/scope-explicit"
+scope_repo "$D"
+printf 'clean content\n' >"$D/untracked.md"
+out="$(cd "$D" && bin/check-private-info.sh tracked.md 2>&1)"
+
+check "explicit-file mode does not report PARTIAL" not_contains "PARTIAL" "$out"
+
+# A red run must be as honest about scope as a green one — otherwise fixing
+# the findings turns a partial scan into an unqualified pass.
+D="$TMP/scope-finding"
+scope_repo "$D"
+# Assembled at runtime, never spelled out: a literal home path in THIS file
+# would itself be a finding, needing both a `private-ok` marker and a
+# `.gitleaks.toml` path allowlist (see docs/privacy-boundaries.md). The fixture
+# file on disk still carries the real pattern, which is what the sweep reads.
+printf 'see /Users/%s/notes\n' someone >"$D/leak.md"
+(cd "$D" && git add -A && git -c user.email=test@example.com -c user.name=test commit -q -m leak)
+printf 'clean content\n' >"$D/untracked.md"
+out="$(cd "$D" && bin/check-private-info.sh 2>&1)"
+rc=$?
+
+check "a run with findings still fails" [ "$rc" -ne 0 ]
+check "a run with findings still discloses the skipped files" contains "PARTIAL" "$out"
 
 # ===========================================================================
 echo "self-test is failable:"

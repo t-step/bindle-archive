@@ -316,10 +316,28 @@ if [ -n "$path_hits" ]; then
 fi
 
 # --- 2. content patterns + denylist ----------------------------------------
+#
+# SCOPE, not just verdict (#347). Both enumerations above are `git ls-files`,
+# so an UNTRACKED file is outside this scan entirely — and "no private info
+# found" reads identically whether the tree was clean or the files under test
+# were simply invisible. PR #345 shipped three home-path hits through exactly
+# that gap: green before `git add`, red after. Ignored files are out of scope
+# by intent and are not counted; a banner that is always on is never read.
+scanned=0
 if [ $# -gt 0 ]; then
-  for f in "$@"; do scan_file "$f"; done
+  for f in "$@"; do
+    scan_file "$f"
+    scanned=$((scanned + 1))
+  done
+  # Explicit-file mode (pre-commit): the scope IS the argument list, so there
+  # is nothing undisclosed to report.
+  SKIPPED=""
 else
-  while IFS= read -r f; do scan_file "$f"; done < <(git ls-files)
+  while IFS= read -r f; do
+    scan_file "$f"
+    scanned=$((scanned + 1))
+  done < <(git ls-files)
+  SKIPPED="$(git ls-files --others --exclude-standard)"
 fi
 
 # Whether personal terms were checked at all is part of the verdict: a clean
@@ -335,12 +353,23 @@ else
   echo "    else ~/.bindle — or point \$BINDLE_DENYLIST at it directly"
 fi
 
+# Scope banner. Prints on a red run too: fixing the findings must not silently
+# promote a partial scan into an unqualified pass.
+if [ -n "$SKIPPED" ]; then
+  skipped_n="$(grep -c . <<<"$SKIPPED")"
+  echo
+  echo "  PARTIAL: $skipped_n untracked file(s) were NOT scanned —"
+  head -n 10 <<<"$SKIPPED" | while IFS= read -r p; do echo "    $p"; done
+  [ "$skipped_n" -gt 10 ] && echo "    … and $((skipped_n - 10)) more"
+  echo "    stage them (git add) and re-run before quoting this result."
+fi
+
 echo
 # The self-test's subshell writes to its own copy of fail on purpose (SC2031);
 # by this point only the real scan above has touched this one.
 # shellcheck disable=SC2031
 if [ "$fail" -eq 0 ]; then
-  ok "no private info found ($DENYLIST_VERDICT)"
+  ok "no private info found — $scanned files scanned ($DENYLIST_VERDICT)"
 else
   echo "Private info found — fix, or mark a false positive with 'private-ok'."
 fi
