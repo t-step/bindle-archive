@@ -439,6 +439,93 @@ out="$(cd "$REPO" && bin/check.sh --content-only 2>&1)"
 check "runs under --content-only" contains "no mention of --agents-skills-home" "$out"
 
 # ===========================================================================
+echo "CodeGraph guidance drift gate:"
+# global/CLAUDE.md and global/AGENTS.md both install into live provider
+# surfaces. The Codex block drifted twice toward CodeGraph-before-grep (#314),
+# so check.sh must enforce the shared behavior rather than trusting reviews.
+
+codegraph_fixture() {
+  local r="$1"
+  build_repo "$r"
+  mkdir -p "$r/global"
+  cat >"$r/global/CLAUDE.md" <<'EOF'
+# Claude guidance
+
+- **CodeGraph** bills a flat ~5.5k tokens per call. Reach for it when you'd otherwise open **6+ files** to orient. For a single symbol or file, grep + Read costs roughly 4x less — use those.
+EOF
+  cat >"$r/global/AGENTS.md" <<'EOF'
+# Codex guidance
+
+<!-- CODEGRAPH_START -->
+## CodeGraph
+
+Reach for CodeGraph when you would otherwise open **6+ files** to orient. For a single symbol or file, grep + Read costs roughly 4x less — use those.
+<!-- CODEGRAPH_END -->
+EOF
+  git_commit "$r" "codegraph guidance"
+}
+
+REPO="$TMP/repo-codegraph-ok"
+codegraph_fixture "$REPO"
+out="$(cd "$REPO" && bin/check.sh 2>&1)"
+
+check "accepts matching CodeGraph guidance" contains "CodeGraph guidance consistent" "$out"
+
+REPO="$TMP/repo-codegraph-before-grep"
+codegraph_fixture "$REPO"
+cat >"$REPO/global/AGENTS.md" <<'EOF'
+# Codex guidance
+
+<!-- CODEGRAPH_START -->
+## CodeGraph
+
+Reach for CodeGraph before grep when a repository is indexed.
+<!-- CODEGRAPH_END -->
+EOF
+git_commit "$REPO" "historical CodeGraph-before-grep regression"
+out="$(cd "$REPO" && bin/check.sh 2>&1)"
+
+check "flags the historical CodeGraph-before-grep regression" \
+  contains "global/AGENTS.md: CodeGraph guidance says CodeGraph before grep" "$out"
+
+REPO="$TMP/repo-codegraph-missing-file"
+build_repo "$REPO"
+out="$(cd "$REPO" && bin/check.sh 2>&1)"
+status=$?
+
+check "skips when provider guidance files are absent" contains "provider guidance file(s) absent; skipping" "$out"
+check "missing provider guidance does not fail fixture repos" test "$status" -eq 0
+
+REPO="$TMP/repo-codegraph-missing-marker"
+codegraph_fixture "$REPO"
+python3 - "$REPO/global/AGENTS.md" <<'PY'
+import pathlib, sys
+p = pathlib.Path(sys.argv[1])
+p.write_text(p.read_text().replace("<!-- CODEGRAPH_END -->\n", ""))
+PY
+git_commit "$REPO" "break CODEGRAPH_END marker"
+out="$(cd "$REPO" && bin/check.sh 2>&1)"
+
+check "flags a present AGENTS.md with missing CodeGraph markers" \
+  contains "global/AGENTS.md: missing CODEGRAPH_START/CODEGRAPH_END block" "$out"
+
+REPO="$TMP/repo-codegraph-content-only"
+codegraph_fixture "$REPO"
+cat >"$REPO/global/AGENTS.md" <<'EOF'
+# Codex guidance
+
+<!-- CODEGRAPH_START -->
+## CodeGraph
+
+Reach for CodeGraph before grep when a repository is indexed.
+<!-- CODEGRAPH_END -->
+EOF
+git_commit "$REPO" "content-only regression"
+out="$(cd "$REPO" && bin/check.sh --content-only 2>&1)"
+
+check "runs under --content-only" contains "CodeGraph before grep" "$out"
+
+# ===========================================================================
 # Every section of check.sh enumerates work with `git ls-files`, so an
 # UNTRACKED file is outside every one of them. Before #347 the run then
 # printed an unqualified "All checks passed." — a true statement about a file
