@@ -183,9 +183,16 @@ expect deny "still denied with slots available" PreToolUse Agent \
 
 echo
 echo "5. PostToolUse for a nested call is a no-op:"
+before="$(slot_count)"
 run PostToolUse Agent "$TMP/session-x/subagents/agent-nested.jsonl" >/dev/null
-echo "  ok: no crash, nothing to release"
-PASS=$((PASS + 1))
+after="$(slot_count)"
+if [[ "$after" == "$before" ]]; then
+  PASS=$((PASS + 1))
+  echo "  ok: slot count unchanged ($before -> $after), nothing released"
+else
+  FAIL=$((FAIL + 1))
+  echo "  FAIL: slot count changed ($before -> $after) — nested PostToolUse released a real slot" >&2
+fi
 
 echo
 echo "6. a parallel top-level batch is serialized correctly by the lock:"
