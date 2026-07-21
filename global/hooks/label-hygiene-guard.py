@@ -20,6 +20,21 @@ closed issue carries a `status:` label. The audit that does cover every path
 is bin/check-issue-labels.sh; run it after any batch of human merges. Wiring
 all the hooks does not retire that sweep.
 
+What counts as an invocation — the guard matches only at a COMMAND POSITION:
+the start of the command, or just after a newline, `&&`, `;`, `|`, or a
+parenthesis. A `gh` command quoted as inert data — inside a `python3 -c`
+string, an `echo`, a grep pattern, a comment — mutates nothing and is allowed.
+It was not always so: until #388 the raw command line was matched with no
+quoting awareness, so a read-only probe that merely PRINTED the guard's own
+denial was itself denied, and the block surfaced as the probe emitting a stale
+message rather than as a refusal. One residual false deny remains by choice: a
+heredoc body line that begins with `gh` reads as a command position. Put
+`label-hygiene-guard: inert` anywhere in such a command to disarm the guard for
+it. That marker is a genuine bypass, and deliberately a visible one — this hook
+exists to catch accidents, not to withstand an agent determined to evade it,
+and a marker in the transcript is a better record than a command quietly
+reworded until the regex stops matching.
+
 R2 is the one that matters. Both drifts this guard was built for (#279, #309)
 closed through a closing keyword rather than `gh issue close`, so R2 scans the
 PR body AND every commit message in the PR — a keyword in a commit closes the
@@ -68,10 +83,10 @@ STATUS = "status:"
 PRIORITY = "priority:"
 TRIAGE = "status: triage"  # the one value R3 must know; the rule is about it
 
-ISSUE_CLOSE = re.compile(r"\bgh\s+issue\s+close\s+(\d+)")
-PR_MERGE = re.compile(r"\bgh\s+pr\s+merge\s+(\d+)")
-ISSUE_EDIT = re.compile(r"\bgh\s+issue\s+edit\s+(\d+)")
-API_CMD = re.compile(r"\bgh\s+api\b")
+ISSUE_CLOSE = re.compile(r"^gh\s+issue\s+close\s+(\d+)")
+PR_MERGE = re.compile(r"^gh\s+pr\s+merge\s+(\d+)")
+ISSUE_EDIT = re.compile(r"^gh\s+issue\s+edit\s+(\d+)")
+API_CMD = re.compile(r"^gh\s+api\b")
 API_ISSUE = re.compile(r"\bissues/(\d+)")
 API_CLOSED = re.compile(r"\bstate=[\"']?closed\b")
 # Label values contain a space ("status: ready"), so an unquoted-value pattern
@@ -85,6 +100,43 @@ REMOVE_LABEL = re.compile(r"--remove-label[=\s]+" + _LABEL_VALUE)
 def label_values(pattern: re.Pattern[str], cmd: str) -> list[str]:
     """Flatten _LABEL_VALUE's three alternatives into the one that matched."""
     return [next(g for g in groups if g).strip() for groups in pattern.findall(cmd)]
+
+
+# Command-position matching (#388). The patterns above are anchored, so they
+# are applied to SEGMENTS rather than to the raw command line. A segment is
+# what a shell would start a command at: the beginning, or just after a
+# newline, `&&`, `||`, `;`, `|`, or a parenthesis. Text that merely quotes a
+# matching command — a `python3 -c` literal, an `echo`, a grep pattern, a
+# comment — never begins a segment, so it mutates nothing and is not denied.
+#
+# This is a deliberate under-approximation of shell parsing, chosen over
+# stripping quoted regions: a mis-split there would silently stop matching a
+# REAL invocation, and a false ALLOW is the failure this guard's fail-open
+# doctrine treats as the worse one. Splitting on these operators can only ever
+# create MORE segments than a shell would, so a real invocation stays visible.
+# The residual is a false deny — a heredoc body line beginning with `gh` — and
+# INERT_MARKER is its escape.
+# `||` needs no alternative of its own: splitting on a single `|` already cuts
+# it in two. Spelling it out survived a deliberate mutant precisely because it
+# was redundant, so it is gone rather than pinned by a test (#388).
+_SEGMENT_SPLIT = re.compile(r"\n|&&|;|\||\(|\)")
+_ENV_PREFIX = re.compile(r"^(?:[A-Za-z_][A-Za-z0-9_]*=\S*\s+)*")
+
+# An explicit, greppable opt-out for the residual false deny. It disarms the
+# guard for one command; its presence is visible in the transcript, which is
+# the point — an agent that needs it leaves a record rather than silently
+# rewriting the command until the regex stops matching.
+INERT_MARKER = "label-hygiene-guard: inert"
+
+
+def command_segments(cmd: str) -> list[str]:
+    """The command line split at every position a shell could start a command."""
+    out = []
+    for raw in _SEGMENT_SPLIT.split(cmd):
+        seg = _ENV_PREFIX.sub("", raw.strip())
+        if seg:
+            out.append(seg)
+    return out
 CLOSING_KEYWORD = re.compile(
     r"\b(?:close[sd]?|fix(?:e[sd])?|resolve[sd]?)\s+#(\d+)", re.I
 )
@@ -170,7 +222,7 @@ def closing_refs(num: str, cwd: str) -> list[str] | None:
     return sorted(set(refs), key=int)
 
 
-def check_close(num: str, cmd: str, cwd: str) -> None:
+def check_close(num: str, segs: list[str], cwd: str) -> None:
     labels = status_labels(num, cwd)
     if labels is None:
         warn(f"issue #{num}")
@@ -179,7 +231,14 @@ def check_close(num: str, cmd: str, cwd: str) -> None:
     # about the close command's own flags. It recognizes a `gh issue edit
     # ... --remove-label ...` chained ahead of the close on one command line —
     # the real in-band escape, and the shape the denial below advertises.
-    removing = set(label_values(REMOVE_LABEL, cmd))
+    # Only a segment that IS such an edit counts (#388): reading the flag out
+    # of quoted text would let inert data talk the guard out of a real deny.
+    removing = {
+        x
+        for seg in segs
+        if ISSUE_EDIT.search(seg)
+        for x in label_values(REMOVE_LABEL, seg)
+    }
     left = [x for x in labels if x not in removing]
     if not left:
         return
@@ -227,8 +286,8 @@ def check_merge(num: str, cwd: str) -> None:
     )
 
 
-def check_edit(num: str, cmd: str, cwd: str) -> None:
-    adding = label_values(ADD_LABEL, cmd)
+def check_edit(num: str, seg: str, cwd: str) -> None:
+    adding = label_values(ADD_LABEL, seg)
     leaving_triage = [x for x in adding if x.startswith(STATUS) and x != TRIAGE]
     if not leaving_triage:
         return
@@ -264,6 +323,8 @@ def main() -> None:
     cmd = (data.get("tool_input") or {}).get("command") or ""
     if "gh " not in cmd:
         return
+    if INERT_MARKER in cmd:
+        return
     cwd = data.get("cwd") or ""
 
     # Gate: only repos carrying the contract these rules come from.
@@ -279,22 +340,26 @@ def main() -> None:
     if not root or not (Path(root) / CONTRACT).is_file():
         return
 
-    m = ISSUE_CLOSE.search(cmd)
-    if m:
-        check_close(m.group(1), cmd, cwd)
-        return
-    if API_CMD.search(cmd) and API_CLOSED.search(cmd):
-        m = API_ISSUE.search(cmd)
+    segs = command_segments(cmd)
+
+    for seg in segs:
+        m = ISSUE_CLOSE.search(seg)
         if m:
-            check_close(m.group(1), cmd, cwd)
-        return
-    m = PR_MERGE.search(cmd)
-    if m:
-        check_merge(m.group(1), cwd)
-        return
-    m = ISSUE_EDIT.search(cmd)
-    if m:
-        check_edit(m.group(1), cmd, cwd)
+            check_close(m.group(1), segs, cwd)
+            return
+        if API_CMD.search(seg) and API_CLOSED.search(seg):
+            m = API_ISSUE.search(seg)
+            if m:
+                check_close(m.group(1), segs, cwd)
+            return
+        m = PR_MERGE.search(seg)
+        if m:
+            check_merge(m.group(1), cwd)
+            return
+        m = ISSUE_EDIT.search(seg)
+        if m:
+            check_edit(m.group(1), seg, cwd)
+            return
 
 
 if __name__ == "__main__":
