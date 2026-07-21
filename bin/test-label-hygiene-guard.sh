@@ -354,6 +354,29 @@ expect deny "residual: heredoc line beginning with gh is still denied" \
 expect allow "escape: the inert marker disarms the guard" \
   $'# label-hygiene-guard: inert\ncat <<EOF\ngh issue close 266\nEOF'
 
+# --- #399: every segment is evaluated, not just the first one that matches ---
+# The dispatch loop used to return after the first segment matching ANY rule, so
+# a harmless leading segment consumed the whole command line and the rule that
+# WOULD have denied a later segment never ran.
+expect deny "every-segment: R1 close after an allowed R3 edit segment" \
+  "gh issue edit 902 --add-label 'status: ready' && gh issue close 266"
+expect deny "every-segment: R2 merge after an allowed R3 edit segment" \
+  "gh issue edit 902 --add-label 'status: in-progress' && gh pr merge 320 --squash"
+expect deny "every-segment: R3 edit after an allowed close segment" \
+  "gh issue close 900 && gh issue edit 901 --add-label 'status: ready'"
+expect deny "every-segment: R1 close after an allowed gh api non-close" \
+  "gh api repos/o/r/issues/266 && gh issue close 266"
+
+# --- #399: the escape hatch is keyed by (issue, label), not the label alone ---
+# The removed-label set used to be flat, so removing a label from ANY issue
+# unblocked closing a DIFFERENT one. These cases must stay denied under a mutant
+# that discards the edit's issue number — the pre-existing escape-hatch tests
+# above all use the CORRECT number and cannot see that mutation.
+expect deny "escape: --remove-label on a DIFFERENT issue does not unblock a close" \
+  "gh issue edit 900 --remove-label 'status: ready' && gh issue close 266"
+expect deny "escape: --remove-label on a different issue, api close bypass" \
+  "gh issue edit 900 --remove-label 'status: ready' && gh api -X PATCH repos/o/r/issues/266 -f state=closed"
+
 # --- fail open --------------------------------------------------------------
 # Issue 999 has no fixture, so the stub gh exits 1 — the API-unreachable shape.
 expect allow "fail open when gh errors" "gh issue close 999"

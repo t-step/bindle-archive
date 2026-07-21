@@ -241,8 +241,10 @@ shipping.
   `gh` write. **Note the ceiling:** as a `PreToolUse` hook it can only see
   agent-initiated closes, so a merge performed in the GitHub web UI never
   reaches it. That is a coverage limit, not a failure mode — the sweep in
-  `bin/check-issue-labels.sh` exists because of it (#355), and #395 moves the
-  correction to PR-open.
+  `bin/check-issue-labels.sh` exists because of it (#355). That sweep is the
+  backstop, and the ceiling stands: moving the correction to PR-open (#395) was
+  designed three ways and refuted each time — the offending label is typically
+  re-added *seconds after* the PR is opened, so a PR-open rule does not see it.
 
 ### Card — `global/hooks/codegraph-chaining-guard.py`
 
