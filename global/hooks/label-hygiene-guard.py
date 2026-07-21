@@ -9,6 +9,17 @@ transition happens, rather than leaving them to a later sweep. Three rules:
   R3  moving an issue out of `status: triage` without a `priority:` label
       is denied
 
+Scope limit — read this before describing what the guard protects. PreToolUse
+can only deny a tool call an agent makes. A close or merge performed in the
+GitHub web UI, from a terminal outside a session, or while the hook is unwired
+is invisible to it. That is not theoretical: #364 closed carrying
+`status: triage` through a web-UI merge, minutes after the PR fixing its own
+R3 defect merged, and #217 closed the same way before it. So this guard is a
+guarantee about AGENT-INITIATED transitions only — never a guarantee that no
+closed issue carries a `status:` label. The audit that does cover every path
+is bin/check-issue-labels.sh; run it after any batch of human merges. Wiring
+all the hooks does not retire that sweep.
+
 R2 is the one that matters. Both drifts this guard was built for (#279, #309)
 closed through a closing keyword rather than `gh issue close`, so R2 scans the
 PR body AND every commit message in the PR — a keyword in a commit closes the
