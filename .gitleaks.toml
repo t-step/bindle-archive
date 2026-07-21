@@ -17,9 +17,15 @@ useDefault = true
 description = "files whose job is to document/encode these patterns"
 paths = [
   '''bin/check-private-info\.sh''',
-  '''bin/structural_graph/redaction\.py''',
   '''\.gitleaks\.toml''',
+  # HISTORY-ONLY (#384). These three paths no longer exist in the working
+  # tree -- the architecture-projection and structural-graph surfaces were
+  # removed -- but `gitleaks git .` scans every COMMIT, so the fictional
+  # /Users/... fixtures they contained still produce findings from history.
+  # The entries stay until the history does. Same class as #362.
+  '''bin/structural_graph/redaction\.py''',
   '''testdata/structural-graph/v\d+/privacy/.*''',
+  '''bin/architecture/tests/test_exclusions\.py''',
   # Quotes redaction.py's pattern source and the adversarial privacy fixtures
   # verbatim (a fictional /Users/jane path, a fake ghp_ token). Every hit
   # carries an inline `private-ok` marker, which bin/check-private-info.sh
@@ -27,13 +33,6 @@ paths = [
   # docs/superpowers/plans/**: a blanket tree exemption is what #227's
   # narrowing moved away from.
   '''docs/superpowers/plans/2026-07-18-structural-graph-interchange\.md''',
-  # Exercises architecture.exclusions' refusal to normalize a home-relative
-  # path, and its redaction of the rejected value in the exclusion report.
-  # The rule under test IS the pattern, so a fictional /Users/someone fixture
-  # is unavoidable; each hit carries an inline `private-ok` marker that
-  # bin/check-private-info.sh honors and gitleaks has no equivalent for.
-  # Same self-exemption redaction.py already holds, one file wide.
-  '''bin/architecture/tests/test_exclusions\.py''',
 ]
 
 [[rules]]

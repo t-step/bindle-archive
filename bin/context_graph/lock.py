@@ -1,19 +1,18 @@
 """context_graph.lock — single-writer project lock (design doc section 15,
 widened to project scope by #228).
 
-Shared by init/config mutation (#191), confirm (#184), and apply (#185), and
-— since #228 — by the architecture surface. `propose` never acquires this
-lock. Acquisition is O_CREAT|O_EXCL|O_WRONLY (atomic create-exclusive);
+Shared by init/config mutation (#191), confirm (#184), and apply (#185).
+`propose` never acquires this lock. Acquisition is O_CREAT|O_EXCL|O_WRONLY (atomic create-exclusive);
 contention retries with bounded exponential backoff; only `config break-lock`
 removes an existing lock file directly, never through normal acquisition.
 
 SCOPE (#228, PT28): the lock lives at `<project_dir>/.bindle/.lock`, the
-parent of both `.bindle/context` and `.bindle/architecture`, so a context
-apply and an architecture apply are serialized rather than interleaved. The
-foundation design froze it at `.bindle/context/.lock`; #228 supersedes that
-line deliberately. The module still lives in `context_graph` because #228
-scoped this as an in-place edit to lock.py — `architecture` imports it the
-same way it already imports `config.project_dir`.
+parent of every surface under `.bindle/`, so two surfaces are serialized
+rather than interleaved. The foundation design froze it at
+`.bindle/context/.lock`; #228 supersedes that line deliberately. The second
+surface that motivated the widening was removed in #384, but the scope is
+kept: it is the safer default, and narrowing it again would strand lock files
+already written at the wider path.
 
 The lock file sits under the hidden `.bindle/` root rather than beside
 `profile.md`, so it never appears in the user's (possibly Obsidian-synced)
@@ -28,11 +27,11 @@ import time
 from . import atomic_io
 
 VALID_OPERATIONS = (
-    # context-graph surface (#140/#191/#184/#185)
+    # context-graph surface (#140/#191/#184/#185). A second surface adds its
+    # own distinct strings here, so a lock file's owner metadata says which
+    # surface holds it; the architecture strings that motivated this were
+    # removed with that surface (#384).
     "init", "config", "confirm", "apply",
-    # architecture surface (#228); distinct strings so a lock file's owner
-    # metadata says which surface holds it.
-    "arch_init", "arch_config", "arch_confirm", "arch_apply",
 )
 
 BINDLE_SUBDIR = ".bindle"
@@ -49,10 +48,10 @@ _BACKOFF_CAP = 2.0
 _CONTENTION_TIMEOUT = 10.0
 
 # Re-entrancy bookkeeping: path -> depth, THREAD-LOCAL by design. An
-# architecture orchestrator that holds the project lock and calls into
-# context_graph.apply (which acquires it again) must not deadlock against
-# itself; a genuinely concurrent thread or process must still contend. A
-# process-global registry would satisfy the first and break the second.
+# orchestrator that holds the project lock and calls into context_graph.apply
+# (which acquires it again) must not deadlock against itself; a genuinely
+# concurrent thread or process must still contend. A process-global registry
+# would satisfy the first and break the second.
 _local = threading.local()
 
 

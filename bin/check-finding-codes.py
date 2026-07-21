@@ -121,11 +121,12 @@ def _check_surface(root, path, problems):
         _NOTICES.append("%s: not yet governed — %s" % (rel, note.strip()))
         return 0, 0
 
-    # Two shapes are in use and both are legitimate: architecture and
-    # structural-graph carry a {code: classification} object, context-graph a
-    # list of {code, classification} records. Supporting only one would leave
-    # the other surface silently ungoverned, which is the failure this check
-    # exists to prevent — so the shape is read, not dictated.
+    # Two shapes are legitimate: a {code: classification} object, and a
+    # list of {code, classification} records (what context-graph uses).
+    # Supporting only one would leave a surface silently ungoverned, which is
+    # the failure this check exists to prevent — so the shape is read, not
+    # dictated. Both shapes stay supported now that the object-shaped surfaces
+    # are gone (#384), because the next surface may use either.
     codes = _classified_codes(data)
     if codes is None:
         problems.append(

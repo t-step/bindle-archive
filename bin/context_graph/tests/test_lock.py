@@ -165,8 +165,8 @@ class TestProjectLock(unittest.TestCase):
 
 
 class TestCrossSurfaceScope(unittest.TestCase):
-    """#228 slice 4: one lock at project_dir() covers both .bindle/context
-    and .bindle/architecture (PT28)."""
+    """#228 slice 4: one lock at project_dir() covers every surface under
+    .bindle/, not just .bindle/context (PT28)."""
 
     def setUp(self):
         self.tmp = tempfile.mkdtemp()
@@ -179,26 +179,18 @@ class TestCrossSurfaceScope(unittest.TestCase):
     def test_lock_path_is_not_scoped_to_either_surface(self):
         path = lock.lock_path(self.tmp)
         self.assertNotIn(os.path.join(".bindle", "context"), path)
-        self.assertNotIn(os.path.join(".bindle", "architecture"), path)
 
-    def test_architecture_operations_are_valid(self):
-        for operation in ("arch_init", "arch_config",
-                          "arch_confirm", "arch_apply"):
-            with lock.ProjectLock(self.tmp, operation) as held:
-                self.assertEqual(
-                    lock.read_owner(held.path)["operation"], operation)
-
-    def test_context_apply_and_architecture_apply_contend_for_one_lock(self):
-        """PT28: the two surfaces are serialized, not interleaved. Written
-        with a foreign owner (another process's context apply) because
-        same-process nesting is deliberately re-entrant."""
+    def test_two_operations_contend_for_one_lock(self):
+        """PT28: work under .bindle/ is serialized, not interleaved. Written
+        with a foreign owner (another process's apply) because same-process
+        nesting is deliberately re-entrant."""
         path = lock.lock_path(self.tmp)
         os.makedirs(os.path.dirname(path), exist_ok=True)
         with open(path, "w", encoding="utf-8") as f:
             f.write(json.dumps({"pid": 999999, "hostname": "elsewhere",
                                 "operation": "apply", "acquired_at": "x"}))
         with self.assertRaises(lock.LockContention) as ctx:
-            with lock.ProjectLock(self.tmp, "arch_apply",
+            with lock.ProjectLock(self.tmp, "confirm",
                                   contention_timeout=0.3, backoff_start=0.05,
                                   backoff_cap=0.1):
                 pass
@@ -206,7 +198,7 @@ class TestCrossSurfaceScope(unittest.TestCase):
 
 
 class TestReentrancy(unittest.TestCase):
-    """An architecture orchestrator holding the project lock may call into
+    """An orchestrator holding the project lock may call into
     context_graph.apply, which acquires the same lock. Nesting in one
     process is a no-op, not a self-deadlock."""
 
@@ -214,28 +206,28 @@ class TestReentrancy(unittest.TestCase):
         self.tmp = tempfile.mkdtemp()
 
     def test_nested_acquire_of_the_same_path_does_not_contend(self):
-        with lock.ProjectLock(self.tmp, "arch_apply") as outer:
+        with lock.ProjectLock(self.tmp, "confirm") as outer:
             with lock.ProjectLock(self.tmp, "apply",
                                   contention_timeout=0.3) as inner:
                 self.assertEqual(inner.path, outer.path)
                 self.assertTrue(os.path.exists(inner.path))
 
     def test_inner_release_does_not_release_the_outer_lock(self):
-        with lock.ProjectLock(self.tmp, "arch_apply") as outer:
+        with lock.ProjectLock(self.tmp, "confirm") as outer:
             with lock.ProjectLock(self.tmp, "apply"):
                 pass
             self.assertTrue(os.path.exists(outer.path))
         self.assertFalse(os.path.exists(outer.path))
 
     def test_owner_metadata_stays_that_of_the_outermost_holder(self):
-        with lock.ProjectLock(self.tmp, "arch_apply") as outer:
+        with lock.ProjectLock(self.tmp, "confirm") as outer:
             with lock.ProjectLock(self.tmp, "apply"):
                 self.assertEqual(
-                    lock.read_owner(outer.path)["operation"], "arch_apply")
+                    lock.read_owner(outer.path)["operation"], "confirm")
 
     def test_reentrancy_is_per_path_not_global(self):
         other = tempfile.mkdtemp()
-        with lock.ProjectLock(self.tmp, "arch_apply") as a:
+        with lock.ProjectLock(self.tmp, "confirm") as a:
             with lock.ProjectLock(other, "apply") as b:
                 self.assertNotEqual(a.path, b.path)
                 self.assertTrue(os.path.exists(a.path))
@@ -243,7 +235,7 @@ class TestReentrancy(unittest.TestCase):
 
     def test_exception_inside_a_nested_hold_unwinds_the_depth(self):
         with self.assertRaises(RuntimeError):
-            with lock.ProjectLock(self.tmp, "arch_apply"):
+            with lock.ProjectLock(self.tmp, "confirm"):
                 with lock.ProjectLock(self.tmp, "apply"):
                     raise RuntimeError("boom")
         self.assertFalse(os.path.exists(lock.lock_path(self.tmp)))
@@ -259,7 +251,7 @@ class TestReentrancy(unittest.TestCase):
         release = threading.Event()
 
         def holder():
-            with lock.ProjectLock(self.tmp, "arch_apply"):
+            with lock.ProjectLock(self.tmp, "confirm"):
                 with lock.ProjectLock(self.tmp, "apply"):
                     started.set()
                     release.wait(5.0)

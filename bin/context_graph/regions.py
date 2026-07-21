@@ -3,10 +3,11 @@
 #185 froze a safe generated-region lifecycle for `context.md`: a BEGIN/END
 comment pair bounds the bytes the tool owns, everything outside it belongs to
 the user and survives byte-for-byte, and a file whose markers are missing or
-duplicated is a conflict rather than something to guess at. Architecture
-projection needs exactly that lifecycle around a *different* pair
-(`<!-- bindle:architecture:generated:begin -->`), so the core moves here and
-takes the pair as arguments.
+duplicated is a conflict rather than something to guess at. A second
+surface needs exactly that lifecycle around a *different* marker pair, so the
+core lives here and takes the pair as arguments. (The architecture surface
+that first needed it was removed in #384; the parameterisation stays, because
+collapsing it back into one hard-coded pair is what #185 warned against.)
 
 `projection.py` keeps its own module constants, its context-specific conflict
 codes, and its file templates; it now delegates the marker mechanics to this
