@@ -605,10 +605,41 @@ if ! $content_only; then
   fi
 fi
 
+# --- scan scope (#347) ------------------------------------------------------
+# Every section above enumerates its work with `git ls-files`, so an UNTRACKED
+# file is outside all of them — and the verdict below then reads as a statement
+# about the whole tree. PR #345 shipped three private-path hits through that
+# gap: this run was green before `git add` and the pre-commit hook, which sees
+# staged content, was red on the same three lines minutes later. The scan is
+# correct; what was broken is that its result did not disclose its own scope.
+# Ignored files are out of scope by intent and are not counted — a banner that
+# fires in every repo with build output is a banner nobody reads.
+#
+# The exit code is deliberately unchanged: `make check` is run mid-edit, and a
+# gate that fails whenever the tree is untidy gets bypassed rather than heeded.
+# This runs under --content-only too (the #279 lesson): a disclosure only the
+# local `make check` prints is one the commit hook and CI never make.
+skipped="$(git ls-files --others --exclude-standard)"
+partial=false
+if [ -n "$skipped" ]; then
+  partial=true
+  skipped_n="$(grep -c . <<<"$skipped")"
+  echo
+  echo "scan scope:"
+  echo "  PARTIAL: $skipped_n untracked file(s) were NOT scanned by any check —"
+  head -n 10 <<<"$skipped" | while IFS= read -r p; do echo "    $p"; done
+  [ "$skipped_n" -gt 10 ] && echo "    … and $((skipped_n - 10)) more"
+  echo "    stage them (git add) and re-run before quoting this result."
+fi
+
 # --- result ----------------------------------------------------------------
 echo
 if [ "$fail" -eq 0 ]; then
-  echo "All checks passed."
+  if $partial; then
+    echo "Checks passed — PARTIAL: $skipped_n untracked file(s) not scanned."
+  else
+    echo "All checks passed."
+  fi
 else
   echo "Hygiene checks FAILED."
 fi

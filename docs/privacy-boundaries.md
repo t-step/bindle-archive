@@ -102,6 +102,24 @@ and any stale `.claude/worktrees/` copies. Intersect its findings with
 `git ls-files` before believing a large number. `gitleaks git` scans history
 and does respect tracking, so it is the honest one.
 
+**Stage before you scan.** Every layer in the table except `gitleaks dir`
+enumerates *tracked* content, so a file you have not `git add`ed is outside all
+of them — and a clean result is then a true statement about a file set that
+excludes exactly the files you are about to commit. This is how PR #345 shipped
+three home-path hits: `gitleaks git .` and `make check` were both run and both
+green while the new files were untracked; the pre-commit hook, which sees
+staged content, failed on the same three lines minutes later. Since #347,
+`bin/check.sh` and `bin/check-private-info.sh` disclose their own scope and
+print a **PARTIAL** banner naming the untracked files they skipped; `gitleaks`
+is a foreign tool and prints no such thing, so its result means "clean" only
+when `git status --porcelain` is empty. Never quote a pre-`git add` scan as
+evidence.
+
+One more asymmetry worth knowing before writing a fixture: `gitleaks` has no
+equivalent of the inline `private-ok` marker `bin/check-private-info.sh`
+honors. A fixture that must contain a personal-info pattern therefore needs
+BOTH — the inline marker and a path allowlist in `.gitleaks.toml`.
+
 **Verified 2026-07-19** (gitleaks 8.30.1, `useDefault = true`): 405 commits and
 the tracked working tree, **no leaks**. The built-in ruleset contributed zero
 findings; the only hits were from the three custom personal-info rules, all in

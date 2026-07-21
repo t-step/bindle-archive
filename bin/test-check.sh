@@ -438,6 +438,62 @@ out="$(cd "$REPO" && bin/check.sh --content-only 2>&1)"
 
 check "runs under --content-only" contains "no mention of --agents-skills-home" "$out"
 
+# ===========================================================================
+# Every section of check.sh enumerates work with `git ls-files`, so an
+# UNTRACKED file is outside every one of them. Before #347 the run then
+# printed an unqualified "All checks passed." — a true statement about a file
+# set that excluded exactly the files under test. PR #345 shipped three
+# private-path hits that way: green before `git add`, red after. The verdict
+# must disclose its own scope, the same way the private-info scan discloses
+# whether a denylist was loaded.
+echo "scan scope is disclosed (#347):"
+
+REPO="$TMP/repo-scope-untracked"
+build_repo "$REPO"
+printf 'not staged yet\n' >"$REPO/docs/unstaged-note.md"
+out="$(cd "$REPO" && bin/check.sh 2>&1)"
+status=$?
+
+check "flags the run as PARTIAL when in-scope files are untracked" \
+  contains "PARTIAL" "$out"
+check "names the untracked file that was not scanned" \
+  contains "docs/unstaged-note.md" "$out"
+check "tells the caller to stage and re-run" contains "git add" "$out"
+check "does not claim an unqualified pass" \
+  not_contains "All checks passed." "$out"
+check "does not change the exit code" test "$status" -eq 0
+
+REPO="$TMP/repo-scope-clean"
+build_repo "$REPO"
+printf 'staged\n' >"$REPO/docs/tracked-note.md"
+git_commit "$REPO" "track the note"
+out="$(cd "$REPO" && bin/check.sh 2>&1)"
+
+check "a fully tracked tree is not called PARTIAL" not_contains "PARTIAL" "$out"
+check "a fully tracked tree still passes outright" contains "All checks passed." "$out"
+
+# An ignored file is out of scope by intent, not by accident — counting it
+# would make PARTIAL permanent in any repo with build output, and a banner
+# that is always on is a banner nobody reads.
+REPO="$TMP/repo-scope-ignored"
+build_repo "$REPO"
+printf 'build/\n' >"$REPO/.gitignore"
+git_commit "$REPO" "ignore build output"
+mkdir -p "$REPO/build"
+printf 'artifact\n' >"$REPO/build/out.md"
+out="$(cd "$REPO" && bin/check.sh 2>&1)"
+
+check "an ignored file does not make the run PARTIAL" not_contains "PARTIAL" "$out"
+
+# The #279 lesson again: a disclosure only the local `make check` prints is a
+# disclosure the commit hook and CI never make.
+REPO="$TMP/repo-scope-content-only"
+build_repo "$REPO"
+printf 'not staged yet\n' >"$REPO/docs/unstaged-note.md"
+out="$(cd "$REPO" && bin/check.sh --content-only 2>&1)"
+
+check "discloses scope under --content-only too" contains "PARTIAL" "$out"
+
 # --- result ----------------------------------------------------------------
 echo
 echo "tests: ${pass} passed, ${fail} failed"
