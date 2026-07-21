@@ -184,7 +184,7 @@ check "guard install exits 0" exit_is "$status" 0
 content="$(cat "$H13/settings.json")"
 check "codegraph guard is wired" contains "codegraph-chaining-guard.py" "$content"
 check "wired under PreToolUse" contains "PreToolUse" "$content"
-check "matcher is the one #309 shipped" contains 'Bash|mcp__.*codegraph.*' "$content"
+check "codegraph matcher observes every tool call" contains '"matcher": ".*"' "$content"
 check "command points at the CLAUDE_HOME symlink, not the checkout" contains "python3 $H13/hooks/codegraph-chaining-guard.py" "$content"
 check "no leading ~ survives into settings.json (#312)" not_contains '"command": "python3 ~' "$content"
 check "settings.json is valid JSON" python3 -c "import json; json.load(open('$H13/settings.json'))"
@@ -205,7 +205,7 @@ content="$(cat "$H13/settings.json")"
 check "label-hygiene guard added" contains "label-hygiene-guard.py" "$content"
 check "codegraph guard still wired" contains "codegraph-chaining-guard.py" "$content"
 check "label-hygiene keeps its own matcher" contains '"matcher": "Bash"' "$content"
-check "codegraph keeps its own matcher" contains 'Bash|mcp__.*codegraph.*' "$content"
+check "codegraph keeps its own matcher" contains '"matcher": ".*"' "$content"
 
 echo
 echo "16. uninstall removes only the guard it was asked to remove:"
