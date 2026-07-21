@@ -181,7 +181,8 @@ anything, so nothing should suppress that.
 | `README.md` | add `subagent-concurrency` to the `--guard` name list |
 
 `bin/test-install-claude-hooks.sh` needs **no change** — verified by reading it: its guard-wiring assertions (section 21) iterate `hook_table()` generically and check each script's own docstring, with no hardcoded per-guard list or count anywhere in the file.
-| `CHANGELOG.md` | entry marked **draft** until pressure-tested (RED → GREEN → REFACTOR), per this repo's skill-writing rule |
+
+`CHANGELOG.md` needs **no change** either — verified by reading its own header: it is entirely Release Please-generated from Conventional Commit messages at release time, with no hand-maintained section to edit.
 
 ## Testing
 
@@ -204,10 +205,12 @@ a real transcript or a real `~/.claude` tree. Cases:
 **Mutation pass deferred by explicit decision** (not this round): the repo
 convention for a new gate is to invert the cap comparison and the nesting
 check independently and confirm each inversion flips the corresponding deny
-cases to allow. Skipped here at the user's direction; the CHANGELOG entry and
-the tracking issue both mark this guard as an unverified draft until that
-pass runs, per this repo's skill-writing rule of not describing a draft as
-finished.
+cases to allow. Skipped here at the user's direction. `CHANGELOG.md` is
+entirely Release Please-generated from Conventional Commit messages — there
+is no hand-maintained section to mark draft in directly (verified by reading
+the file's own header) — so draft/unverified status is recorded in the
+tracking issue instead, per this repo's skill-writing rule of not describing
+a draft as finished.
 
 ## Open, deferred
 
