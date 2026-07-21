@@ -177,9 +177,10 @@ anything, so nothing should suppress that.
 |---|---|
 | `global/hooks/subagent-concurrency-guard.py` | new — the guard |
 | `bin/test-subagent-concurrency-guard.sh` | new — hermetic self-test |
-| `bin/install-claude-hooks.sh` | new `hook_table` rows (`PreToolUse` + `PostToolUse`), new `--guard subagent-concurrency` selector, usage strings |
-| `bin/test-install-claude-hooks.sh` | extend matcher/wiring assertions to cover the new guard |
+| `bin/install-claude-hooks.sh` | new `hook_table` rows (`PreToolUse` + `PostToolUse`), `subagent-concurrency` added to `GUARD_SELECTORS` and the printed usage line |
 | `README.md` | add `subagent-concurrency` to the `--guard` name list |
+
+`bin/test-install-claude-hooks.sh` needs **no change** — verified by reading it: its guard-wiring assertions (section 21) iterate `hook_table()` generically and check each script's own docstring, with no hardcoded per-guard list or count anywhere in the file.
 | `CHANGELOG.md` | entry marked **draft** until pressure-tested (RED → GREEN → REFACTOR), per this repo's skill-writing rule |
 
 ## Testing
@@ -200,9 +201,13 @@ a real transcript or a real `~/.claude` tree. Cases:
 - state directory uncreatable / lock unavailable / `transcript_path` missing or unreadable / no matching `tool_use` block found → allow (fails open)
 - non-`Agent` tool call → untouched, no-op
 
-**Mutation pass**, per the repo rule that a new gate must be proven failable:
-invert the cap comparison and the nesting check independently, confirm each
-inversion flips the corresponding deny cases to allow (and vice versa).
+**Mutation pass deferred by explicit decision** (not this round): the repo
+convention for a new gate is to invert the cap comparison and the nesting
+check independently and confirm each inversion flips the corresponding deny
+cases to allow. Skipped here at the user's direction; the CHANGELOG entry and
+the tracking issue both mark this guard as an unverified draft until that
+pass runs, per this repo's skill-writing rule of not describing a draft as
+finished.
 
 ## Open, deferred
 
