@@ -143,6 +143,81 @@ class Allocate(unittest.TestCase):
         self.assertTrue(ids.is_arch_node_id(arch_id))
 
 
+class AllocationPayload(unittest.TestCase):
+    """The record is the CREATION EVENT, and #228 makes the log the sole
+    authority for meaning -- so everything needed to continue the identity
+    later has to be in it. Two readers depend on that: `matcher` scores
+    against the payload's signals, and preview re-derives the note path
+    from its slug when index.json is missing."""
+
+    def _rich(self, key, name, **extra):
+        candidate = _candidate(key, name)
+        candidate.update({"source_paths": ["src/b.py", "src/a.py"],
+                          "symbol_names": ["Beta", "Alpha"],
+                          "neighborhood": ["n2", "n1"]})
+        candidate.update(extra)
+        return candidate
+
+    def _payload(self, candidate):
+        result = allocate.allocate(PROJECT_ID, [candidate], DECIDED_AT,
+                                   mint_hex=_counting_hex())
+        return result["records"][0]["payload"]
+
+    def test_the_payload_records_the_creation_event_slug(self):
+        payload = self._payload(self._rich("component:auth", "Auth Layer"))
+        self.assertEqual("auth-layer", payload["slug"])
+
+    def test_the_payload_records_the_projection_type(self):
+        payload = self._payload(self._rich("component:auth", "Auth Layer"))
+        self.assertEqual("arch_component", payload["projection_type"])
+
+    def test_slug_and_projection_type_reconstruct_the_note_path(self):
+        """The whole point of carrying them: a reuse supplies no slug, and
+        index.json is written AFTER this record, so between the two this
+        payload is the only thing that can place the note."""
+        payload = self._payload(self._rich("component:auth", "Auth Layer"))
+        self.assertEqual(
+            "Components/auth-layer.md",
+            state.format_note_path(payload["projection_type"],
+                                   payload["slug"]))
+
+    def test_the_payload_carries_the_matcher_scoring_signals(self):
+        payload = self._payload(self._rich("component:auth", "Auth Layer"))
+        for field in ("source_paths", "symbol_names", "neighborhood"):
+            self.assertIn(field, payload)
+
+    def test_every_signal_is_sorted(self):
+        """`record_id` is a content digest over the payload, so an
+        unordered signal set would give one decision two record ids."""
+        payload = self._payload(self._rich("component:auth", "Auth Layer"))
+        self.assertEqual(["src/a.py", "src/b.py"], payload["source_paths"])
+        self.assertEqual(["Alpha", "Beta"], payload["symbol_names"])
+        self.assertEqual(["n1", "n2"], payload["neighborhood"])
+
+    def test_a_missing_signal_becomes_an_empty_list_not_an_absence(self):
+        """`matcher._apply_signals` treats a PRESENT field as superseding.
+        An absent field and an empty one both score zero here, but the
+        empty list is the honest statement that the creation event saw no
+        such signal."""
+        payload = self._payload(_candidate("component:auth", "Auth Layer"))
+        self.assertEqual([], payload["neighborhood"])
+
+    def test_the_candidate_key_is_still_recorded(self):
+        payload = self._payload(self._rich("component:auth", "Auth Layer"))
+        self.assertEqual("component:auth", payload["candidate_key"])
+
+    def test_the_record_still_validates(self):
+        """The shape is additive: judgment.schema.json declares `payload` an
+        open object and requires only `arch_id` on an identity_allocation."""
+        from architecture import canonical
+        from architecture import judgments as arch_judgments
+        result = allocate.allocate(
+            PROJECT_ID, [self._rich("component:auth", "Auth Layer")],
+            DECIDED_AT, mint_hex=_counting_hex())
+        stamped = canonical.stamp(result["records"][0])
+        self.assertEqual([], arch_judgments.validate_judgment(stamped))
+
+
 class SlugCollision(unittest.TestCase):
     """Two candidates deriving one slug would claim one note path, and the
     duplicate would enter the fingerprint's manifest term. Refuse, naming

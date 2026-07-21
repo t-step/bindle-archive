@@ -1473,6 +1473,10 @@
     {
       "path": "bin/architecture/tests/test_preview.py",
       "reason": "unit tests for architecture.preview, the first integration evidence in the package: fingerprint stability across two previews of identical inputs guarded by a companion test asserting the two runs really did mint different arch_ids, so stability cannot pass vacuously; zero bytes written asserted by walking the whole notes home rather than trusting the absence of a write call; contested classification; a reuse preserving the creation-event note path recorded in index.json; and the crashed-mid-apply state where the judgments log knows an identity index.json records no path for; test infrastructure, not a capability an agent invokes."
+    },
+    {
+      "path": "bin/architecture/tests/test_cycle.py",
+      "reason": "end-to-end projection cycle tests (#374 slice D5c) feeding apply's own output back into a second preview — the only place the identity round trip is observable, and the gap test_preview and test_apply each leave open by exercising one half with the other's inputs built by hand. Asserts that a committed identity is REUSED rather than re-minted, that a rerun at the same commit writes zero bytes, that a changed run refreshes without appending a second identity_allocation, that a signal-moving change is routed to child G rather than silently re-identified, and that an identity committed without an index.json is still placeable from its own allocation payload; test infrastructure, not a capability an agent invokes."
     }
   ],
   "external_upstreams": [
