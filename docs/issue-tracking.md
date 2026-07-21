@@ -47,6 +47,26 @@ accumulate before the sweep in `#227`, and two more after it (`#279`, `#309`).
 Rule 1's merge case is the one that actually fires: both `#279` and `#309` closed
 through a `Resolves #N` keyword rather than `gh issue close`.
 
+### How the rules are enforced
+
+Two mechanisms, and neither subsumes the other:
+
+- `global/hooks/label-hygiene-guard.py` — a `PreToolUse` hook that denies an
+  offending close, merge, or edit as it is attempted. It sees only what an agent
+  does through the harness: a web-UI merge, a close typed in a terminal, or any
+  transition while the hook is unwired is invisible to it.
+- `bin/check-issue-labels.sh` — the repo-wide audit that covers every path,
+  including the ones the guard cannot see. **It runs automatically at the end of
+  every session, as step 3 of `/session-end`**, and can be run by hand any time.
+  It is read-only: it reports drift and never edits a label, and a finding does
+  not block the session. In a repo that does not carry this document it reports
+  `NOT APPLICABLE` and exits without checking anything — these rules are this
+  repo's convention, not a universal one.
+
+The audit is what catches rule 1's merge case after the fact: `#217`, `#364` and
+`#366` each closed carrying a `status:` label through a web-UI merge, and the
+guard fired on none of them.
+
 ## Conventions
 
 - One issue per PR-able unit of work, matching the existing
