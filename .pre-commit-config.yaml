@@ -57,9 +57,9 @@ repos:
       # the commit gate (#256, #257). Adding a suite requires no edit to this
       # file; it is covered the moment it is tracked.
       #
-      # language: python (not script) because two discovered suites —
-      # test-context-graph-schema.sh and test-structural-graph.sh — import
-      # jsonschema, and pre-commit only provisions it for a python hook.
+      # language: python (not script) because a discovered suite —
+      # test-context-graph-schema.sh — imports jsonschema, and pre-commit only
+      # provisions it for a python hook.
       - id: bindle-test-suites
         name: test suites (discovered bin/test-*.sh)
         entry: bin/run-test-suites.sh
