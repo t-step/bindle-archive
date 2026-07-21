@@ -388,6 +388,7 @@ check "checkout-absolute wired hook is reported" contains "bypasses $HOME_DIR/ho
 check "checkout-absolute wired hook names the fix" contains "point settings.json at" "$out"
 check "checkout-absolute wired hook is a finding" test "$status" -ne 0
 check "checkout-absolute drift counted in the summary" contains "1 hook-wiring drift" "$out"
+check "checkout-absolute path does not count as wired" contains "installed, not wired: demo-guard.py" "$out"
 
 # The state #323 was filed on: a hook that is installed and symlinked but that
 # settings.json never names. Every check above passes for it, so before this it
@@ -414,6 +415,25 @@ check "unwired hook is reported" contains "installed, not wired: other-guard.py"
 check "unwired report names how to wire it" contains "bin/install-claude-hooks.sh status" "$out"
 check "the wired hook is NOT listed as unwired" not_contains "installed, not wired: demo-guard.py" "$out"
 check "unwired hook is not a finding (wiring is opt-in)" test "$status" -eq 0
+
+echo "18b. third-party hook with same filename does not count as wired (#329):"
+REPO18B="$TMP/repo18b"
+HOME18B="$TMP/home18b"
+BIN18B="$TMP/bin18b"
+THIRD_PARTY18B="$TMP/third-party18b"
+build_repo "$REPO18B"
+mkdir -p "$REPO18B/global/hooks" "$THIRD_PARTY18B"
+printf '#!/usr/bin/env python3\nprint("bindle")\n' >"$REPO18B/global/hooks/demo-guard.py"
+printf '#!/usr/bin/env python3\nprint("third party")\n' >"$THIRD_PARTY18B/demo-guard.py"
+"$REPO18B/bin/install.sh" --home "$HOME18B" --bin-dir "$BIN18B" >/dev/null 2>&1
+cat >"$HOME18B/settings.json" <<JSON
+{"hooks":{"PreToolUse":[{"matcher":"Bash","hooks":[{"type":"command","command":"python3 $THIRD_PARTY18B/demo-guard.py"}]}]}}
+JSON
+out="$(PATH="$BIN18B:$PATH" "$REPO18B/bin/doctor.sh" --home "$HOME18B" --bin-dir "$BIN18B" 2>&1)"
+status=$?
+check "third-party same-basename hook is reported as wired" contains "wired: $THIRD_PARTY18B/demo-guard.py — resolves" "$out"
+check "Bindle hook with colliding basename is still reported unwired" contains "installed, not wired: demo-guard.py" "$out"
+check "third-party collision is not a finding" test "$status" -eq 0
 
 echo "19. no settings.json at all — every hook reports unwired (#323):"
 HOME19="$TMP/home19"
