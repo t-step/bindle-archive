@@ -310,6 +310,50 @@ expect allow "R3 priority added, status removed and re-added in one command" \
 expect_remediation_allows "R3 the guard's own remediation is accepted (#364)" \
   "gh issue edit 901 --add-label 'status: ready'"
 
+# --- #388: a gh literal quoted as inert data is not an invocation ------------
+# The guard matches only at a COMMAND POSITION — start of the command, or after
+# a newline / && / || / ; / | / (. Text that merely CONTAINS a matching command
+# mutates nothing, and denying it blocked a read-only probe during #366.
+expect allow "inert: close inside a python3 -c string literal" \
+  "python3 -c \"print('gh issue close 266')\""
+expect allow "inert: close inside an echo" \
+  "echo \"remediation: gh issue close 266\""
+expect allow "inert: close in a comment" \
+  "# gh issue close 266"
+expect allow "inert: merge as a grep pattern" \
+  "grep -rn 'gh pr merge 320' bin/"
+expect allow "inert: gh api close bypass quoted as data" \
+  "echo \"gh api -X PATCH repos/o/r/issues/266 -f state=closed\""
+expect allow "inert: R3 edit quoted as data" \
+  "echo \"gh issue edit 901 --add-label 'status: ready'\""
+
+# A real invocation stays denied in every form the guard catches today.
+expect deny "real: close after &&" "git fetch --prune && gh issue close 266"
+expect deny "real: close after ;" "git fetch --prune; gh issue close 266"
+expect deny "real: close after ||" "git fetch --prune || gh issue close 266"
+expect deny "real: close on its own line" $'git fetch --prune\ngh issue close 266'
+expect deny "real: close with leading whitespace" "   gh issue close 266"
+expect deny "real: close behind an env-var prefix" \
+  "GH_HOST=github.com gh issue close 266"
+expect deny "real: close in a subshell" "(gh issue close 266)"
+expect deny "real: merge after &&" "make check && gh pr merge 320 --squash"
+expect deny "real: api close bypass after &&" \
+  "git fetch && gh api -X PATCH repos/o/r/issues/266 -f state=closed"
+expect deny "real: R3 edit after &&" \
+  "git fetch && gh issue edit 901 --add-label 'status: ready'"
+
+# The escape hatch only counts when it is a real command, not quoted text —
+# otherwise inert data becomes a way to talk the guard out of a real deny.
+expect deny "escape: --remove-label quoted as data does not unblock a close" \
+  "echo \"--remove-label 'status: ready'\" && gh issue close 266"
+
+# Documented residual: a heredoc line that BEGINS with gh reads as a command
+# position and is still denied. The marker is the escape.
+expect deny "residual: heredoc line beginning with gh is still denied" \
+  $'cat <<EOF\ngh issue close 266\nEOF'
+expect allow "escape: the inert marker disarms the guard" \
+  $'# label-hygiene-guard: inert\ncat <<EOF\ngh issue close 266\nEOF'
+
 # --- fail open --------------------------------------------------------------
 # Issue 999 has no fixture, so the stub gh exits 1 — the API-unreachable shape.
 expect allow "fail open when gh errors" "gh issue close 999"
