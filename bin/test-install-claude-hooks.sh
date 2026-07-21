@@ -261,13 +261,25 @@ while IFS=';' read -r selector script event matcher; do
   src="$REPO_ROOT/global/hooks/$script"
   check "$script exists in global/hooks/" [ -f "$src" ]
   [ -f "$src" ] || continue
-  head="$(sed -n '1,60p' "$src")"
+  # Read the whole module docstring, not a fixed line window (#393). A window
+  # is a guess about where the block sits: label-hygiene's wire-up block landed
+  # on line 60 of a 60-line window after #388's docstring edit, one line from
+  # breaking. Worse, the no-matcher branch below is a `not_contains`, so a block
+  # that drifted out of the window would have passed VACUOUSLY — proving the
+  # absence of a string in text that no longer held the block at all. A
+  # docstring is a structural bound, and its absence is a hard failure.
+  doc="$(awk '/"""/ { seen++ } seen >= 1 { print } seen >= 2 { exit }' "$src")"
+  check "$script has a module docstring" [ -n "$doc" ]
+  check "$script docstring carries a wire-up block" contains '"hooks": {' "$doc"
   if [ -n "$matcher" ]; then
-    check "$script docstring declares matcher $matcher" contains "\"matcher\": \"$matcher\"" "$head"
+    check "$script docstring declares matcher $matcher" contains "\"matcher\": \"$matcher\"" "$doc"
   else
-    check "$script docstring declares no matcher" not_contains '"matcher"' "$head"
+    check "$script docstring declares no matcher" not_contains '"matcher"' "$doc"
   fi
-  check "$script docstring names event $event" contains "\"$event\"" "$head"
+  # Match the event in its wire-up form (`"SessionEnd": [`), never as a bare
+  # word: every one of these hooks names its event in the docstring's opening
+  # prose too, so a substring check passed whether or not the block was there.
+  check "$script docstring names event $event" contains "\"$event\": [" "$doc"
 done <<EOF
 $rows
 EOF
