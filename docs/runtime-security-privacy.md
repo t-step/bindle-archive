@@ -60,9 +60,35 @@ fields join its schema; until then the card lives in the asset's doc.)
 
 ## Current inventory (2026-07-10)
 
-**Automatic assets: none.** Bindle today ships nothing that runs without a
-human starting it. When issue #21 (session hooks) lands, its assets get
-the first cards.
+**Automatic assets: six hooks under `global/hooks/`** — two session hooks and
+four `PreToolUse` guards. All are opt-in: `bin/install.sh` only symlinks them,
+and nothing runs until `bin/install-claude-hooks.sh --apply` wires it.
+
+Only one carries a card today, below. The other five shipped without one,
+which this document's own gate forbids — recorded here rather than left
+implied, and the backfill is its own work.
+
+### Card — `global/hooks/git-push-merged-branch-guard.py`
+
+- **trigger** — Claude Code `PreToolUse`, matcher `Bash`, only when the
+  command contains `git push` at a command position.
+- **inputs** — the tool call's `command` string and `cwd`; the current branch
+  via `git symbolic-ref`; the PR state via exactly
+  `gh pr view <branch> --json state,mergedAt,number`. Nothing from the local
+  machine leaves it beyond that branch name.
+- **outputs** — either a deny decision with a reason, or a one-line stderr
+  notice for a `CLOSED` PR. Nothing else.
+- **storage** — none. It writes no file.
+- **retention** — none; there is nothing to delete.
+- **failure behavior** — fails OPEN. An absent, unauthenticated, offline or
+  slow `gh` allows the push silently; so does an unparseable command or a
+  non-git `cwd`.
+- **disable / uninstall** —
+  `bin/install-claude-hooks.sh uninstall --guard git-push-merged --apply`.
+- **confirmation** — none required; it only ever denies or allows a call the
+  agent already initiated, and mutates nothing itself.
+- **capability class** — C4 under the read-only carve-out (one authenticated
+  `gh` read per push, degrading silently). Never C5: it performs no write.
 
 Executable-on-request assets, classified:
 
