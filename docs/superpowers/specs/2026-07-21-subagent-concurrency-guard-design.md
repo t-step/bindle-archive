@@ -6,12 +6,19 @@
 ## Problem
 
 Nothing in Claude Code or in this repo currently caps how many subagents can be
-in flight at once. A session can fan out an unbounded number of `Task`-tool
+in flight at once. A session can fan out an unbounded number of `Agent`-tool
 dispatches (parallel batches, repeated sequential dispatch, or a subagent
 dispatching its own subagents) with no mechanical ceiling. The user asked for a
 hard cap of 3 concurrent subagents, explicitly including closing the obvious
 workaround: a dispatched subagent itself dispatching further subagents to
 route around a cap enforced only against the top level.
+
+This is not hypothetical. Read-only inspection of this machine's own local
+transcripts (`~/.claude/projects/-Users-thomasestep-Developer-bindle/`, never
+modified, no hook wired to capture anything new) found a real, already-shipped
+case of a subagent dispatching a nested `Agent` call
+(`subagent_type: "fork"`) from inside its own transcript file. The workaround
+this design closes already happens today.
 
 Requested and confirmed (three prior questions, all answered with the
 recommended option):
@@ -70,29 +77,32 @@ pre-empt.
 
 ### Detecting "is this call nested"
 
-No hook payload field is assumed without verification (see Phase 0 below).
-The chosen detection does not depend on any undocumented field:
+Verified directly against real, on-disk transcript data for this repo (not
+guessed, not inferred from the minified CLI bundle): every session directory
+under `~/.claude/projects/<project>/<session-uuid>/` that has ever dispatched
+a subagent has a `subagents/` child directory holding one
+`agent-<agentId>.jsonl` (that subagent's own transcript, its records tagged
+`"isSidechain": true`) plus a paired `agent-<agentId>.meta.json`
+(`agentType`, `isFork`, `description`, `toolUseId`, `spawnDepth`) per
+dispatched subagent. `codegraph-chaining-guard.py` already relies on, and
+documents, the fact that `PreToolUse`'s `transcript_path` field always points
+to the transcript of the *calling* context — the top-level session's own
+`<session-uuid>.jsonl` for a top-level call, a subagent's own
+`subagents/agent-<id>.jsonl` for a call made from inside that subagent.
 
-**A session's first-ever dispatch-tool call is always top-level**, because a
-subagent cannot exist before something has dispatched it. So: the guard reads
-`session_id` and `transcript_path` from the `PreToolUse` payload. On the first
-dispatch call it has seen for that `session_id`, it records that call's
-`transcript_path` as the session's root transcript (atomic create via
-`O_CREAT | O_EXCL`, so a parallel top-level batch — several dispatch calls
-launched in one turn — races safely: all of them share the same top-level
-`transcript_path`, so whichever process wins the create, the others read back
-the same value and agree). Every later dispatch call in that session is
-top-level if its own `transcript_path` matches the recorded root, and nested
-otherwise — a subagent's dispatch calls are recorded in a transcript file of
-their own, per the existing observation in `codegraph-chaining-guard.py` that
-"it works unchanged inside a subagent because each subagent has its own
-transcript."
+So nesting detection is exactly: **is the immediate parent directory of
+`transcript_path` named `subagents`?**
 
-**Known limitation, accepted:** if the guard is wired for the first time in
-the middle of an already-running session that has subagents active, the first
-dispatch call the guard observes may itself be nested, and would be
-misclassified as root. Narrow window (guard install mid-flight with a live
-subagent chain), not solved here.
+```python
+import os
+def is_nested(transcript_path: str) -> bool:
+    return os.path.basename(os.path.dirname(transcript_path)) == "subagents"
+```
+
+No state file, no bootstrap race, no per-session recording, no mid-session
+misclassification window — the answer is fully determined by the one
+`transcript_path` value every `PreToolUse`/`PostToolUse` call already carries,
+with no dependency on when the guard happened to get wired.
 
 ### Enforcing the cap
 
@@ -111,47 +121,39 @@ some subagents legitimately run long, but bounded so a crashed subagent that
 never reaches `PostToolUse` cannot permanently shrink the cap) is treated as
 free and removed when encountered during a count.
 
-Root-transcript records
-(`~/.claude/bindle/state/subagent-concurrency/roots/<session_id>`) are tiny and
-not TTL-reaped; a session's root does not change for the life of that session.
-
 ### Correlating `PreToolUse` and `PostToolUse` for the same call
 
-Needs a stable identifier present in both events to know which slot a given
-`PostToolUse` should release. Existence and name of this field is unconfirmed
-— this is the second thing Phase 0 verifies. Fallback if no such field exists:
-match on `(session_id, transcript_path, tool_input)` tuple, accepting that two
-truly identical concurrent calls in the same batch would be ambiguous (rare —
-identical dispatch prompts launched in parallel — and the failure mode is
-merely releasing the wrong one of two otherwise-interchangeable slots, not a
-miscount).
+Verified directly against real transcript data: each `tool_use` block already
+carries its own stable `id` (e.g. `toolu_01794DzDwtpWtTKySnUunKD1`) in the
+transcript JSONL itself — confirmed by cross-referencing a real dispatch
+call's `tool_use.id` in the parent transcript against the dispatched
+subagent's own `meta.json.toolUseId`, which matched exactly. This is the same
+transcript the guard already reads for the nesting check, and reading it for
+the correlation id reuses `codegraph-chaining-guard.py`'s established
+technique (read the tail, find the newest matching `tool_use` block) rather
+than depending on any undocumented `PreToolUse`/`PostToolUse` payload field:
 
-## Phase 0 — empirical verification (before writing the real guard)
-
-A throwaway capture hook, wired broadly, dumps raw `PreToolUse`/`PostToolUse`
-JSON to a scratch file for: one top-level dispatch call, and one nested
-dispatch call (a dispatched subagent itself dispatching another). Confirms,
-before any real guard code is written:
-
-1. The exact `tool_name` value for a dispatch call (candidate: `Task`; this
-   session's own tool listing calls it "Agent", which may be a display-layer
-   rename over the same internal tool name — not assumed either way).
-2. A stable per-call correlation id present in both `PreToolUse` and
-   `PostToolUse` for the same dispatch (or confirmation that none exists, in
-   which case the fallback correlation above is used).
-3. That `transcript_path` really does differ between a top-level call and a
-   nested one, as the nesting-detection mechanism assumes.
-
-Findings get folded into the real guard and its docstring, in the same
-evidence-cited style as `codegraph-chaining-guard.py`. The capture hook is
-deleted once its findings are recorded — it is a spike, not a shipped file.
+- **`PreToolUse` (top-level, allowed):** find the newest `tool_use` block in
+  the transcript tail with `name == "Agent"` — per
+  `codegraph-chaining-guard.py`'s documented reasoning, `PreToolUse` fires
+  right after the assistant message carrying this exact call is written, so
+  that newest block *is* this call. Use its `id` as the slot filename.
+- **`PostToolUse` (top-level):** same lookup, same transcript, same helper —
+  by the time `PostToolUse` fires the block is still the newest `Agent`
+  `tool_use` entry for this call. Remove the slot file for that `id` if
+  present; a missing slot (already reaped by TTL, or never created because
+  the cap check failed open) is a no-op, not an error.
+- If no matching `tool_use` block is found in either event (fails open): no
+  slot is created (`PreToolUse`) or nothing is removed (`PostToolUse`) — the
+  failure direction is always toward under-counting, never toward a stuck
+  slot.
 
 ## Failure posture: fails OPEN
 
-Any failure to read or write guard state — state directory uncreatable,
-lock unavailable, a record unreadable or unparseable, `session_id` or
-`transcript_path` missing from the payload — **allows** the call rather than
-denying it.
+Any failure to read or write guard state — state directory uncreatable, lock
+unavailable, `transcript_path` missing from the payload, or the transcript
+itself unreadable/unparseable/lacking a matching `tool_use` block — **allows**
+the call rather than denying it.
 
 This is a new mechanism with no track record. The asymmetry: a false allow
 here costs at most one extra in-flight subagent beyond the intended cap of 3,
@@ -187,16 +189,17 @@ anything, so nothing should suppress that.
 `PostToolUse` payloads and a synthesized state directory in a temp dir, never
 a real transcript or a real `~/.claude` tree. Cases:
 
-- first dispatch call in a session, 0 slots occupied → allow, root recorded, slot created
+- top-level call (`transcript_path` not under a `subagents/` dir), 0 slots occupied → allow, slot created named by the call's `tool_use.id`
 - top-level call, 1–2 slots occupied → allow, slot created
 - top-level call, 3 slots occupied → **deny**
 - top-level call, 3 slots occupied but one is older than the TTL → allow (stale slot reaped)
-- nested call (transcript differs from recorded root), 0 slots occupied → **deny**
-- nested call, would-be-available slots → **deny** (nesting check short-circuits before the count is even consulted)
+- nested call (`transcript_path`'s parent dir is `subagents`), 0 slots occupied → **deny**
+- nested call, would-be-available slots → **deny** (nesting check short-circuits before the count is even consulted; no slot lookup happens)
 - `PostToolUse` for a call that took a slot → slot file removed
-- two simultaneous top-level `PreToolUse` calls racing to create the root record → both agree on the same root, no crash, no double-count
-- state directory uncreatable / lock unavailable / payload missing `session_id` or `transcript_path` → allow (fails open)
-- non-dispatch tool call → untouched, no-op
+- `PostToolUse` for a nested call → no-op (never held a slot)
+- two simultaneous top-level `PreToolUse` calls (a parallel dispatch batch) racing on the same slot directory → lock serializes them, both counted correctly, no double-allow past 3
+- state directory uncreatable / lock unavailable / `transcript_path` missing or unreadable / no matching `tool_use` block found → allow (fails open)
+- non-`Agent` tool call → untouched, no-op
 
 **Mutation pass**, per the repo rule that a new gate must be proven failable:
 invert the cap comparison and the nesting check independently, confirm each
@@ -204,11 +207,12 @@ inversion flips the corresponding deny cases to allow (and vice versa).
 
 ## Open, deferred
 
-- The two Phase 0 unknowns (exact `tool_name`, correlation id availability)
-  are deliberately left open here and resolved empirically before
-  implementation, not guessed.
 - Whether 3 is the right steady-state number, and whether a future need for an
   explicit, deliberate override (cap or nesting) ever arises, is left for a
   later decision if it comes up — not pre-solved with an escape hatch now.
-- The mid-session wire-up misclassification window (guard installed while a
-  subagent chain is already live) is accepted, not solved.
+- The transcript-directory layout this design depends on
+  (`<session>/subagents/agent-<id>.jsonl`) is observed, real, on-disk behavior
+  of the installed Claude Code CLI, not a documented/versioned public
+  contract. If a future CLI version changes that layout, the guard fails open
+  (no matching transcript shape → allow), so a layout change degrades to "cap
+  temporarily ineffective," not "subagent dispatch silently broken."
