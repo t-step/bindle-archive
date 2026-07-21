@@ -29,6 +29,20 @@ Steps:
    session-continuity's slug rule) — steps 4 and 5 both reuse it.
 3. Label reconciliation (skip silently if there's no GitHub remote, `gh` is
    unavailable or unauthenticated, or this session touched no issues):
+   - **Run the repo-wide audit first**: `<bindle>/bin/check-issue-labels.sh`
+     (your Bindle checkout's copy; it audits the current working repo). It is
+     read-only — it never edits a label, and a finding never blocks session-end.
+     Report its verdict by exit code, and do not round any of them up to green:
+     - **0** — say label hygiene is clean.
+     - **1** — list every violation it printed. These are drift the session may
+       never have touched, which is the point: the `PreToolUse` guard sees only
+       agent-initiated transitions, so a web-UI merge closes an issue with its
+       `status:` label intact and nothing catches it until this sweep. Fold them
+       into the approval batch below.
+     - **2** — SKIPPED. Report that nothing was verified. Never report this as
+       clean; that is the failure mode `#279` cost this repo once already.
+     - **3** — NOT APPLICABLE (the repo carries no `docs/issue-tracking.md`, so
+       this taxonomy is not its convention). Skip the rest of this step silently.
    - Identify issues this session touched — numbers referenced in the branch
      name, commit subjects/bodies (`#123`), or named explicitly in
      conversation.

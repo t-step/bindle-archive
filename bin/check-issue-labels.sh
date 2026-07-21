@@ -20,13 +20,22 @@
 # bin/test-check-frontmatter.sh, which have no network and no GitHub repo; and
 # the pre-commit path must stay offline. Run it on demand.
 #
+# Gating: the repo must carry docs/issue-tracking.md, the contract these rules
+# come from — the same gate global/hooks/label-hygiene-guard.py applies, for the
+# same reason. Absent it, the convention is not this repo's, so neither are the
+# rules. This matters now that /session-end calls the audit automatically (#355):
+# that command runs in every project, and without the gate an unrelated repo's
+# perfectly good labels are reported as violations.
+#
 # Exit codes:
 #   0  all invariants hold
 #   1  at least one violation (each is printed)
 #   2  SKIPPED — gh is absent or unauthenticated, so nothing was verified
+#   3  NOT APPLICABLE — this repo does not carry the contract
 #
 # Exit 2 is deliberately distinct from 0. A gate that reports success when it did
-# not run is the failure this repo already paid for once (#279).
+# not run is the failure this repo already paid for once (#279). Exit 3 is
+# distinct from BOTH: nothing failed to run, and there was nothing to check.
 #
 # Self-test: bin/test-issue-labels.sh
 #
@@ -43,6 +52,21 @@ problem() {
 ok() { echo "  ✓ $1"; }
 
 echo "issue label hygiene:"
+
+# The contract gate, ahead of every gh call: an unrelated repo should cost no
+# network round-trip, and must not report SKIPPED for a gh it never needed.
+CONTRACT="docs/issue-tracking.md"
+ROOT="$(git rev-parse --show-toplevel 2>/dev/null || true)"
+# The empty-ROOT test is deliberately redundant: with ROOT unset the -f test
+# already fails, because it then asks about /docs/issue-tracking.md. It is kept
+# because that is an accident of path concatenation rather than a decision — a
+# fixture cannot create /docs to prove it, so a mutant dropping this clause
+# survives, and the comment is the record that it was considered.
+if [ -z "$ROOT" ] || [ ! -f "$ROOT/$CONTRACT" ]; then
+  echo "  NOT APPLICABLE — no $CONTRACT here; these label rules are not this" \
+    "repo's convention" >&2
+  exit 3
+fi
 
 if ! command -v gh >/dev/null 2>&1; then
   echo "  SKIPPED — gh is not installed; no invariant was verified" >&2

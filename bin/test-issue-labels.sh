@@ -38,8 +38,12 @@ chmod +x "$STUBBIN/gh"
 export PATH="$STUBBIN:$PATH"
 
 run() { # run -> prints output, sets RC
+  run_in "$REPO_ROOT"
+}
+
+run_in() { # run_in <cwd> -> prints output, sets RC
   set +e
-  OUT="$(bash "$CHECK" 2>&1)"
+  OUT="$(cd "$1" && bash "$CHECK" 2>&1)"
   RC=$?
   set -e
 }
@@ -99,6 +103,62 @@ export GH_BROKEN=1
 run
 check 2 "gh unavailable skips loudly" "SKIPPED"
 unset GH_BROKEN
+
+# --- the contract gate (#355) -----------------------------------------------
+# The audit now has an automatic call site in /session-end, which runs in every
+# project — so it must be inert where this label taxonomy is not the local
+# convention. The rules come from docs/issue-tracking.md; absent it, they are
+# not this repo's rules. Distinct from SKIPPED: nothing FAILED to run here,
+# there was simply nothing to check.
+NORULES="$TMP/norules"
+mkdir -p "$NORULES"
+git -C "$NORULES" init -q
+
+export GH_ISSUES='[{"number":287,"state":"CLOSED","labels":[{"name":"status: in-progress"}]}]'
+export GH_LABELS='status: triage	Not yet assessed'
+run_in "$NORULES"
+check 3 "repo without the contract is NOT APPLICABLE, not a violation" "NOT APPLICABLE"
+
+# The gate must sit ahead of the gh calls: an unrelated repo should cost no
+# network round-trip and must not report SKIPPED for a missing gh it never needed.
+export GH_BROKEN=1
+run_in "$NORULES"
+check 3 "contract gate precedes the gh probe" "NOT APPLICABLE"
+unset GH_BROKEN
+
+# And the gate must not swallow a real audit in a repo that DOES carry it.
+export GH_ISSUES='[{"number":287,"state":"CLOSED","labels":[{"name":"status: in-progress"}]}]'
+run
+check 1 "contract present: violations still reported" "#287"
+
+# A non-git directory resolves no repo root, so no contract — also inert.
+NOTGIT="$TMP/notgit"
+mkdir -p "$NOTGIT"
+run_in "$NOTGIT"
+check 3 "non-git directory is NOT APPLICABLE" "NOT APPLICABLE"
+
+# --- the call site itself (#355) --------------------------------------------
+# The defect this issue names is not a bug in the script — it is that nothing
+# invoked it, so the drift it detects still accumulated between manual runs. A
+# call site that can be silently dropped again is the same defect, so assert it.
+call_site() { # call_site <want-substring> <file> <name>
+  if grep -qF -- "$1" "$REPO_ROOT/$2"; then
+    PASS=$((PASS + 1))
+    echo "  ok: $3"
+  else
+    FAIL=$((FAIL + 1))
+    echo "  FAIL: $3 ($2 lacks '$1')" >&2
+  fi
+}
+
+call_site "bin/check-issue-labels.sh" "commands/session-end.md" \
+  "/session-end invokes the audit"
+call_site "NOT APPLICABLE" "commands/session-end.md" \
+  "/session-end handles the NOT APPLICABLE verdict"
+call_site "SKIPPED" "commands/session-end.md" \
+  "/session-end reports SKIPPED rather than green"
+call_site "bin/check-issue-labels.sh" "docs/issue-tracking.md" \
+  "the contract names when the audit runs"
 
 echo
 if [ "$FAIL" -gt 0 ]; then
