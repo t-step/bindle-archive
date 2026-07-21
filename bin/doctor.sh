@@ -318,7 +318,7 @@ executable_section() {
 hooks_section() {
   echo
   echo "claude hooks ($CLAUDE_HOME/hooks):"
-  local src dest name settings wired target unwired
+  local src dest name settings wired wired_targets target unwired
   settings="$CLAUDE_HOME/settings.json"
   if [ ! -d "$REPO_ROOT/global/hooks" ]; then
     echo "  - no hooks in this checkout"
@@ -334,6 +334,7 @@ hooks_section() {
   # Wiring: every hook path settings.json names must resolve. A configured but
   # unreachable hook is the case #264 was filed on.
   wired=""
+  wired_targets=""
   if [ ! -f "$settings" ]; then
     echo "  - settings.json absent; nothing wired (opt-in — bin/install-claude-hooks.sh)"
   else
@@ -361,6 +362,8 @@ PY
     [ -n "$target" ] || continue
     # shellcheck disable=SC2088 # matching a LITERAL tilde in a settings.json path, not expanding one
     case "$target" in "~/"*) target="$HOME/${target#\~/}" ;; esac
+    wired_targets="${wired_targets}
+$target"
     if [ -e "$target" ]; then
       # Resolving is not the same as wired correctly (#312). A path into the
       # checkout resolves today and disappears the moment the repo moves —
@@ -370,8 +373,8 @@ PY
       name="$(basename "$target")"
       case "$target" in
         "$CLAUDE_HOME"/hooks/*) printf '  \xe2\x9c\x93 wired: %s — resolves\n' "$target" ;;
-        *)
-          if [ -e "$REPO_ROOT/global/hooks/$name" ]; then
+        "$REPO_ROOT"/global/hooks/*)
+          if [ -e "$REPO_ROOT/global/hooks/$name" ] && [ "$target" = "$REPO_ROOT/global/hooks/$name" ]; then
             printf '  \xe2\x9c\x97 wired: %s — resolves, but bypasses %s/hooks\n' "$target" "$CLAUDE_HOME"
             printf '      \xe2\x86\x92 point settings.json at %s/hooks/%s (bin/install.sh maintains that symlink; a checkout move otherwise disables the hook silently)\n' "$CLAUDE_HOME" "$name"
             drift_count=$((drift_count + 1))
@@ -379,6 +382,7 @@ PY
             printf '  \xe2\x9c\x93 wired: %s — resolves\n' "$target"
           fi
           ;;
+        *) printf '  \xe2\x9c\x93 wired: %s — resolves\n' "$target" ;;
       esac
     else
       printf '  \xe2\x9c\x97 wired: %s — configured but NOT reachable\n' "$target"
@@ -392,13 +396,18 @@ EOF
   # Installed but never wired (#323). The symlink checks above pass for a hook
   # nothing references, so without this a guard that has never once fired looks
   # identical to a healthy one. Reported, not counted: wiring is opt-in per
-  # hook, so choosing not to wire one is a decision, not a fault.
+  # hook, so choosing not to wire one is a decision, not a fault. Only the
+  # stable $CLAUDE_HOME/hooks/<name> symlink counts as wired; a checkout path is
+  # drift, not a substitute for the stable hook entry.
   unwired=""
   for src in "$REPO_ROOT"/global/hooks/*.py; do
     [ -e "$src" ] || continue
     name="$(basename "$src")"
-    case "$wired" in
-      *"$name"*) continue ;;
+    case "$wired_targets
+" in
+      *"
+$CLAUDE_HOME/hooks/$name
+"*) continue ;;
     esac
     unwired="${unwired:+$unwired }$name"
   done
