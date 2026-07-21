@@ -137,6 +137,18 @@ class ChainTests(PreviewTestCase):
         self.assertEqual(
             "loaded", out["graph"]["bindings"][BINDING]["status"])
 
+    def test_the_planned_bindings_are_returned_separately_from_the_report(self):
+        """`graph` is the human-readable per-binding status; `bindings` is
+        what the plan was actually fingerprinted against. They are not
+        interchangeable: `planner._binding_term` digests each binding's
+        source_commit, which the report drops -- so a caller handing apply
+        the report would fingerprint every binding as None and burn its own
+        confirmation as stale_preview."""
+        out = self.preview(self.configured())
+        self.assertEqual("a" * 40,
+                         out["bindings"][BINDING]["source_commit"])
+        self.assertNotIn("source_commit", out["graph"]["bindings"][BINDING])
+
     def test_a_fingerprint_is_produced(self):
         out = self.preview(self.configured())
         self.assertTrue(out["fingerprint"].startswith("arch-plan:sha256:"))

@@ -98,8 +98,10 @@ class CycleTestCase(unittest.TestCase):
             identities=out["identities"],
             identity_records=out["identity_records"],
             config=config,
-            bindings={binding_id: dict(info) for binding_id, info
-                      in (out["graph"]["bindings"] or {}).items()},
+            # `bindings`, not `graph["bindings"]`: the fingerprint's
+            # binding term digests each binding's source_commit, which the
+            # human-readable graph report drops.
+            bindings=out["bindings"],
             projected_at=DECIDED_AT)
 
 
@@ -114,6 +116,23 @@ class FirstApplyTests(CycleTestCase):
             self.assertTrue(os.path.exists(os.path.join(
                 self.notes_home, "projects", SLUG, entry["note_path"])),
                 "not written: %r" % (entry["note_path"],))
+
+    def test_each_projected_node_records_its_source_commit(self):
+        """index.json's contract promises "current observed provider
+        provenance ... source commits". `apply._node` reads the commit off
+        the binding it was handed, and `graphset.load_set` did not carry
+        one -- so every node silently shipped without provenance, and
+        `planner._binding_term` digested None for every binding."""
+        out = self.preview()
+        self.apply_preview(out)
+        with open(state.index_path(self.notes_home, SLUG),
+                  encoding="utf-8") as handle:
+            index = json.load(handle)
+        for node in index["nodes"]:
+            self.assertEqual(
+                [{"binding_id": BINDING, "commit": "a" * 40}],
+                node.get("source_commits"),
+                "no provenance on %r" % (node.get("note_path"),))
 
     def test_the_first_apply_commits_one_identity_per_entry(self):
         out = self.preview()

@@ -1475,6 +1475,14 @@
       "reason": "unit tests for architecture.preview, the first integration evidence in the package: fingerprint stability across two previews of identical inputs guarded by a companion test asserting the two runs really did mint different arch_ids, so stability cannot pass vacuously; zero bytes written asserted by walking the whole notes home rather than trusting the absence of a write call; contested classification; a reuse preserving the creation-event note path recorded in index.json; and the crashed-mid-apply state where the judgments log knows an identity index.json records no path for; test infrastructure, not a capability an agent invokes."
     },
     {
+      "path": "bin/architecture/loop.py",
+      "reason": "library module implementing the confirm and apply halves of the projection loop (#374 slice D5c, epic #141): rebuilds the plan through architecture.preview so apply is handed exactly what preview planned, checks a held fingerprint against the current plan, and evaluates the epic's static confirmation policy (diff size against config.json's diff_size_confirmation_limit \u2014 which had no consumer anywhere before this slice \u2014 plus over-cap, deferred and conflicting entries). requires_confirmation REPORTS rather than refuses, and the authoritative token comparison is left to apply.apply under the project lock rather than duplicated here. Consumed by bin/architecture-projection.py, not a standalone capability."
+    },
+    {
+      "path": "bin/architecture/tests/test_loop.py",
+      "reason": "unit tests for architecture.loop covering what the subprocess CLI tests state poorly: each confirmation-policy trigger in isolation, the boundary where a diff size exactly equal to its configured limit does not trigger, a config missing the limit key not being read as a limit of zero, requires_confirmation reporting rather than refusing, and a stale token being refused by apply under the lock rather than pre-checked in the loop module; test infrastructure, not a capability an agent invokes."
+    },
+    {
       "path": "bin/architecture/tests/test_cycle.py",
       "reason": "end-to-end projection cycle tests (#374 slice D5c) feeding apply's own output back into a second preview — the only place the identity round trip is observable, and the gap test_preview and test_apply each leave open by exercising one half with the other's inputs built by hand. Asserts that a committed identity is REUSED rather than re-minted, that a rerun at the same commit writes zero bytes, that a changed run refreshes without appending a second identity_allocation, that a signal-moving change is routed to child G rather than silently re-identified, and that an identity committed without an index.json is still placeable from its own allocation payload; test infrastructure, not a capability an agent invokes."
     }

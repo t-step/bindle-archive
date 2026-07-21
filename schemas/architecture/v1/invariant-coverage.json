@@ -93,6 +93,8 @@
     "E_ARCH_APPLY_UNCONFIRMED": "apply-run outcome: reports that no confirmed plan fingerprint was supplied to this invocation. Ephemeral invocation state by design (the fingerprint travels as a token, never as a persisted field), so no document exists for a schema to govern.",
     "E_ARCH_APPLY_STALE_PREVIEW": "apply-run outcome: reports that inputs moved between preview and apply. A comparison between a run's recomputed digest and a token held by the caller, not a property of any file on disk.",
     "E_ARCH_APPLY_PLAN_REJECTED": "apply-run outcome: surfaces a planner PlanInputError (unrankable records, an unplaceable slug, a planned path escaping the notes home) at the apply boundary. The underlying documents have their own codes; this one names the run that refused.",
-    "E_ARCH_APPLY_IDENTITY_REFUSED": "apply-run outcome: an identity_allocation record the caller supplied would not read back, so the append was refused and nothing was written. The record's own invalidity is E_ARCH_JUDGMENTS_INVALID_RECORD; this code reports the aborted run."
+    "E_ARCH_APPLY_IDENTITY_REFUSED": "apply-run outcome: an identity_allocation record the caller supplied would not read back, so the append was refused and nothing was written. The record's own invalidity is E_ARCH_JUDGMENTS_INVALID_RECORD; this code reports the aborted run.",
+    "E_ARCH_CONFIRM_NO_PLAN": "confirm/apply-run outcome: there is no current plan to confirm a token against, or to write. Reports the invocation, not a document -- the underlying reason carries its own preview code alongside it.",
+    "E_ARCH_CONFIRM_STALE_TOKEN": "confirm-run outcome: the plan moved since the held fingerprint was printed. Like E_ARCH_APPLY_STALE_PREVIEW it compares a recomputed digest against a token the caller carries, and the token is ephemeral invocation state that no document records."
   }
 }
