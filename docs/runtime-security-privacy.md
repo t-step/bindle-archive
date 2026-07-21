@@ -66,14 +66,13 @@ and nothing runs until `bin/install-claude-hooks.sh --apply` wires it.
 
 All six carry a card, below (#392). Five of them shipped without one and were
 carded retroactively; writing those five surfaced two facts this document had
-not recorded, both stated in the cards themselves rather than smoothed over:
+not recorded, both stated in the cards themselves rather than smoothed over.
+One of them was then removed in #396:
 
-- **`codegraph-chaining-guard.py` reads session transcript content**, which is
-  C3 and which rule 3 below forbids outright in its first sentence. Rule 3's
-  own escape clause — "any future exception needs its own card naming exactly
-  what is read and why, and remains opt-in" — is the path it now takes, but the
-  card was written a release after the hook shipped, so the exception was in
-  force before it was sanctioned. Rule 3's blanket sentence is corrected below.
+- **`codegraph-chaining-guard.py` used to read session transcript content**:
+  a C3 exception that #392 carded after the hook had already shipped. #396
+  removed that read. The hook now keys one small temp-state file by a hash of
+  `transcript_path` and never opens the transcript, so it is C1.
 - **`label-hygiene-guard.py` makes authenticated `gh` reads**, which is the C4
   carve-out and requires a card naming the exact commands. It had none.
 
@@ -248,40 +247,37 @@ shipping.
 
 ### Card — `global/hooks/codegraph-chaining-guard.py`
 
-- **trigger** — Claude Code `PreToolUse`, matcher `Bash|mcp__.*codegraph.*`.
-  Acts on a CodeGraph call — an `mcp__*codegraph*` tool, or a Bash command
-  matching `codegraph … explore` — that carries no `cg-chain-ok` marker, and
-  only when the immediately preceding tool use in the transcript was itself a
-  CodeGraph call.
+- **trigger** — Claude Code `PreToolUse`, matcher `.*`, so the hook sees every
+  tool call. It acts only on a CodeGraph call — an `mcp__*codegraph*` tool, or
+  a Bash command matching `codegraph … explore` — that carries no `cg-chain-ok`
+  marker, and only when the immediately preceding observed tool use for the
+  same transcript path was itself a CodeGraph call.
 - **inputs** — the tool call's `tool_name`, `tool_input`, and
-  `transcript_path`. **It opens the transcript**: the last 256 KB of the file,
-  decoded and reduced to the final 400 lines. From that tail it parses
-  `tool_use` blocks and uses only their `name` and `input`; no message prose,
-  thinking block, or file content is surfaced to its decision or its output.
-  The read is nonetheless of transcript *content*, not a path — see the class
-  line below. Nothing leaves the machine.
+  `transcript_path`. It uses only the transcript *path* as a state key, hashed
+  before it becomes a filename. It does not open the transcript and never reads
+  message prose, thinking blocks, tool results, or file content. Nothing leaves
+  the machine.
 - **outputs** — a deny decision with a reason, or nothing. No stderr. Exits 0
   either way.
-- **storage** — none.
-- **retention** — none.
+- **storage** — one JSON file per transcript path under the system temp
+  directory, or under `BINDLE_CODEGRAPH_GUARD_STATE_DIR` when set for tests.
+  The record stores the last observed `tool_name`, `tool_input`, and an update
+  timestamp. Writes are atomic temp-file replaces.
+- **retention** — stale files older than 24 hours are removed opportunistically
+  on each hook invocation. A file may remain longer if the hook never runs
+  again, but the next run attempts cleanup.
 - **failure behavior** — fails OPEN. A missing, non-string, or unreadable
-  `transcript_path`, an unreadable file, malformed stdin, or a malformed JSONL
-  line all allow the call (bad lines are skipped individually). It imports no
-  `subprocess` at all, so it has no subprocess failure mode, and the bounded
-  read means transcript size does not affect its cost.
+  `transcript_path`, unreadable or malformed state file, unwritable temp
+  directory, malformed stdin, or cleanup failure allows the call. It imports no
+  `subprocess` at all, so it has no subprocess failure mode, and transcript
+  size does not affect its cost because the transcript is never opened.
 - **disable / uninstall** —
   `bin/install-claude-hooks.sh uninstall --guard codegraph --apply`. A single
   intended chain can be allowed with the `cg-chain-ok` marker.
 - **confirmation** — none required; it denies or allows a call the agent
   already initiated and mutates nothing.
-- **capability class** — **C3**, and the only C3 automatic asset Bindle ships.
-  Rule 3 below forbids an automatic asset from opening a transcript and admits
-  exceptions only by card; this is that card, and it is the reason rule 3's
-  first sentence is now qualified. What makes the exception defensible is the
-  scope: a bounded tail, only `tool_use` names and inputs consumed, nothing
-  stored, nothing transmitted, and the whole hook opt-in. What makes it worth
-  re-examining is that the hook shipped in v0.9.0 and this card was written
-  after — the exception was taken before it was granted.
+- **capability class** — **C1**: local temp-state mutation plus local reads of
+  hook input. Not C3 — it handles a transcript path, never transcript contents.
 
 Executable-on-request assets, classified:
 
@@ -307,15 +303,10 @@ the scripts above, that script's class applies.
 2. **Pointers, not payloads.** A hook may pass *paths* to notes, handoffs,
    or transcripts; it must never inject or copy their *contents*. Reading
    contents is the in-session agent's decision, visible to the user.
-3. **Transcripts are off-limits, with one carded exception.** Where the
-   provider hands a hook a transcript path, a Bindle hook does not open it —
-   except `codegraph-chaining-guard.py`, whose card above states exactly what
-   it reads (a bounded 256 KB tail, `tool_use` names and inputs only), why
-   (the preceding call is the only place the chaining state exists), and that
-   it stores and transmits nothing. Any further exception needs the same:
-   its own card naming exactly what is read and why, and it remains opt-in.
-   Read the card before adding the second one — this exception was taken a
-   release before it was granted, which is not the order this gate assumes.
+3. **Transcripts are off-limits.** Where the provider hands a hook a
+   transcript path, a Bindle hook does not open it. It may use the path as a
+   pointer or state key; it must not read, copy, parse, store, or transmit the
+   transcript contents.
 4. **No network, with the C4 carve-out above** (documented, read-only,
    authenticated-CLI queries that fail silent).
 5. **Fail open, quietly.** A hook that errors must leave the session fully

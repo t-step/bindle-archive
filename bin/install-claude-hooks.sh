@@ -70,7 +70,7 @@ session;session-start-context.py;SessionStart;startup|resume
 session;session-end-breadcrumb.py;SessionEnd;
 nested-notes;nested-notes-guard.py;PreToolUse;Bash|mcp__.*github.*
 label-hygiene;label-hygiene-guard.py;PreToolUse;Bash
-codegraph;codegraph-chaining-guard.py;PreToolUse;Bash|mcp__.*codegraph.*
+codegraph;codegraph-chaining-guard.py;PreToolUse;.*
 git-push-merged;git-push-merged-branch-guard.py;PreToolUse;Bash
 TABLE
 }

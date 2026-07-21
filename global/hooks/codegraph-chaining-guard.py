@@ -22,22 +22,23 @@ Escape hatch: `cg-chain-ok` anywhere in the tool input allows the call through.
 A genuinely wide orientation sweep across several subsystems is exactly where
 CodeGraph wins; the marker makes that an explicit, greppable assertion.
 
-State comes from the transcript, not a state file. The matcher scopes this hook
-to CodeGraph tools, so it never observes the intervening calls it needs in order
-to judge "consecutive" — but `transcript_path` already records them. No state to
-persist, no cleanup, no races between parallel subagents, and it works unchanged
-inside a subagent because each subagent has its own transcript.
+State is one small temp file keyed by a hash of `transcript_path`. The hook is
+wired for every tool call so it can remember the immediately preceding tool
+without opening the transcript. Keying on the path preserves subagent isolation:
+each subagent has its own transcript path, so concurrent subagents do not share
+state. Stale files are cleaned opportunistically on each call.
 
-Fails OPEN — a missing, unreadable, or malformed transcript allows. This is the
-opposite of the nested-notes guard's MCP path (#264), deliberately: that is a
-correctness gate where a false allow lands unreviewable prose on a maintainer's
-issue, while this is an efficiency gate where a false allow costs ~5.5k tokens
-and a false deny wedges real work mid-task.
+Fails OPEN — a missing transcript path, unreadable state, unwritable temp dir,
+or malformed input allows. This is the opposite of the nested-notes guard's MCP
+path (#264), deliberately: that is a correctness gate where a false allow lands
+unreviewable prose on a maintainer's issue, while this is an efficiency gate
+where a false allow costs ~5.5k tokens and a false deny wedges real work
+mid-task.
 
 Wire-up in ~/.claude/settings.json — note the ~/.claude/hooks path, a symlink
 bin/install.sh maintains, so moving the checkout leaves a dangling link this
 hook's own nonzero exit and bin/doctor.sh both report:
-  "hooks": { "PreToolUse": [ { "matcher": "Bash|mcp__.*codegraph.*",
+  "hooks": { "PreToolUse": [ { "matcher": ".*",
     "hooks": [ { "type": "command",
     "command": "python3 ~/.claude/hooks/codegraph-chaining-guard.py",
     "timeout": 10 } ] } ] }
@@ -52,13 +53,18 @@ Self-test: bin/test-codegraph-chaining-guard.sh
 
 from __future__ import annotations
 
+import hashlib
 import json
+import os
 import re
 import sys
+import tempfile
+import time
+from pathlib import Path
 
 MARKER = "cg-chain-ok"
-TAIL_BYTES = 256 * 1024  # transcripts grow unbounded; the answer is always near the end
-MAX_LINES = 400
+STATE_TTL_SECONDS = 24 * 60 * 60
+STATE_PREFIX = "codegraph-chain-"
 
 MCP_CODEGRAPH = re.compile(r"^mcp__.*codegraph", re.I)
 BASH_CODEGRAPH = re.compile(r"\bcodegraph\b[^|;&]*\bexplore\b", re.I)
@@ -90,61 +96,67 @@ def is_codegraph(tool_name: str, tool_input: dict) -> bool:
     return False
 
 
-def tail_lines(path: str) -> list[str]:
-    """Last MAX_LINES whole lines of the transcript. Returns [] on any problem."""
+def state_dir() -> Path:
+    override = os.environ.get("BINDLE_CODEGRAPH_GUARD_STATE_DIR")
+    if override:
+        return Path(override)
+    return Path(tempfile.gettempdir()) / "bindle-codegraph-chaining-guard"
+
+
+def state_path(transcript_path: str) -> Path:
+    digest = hashlib.sha256(
+        transcript_path.encode("utf-8", errors="surrogatepass")
+    ).hexdigest()
+    return state_dir() / f"{STATE_PREFIX}{digest}.json"
+
+
+def cleanup_stale(now: float | None = None) -> None:
+    """Best-effort cleanup so state files do not accumulate without bound."""
+    root = state_dir()
+    cutoff = (time.time() if now is None else now) - STATE_TTL_SECONDS
     try:
-        with open(path, "rb") as handle:
-            handle.seek(0, 2)
-            size = handle.tell()
-            handle.seek(max(0, size - TAIL_BYTES))
-            chunk = handle.read()
+        entries = list(root.glob(f"{STATE_PREFIX}*.json"))
     except OSError:
-        return []
-    text = chunk.decode("utf-8", errors="replace")
-    lines = text.splitlines()
-    if size > TAIL_BYTES and lines:
-        lines = lines[1:]  # first line is a partial record from the seek
-    return lines[-MAX_LINES:]
-
-
-def tool_uses(lines: list[str]) -> list[tuple[str, dict]]:
-    """Every (name, input) tool_use in the tail, oldest first."""
-    found: list[tuple[str, dict]] = []
-    for line in lines:
+        return
+    for entry in entries:
         try:
-            record = json.loads(line)
-        except (ValueError, TypeError):
-            continue  # a malformed line is skipped, not fatal — fail open
-        if not isinstance(record, dict):
+            if entry.stat().st_mtime < cutoff:
+                entry.unlink()
+        except OSError:
             continue
-        content = (record.get("message") or {}).get("content")
-        if not isinstance(content, list):
-            continue
-        for block in content:
-            if not isinstance(block, dict) or block.get("type") != "tool_use":
-                continue
-            name = block.get("name")
-            payload = block.get("input")
-            if isinstance(name, str):
-                found.append((name, payload if isinstance(payload, dict) else {}))
-    return found
 
 
-def previous_tool_use(
-    lines: list[str], tool_name: str, tool_input: dict
-) -> tuple[str, dict] | None:
-    """The tool call before this one, skipping this one's own transcript record.
+def read_previous(transcript_path: str) -> tuple[str, dict] | None:
+    try:
+        with state_path(transcript_path).open("r", encoding="utf-8") as handle:
+            record = json.load(handle)
+    except (OSError, ValueError, TypeError):
+        return None
+    if not isinstance(record, dict):
+        return None
+    name = record.get("tool_name")
+    payload = record.get("tool_input")
+    if not isinstance(name, str):
+        return None
+    return name, payload if isinstance(payload, dict) else {}
 
-    PreToolUse fires after the assistant message carrying the call is written, so
-    the newest tool_use in the tail is usually this very call. Exactly one such
-    self-match is dropped — dropping only one keeps a genuine identical repeat
-    (`cg(X)` then `cg(X)` again) detectable, since the second-newest entry is
-    then the real predecessor.
-    """
-    found = tool_uses(lines)
-    if found and found[-1] == (tool_name, tool_input):
-        found.pop()
-    return found[-1] if found else None
+
+def write_current(transcript_path: str, tool_name: str, tool_input: dict) -> None:
+    root = state_dir()
+    path = state_path(transcript_path)
+    tmp = path.with_suffix(f".{os.getpid()}.tmp")
+    payload = {"tool_name": tool_name, "tool_input": tool_input, "updated_at": time.time()}
+    try:
+        root.mkdir(mode=0o700, parents=True, exist_ok=True)
+        with tmp.open("w", encoding="utf-8") as handle:
+            json.dump(payload, handle, separators=(",", ":"))
+            handle.write("\n")
+        os.replace(tmp, path)
+    except OSError:
+        try:
+            tmp.unlink()
+        except OSError:
+            pass
 
 
 def main() -> None:
@@ -158,15 +170,19 @@ def main() -> None:
     tool_input = data.get("tool_input")
     if not isinstance(tool_input, dict):
         tool_input = {}
-    if not is_codegraph(tool_name, tool_input):
+    transcript = data.get("transcript_path")
+    if not isinstance(transcript, str) or not transcript:
+        return
+
+    cleanup_stale()
+    current_is_codegraph = is_codegraph(tool_name, tool_input)
+    previous = read_previous(transcript)
+    write_current(transcript, tool_name, tool_input)
+
+    if not current_is_codegraph:
         return
     if MARKER in json.dumps(tool_input, default=str):
         return
-
-    transcript = data.get("transcript_path")
-    if not isinstance(transcript, str) or not transcript:
-        return  # can't judge -> allow; CLAUDE.md still governs
-    previous = previous_tool_use(tail_lines(transcript), tool_name, tool_input)
     if previous is None or not is_codegraph(previous[0], previous[1]):
         return
 
