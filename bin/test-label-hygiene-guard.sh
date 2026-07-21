@@ -153,6 +153,104 @@ PY
   fi
 }
 
+# Extracts the commands a denial SUGGESTS. Convention, shared with check_merge:
+# a suggested command occupies its own line and stripped starts with `gh `.
+# Prose that merely names a subcommand in backticks is not on its own line and
+# so is not mistaken for advice.
+suggested_commands() { # suggested_commands <guard-output>
+  python3 - "$1" <<'PY'
+import json, sys
+try:
+    reason = json.loads(sys.argv[1])["hookSpecificOutput"]["permissionDecisionReason"]
+except Exception:
+    sys.exit(0)
+for line in reason.splitlines():
+    if line.strip().startswith("gh "):
+        print(line.strip())
+PY
+}
+
+# Asserts every suggested command is a shape `gh` accepts (#366). `gh issue
+# close` has no --remove-label flag, so advice pairing them cannot be run — and
+# neither a deny-decision assertion nor a message-substring assertion can see
+# that. Flag tables are transcribed from `gh issue close --help` and `gh issue
+# edit --help` (gh 2.96.0); the suite stays hermetic, so the stub `gh` on PATH
+# cannot be asked at runtime.
+expect_suggested_commands_runnable() { # <name> <denied-command> [cwd]
+  local name="$1" cmd="$2" cwd="${3:-$REPO}" out cmds bad
+  out="$(payload "$cmd" "$cwd" | python3 "$GUARD")"
+  cmds="$(suggested_commands "$out")"
+  if [ -z "$cmds" ]; then
+    FAIL=$((FAIL + 1))
+    echo "  FAIL: $name (denial suggested no runnable command at all)" >&2
+    return
+  fi
+  bad="$(
+    python3 - "$cmds" <<'PY'
+import sys
+
+FLAGS = {
+    ("issue", "close"): {"-c", "--comment", "--duplicate-of", "-r", "--reason",
+                         "-R", "--repo"},
+    ("issue", "edit"): {"--add-assignee", "--add-blocked-by", "--add-blocking",
+                        "--add-label", "--add-project", "--add-sub-issue",
+                        "-b", "--body", "-F", "--body-file", "-m", "--milestone",
+                        "--parent", "--remove-assignee", "--remove-blocked-by",
+                        "--remove-blocking", "--remove-label",
+                        "--remove-milestone", "--remove-parent",
+                        "--remove-project", "--remove-sub-issue",
+                        "--remove-type", "-t", "--title", "--type",
+                        "-R", "--repo"},
+}
+
+for line in sys.argv[1].splitlines():
+    parts = line.split()
+    if len(parts) < 3:
+        print(f"{line!r}: not a complete gh invocation")
+        continue
+    key = (parts[1], parts[2])
+    known = FLAGS.get(key)
+    if known is None:
+        print(f"{line!r}: no flag table for `gh {key[0]} {key[1]}`")
+        continue
+    for tok in parts[3:]:
+        flag = tok.split("=", 1)[0]
+        if flag.startswith("-") and flag not in known:
+            print(f"{line!r}: `gh {key[0]} {key[1]}` has no {flag}")
+PY
+  )"
+  if [ -n "$bad" ]; then
+    FAIL=$((FAIL + 1))
+    echo "  FAIL: $name" >&2
+    while IFS= read -r line; do echo "    $line" >&2; done <<<"$bad"
+    return
+  fi
+  PASS=$((PASS + 1))
+  echo "  ok: $name"
+}
+
+# Runs the suggested command ahead of the original and asserts the guard then
+# allows it — proving the advice is not just well-formed but actually unblocks.
+expect_suggested_command_unblocks() { # <name> <denied-command> [cwd]
+  local name="$1" cmd="$2" cwd="${3:-$REPO}" out first fixed
+  out="$(payload "$cmd" "$cwd" | python3 "$GUARD")"
+  first="$(suggested_commands "$out" | head -1)"
+  if [ -z "$first" ]; then
+    FAIL=$((FAIL + 1))
+    echo "  FAIL: $name (denial suggested no command to run)" >&2
+    return
+  fi
+  fixed="$first && $cmd"
+  out="$(payload "$fixed" "$cwd" | python3 "$GUARD")"
+  if grep -q '"permissionDecision": "deny"' <<<"$out"; then
+    FAIL=$((FAIL + 1))
+    echo "  FAIL: $name (guard still denied after its own advice: $fixed)" >&2
+  else
+    PASS=$((PASS + 1))
+    echo "  ok: $name"
+  fi
+}
+
 echo "label-hygiene-guard self-test"
 
 # --- fixtures ---------------------------------------------------------------
@@ -172,10 +270,19 @@ expect allow "gh read-only" "gh issue view 266 --json labels"
 
 # --- R1: closing an issue that still carries a status: label ----------------
 expect deny "R1 close with status: label" "gh issue close 266"
-expect allow "R1 close with matching --remove-label" \
-  "gh issue close 266 --remove-label 'status: ready'"
+# `gh issue close` has no --remove-label flag, so the in-band escape is a real
+# `gh issue edit` chained ahead of it — which is what the REMOVE_LABEL parse
+# actually recognizes (#366; #350's "dead code" reading was wrong).
+expect allow "R1 close chained after a runnable gh issue edit --remove-label" \
+  "gh issue edit 266 --remove-label 'status: ready' && gh issue close 266"
 expect allow "R1 close, issue has no status: label" "gh issue close 900"
 expect_msg "status: ready" "R1 names the offending label" "gh issue close 266"
+expect_suggested_commands_runnable "R1 remediation is a runnable gh shape (#366)" \
+  "gh issue close 266"
+expect_suggested_command_unblocks "R1 remediation actually unblocks the close (#366)" \
+  "gh issue close 266"
+expect_suggested_commands_runnable "R2 remediation is a runnable gh shape" \
+  "gh pr merge 320 --squash"
 
 # --- R1 bypass: gh api PATCH state=closed -----------------------------------
 expect deny "R1 gh api state=closed bypass" \
