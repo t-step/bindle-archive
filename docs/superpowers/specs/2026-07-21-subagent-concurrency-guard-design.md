@@ -179,7 +179,6 @@ anything, so nothing should suppress that.
 | `bin/test-subagent-concurrency-guard.sh` | new — hermetic self-test |
 | `bin/install-claude-hooks.sh` | new `hook_table` rows (`PreToolUse` + `PostToolUse`), new `--guard subagent-concurrency` selector, usage strings |
 | `bin/test-install-claude-hooks.sh` | extend matcher/wiring assertions to cover the new guard |
-| `capabilities.json` | record the capability, `make check` reconciles |
 | `README.md` | add `subagent-concurrency` to the `--guard` name list |
 | `CHANGELOG.md` | entry marked **draft** until pressure-tested (RED → GREEN → REFACTOR), per this repo's skill-writing rule |
 
