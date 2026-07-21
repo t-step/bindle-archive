@@ -72,15 +72,17 @@ nested-notes;nested-notes-guard.py;PreToolUse;Bash|mcp__.*github.*
 label-hygiene;label-hygiene-guard.py;PreToolUse;Bash
 codegraph;codegraph-chaining-guard.py;PreToolUse;.*
 git-push-merged;git-push-merged-branch-guard.py;PreToolUse;Bash
+subagent-concurrency;subagent-concurrency-guard.py;PreToolUse;Agent
+subagent-concurrency;subagent-concurrency-guard.py;PostToolUse;Agent
 TABLE
 }
 
-GUARD_SELECTORS="nested-notes label-hygiene codegraph git-push-merged"
+GUARD_SELECTORS="nested-notes label-hygiene codegraph git-push-merged subagent-concurrency"
 
 usage_error() {
   echo "install-claude-hooks.sh: $1" >&2
   echo "usage: bin/install-claude-hooks.sh [status | install [SELECTORS] [--apply] | uninstall [SELECTORS] [--apply]] [--home DIR]" >&2
-  echo "       SELECTORS: --session | --guard <nested-notes|label-hygiene|codegraph|git-push-merged> (repeatable); default --session" >&2
+  echo "       SELECTORS: --session | --guard <nested-notes|label-hygiene|codegraph|git-push-merged|subagent-concurrency> (repeatable); default --session" >&2
   exit 2
 }
 
