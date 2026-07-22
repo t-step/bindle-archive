@@ -581,6 +581,40 @@ out="$(cd "$REPO" && bin/check.sh --content-only 2>&1)"
 
 check "discloses scope under --content-only too" contains "PARTIAL" "$out"
 
+# ===========================================================================
+# A skill whose content changed since its newest hashed rep series carries
+# evidence about text that no longer ships (#339). The banner is warn-only by
+# the recorded decision: it must name the drift and must not move the exit
+# code. Grandfathered (unrecorded-only) series must produce no banner at all.
+echo "stale-reps banner (#339):"
+
+REPO="$TMP/repo-stale-reps"
+build_repo "$REPO"
+cp "$REPO_ROOT/bin/skill-content-id.sh" "$REPO/bin/skill-content-id.sh"
+chmod +x "$REPO/bin/skill-content-id.sh"
+mkdir -p "$REPO/skills/demo"
+printf 'demo body\n' >"$REPO/skills/demo/SKILL.md"
+printf '%s\n' '**Content:** unrecorded' >"$REPO/skills/demo/PRESSURE-TESTS.md"
+(cd "$REPO" && git add -A &&
+  git -c user.email=t@t -c user.name=t commit -qm 'add demo skill')
+
+out="$(cd "$REPO" && bin/check.sh 2>&1)"
+base_status=$?
+check "grandfathered-only series produce no banner" \
+  not_contains "stale reps:" "$out"
+
+printf '%s\n' '**Content:** sha256:000000000000' \
+  >"$REPO/skills/demo/PRESSURE-TESTS.md"
+(cd "$REPO" && git add -A &&
+  git -c user.email=t@t -c user.name=t commit -qm 'hashed series')
+
+out="$(cd "$REPO" && bin/check.sh 2>&1)"
+status=$?
+check "names the drifted skill in a stale-reps warning" \
+  contains "demo: STALE" "$out"
+check "says the banner is warn-only" contains "warn-only" "$out"
+check "stale reps do not change the exit code" test "$status" -eq "$base_status"
+
 # --- result ----------------------------------------------------------------
 echo
 echo "tests: ${pass} passed, ${fail} failed"
