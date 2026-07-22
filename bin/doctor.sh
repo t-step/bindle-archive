@@ -463,6 +463,37 @@ notes_section() {
     missing_count=$((missing_count + 1))
   fi
 
+  # Denylist visibility (#271). Informational only: the file is optional by
+  # design, so absence is never a counted finding — same shape as the hooks
+  # section's "installed, not wired" lines. Resolution mirrors
+  # bin/check-private-info.sh: explicit override, then the notes home root,
+  # then the deprecated ~/.claude-kit read fallback.
+  local denylist_path="" denylist_via="" denylist_terms
+  if [ -n "${BINDLE_DENYLIST:-}" ]; then
+    denylist_path="$BINDLE_DENYLIST"
+    denylist_via=" (via BINDLE_DENYLIST)"
+  elif [ -n "${CLAUDE_KIT_DENYLIST:-}" ]; then
+    denylist_path="$CLAUDE_KIT_DENYLIST"
+    denylist_via=" (via CLAUDE_KIT_DENYLIST, deprecated)"
+  elif [ -f "$notes_dir/private-denylist.txt" ]; then
+    denylist_path="$notes_dir/private-denylist.txt"
+  elif [ -f "${HOME}/.claude-kit/private-denylist.txt" ]; then
+    denylist_path="${HOME}/.claude-kit/private-denylist.txt"
+    denylist_via=" (deprecated location — migrate it to the notes home root)"
+  fi
+  if [ -n "$denylist_path" ] && [ -f "$denylist_path" ]; then
+    # Not `|| echo 0`: grep -c already prints 0 (and exits 1) on no match —
+    # the fallback would print a second 0 and split this line in two. The
+    # `|| true` swallows only the exit code (this script runs set -e).
+    denylist_terms="$(grep -cvE '^[[:space:]]*(#|$)' "$denylist_path" 2>/dev/null || true)"
+    [ -n "$denylist_terms" ] || denylist_terms=0
+    echo "  - denylist: $denylist_path$denylist_via — $denylist_terms term(s)"
+  elif [ -n "$denylist_path" ]; then
+    echo "  - denylist: none —$denylist_via names $denylist_path, but no file exists there"
+  else
+    echo "  - denylist: none at $notes_dir/private-denylist.txt (optional; scaffold: bin/notes-home.sh init-denylist)"
+  fi
+
   if [ -d "${HOME}/.claude-kit" ]; then
     echo "  - legacy ~/.claude-kit data present (not migrated automatically)"
   fi

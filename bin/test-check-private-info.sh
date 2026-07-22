@@ -69,10 +69,11 @@ echo "self-test coverage floor:"
 # The self-test prints "  self-test: <behaved>/<total> fixtures behaved". A
 # fixture deleted from the self-test lowers <total> while the exit code stays
 # 0 — coverage can shrink silently. Assert every fixture behaved AND that the
-# fixture count has not dropped below what #268 left in place (16), plus the
-# three #289 message/read-fallback fixtures. Raise FLOOR when fixtures are
-# added; never lower it to make a red suite green.
-FLOOR=19
+# fixture count has not dropped below what #268 left in place (16), the
+# three #289 message/read-fallback fixtures, and the #271 0-term-verdict
+# fixture. Raise FLOOR when fixtures are added; never lower it to make a red
+# suite green.
+FLOOR=20
 counts="$(sed -n 's|.*self-test: \([0-9]\{1,\}\)/\([0-9]\{1,\}\) fixtures behaved.*|\1 \2|p' <<<"$selftest_out")"
 behaved="${counts% *}"
 total="${counts#* }"
@@ -158,6 +159,84 @@ rc=$?
 
 check "a run with findings still fails" [ "$rc" -ne 0 ]
 check "a run with findings still discloses the skipped files" contains "PARTIAL" "$out"
+
+# ===========================================================================
+# The selection rule (docs/privacy-boundaries.md): a denylist term belongs on
+# the list only if it should appear ZERO times in tracked content, forever.
+# --audit-denylist proves each term against the tracked tree BEFORE the term
+# starts flagging every commit (#271). Raw truth: no private-ok vouching.
+echo "denylist audit (--audit-denylist):"
+
+D="$TMP/audit-clean"
+scope_repo "$D"
+printf '# a comment, not a term\nzz-unique-term\nzz-other-term\n' >"$TMP/audit-dl.txt"
+out="$(cd "$D" && BINDLE_DENYLIST="$TMP/audit-dl.txt" bin/check-private-info.sh --audit-denylist 2>&1)"
+rc=$?
+check "clean audit exits 0" [ "$rc" -eq 0 ]
+check "clean audit reports the audited term count" contains "2 term" "$out"
+
+D="$TMP/audit-hot"
+scope_repo "$D"
+printf 'this file mentions zz-flood-term\n' >"$D/hot.md"
+printf 'ZZ-FLOOD-TERM in caps  private-ok\n' >"$D/vouched.md"
+(cd "$D" && git add -A && git -c user.email=test@example.com -c user.name=test commit -q -m hot)
+printf 'zz-flood-term\nzz-cold-term\n' >"$TMP/audit-hot-dl.txt"
+out="$(cd "$D" && BINDLE_DENYLIST="$TMP/audit-hot-dl.txt" bin/check-private-info.sh --audit-denylist 2>&1)"
+rc=$?
+check "a term with tracked hits fails the audit" [ "$rc" -ne 0 ]
+check "the offending term is named" contains "zz-flood-term" "$out"
+check "the hit location is named" contains "hot.md" "$out"
+check "case-insensitive, and private-ok vouching does not hide a hit" \
+  contains "vouched.md" "$out"
+
+# short terms over-match (Ada hits adapter) — warn, never fail on the warning
+D="$TMP/audit-short"
+scope_repo "$D"
+printf 'zzq\n' >"$TMP/audit-short-dl.txt"
+out="$(cd "$D" && BINDLE_DENYLIST="$TMP/audit-short-dl.txt" bin/check-private-info.sh --audit-denylist 2>&1)"
+rc=$?
+check "a short term draws an over-match warning" contains "over-match" "$out"
+check "a warning alone does not fail the audit" [ "$rc" -eq 0 ]
+
+# no denylist resolves: nothing to audit — say so, point at the scaffold
+D="$TMP/audit-none"
+scope_repo "$D"
+mkdir -p "$TMP/audit-nohome"
+out="$(cd "$D" && env -u BINDLE_DENYLIST -u CLAUDE_KIT_DENYLIST -u BINDLE_NOTES_DIR \
+  -u CLAUDE_KIT_NOTES_DIR HOME="$TMP/audit-nohome" bin/check-private-info.sh --audit-denylist 2>&1)"
+rc=$?
+check "no denylist: audit exits 0" [ "$rc" -eq 0 ]
+check "no denylist: says nothing to audit" contains "nothing to audit" "$out"
+check "no denylist: points at the scaffold" contains "init-denylist" "$out"
+
+# The audit's case-insensitivity is load-bearing: a case-sensitive mutant must
+# MISS a caps-only hit the real audit catches — proving the -i flag is what
+# catches it, not an accident of the fixture.
+D="$TMP/audit-caps"
+scope_repo "$D"
+printf 'only ZZ-CAPS-TERM here\n' >"$D/caps.md"
+(cd "$D" && git add -A && git -c user.email=test@example.com -c user.name=test commit -q -m caps)
+printf 'zz-caps-term\n' >"$TMP/audit-caps-dl.txt"
+out="$(cd "$D" && BINDLE_DENYLIST="$TMP/audit-caps-dl.txt" bin/check-private-info.sh --audit-denylist 2>&1)"
+rc=$?
+check "real audit catches a caps-only hit" [ "$rc" -ne 0 ]
+
+D="$TMP/audit-caps-mutant"
+scope_repo "$D"
+printf 'only ZZ-CAPS-TERM here\n' >"$D/caps.md"
+(cd "$D" && git add -A && git -c user.email=test@example.com -c user.name=test commit -q -m caps)
+sed 's|git grep -Iin --fixed-strings|git grep -In --fixed-strings|' "$SCANNER" \
+  >"$D/bin/check-private-info.sh"
+chmod +x "$D/bin/check-private-info.sh"
+if cmp -s "$SCANNER" "$D/bin/check-private-info.sh"; then
+  printf '  ✗ audit case-mutant (mutation changed nothing — the sed expression is stale)\n'
+  fail=$((fail + 1))
+else
+  out="$(cd "$D" && BINDLE_DENYLIST="$TMP/audit-caps-dl.txt" bin/check-private-info.sh --audit-denylist 2>&1)"
+  rc=$?
+  check "case-sensitive mutant misses the caps-only hit (the -i is load-bearing)" \
+    [ "$rc" -eq 0 ]
+fi
 
 # ===========================================================================
 echo "self-test is failable:"

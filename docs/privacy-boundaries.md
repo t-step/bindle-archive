@@ -29,9 +29,44 @@ Never commit, to this repo or any project repo:
   work, and `$BINDLE_DENYLIST` overrides them all). One term per line; read by
   the scanner, never committed. **If no denylist resolves, these rules do not
   run** — a passing scan then covers the patterns above only, and says so.
+  Choosing terms well matters more than having the file — see
+  [Choosing denylist terms](#choosing-denylist-terms-the-selection-rule).
 
 "Private" is broader than "secret": a path or email that merely *identifies
 you* doesn't belong in a shareable repo even though it unlocks nothing.
+
+## Choosing denylist terms (the selection rule)
+
+The pattern rules match *shapes*; the denylist is the only rule that catches
+values which read as ordinary prose — a plain `@gmail.com` address matches no
+pattern at all. But the failure mode of a denylist is not an empty file, it is
+a **badly populated** one, so the selection rule is strict:
+
+**A term belongs on the denylist only if it should appear ZERO times in any
+repo you scan, forever.** Every occurrence is a finding, so a term that
+legitimately appears anywhere floods every commit with false positives until
+it is removed — which trains you to reflexively `private-ok` past findings,
+worse than having no denylist at all. Concretely:
+
+- good terms: a personal (non-relay) email, a colleague's/client's/employer's
+  name, an internal codename, a private hostname;
+- never add your own repo handle or anything that legitimately appears in a
+  repo you work on;
+- avoid short fragments (under ~4 characters): matching is case-insensitive
+  fixed substrings, so `Ada` hits `adapter`.
+
+From no denylist to one that does not false-positive:
+
+1. `bin/notes-home.sh init-denylist` scaffolds a comments-only template at the
+   notes home root (previewed; never overwrites an existing denylist);
+2. add terms per the rule above, one per line;
+3. prove them: `bin/check-private-info.sh --audit-denylist` greps every term
+   against tracked content — raw hits, no `private-ok` vouching — and fails
+   any term that already appears. Re-run it whenever you add a term; nothing
+   else re-checks a term after it lands, so an unaudited list rots silently.
+
+`bin/doctor.sh` reports whether a denylist resolves and how many terms it
+carries (informational — the file is optional by design).
 
 ## Why session memory writes outside project repos
 

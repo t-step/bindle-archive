@@ -240,6 +240,37 @@ out="$(env -u BINDLE_NOTES_DIR CLAUDE_KIT_NOTES_DIR="$NOTES_LEGACY" "$REPO/bin/d
 check "resolved from CLAUDE_KIT_NOTES_DIR" contains "via CLAUDE_KIT_NOTES_DIR (deprecated))" "$out"
 check "notes deprecation note present" contains "CLAUDE_KIT_NOTES_DIR is deprecated" "$out"
 
+# The denylist is optional by design (#271): doctor reports whether one
+# resolves as an INFO line, never a counted finding — a fresh install must
+# not go red over a file the operator may never want.
+echo "  8d. denylist present at the notes home — reported with a term count:"
+NOTES_DL="$TMP/notes-dl"
+mkdir -p "$NOTES_DL/projects/demo-project"
+printf '# comment\nterm-one\nterm-two\n' >"$NOTES_DL/private-denylist.txt"
+out="$(env -u CLAUDE_KIT_NOTES_DIR -u BINDLE_DENYLIST -u CLAUDE_KIT_DENYLIST \
+  BINDLE_NOTES_DIR="$NOTES_DL" "$REPO/bin/doctor.sh" --home "$HOME_DIR" 2>&1)"
+status=$?
+check "denylist line names the file" contains "$NOTES_DL/private-denylist.txt" "$out"
+check "denylist term count reported" contains "2 term" "$out"
+check "presence keeps exit zero" exit_is "$status" 0
+
+# A comments-only file (exactly what init-denylist scaffolds) is 0 terms —
+# and `grep -c … || echo 0` prints "0" TWICE in that case, mangling the line.
+printf '# comments only, no terms yet\n' >"$NOTES_DL/private-denylist.txt"
+out="$(env -u CLAUDE_KIT_NOTES_DIR -u BINDLE_DENYLIST -u CLAUDE_KIT_DENYLIST \
+  BINDLE_NOTES_DIR="$NOTES_DL" "$REPO/bin/doctor.sh" --home "$HOME_DIR" 2>&1)"
+check "a 0-term denylist reports a clean single-line count" contains "— 0 term(s)" "$out"
+
+echo "  8e. no denylist — info line with the scaffold pointer, not a finding:"
+NOTES_NODL="$TMP/notes-nodl"
+mkdir -p "$NOTES_NODL/projects/demo-project"
+out="$(env -u CLAUDE_KIT_NOTES_DIR -u BINDLE_DENYLIST -u CLAUDE_KIT_DENYLIST \
+  BINDLE_NOTES_DIR="$NOTES_NODL" "$REPO/bin/doctor.sh" --home "$HOME_DIR" 2>&1)"
+status=$?
+check "absence names the expected path" contains "$NOTES_NODL/private-denylist.txt" "$out"
+check "absence points at the scaffold" contains "init-denylist" "$out"
+check "absence is not a counted finding — exit zero" exit_is "$status" 0
+
 # ===========================================================================
 echo "9. codex section:"
 REPO="$TMP/repo9"

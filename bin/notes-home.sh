@@ -16,13 +16,17 @@
 #   bin/notes-home.sh set <path> [--apply]    # persist BINDLE_NOTES_DIR
 #   bin/notes-home.sh migrate <path> [--apply] # copy notes to a new home
 #   bin/notes-home.sh reset [--apply]     # remove the persisted key
+#   bin/notes-home.sh init-denylist [--apply] # scaffold a denylist template
 #   bin/notes-home.sh ... --home DIR      # Claude home override (tests)
 #
-# Without --apply, `set`, `migrate`, and `reset` only PREVIEW: they print
-# exactly what would change and exit 0 with "no changes written". A TTY user
-# is prompted instead; answering y is equivalent to --apply. `migrate`
-# copies — it never deletes the old home, and it skips any project that
-# already exists at the destination.
+# Without --apply, `set`, `migrate`, `reset`, and `init-denylist` only
+# PREVIEW: they print exactly what would change and exit 0 with "no changes
+# written". A TTY user is prompted instead; answering y is equivalent to
+# --apply. `migrate` copies — it never deletes the old home, and it skips any
+# project that already exists at the destination. `init-denylist` writes a
+# comments-only private-denylist.txt template (docs/privacy-boundaries.md's
+# selection rule, no example terms) at the notes home root and never
+# overwrites an existing denylist.
 #
 # Exit codes:
 #   0  success (including previews and no-ops)
@@ -38,7 +42,7 @@ APPLY=false
 
 usage_error() {
   echo "notes-home.sh: $1" >&2
-  echo "usage: bin/notes-home.sh [status | set <path> [--apply] | migrate <path> [--apply] | reset [--apply]] [--home DIR]" >&2
+  echo "usage: bin/notes-home.sh [status | set <path> [--apply] | migrate <path> [--apply] | reset [--apply] | init-denylist [--apply]] [--home DIR]" >&2
   exit 2
 }
 
@@ -53,7 +57,7 @@ while [ $# -gt 0 ]; do
       APPLY=true
       shift
       ;;
-    status | set | migrate | reset)
+    status | set | migrate | reset | init-denylist)
       [ -z "$SUBCMD" ] || usage_error "more than one subcommand given"
       SUBCMD="$1"
       shift
@@ -72,7 +76,7 @@ done
 if [ -z "$SUBCMD" ] && [ -n "$TARGET" ]; then
   usage_error "unknown subcommand: $TARGET"
 fi
-if [ "$SUBCMD" = "status" ] || [ "$SUBCMD" = "reset" ]; then
+if [ "$SUBCMD" = "status" ] || [ "$SUBCMD" = "reset" ] || [ "$SUBCMD" = "init-denylist" ]; then
   [ -z "$TARGET" ] || usage_error "$SUBCMD takes no path argument"
 fi
 [ -n "$SUBCMD" ] || SUBCMD="status"
@@ -358,9 +362,80 @@ cmd_migrate() {
   echo "If you haven't yet, persist the new location: bin/notes-home.sh set $dest"
 }
 
+# denylist_template — the scaffold content. Comments only: the selection rule
+# travels with the file, and no example term can be mistaken for a real one.
+denylist_template() {
+  cat <<'TEMPLATE'
+# private-denylist.txt — personal terms the Bindle privacy scanner
+# (bin/check-private-info.sh) must never find in a repo. One term per line;
+# terms are case-insensitive fixed substrings; '#' lines and blanks are
+# ignored. This file is personal — never commit it.
+#
+# THE SELECTION RULE — a term belongs here only if it should appear ZERO
+# times in every repo you scan, forever:
+#   - good: a personal (non-relay) email, a colleague/client/employer name,
+#     an internal codename, a private hostname
+#   - bad: your own repo handle, or anything that legitimately appears in a
+#     repo you work on — one such term floods every commit with findings
+#   - bad: short fragments (under ~4 characters) — they over-match inside
+#     ordinary words (Ada hits adapter)
+#
+# After adding a term, prove it appears zero times in tracked content:
+#   bin/check-private-info.sh --audit-denylist
+#
+# Add your terms below, one per line, uncommented.
+TEMPLATE
+}
+
+cmd_init_denylist() {
+  # An explicit override points at the operator's own file, usually outside
+  # the notes home — a surface this script does not own. Report; never
+  # follow the override with a write (docs/runtime-security-privacy.md C1:
+  # local mutation of OWNED surfaces only).
+  local ov_name="" ov_path=""
+  if [ -n "${BINDLE_DENYLIST:-}" ]; then
+    ov_name="BINDLE_DENYLIST"
+    ov_path="$BINDLE_DENYLIST"
+  elif [ -n "${CLAUDE_KIT_DENYLIST:-}" ]; then
+    ov_name="CLAUDE_KIT_DENYLIST (deprecated; prefer BINDLE_DENYLIST)"
+    ov_path="$CLAUDE_KIT_DENYLIST"
+  fi
+  if [ -n "$ov_name" ]; then
+    if [ -f "$ov_path" ]; then
+      echo "a denylist already resolves via $ov_name ($ov_path) — nothing to scaffold."
+      return 0
+    fi
+    echo "ERROR: $ov_name is set but no file exists at $ov_path." >&2
+    echo "notes-home.sh writes only inside the notes home — create that file by hand, or unset the override and re-run." >&2
+    exit 1
+  fi
+
+  resolve_notes_home
+  local target="$NOTES_DIR/private-denylist.txt"
+  if [ -f "$target" ]; then
+    echo "denylist already exists at $target — never overwritten. Edit it by hand."
+    return 0
+  fi
+
+  echo "notes home: $NOTES_DIR (via $NOTES_SOURCE)"
+  echo "would create: $target"
+  echo
+  echo "template (comments only — you add the terms):"
+  denylist_template | sed 's/^/  /'
+
+  confirm_or_preview
+
+  mkdir -p "$NOTES_DIR"
+  denylist_template >"$target"
+  echo "written: $target"
+  echo "Add terms per the selection rule in the file, then prove each appears"
+  echo "zero times in tracked content: bin/check-private-info.sh --audit-denylist"
+}
+
 case "$SUBCMD" in
   status) cmd_status ;;
   set) cmd_set ;;
   reset) cmd_reset ;;
   migrate) cmd_migrate ;;
+  init-denylist) cmd_init_denylist ;;
 esac

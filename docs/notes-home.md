@@ -78,6 +78,13 @@ never deletes the old directory; removing that remains your call, later. Or
 copy the files yourself. Either way, keep the old directory until you are
 comfortable deleting it.
 
+`private-denylist.txt` does not exist until you create it.
+`bin/notes-home.sh init-denylist` scaffolds a comments-only template at the
+notes home root — the selection rule travels as comments, no example terms,
+and an existing denylist is never overwritten. See
+[privacy-boundaries.md](privacy-boundaries.md) for the rule itself and the
+audit that proves a term safe.
+
 ## Obsidian
 
 Obsidian reads folders of plain Markdown, which is exactly what this is. To see

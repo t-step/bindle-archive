@@ -13,6 +13,8 @@
 #   bin/check-private-info.sh              # scan all tracked files
 #   bin/check-private-info.sh FILE...      # scan specific files (pre-commit)
 #   bin/check-private-info.sh --self-test  # prove the patterns catch fixtures
+#   bin/check-private-info.sh --audit-denylist  # prove each denylist term
+#                                          # has ZERO tracked hits (#271)
 #
 # Personal denylist: one term per line (case-insensitive fixed strings; '#'
 # comments) at private-denylist.txt in the NOTES HOME ROOT — $BINDLE_NOTES_DIR
@@ -275,6 +277,18 @@ self_test() {
     printf '  ✗ self-test: missing-denylist message does not default to ~/.bindle\n'
     failed=1
   fi
+  # A 0-term denylist (a freshly scaffolded comments-only template) must
+  # yield a clean ONE-LINE verdict — `grep -c … || echo 0` prints "0" twice
+  # when the count is 0, splitting the verdict across two lines.
+  printf '# only comments, no terms yet\n' >"$t/deny-empty.txt"
+  advice="$(env -u CLAUDE_KIT_DENYLIST -u BINDLE_NOTES_DIR -u CLAUDE_KIT_NOTES_DIR \
+    BINDLE_DENYLIST="$t/deny-empty.txt" "$0" "$t/clean.md" 2>&1)"
+  if grep -qF '(0 denylist terms checked)' <<<"$advice"; then
+    pass=$((pass + 1))
+  else
+    printf '  ✗ self-test: 0-term denylist verdict is mangled\n'
+    failed=1
+  fi
   # ...and the deprecated location stays READABLE while never being advertised.
   mkdir -p "$t/kithome/.claude-kit"
   cp "$t/deny.txt" "$t/kithome/.claude-kit/private-denylist.txt"
@@ -286,7 +300,7 @@ self_test() {
     pass=$((pass + 1))
   fi
   rm -rf "$t"
-  printf '  self-test: %d/19 fixtures behaved\n' "$pass"
+  printf '  self-test: %d/20 fixtures behaved\n' "$pass"
   return "$failed"
 }
 
@@ -299,6 +313,51 @@ if [ "${1:-}" = "--self-test" ]; then
     echo "private-info self-test FAILED."
     exit 1
   fi
+fi
+
+# --- denylist audit (#271) --------------------------------------------------
+#
+# The selection rule (docs/privacy-boundaries.md): a term belongs on the
+# denylist only if it should appear ZERO times in tracked content, forever —
+# a term that legitimately appears floods every commit with findings. This
+# mode proves each term BEFORE it starts doing that. Raw truth on purpose:
+# no SKIP_FILES, no private-ok vouching — a vouched line still proves the
+# term lives in the repo.
+if [ "${1:-}" = "--audit-denylist" ]; then
+  echo "denylist audit:"
+  if ! git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+    echo "  ✗ not inside a git repository — nothing tracked to audit against"
+    exit 1
+  fi
+  if [ ! -f "$DENYLIST" ]; then
+    echo "  - no denylist at $DENYLIST_SUGGESTED — nothing to audit"
+    echo "    scaffold one: bin/notes-home.sh init-denylist"
+    exit 0
+  fi
+  audit_terms=0
+  while IFS= read -r term; do
+    case "$term" in '' | \#*) continue ;; esac
+    audit_terms=$((audit_terms + 1))
+    if [ "${#term}" -lt 4 ]; then
+      echo "  - warning: \"$term\" is only ${#term} chars — short terms over-match inside ordinary words"
+    fi
+    hits="$(git grep -Iin --fixed-strings -- "$term" 2>/dev/null || true)"
+    if [ -n "$hits" ]; then
+      hit_count="$(grep -c . <<<"$hits")"
+      finding "\"$term\" matches tracked content ($hit_count line(s)) — it would flag every commit:"
+      head -n 3 <<<"$hits" | sed 's/^/      /'
+      [ "$hit_count" -gt 3 ] && echo "      … and $((hit_count - 3)) more"
+    fi
+  done <"$DENYLIST"
+  echo
+  # shellcheck disable=SC2031 # only the audit loop above touches fail here
+  if [ "$fail" -eq 0 ]; then
+    ok "$audit_terms term(s) audited — zero tracked hits"
+    exit 0
+  fi
+  echo "Terms above already appear in tracked content — per the selection rule"
+  echo "(docs/privacy-boundaries.md) remove or narrow them before relying on the denylist."
+  exit 1
 fi
 
 echo "private-info scan:"
@@ -344,7 +403,10 @@ fi
 # run with no denylist proves the PATTERNS held, not that your personal terms
 # were absent. Never let those two print the same line.
 if [ -f "$DENYLIST" ]; then
-  denylist_terms="$(grep -cvE '^[[:space:]]*(#|$)' "$DENYLIST" 2>/dev/null || echo 0)"
+  # Not `|| echo 0`: grep -c already prints 0 (and exits 1) on no match, so
+  # the fallback would print a SECOND 0 and split the verdict across lines.
+  denylist_terms="$(grep -cvE '^[[:space:]]*(#|$)' "$DENYLIST" 2>/dev/null)"
+  [ -n "$denylist_terms" ] || denylist_terms=0
   DENYLIST_VERDICT="$denylist_terms denylist terms checked"
 else
   DENYLIST_VERDICT="pattern rules only — NO personal denylist loaded"
