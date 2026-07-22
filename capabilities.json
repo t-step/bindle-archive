@@ -169,7 +169,7 @@
       "name": "notes-home",
       "type": "command",
       "path": "commands/notes-home.md",
-      "description": "Show, set, migrate, or reset the Bindle notes home (point it at an Obsidian vault)",
+      "description": "Show, set, migrate, or reset the Bindle notes home (point it at an Obsidian vault), or scaffold a denylist template",
       "provider": {
         "claude": "installed",
         "codex": "unsupported"
@@ -356,7 +356,7 @@
       "name": "notes-home",
       "type": "script",
       "path": "bin/notes-home.sh",
-      "description": "Inspect and durably configure where Bindle's session workflows keep their notes (docs/notes-home.md): status/set/migrate/reset against BINDLE_NOTES_DIR, with a surgical, confirm-before-write settings.json edit; backs the /notes-home command.",
+      "description": "Inspect and durably configure where Bindle's session workflows keep their notes (docs/notes-home.md): status/set/migrate/reset against BINDLE_NOTES_DIR, with a surgical, confirm-before-write settings.json edit, plus init-denylist to scaffold a comments-only private-denylist.txt template (#271, never overwrites); backs the /notes-home command.",
       "provider": {
         "claude": "manual",
         "codex": "untested"

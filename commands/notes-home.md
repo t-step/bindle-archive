@@ -1,6 +1,6 @@
 ---
-description: Show, set, migrate, or reset the Bindle notes home (point it at an Obsidian vault)
-argument-hint: [status | set <path> | migrate <path> | reset]
+description: Show, set, migrate, or reset the Bindle notes home (point it at an Obsidian vault), or scaffold a denylist template
+argument-hint: [status | set <path> | migrate <path> | reset | init-denylist]
 allowed-tools: Bash(readlink:*), Bash(bin/notes-home.sh status:*)
 ---
 
@@ -30,7 +30,7 @@ Steps:
    checkout is missing, stop and tell the user to run `<bindle>/bin/notes-home.sh`
    from their Bindle checkout by hand (the manual fallback always works).
 2. Parse the argument: default to `status`; otherwise `set <path>`,
-   `migrate <path>`, or `reset`.
+   `migrate <path>`, `reset`, or `init-denylist`.
 3. `status`: run `<bindle>/bin/notes-home.sh status` and relay the result — where the
    notes home resolves, why, whether it's persisted in
    `~/.claude/settings.json`, and what's in it.
@@ -46,3 +46,11 @@ Steps:
    untouched and deleting it is their call, later.
 6. `reset`: preview, show the diff, explicit yes, `--apply`, and relay the
    fallback resolution note.
+7. `init-denylist`: run the preview, show the target path and the
+   comments-only template, get an explicit yes, then `--apply`. Never
+   suggest terms and never write terms yourself — the operator authors the
+   denylist by hand (its whole point is that its contents are personal).
+   Relay the follow-up: prove each added term with
+   `<bindle>/bin/check-private-info.sh --audit-denylist` (selection rule in
+   docs/privacy-boundaries.md). If the script reports a denylist already
+   exists or an override is set, relay that and stop — never work around it.

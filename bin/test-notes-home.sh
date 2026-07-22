@@ -39,7 +39,8 @@ trap 'rm -rf "$TMP"' EXIT
 
 # run_nh HOME_DIR CLAUDE_HOME [env VAR=... ...] -- ARGS...
 # Runs notes-home.sh with a scrubbed environment: fake $HOME, no
-# BINDLE_NOTES_DIR / CLAUDE_KIT_NOTES_DIR unless the caller passes them.
+# BINDLE_NOTES_DIR / CLAUDE_KIT_NOTES_DIR / denylist overrides unless the
+# caller passes them.
 run_nh() {
   local home_dir="$1" claude_home="$2"
   shift 2
@@ -49,7 +50,8 @@ run_nh() {
     shift
   done
   shift # the --
-  env -u BINDLE_NOTES_DIR -u CLAUDE_KIT_NOTES_DIR HOME="$home_dir" \
+  env -u BINDLE_NOTES_DIR -u CLAUDE_KIT_NOTES_DIR \
+    -u BINDLE_DENYLIST -u CLAUDE_KIT_DENYLIST HOME="$home_dir" \
     ${envs[@]+"${envs[@]}"} "$NH" --home "$claude_home" "$@"
 }
 
@@ -228,6 +230,59 @@ check "existing beta skipped" [ "$(cat "$DEST/projects/beta/profile.md")" = "alr
 check "skip is reported" contains "beta" "$out"
 check "source alpha still present" [ -f "$H/.bindle/projects/alpha/sessions/2026-01-01-x.md" ]
 check "source is never deleted notice" contains "old" "$out"
+
+echo
+echo "9b. init-denylist — scaffold, never overwrite (#271):"
+H="$TMP/h9b"
+CH="$TMP/h9b/.claude"
+mkdir -p "$CH"
+
+out="$(run_nh "$H" "$CH" -- init-denylist 2>&1)"
+status=$?
+check "preview exits 0" exit_is "$status" 0
+check "preview names the target path" contains "$H/.bindle/private-denylist.txt" "$out"
+check "preview says nothing was written" contains "no changes written" "$out"
+check "preview creates no file" [ ! -e "$H/.bindle/private-denylist.txt" ]
+
+out="$(run_nh "$H" "$CH" -- init-denylist --apply 2>&1)"
+status=$?
+check "apply exits 0" exit_is "$status" 0
+check "template written at the notes home root" [ -f "$H/.bindle/private-denylist.txt" ]
+check "template is comments and blanks only — zero live terms" \
+  [ "$(grep -cvE '^[[:space:]]*(#|$)' "$H/.bindle/private-denylist.txt")" = "0" ]
+check "template states the selection rule (zero occurrences)" \
+  grep -qi "zero" "$H/.bindle/private-denylist.txt"
+check "template points at the audit" \
+  grep -qF -- "--audit-denylist" "$H/.bindle/private-denylist.txt"
+
+printf 'zz-operator-term\n' >>"$H/.bindle/private-denylist.txt"
+before_sum="$(shasum -a 256 "$H/.bindle/private-denylist.txt" | awk '{print $1}')"
+out="$(run_nh "$H" "$CH" -- init-denylist --apply 2>&1)"
+status=$?
+check "existing denylist: exit 0" exit_is "$status" 0
+check "existing denylist: refusal is stated" contains "already exists" "$out"
+after_sum="$(shasum -a 256 "$H/.bindle/private-denylist.txt" | awk '{print $1}')"
+check "existing denylist: file byte-identical" [ "$before_sum" = "$after_sum" ]
+
+out="$(run_nh "$H" "$CH" BINDLE_NOTES_DIR="$TMP/h9b-vault" -- init-denylist --apply 2>&1)"
+check "BINDLE_NOTES_DIR target honored" [ -f "$TMP/h9b-vault/private-denylist.txt" ]
+
+# An explicit denylist override points OUTSIDE the notes home — notes-home.sh
+# writes only inside surfaces it owns, so it must refuse, never follow it.
+out="$(run_nh "$H" "$CH" BINDLE_DENYLIST="$TMP/h9b-own/dl.txt" -- init-denylist --apply 2>&1)"
+status=$?
+check "BINDLE_DENYLIST set, file missing: exit 1" exit_is "$status" 1
+check "BINDLE_DENYLIST set, file missing: nothing written there" [ ! -e "$TMP/h9b-own/dl.txt" ]
+check "BINDLE_DENYLIST set, file missing: override is named" contains "BINDLE_DENYLIST" "$out"
+
+printf '# already authored\n' >"$TMP/h9b-existing-dl.txt"
+out="$(run_nh "$H" "$CH" BINDLE_DENYLIST="$TMP/h9b-existing-dl.txt" -- init-denylist 2>&1)"
+status=$?
+check "BINDLE_DENYLIST resolves to a real file: no-op exit 0" exit_is "$status" 0
+
+out="$(run_nh "$TMP/h9c" "$TMP/h9c/.claude" -- init-denylist "$TMP/somewhere" 2>&1)"
+status=$?
+check "init-denylist takes no path argument — exit 2" exit_is "$status" 2
 
 echo
 echo "10. usage errors:"
