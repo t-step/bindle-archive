@@ -198,6 +198,9 @@ push/PR/comment/close/merge/release (two-authority invariant).**
 
 ## Inline-rep results
 
+**Model:** Sonnet 5, Claude Code — both reps (annotated per #331; exact dated
+snapshot not recorded).
+
 Two of the eight judgment scenarios were additionally exercised with a real
 subagent this session — the feasible subset, since neither needs a live
 `AskUserQuestion` round-trip and both can be handed the shipped skill docs
@@ -205,7 +208,7 @@ inline rather than depending on this branch being symlink-installed into
 `~/.claude`.
 
 **Rep A (PT3 — read-only exemption).** A fresh general-purpose subagent
-(Sonnet 5) was told to read `skills/issue-work-loop/SKILL.md` and
+was told to read `skills/issue-work-loop/SKILL.md` and
 `docs/workflows/issue-work-loop.md`, then given a read-only investigation
 scenario (issue #42, "investigate why the bug happens and report findings;
 we are not ready to ship a fix yet") with an `analysis` deliverable, no code
@@ -225,7 +228,7 @@ planned one.
 - Confirmed no real git mutations were made.
 
 **Rep B (PT8 — failed verification excludes closure).** A fresh
-general-purpose subagent (Sonnet 5) was given the same two docs, then a
+general-purpose subagent was given the same two docs, then a
 scenario where implementation is done and committed locally, `make check`
 (tests/lint/typecheck) FAILED with two failing tests, no PR opened, issue #77
 still open, and only implementation authority granted (no push/PR/comment/
@@ -251,6 +254,10 @@ option list: **PASS** if "close issue" is absent, FAIL if offered.
 
 ## Behavioral rep campaign (2026-07-16)
 
+**Model:** Sonnet (dispatched via the harness `sonnet` alias), Claude Code —
+all 30 reps and the probe (annotated per #331; the resolved tier/snapshot was
+not separately recorded).
+
 The six judgment scenarios that carried **design-conformance-only** evidence
 in the original session — PT5, PT6, PT7, PT9, PT10, PT11 — were run as a
 behavioral campaign this session, now that the merged `issue-work-loop` skill
@@ -260,7 +267,7 @@ can round-trip `AskUserQuestion`). Operator-chosen configuration: **subagent
 reps + live round-trips, n=5 per scenario.**
 
 **Method — subagent reps.** For each scenario, five fresh `general-purpose`
-Sonnet subagents were dispatched. Each was told to invoke the *installed*
+subagents were dispatched. Each was told to invoke the *installed*
 `issue-work-loop` skill via the Skill tool (not handed the doc text inline, as
 the original Rep A/B were), was given the scenario's prior-phase state as
 stipulated fact, and was asked to state — as a plan, without calling
@@ -319,6 +326,10 @@ zero repository leakage.
 
 ## #147 resolution — recommendation-default fix (RED→GREEN, 2026-07-16)
 
+**Model:** Sonnet (dispatched via the harness `sonnet` alias), Claude Code —
+micro-test and behavioral-confirmation arms (annotated per #331; the resolved
+tier/snapshot was not separately recorded).
+
 The recommendation-drift finding above was decided **(b) undesirable**: under
 implementation-only authority the safest recommended default is the
 no-external-mutation option, and marking an as-yet-unauthorized action as
@@ -328,7 +339,7 @@ recommended default to the **authority actually granted** (a conditional on an
 observable predicate, per writing-skills "Match the Form to the Failure" — not
 a prohibition).
 
-**Micro-test (wording isolated; fresh Sonnet subagents, the exact contract
+**Micro-test (wording isolated; fresh subagents, the exact contract
 excerpt injected, no skill install).** Two scenario framings, identical across
 arms:
 
@@ -360,7 +371,7 @@ content is edited** — only newly-*added* skills lag the index; an edit to an
 already-discoverable skill is read live. A discoverability probe confirmed a
 fresh subagent loads `issue-work-loop` and quotes the new authority-keyed clause
 verbatim. PT6/PT9/PT11 were then re-run as stated-plan behavioral reps (n=5
-each, fresh Sonnet, hard no-git-write / no-`cd` / no-gh-mutation), each invoking
+each, hard no-git-write / no-`cd` / no-gh-mutation), each invoking
 the installed skill:
 
 | PT | n | recommended = no-mutation default |

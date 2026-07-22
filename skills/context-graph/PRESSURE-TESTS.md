@@ -26,7 +26,7 @@
    graduation-blocking ("Graduation is blocked if any provider can bypass,
    reinterpret, or silently repair endpoint legality").
 2. **Behavioral RED → GREEN wording micro-tests.** Fresh `general-purpose`
-   (sonnet) subagents, skill guidance injected vs. absent, verifying the
+   subagents, skill guidance injected vs. absent, verifying the
    SKILL.md prose changes agent behavior on the two discipline behaviors the
    skill uniquely encodes (project-identity non-inference; candidate authority /
    no silent ontology repair).
@@ -84,6 +84,10 @@ accepted proposals regardless of producer; and direct-CLI and skill-assisted
 paths return identical validation failures for the same illegal proposal.
 
 ## Layer 2 — behavioral RED → GREEN (wording micro-tests)
+
+**Model:** Sonnet (dispatched via the harness `sonnet` alias), Claude Code —
+all arms (annotated per #331; the resolved tier/snapshot was not separately
+recorded).
 
 **Method.** Per superpowers:writing-skills, the skill's operative guidance was
 injected into the subagent's context (system-prompt-equivalent), *not* discovered
@@ -153,7 +157,11 @@ it through the **Skill tool** — not injected guidance. Both scenarios were re-
 as live-discovery reps and graded from the subagents' raw JSONL transcripts
 (`grep '"name":"Skill"'` for a real invocation), never from their self-reports.
 
-**Method.** Fresh `general-purpose` (sonnet) subagents, one realistic authoring
+**Model:** Sonnet (dispatched via the harness `sonnet` alias), Claude Code —
+all reps (annotated per #331; the resolved tier/snapshot was not separately
+recorded).
+
+**Method.** Fresh `general-purpose` subagents, one realistic authoring
 task each, the skill *not* named and no tool prohibition — the point is to see
 whether the trigger fires on its own. Two-axis grade: (1) *discovery* — did the
 transcript carry a real `"name":"Skill"` call loading `context-graph`
@@ -207,6 +215,10 @@ recorded as-is: discovery is reliable but not universal, and the underlying
 invariant is source-discoverable regardless.
 
 ## Layer 4 — Codex adapter live proof (2026-07-18, issue #211)
+
+**Model:** gpt-5.5, Codex CLI (`codex exec`) — a different provider *and*
+model from the Claude Code layers above (annotated per #331; the CLI version
+for this run was not recorded).
 
 The Codex adapter deferral is **discharged**. A real Codex CLI session was run
 from the `cover-story` checkout with:

@@ -46,8 +46,12 @@ improvement trail; see the stated limit on what those 5 reps do and do not prove
 
 ## Method
 
+**Model:** Sonnet (dispatched via the harness `sonnet` alias), Claude Code —
+every series in this file (annotated per #331; the resolved tier/snapshot was
+not separately recorded).
+
 Per superpowers:writing-skills (RED → GREEN → REFACTOR). Fresh `general-purpose`
-(sonnet) subagents, each in its own throwaway fixture repo — a realistic mini
+subagents, each in its own throwaway fixture repo — a realistic mini
 Python library (`widgetlib`) with a `VERSION`, a `CHANGELOG.md`, a release tag,
 and conventional commits since that tag (`feat:` + `fix:`). Fixtures are **not**
 named after the skill. Grade the filesystem + the subagent transcript

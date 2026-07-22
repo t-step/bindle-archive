@@ -27,6 +27,13 @@ run). 5 reps per variant; the filesystem — not the agent's self-report — is 
 ground truth. Baseline (RED) runs the scenario with no skill; GREEN runs the real
 command with the skill available.
 
+**Model:** per series (annotated per #331; exact dated snapshots not
+recorded), Claude Code throughout — Claims 1, 1a, 2, 3 (incl. 3a/3b), 4, 4a:
+Opus 4.8 (the original campaign — sub-claim 1b's header and Claim 4's own
+note name the bracket); sub-claim 1b: Haiku 4.5; sub-claim 1c: Sonnet 5;
+Claim 5: Sonnet 5 reps, graded on Opus 4.8; Claim 6: Sonnet 5. Sub-claim 3c
+is a mechanical scanner test — no rep model applies.
+
 ## Claim 1 — `/session-end` writes notes outside the repo (Rule 1)
 
 **Status: VERIFIED (2026-07-05).**
@@ -291,8 +298,9 @@ attributable to the command (even though GREEN agents also invoke the ambient
 rules as *additional* reasons to defer). Note the GREEN subagents had full tools:
 in the real harness the command's `allowed-tools` (Bash limited to read-only git +
 `date`) is a second, structural backstop these agents lacked — so this tests the
-*instruction's* binding force, the weaker of the two guards. Model: Opus 4.8; a
-weaker model asked to "tidy up" remains the most likely place this breaks.
+*instruction's* binding force, the weaker of the two guards. A
+weaker model asked to "tidy up" remains the most likely place this breaks
+(bracket per the `Model:` field above).
 
 **Caveat — closed by sub-claim 4a (2026-07-07):** the momentum prompt above did
 not test an *explicit* "tidy up before we start" request. Sub-claim 4a does, with
@@ -310,8 +318,8 @@ lands the line in `profile.md`. This is the core behavior the old one-line
 suggestion lacked (see the design spec,
 `docs/superpowers/specs/2026-07-13-profile-proposals-queue-design.md`).
 
-Method (mirrors Claim 1's fixture style): fresh **Sonnet 5** general-purpose
-subagents, graded on Opus. Each rep gets its own throwaway git repo mimicking a
+Method (mirrors Claim 1's fixture style): fresh general-purpose
+subagents (bracket per the `Model:` field above), graded on Opus. Each rep gets its own throwaway git repo mimicking a
 mid-work session (committed `widget.py`/`README.md` + one uncommitted change)
 plus its own notes-home fixture (`BINDLE_NOTES_DIR` override — every arm, per
 sub-claim 1c's fix). The `/session-end` **command text and skill are pasted in**

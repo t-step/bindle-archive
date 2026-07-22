@@ -22,8 +22,13 @@ records what was actually pressure-tested with subagents, so nobody has to
 guess which claims are verified and which are still draft. Closes issue #14.
 
 This skill had no pressure test at all before this log — a draft since it
-shipped. Model: Sonnet 5 throughout (this campaign's main-loop model; no
-`model` override needed), 3 reps per arm. Ground truth is the filesystem —
+shipped. 3 reps per arm.
+
+**Model:** Sonnet 5, Claude Code — every series in this file (the campaign's
+main-loop model, no `model` override; annotated per #331, exact dated
+snapshots not recorded).
+
+Ground truth is the filesystem —
 `git log`/`git diff --stat` against each fixture's initial commit, `git grep`
 for tool names, and the actual `.pre-commit-config.yaml` / `Makefile` /
 `.github/workflows/ci.yml` contents — never the agent's chat self-report.
@@ -122,7 +127,7 @@ changed behavior, and a candidate flagship claim for a future rerun.
   bypassed in both arms (fixture instructions told reps to default rather
   than block on a question) — untested whether either arm would have
   correctly paused for a real operator instead of guessing.
-- **Weaker/other-model brackets** are untested; this ran on Sonnet 5 only.
+- **Weaker/other-model brackets** are untested (see the `Model:` field above).
 
 ## #65 rerun — harder "half-migrated" fixture (the detect-vs-impose stressor #14 lacked)
 
@@ -130,7 +135,8 @@ changed behavior, and a candidate flagship claim for a future rerun.
 on Sonnet 5.** The skill-naive baseline held 4/4; the sole ruff-imposition
 across all 7 reps this campaign occurred *with* the skill loaded, not without.
 Closes the #65 verification gap by answering its question rather than by
-proving the skill load-bearing. Model: Sonnet 5, 7 reps total. Ground truth is
+proving the skill load-bearing. 7 reps total (model per the file-wide
+`Model:` field above). Ground truth is
 the filesystem (`git grep -i ruff` excluding `.gitignore`/Makefile-clean
 `.ruff_cache` cache paths, `[tool.*]` survival, config file presence) plus each
 subagent's own JSONL transcript grepped for a real `Skill` tool-use — never the
@@ -211,6 +217,7 @@ vs. naive test of the "ruff consolidation" temptation, more reps).
 - **A JS/TS or mixed-language repo** (the "eslint in a pure-Python repo"
   mistake) remains untested — a different named mistake, out of scope for the
   #65 "detect vs. impose" gap.
-- **Weaker/other-model brackets** remain untested; this ran on Sonnet 5 only. A
+- **Weaker/other-model brackets** remain untested (see the `Model:` field
+  above). A
   weaker model is the most likely place a naive baseline would actually fail and
   the skill would earn its keep.

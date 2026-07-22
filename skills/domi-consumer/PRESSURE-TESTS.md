@@ -22,7 +22,10 @@ records what has actually been pressure-tested with subagents, so nobody has to
 guess which claims are verified. Closes issue #107 (the reps deliberately
 deferred in the #58 session that shipped the draft skill).
 
-**Method.** Fresh `general-purpose` subagents (Sonnet 5), each in its own
+**Model:** Sonnet 5, Claude Code — every series in this file (annotated per
+#331; exact dated snapshot not recorded).
+
+**Method.** Fresh `general-purpose` subagents, each in its own
 throwaway git fixture repo — never named after the skill under test. 5 reps per
 arm. The **filesystem and the JSONL transcript are ground truth**, not the
 agent's self-report: every arm was scored by grepping the transcript for a real
@@ -163,7 +166,8 @@ RED→GREEN→REFACTOR.
 
 ## Not yet pressure-tested (still open)
 
-- **Weaker/other model brackets.** All arms ran on Sonnet 5. The behaviors most
+- **Weaker/other model brackets.** All arms ran on the recorded model (see the
+  `Model:` field above). The behaviors most
   likely to be model-fragile: Claim 3's honest-`unverifiable` under pressure and
   Claim 4's no-fabrication both *passed at baseline* here, so a weaker model that
   fabricates `current`/a dependency is the scenario that would make those claims
