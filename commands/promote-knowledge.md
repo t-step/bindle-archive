@@ -23,10 +23,12 @@ Steps:
    via `<bindle>/bin/slugify.sh` (its Bindle-checkout root) when the Bindle repo is reachable, else by the
    documented slug rule.
 3. Read `projects/<project>/map.md` if it exists; note the
-   `evidence through:` cursor. No map → this is a **bootstrap** run
-   (contract: Cursor semantics).
+   `evidence through:` cursor and its ` · same-day:` list when present.
+   No map → this is a **bootstrap** run (contract: Cursor semantics).
 4. Enumerate evidence newer than the cursor: `sessions/*.md` and
-   `handoffs/*.md` by date-stamped filename, `profile.md` by mtime. If
+   `handoffs/*.md` by date-stamped filename — dated after the cursor
+   note's date, plus any file dated *equal* to it that is neither the
+   cursor note nor on its same-day list — and `profile.md` by mtime. If
    there is none: say "nothing new since <cursor>" and stop — write
    nothing.
 5. Read the evidence. For issues/PRs the notes reference, use
@@ -76,7 +78,9 @@ Steps:
    behind status-flipped in place, and never allocate an id for a retired
    entry that never had one. `none`, and every rejected or deferred
    candidate, gets no id at all.
-9. Advance the cursor line to the newest processed session note and update
+9. Advance the cursor line to the newest processed session note, rewrite
+   its ` · same-day:` list to exactly the other processed files sharing
+   that note's date (omit the segment when there are none), and update
    `updated:` — announce it, don't ask (contract rule). If the run was
    interrupted before step 8 completed, write nothing at all, cursor
    included.
