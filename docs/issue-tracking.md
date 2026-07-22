@@ -75,6 +75,25 @@ guard fired on none of them.
 - Before an issue moves to `status: ready` for delegation, it should carry a
   [delegated implementation packet](delegated-implementation-packets.md) —
   bounded objective, do-not-change scope, verification, and mutation authority.
+- **A scope claim requires a complement query, not an instance query.** A body
+  that quantifies over a set — the tells, while writing: *only*, *every
+  other*, *none*, *all of the*, *the exception* — must show an enumerating or
+  complement query in its Evidence section, never a single-instance match.
+  Evidence about one member proves nothing about the set: twice (#256, #257)
+  the instance was true, the generalization false, and the fix implemented
+  literally against the acceptance criteria would have closed green while
+  leaving the real defect open. A delegated worker has no reason to re-derive
+  the premise, so the check has to live in the body. Before/after, from #256:
+
+  ```sh
+  # instance query — proves ONE suite is unregistered; silent about the rest
+  grep map-entry-id .pre-commit-config.yaml        # -> no match
+
+  # complement query — enumerates the set and shows the gap (11 suites, not 1)
+  sed -n '/^test:/,/^$/p' Makefile | grep -o 'bin/test-[a-z0-9-]*\.sh' | sort -u > /tmp/mk.txt
+  grep -o 'bin/test-[a-z0-9-]*\.sh' .pre-commit-config.yaml | sort -u > /tmp/pc.txt
+  comm -23 /tmp/mk.txt /tmp/pc.txt
+  ```
 - Milestones are release-scoped (`v0.3.0`, `v0.4.0`, …). Assign an issue to
   a milestone when it is committed to that release.
 - Keep `status:` labels current when starting/blocking work — the dashboard
