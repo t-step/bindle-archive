@@ -275,6 +275,79 @@ code=$?
   ok "apply fails when the post-sync check reports a VERSION/manifest mismatch" ||
   bad "apply-gate-failure ($code): $out"
 
+# --- apply precondition: dirty target tree (#278) ---------------------------
+DIRTY="$TMP/dirty"
+git init -q "$DIRTY"
+git -C "$DIRTY" config user.email t@e.st
+git -C "$DIRTY" config user.name t
+git -C "$DIRTY" checkout -q -b main
+: >"$DIRTY/f"
+git -C "$DIRTY" add f
+git -C "$DIRTY" commit -qm base
+git -C "$DIRTY" remote add origin https://example.invalid/o/r.git
+echo "uncommitted" >>"$DIRTY/f"
+
+: >"$RP_STUB_LOG"
+out="$(cd "$DIRTY" && GITHUB_TOKEN=faketoken RC_CONFIG="$TMP/good.toml" RELEASE_PLEASE_CMD="$STUB" \
+  "$SEL" apply --approval-token eph-dirty 2>&1)"
+code=$?
+{ [ "$code" -eq 65 ] && printf '%s' "$out" | grep -qi 'uncommitted' && [ ! -s "$RP_STUB_LOG" ]; } &&
+  ok "apply refuses a dirty target tree (#278) -> exit 65, no invocation" ||
+  bad "apply-dirty-tree ($code): $out; log=$(cat "$RP_STUB_LOG")"
+
+# --- apply precondition: un-routed inherited release policy (#278, the #225
+# failure mode — an agent created release-PR artifacts while upstream owned
+# the version/timing call) ----------------------------------------------------
+PINNED="$TMP/pinned"
+git init -q "$PINNED"
+git -C "$PINNED" config user.email t@e.st
+git -C "$PINNED" config user.name t
+git -C "$PINNED" checkout -q -b main
+cat >"$PINNED/.domi-pin" <<PIN
+upstream: domattioli/DomI
+branch: main
+sha: $(printf 'a%.0s' {1..40})
+manifest_sha256: $(printf 'b%.0s' {1..64})
+pinned_at: 2026-07-13T00:00:00Z
+PIN
+git -C "$PINNED" add .domi-pin
+git -C "$PINNED" commit -qm base
+git -C "$PINNED" remote add origin https://example.invalid/o/r.git
+
+: >"$RP_STUB_LOG"
+: >"$SYNC_STUB_LOG"
+out="$(cd "$PINNED" && GITHUB_TOKEN=faketoken RC_CONFIG="$TMP/good.toml" RELEASE_PLEASE_CMD="$STUB" \
+  RELEASE_PLEASE_SYNC_CMD="$SYNC_STUB" \
+  "$SEL" apply --approval-token eph-pinned 2>&1)"
+code=$?
+{
+  [ "$code" -eq 66 ] &&
+    printf '%s' "$out" | grep -qi 'release-semver-governance' &&
+    printf '%s' "$out" | grep -qi 'routed' &&
+    [ ! -s "$RP_STUB_LOG" ]
+} &&
+  ok "apply refuses when inherited release policy has not been routed (#225 shape) -> exit 66, never invokes release-please" ||
+  bad "apply-unrouted-policy ($code): $out; log=$(cat "$RP_STUB_LOG")"
+
+# --inherited-policy-routed unblocks apply once a human confirms routing.
+: >"$RP_STUB_LOG"
+: >"$SYNC_STUB_LOG"
+out="$(cd "$PINNED" && GITHUB_TOKEN=faketoken RC_CONFIG="$TMP/good.toml" RELEASE_PLEASE_CMD="$STUB" \
+  RELEASE_PLEASE_SYNC_CMD="$SYNC_STUB" \
+  "$SEL" apply --inherited-policy-routed --approval-token eph-pinned2 2>&1)"
+code=$?
+{
+  [ "$code" -eq 0 ] &&
+    grep -q 'release-pr' "$RP_STUB_LOG" &&
+    grep -q -- '--token=faketoken' "$RP_STUB_LOG"
+} &&
+  ok "apply proceeds once --inherited-policy-routed is supplied" ||
+  bad "apply-routed ($code): log=$(cat "$RP_STUB_LOG")"
+
+# A target repo with no .domi-pin is unaffected by the gate (already exercised
+# by every earlier apply assertion against $FIX, which has none) — the FIX
+# assertions above staying green after this change IS that proof.
+
 # --- Release Please config: simple type, component-less tag, manifest is semver ---
 # The manifest version is NOT hardcoded — it advances every release (0.4.0 at
 # seed, 0.5.0 after the first cut, ...); assert it's a valid semver, not a value.

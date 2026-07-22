@@ -21,7 +21,11 @@ the consumer repo.
 
 1. Run the detector from your Bindle checkout:
    `bash <bindle>/bin/domi-status.sh --repo <consumer-repo-root>` (omit `--repo`
-   to default to the current repo).
+   to default to the current repo). To answer whether ONE category is
+   inherited — e.g. before a release decision — add
+   `--category <slug>` (a slug from the table below) instead: it prints
+   `inherited=true|false|malformed` directly, no verdict-table lookup needed.
+   release-captain's stop conditions use this mode.
 2. Read the exit code / verdict:
    - `not-a-domi-consumer` (2) — nothing to do.
    - `current` (0) — report the source and continue.
