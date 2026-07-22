@@ -1,6 +1,6 @@
 # Product boundary
 
-Affirmed through: v0.9
+Affirmed through: v0.10
 
 The standing product-boundary decision for Bindle, resolving issue #34 and
 refreshed 2026-07-19 per issue #283. This is a decision document — when a
