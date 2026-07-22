@@ -24,8 +24,11 @@ guess which claims are verified and which are still draft. Closes issue #15.
 This skill shipped in 0.2.0 with unit tests for its Python scripts
 (`tests/test_*.py`, run via `make check`) but no agent-behavior pressure test —
 those check the scripts do what they claim; this log checks whether an agent
-*uses* them correctly under realistic pressure. Model: Sonnet 5 throughout
-(this campaign's main-loop model; no `model` override needed), 3 reps per arm.
+*uses* them correctly under realistic pressure. 3 reps per arm.
+
+**Model:** Sonnet 5, Claude Code — every series in this file (the campaign's
+main-loop model, no `model` override; annotated per #331, exact dated
+snapshot not recorded).
 Ground truth is the filesystem — the written `license-compliance-report.md` /
 `license-compliance-findings.json`, and whether the target repo was mutated
 beyond those two files — never the agent's chat self-report.
@@ -168,7 +171,7 @@ font/asset cheatsheets are unchanged.
 - A **large-manifest** case (many real dependencies, only one problematic) is
   untested — this fixture used an empty manifest specifically to isolate the
   non-manifest phases.
-- **Weaker/other-model brackets** are untested; this ran on Sonnet 5 only.
+- **Weaker/other-model brackets** are untested (see the `Model:` field above).
 - The **Issue-Creation Gate** (never automatic, requires `gh auth status` +
   remote + explicit confirmation) was reached identically by all 6 reps
   (closing question asked, no issue created unprompted) but not itself

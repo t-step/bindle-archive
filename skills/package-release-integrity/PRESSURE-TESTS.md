@@ -51,7 +51,11 @@ arm-declaration rule and may include reps that tested a different skill.
 
 ## Method
 
-Fresh `general-purpose` (sonnet) subagents, each in its own throwaway fixture
+**Model:** Sonnet (dispatched via the harness `sonnet` alias), Claude Code —
+the Results series below (annotated per #331; the resolved tier/snapshot was
+not separately recorded). Later series record their own `Model:` lines.
+
+Fresh `general-purpose` subagents, each in its own throwaway fixture
 repo (realistic mini Python packages built under a scratch dir, **not** named
 after the skill). Realistic release prompts with **no skill hint** (GREEN) or a
 hard "do NOT invoke the Skill tool" prohibition (RED).
@@ -117,8 +121,10 @@ repo-supplied tools; no Claude-only primitive) but flagged one gap: the helper
 had **never been exercised under a real Codex session**. This section closes
 that gap — the last open item on #59's audit row.
 
-**Method.** Three real `codex exec` sessions (Codex CLI v0.143.0, model
-`gpt-5.5`, non-interactive, `workspace-write` sandbox), each run against a
+**Model:** gpt-5.5, Codex CLI v0.143.0 (annotated per #331).
+
+**Method.** Three real `codex exec` sessions (non-interactive,
+`workspace-write` sandbox), each run against a
 standalone copy of an in-repo fixture. Each prompt gave Codex only the portable
 contract (`docs/package-release-integrity.md`) + the helper path + the release
 context — **not** the command to run. Codex read the contract, formed the
@@ -143,8 +149,12 @@ campaign deferred (see caveats below).
 
 ## Direct Codex helper verification (2026-07-15, issue #118)
 
+**Model:** unrecorded, Codex CLI 0.144.4 (annotated per #331 — the session's
+model was not written down; the evidence here is the deterministic helper's
+own output, so the gap is noted rather than material).
+
 This follow-up ran the deterministic helper directly from a real Codex session,
-as required by #118. The session used Codex CLI `0.144.4`; the Claude-native
+as required by #118. The Claude-native
 `package-release-integrity` skill was neither installed in the repo/user Codex
 skill locations nor discovered in the session's skill catalog.
 
@@ -208,6 +218,9 @@ capability classification is `manual`: the helper is Codex-runnable, but the
 Claude-native skill itself is not installed or discovered as a Codex skill.
 
 ## Defer-axis top-up attempt (2026-07-18, #212)
+
+**Model:** unrecorded, Claude Code (annotated per #331 — the dispatching
+session did not write the subagent model down; not retroactively guessed).
 
 An attempt to top the **defer axis** up toward 5 reps/variant per #212. Five
 reps run, one at a time, each in its own throwaway fixture outside any real
@@ -289,6 +302,9 @@ was not read; tracked in **#225**.
 has 3 credited reps on a realistic pin, all PASS.
 
 ## E-series — clean release, realistic pin (2026-07-18, #224)
+
+**Model:** unrecorded, Claude Code (annotated per #331 — the dispatching
+session did not write the subagent model down; not retroactively guessed).
 
 The retest #224 asked for: does D5's GO reproduce once the fixture's placeholder
 pin is gone? **It does not.** Three credited reps, three PASSes.

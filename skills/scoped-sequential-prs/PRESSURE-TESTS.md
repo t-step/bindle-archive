@@ -33,6 +33,10 @@ branch is scored by `git diff --name-only <root>..HEAD` (which files landed) and
 by grepping the committed `README.md` for later-stage terms, never the agent's
 self-report. 5 reps per variant.
 
+**Model:** per series (annotated per #331; exact dated snapshots not
+recorded), Claude Code throughout — Claims 1–2: Opus 4.8; Claims 3–4:
+Haiku 4.5; Claim 5: Sonnet 5.
+
 Two contamination vectors are measured independently:
 - **File-scope contamination** — did any file PR2/PR3 owns (`parser.py`,
   `evaluator.py`, or their tests) land in the PR1 commit, e.g. via `git add -A`?
@@ -93,7 +97,7 @@ records the verification, not a change — mirroring the `/handoff` and
   one to run to exercise that rule. **→ Now closed by Claim 2 (forward-stub
   temptation, breaking and non-breaking).**
 - **Shared-prerequisite pull-earlier** and **weaker models** are likewise
-  untested. This ran on Opus 4.8.
+  untested (bracket per the `Model:` field above).
 
 ## Claim 2 — scope holds with NO plan and under a forward-code-stub temptation; and the gate fires on a leak
 
@@ -103,7 +107,7 @@ Closes three of Claim 1's caveats at once: (a) **no committed plan** doing the
 file-scoping, (b) a forward-***code***-stub temptation, and (c) the contamination
 gate actually **catching** a leak.
 
-**Method.** Fresh general-purpose subagents (Opus 4.8), each in its own throwaway
+**Method.** Fresh general-purpose subagents, each in its own throwaway
 repo **outside** claude-kit. Unlike Claim 1 there is **no `RECONSTRUCTION-PLAN.md`**
 — nothing enumerates per-stage file ownership, so the agent must draw the PR1/PR2
 line itself. The two concerns are **entangled inside one file** (`app.py`): concern
@@ -161,7 +165,7 @@ unchanged; this entry records verification.
 - **Ambiguous seams.** Here the correct PR1/PR2 line, though unplanned, was fairly
   discoverable (validation vs. the other concern). A pile where the *seam itself*
   is ambiguous — which stage owns a shared helper — is untested.
-- **Weaker models.** Opus 4.8 only. **→ Now addressed by Claim 3 below (Haiku 4.5).**
+- **Weaker models.** One bracket only (see `Model:` above). **→ Now addressed by Claim 3 below (Haiku 4.5).**
 
 ## Claim 3 — weaker-model rerun on Haiku 4.5: core discipline holds; the name-only gate's in-file blind spot becomes agent-triggered
 

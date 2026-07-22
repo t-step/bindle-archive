@@ -126,6 +126,14 @@ re-check the arm after any fixture change made to satisfy the checklist.
 A rep's environment is uncontrolled unless you control it. State these
 per campaign:
 
+- **Worker model.** The single largest determinant of a rep's outcome, and a
+  controlled input like any other: declare which model (and provider — Claude
+  Code vs. Codex) runs each series *before dispatch*, and record it per
+  § Recording below. `docs/workflow-eval.md`'s result schema already requires
+  exact model/provider/version as a state-based field; this bullet is where
+  the protocol of record catches up (#331). Reps run under Codex
+  (`codex exec`) are a different provider *and* a different model — never
+  record them interchangeably with Claude Code reps.
 - **Network.** Subagents reach the network unprompted — a #212 rep queried
   `pypi.org` twice without being asked. Either treat reps as network-capable by
   default and name fixtures accordingly, or sandbox explicitly. Don't assume
@@ -178,8 +186,25 @@ interactive choice; sequential is the default and the recommendation.
 - credited reps (PASS/FAIL) **and** void reps, with the void rate;
 - the fixture checklist result for each fixture;
 - the environment controls in force;
+- the **model** that produced the series — a `**Model:**` line in each
+  series' method statement, naming exact model/provider/version, e.g.
+  "**Model:** Sonnet 5 (`claude-sonnet-5`), Claude Code" or "**Model:**
+  gpt-5.5, Codex CLI 0.143.0". Granularity is **per-series, with a
+  per-rep override**: one
+  line covers every rep in the series; a series that mixes models must
+  instead name the model per rep or per arm (the fork-pr-flow Fable+Haiku
+  campaign is the worked example). A series whose model is not known writes
+  `**Model:** unrecorded` — an explicit unknown, never silence, and never a
+  guessed value more precise than the evidence (a historical series known
+  only as "Sonnet 5" records that, not an invented dated snapshot);
 - a FAIL kept as a FAIL. A recorded failure that is neither fixed nor diagnosed
   is honest evidence; quietly dropping it is not.
+
+The `**Model:**` field is the **single source** for model provenance
+(#312/#323: one declared place). Prose that merely restates the series'
+model collapses into the field; prose in which the model is part of a
+*finding* — a cross-bracket comparison, a weaker-model failure analysis —
+stays, because that is evidence, not a caveat.
 
 Counts predating this protocol carry a caveat line saying so — they were
 gathered without arm attribution, and an unknown fraction may be void.
@@ -204,6 +229,13 @@ before the protocol landed is pre-protocol, including series in the two files
 that also carry compliant ones — and including a same-day series that predates
 the finding it produced. The discriminator is whether the series **declared its
 arm before dispatch**, not its date.
+
+The `**Model:**` field (#331) follows the same rule: historical series are
+**annotated with what is already known** — the model their own prose or
+session notes name, `unrecorded` where nothing does — and are **never re-run
+to learn their model**. The new field is not a re-run obligation, and an
+annotation is not a protocol credit: a pre-protocol series with a `Model:`
+line is still pre-protocol.
 
 ### What this does to #212's targets
 

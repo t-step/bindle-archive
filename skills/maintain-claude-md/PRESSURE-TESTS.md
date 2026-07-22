@@ -34,6 +34,9 @@ agent cleans up in-repo markers afterward (one did). 5 reps per variant.
 
 Two flagship lint claims are tested: **include integrity** and **command safety**.
 
+**Model:** per series (annotated per #331; exact dated snapshots not
+recorded), all Claude Code — Claims 1–4: Opus 4.8; Claims 5–6: Sonnet 5.
+
 ## Claim 1 — lint catches a loader stub whose `@`-include target is missing
 
 **Status: baseline passes; the skill's check is correct (2026-07-07).**
@@ -132,7 +135,8 @@ content), but the literal "stop" beat did not fire; a future edit could split
 "merge on request" from "halt when unsure." (2) One GREEN rep (green2) reworded
 existing lines and silently fixed the typo: the verbatim-preservation rule lives
 only in **Mode: update**, so a *merging* init agent isn't explicitly bound to keep
-typos — 4/5 did so by judgment, not by rule. (3) Model-dependent (Opus 4.8).
+typos — 4/5 did so by judgment, not by rule. (3) Model-dependent (see the
+`Model:` field above).
 
 ## Claim 4 — update is append-only and preserves existing content verbatim
 
@@ -167,7 +171,7 @@ variant because no task asked to touch it — its byte-for-byte preservation is
 corroborated but never actively tempted; a spec-rewrite scenario would test it
 directly. (2) The append-only win rests on the model recognizing "correct the
 record" as *supersede-don't-rewrite*; a weaker model may not. (3) Model-dependent
-(Opus 4.8).
+(see the `Model:` field above).
 
 ## Scoping decision for the non-flagship checks (issue #17)
 
@@ -247,7 +251,7 @@ notes actually name — a resolvable include silently pointing at the wrong
 file with **no such corroborating tell** (e.g., a same-named file relocated
 by mistake, with no sibling doc and no README mention) — is still untested and
 is where a real failure is more plausible. Weaker/other-model brackets are
-also untested; this ran on Sonnet 5 only.
+also untested (see the `Model:` field above).
 
 ## Claim 6 — lint catches (or a naive reader catches) governance duplicated in paraphrased prose that avoids the obvious keywords
 
@@ -290,7 +294,8 @@ structure, same order, obviously about version bumps). A paraphrase that
 restates governance more obliquely (e.g., folded into unrelated prose, or
 describing only the *consequence* of the policy rather than the policy
 itself) is untested and is where "keyword-based" detection is more likely to
-actually fail. Weaker/other-model brackets are untested; Sonnet 5 only.
+actually fail. Weaker/other-model brackets are untested (see the `Model:`
+field above).
 
 ## Not pressure-tested (still deferred)
 - **Byte budget.** Explicitly de-scoped above (issue #17) — heuristic, not a
@@ -299,7 +304,7 @@ actually fail. Weaker/other-model brackets are untested; Sonnet 5 only.
   incidentally (GREEN agents ran the whole table across Claims 1–6) but not
   independently RED-tested — same reasoning as the byte budget.
 - **Weaker models.** All runs (Claims 1–6) were on a single bracket each
-  (Opus 4.8 for Claims 1–4, Sonnet 5 for Claims 5–6) — no claim has been
+  (see the `Model:` field above) — no claim has been
   cross-checked across brackets yet.
 - **A less-generous include-mismatch fixture** (Claim 5) and **a more oblique
   governance paraphrase** (Claim 6) — see each claim's caveat.
