@@ -479,3 +479,16 @@ leakage); DomI HEAD `bf09fb5`, dirty 0; every fixture source md5 `ed459cc1…`,
 
 **Axis status: RED 2/2 FAIL → GREEN 5/5 PASS.** The defer axis is verified;
 `maturity` stays `tested`.
+
+## Contract change (2026-07-21, #242) — "Route, don't invoke" soft spot closed on paper; reps owed
+
+The known soft spot recorded in `SKILL.md` ("routes the call upstream; does
+not run DomI's own release-integrity") was settled by #242: routing under
+inherited policy now **also obliges invoking** the authority via
+`bin/domi-release-check.sh`, with `checker-unreachable` (exit 4) as the only
+legitimate — and explicitly degraded — verbal defer. The F/GREEN series above
+predate this obligation and say nothing about it.
+
+No protocol rep has yet exercised the invocation obligation on this arm. The
+campaign (2 reps this arm, D6/D7 release-decision wording) is filed as
+**#429** (v0.11.0), deferred so reps measure the merged, installed skill text.
