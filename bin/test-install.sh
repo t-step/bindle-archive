@@ -502,6 +502,28 @@ check "moved-checkout hook link is not reported as a conflict" not_contains "CON
 check "reinstall repairs the hook link" links_to "$REPO_MOVED/global/hooks/demo-guard.py" "$CLAUDE_HOME/hooks/demo-guard.py"
 check "repaired hook resolves" test -e "$CLAUDE_HOME/hooks/demo-guard.py"
 
+echo "install.sh run from inside a linked worktree resolves to the PRIMARY checkout, not the worktree (#411):"
+PRIMARY="$TMP/repo-worktree-guard"
+build_repo "$PRIMARY"
+mkdir -p "$PRIMARY/global/hooks"
+printf '#!/usr/bin/env python3\nprint("guard")\n' >"$PRIMARY/global/hooks/wt-guard.py"
+
+WT="$PRIMARY/.worktrees/fake-worktree"
+mkdir -p "$(dirname "$WT")"
+STAGE="$TMP/wt-stage"
+build_repo "$STAGE"
+mkdir -p "$STAGE/global/hooks"
+printf '#!/usr/bin/env python3\nprint("guard")\n' >"$STAGE/global/hooks/wt-guard.py"
+mv "$STAGE" "$WT"
+
+CLAUDE_HOME_WT="$TMP/wt-claude"
+out="$("$WT/bin/install.sh" --provider claude --home "$CLAUDE_HOME_WT" --bin-dir "$TMP/wt-bin" 2>&1)"
+check "hook symlinked to the PRIMARY checkout, not the worktree" \
+  links_to "$PRIMARY/global/hooks/wt-guard.py" "$CLAUDE_HOME_WT/hooks/wt-guard.py"
+check "skill symlinked to the PRIMARY checkout, not the worktree" \
+  links_to "$PRIMARY/skills/demo" "$CLAUDE_HOME_WT/skills/demo"
+check "worktree-run install still reports success" contains "Claude hooks:" "$out"
+
 # --- result ----------------------------------------------------------------
 echo
 echo "tests: ${pass} passed, ${fail} failed"
