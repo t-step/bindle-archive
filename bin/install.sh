@@ -60,6 +60,19 @@
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+# A linked worktree under this repo's OWN convention (.worktrees/<name>, see
+# superpowers:using-git-worktrees) is not a stable install source — its
+# absence (a routine `git worktree remove`) is a normal event, but every
+# symlink this script creates from a worktree-resolved REPO_ROOT would dangle
+# the moment that happens, with no warning. Hooks make this dangerous rather
+# than cosmetic: the guard hooks match `Bash`/`.*`, so a dangled hook symlink
+# blocks every subsequent Bash tool call, including the one needed to fix it
+# (#411). Normalize once, here, so every surface below — hooks, skills,
+# agents, commands, CLAUDE.md — always resolves against the primary checkout,
+# matching what this repo already documents as the only supported source.
+case "$REPO_ROOT" in
+  */.worktrees/*) REPO_ROOT="${REPO_ROOT%%/.worktrees/*}" ;;
+esac
 # shellcheck source=bin/lib/manifest.sh
 # shellcheck disable=SC1091 # only resolvable with -x or a full-repo shellcheck pass (make check does the latter); pre-commit lints changed files only
 source "$REPO_ROOT/bin/lib/manifest.sh"
