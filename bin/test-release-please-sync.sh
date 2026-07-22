@@ -28,6 +28,11 @@ trap 'rm -rf "$TMP"' EXIT
 # pushed to a local bare "$work.bare", with a release-please PR branch that
 # has bumped .release-please-manifest.json + CHANGELOG.md but left VERSION
 # behind (the exact bug this script fixes).
+#
+# <check-exit-code> may also be the literal word `boundary`: then bin/check.sh
+# passes only when boundary.txt reads `current`, and the fixture starts with it
+# `stale` — the v0.10.0 shape (#415), where the release branch's content fails
+# the gate until the base branch's fix is merged forward.
 build_fixture() {
   local work="$1" check_exit="$2"
   local bare="$work.bare"
@@ -40,10 +45,18 @@ build_fixture() {
   git -C "$work" remote add origin "$bare"
 
   mkdir -p "$work/bin"
-  cat >"$work/bin/check.sh" <<SH
+  if [ "$check_exit" = "boundary" ]; then
+    cat >"$work/bin/check.sh" <<'SH'
+#!/usr/bin/env bash
+grep -q current boundary.txt
+SH
+    printf 'stale\n' >"$work/boundary.txt"
+  else
+    cat >"$work/bin/check.sh" <<SH
 #!/usr/bin/env bash
 exit $check_exit
 SH
+  fi
   chmod +x "$work/bin/check.sh"
   cat >"$work/bin/test-install.sh" <<'SH'
 #!/usr/bin/env bash
@@ -263,6 +276,112 @@ code=$?
 out="$(cd "$WORK3" && PATH="$GH0:$PATH" "$SCRIPT" check 2>&1)"
 code=$?
 [ "$code" -eq 10 ] && ok "check with no release PR -> exit 10, not success" || bad "check-no-pr ($code): $out"
+
+# --- #415: release PR branch pinned behind an advanced base ------------------
+# WORK4 replicates the v0.10.0 cut exactly: the release branch was created off
+# a main whose content fails bin/check.sh (stale boundary), the fix then merged
+# to main, and release-please left the PR branch's base pinned because its own
+# computed diff was unchanged. Without a forward-merge, apply re-fails the gate
+# against the stale content no matter how many times main is fixed.
+WORK4="$TMP/work4"
+build_fixture "$WORK4" boundary
+GH5="$TMP/gh5"
+gh_stub "$GH5" '[{"number":90,"headRefName":"release-please--branches--main","baseRefName":"main"}]'
+
+# the fix lands on main AFTER the release branch was cut
+printf 'current\n' >"$WORK4/boundary.txt"
+git -C "$WORK4" add boundary.txt
+git -C "$WORK4" commit -q -m "docs: affirm boundary"
+git -C "$WORK4" push -q origin main
+
+# dry-run: reports the pending forward-merge, mutates nothing
+bare4_before="$(git -C "$WORK4.bare" show-ref)"
+out="$(cd "$WORK4" && PATH="$GH5:$PATH" "$SCRIPT" dry-run 2>&1)"
+code=$?
+bare4_after="$(git -C "$WORK4.bare" show-ref)"
+{
+  [ "$code" -eq 0 ] &&
+    printf '%s' "$out" | grep -qi 'behind origin/main' &&
+    printf '%s' "$out" | grep -qi 'would merge origin/main forward' &&
+    [ "$bare4_before" = "$bare4_after" ]
+} &&
+  ok "dry-run reports the forward-merge on a behind branch, mutates nothing" ||
+  bad "dry-run-behind ($code): $out"
+
+# apply: merges the base forward FIRST, so the gate sees the fixed content
+out="$(cd "$WORK4" && PATH="$GH5:$PATH" "$SCRIPT" apply --approval-token eph-5 2>&1)"
+code=$?
+main4_sha="$(git -C "$WORK4.bare" rev-parse main)"
+head4_version="$(git -C "$WORK4.bare" show "release-please--branches--main:VERSION" 2>/dev/null || true)"
+head4_boundary="$(git -C "$WORK4.bare" show "release-please--branches--main:boundary.txt" 2>/dev/null || true)"
+merged4=no
+git -C "$WORK4.bare" merge-base --is-ancestor "$main4_sha" "release-please--branches--main" && merged4=yes
+{
+  [ "$code" -eq 0 ] &&
+    [ "$merged4" = "yes" ] &&
+    [ "$head4_version" = "0.2.0" ] &&
+    [ "$head4_boundary" = "current" ]
+} &&
+  ok "apply merges the advanced base forward, then gate passes and VERSION lands" ||
+  bad "apply-behind ($code): merged=$merged4 VERSION=$head4_version boundary=$head4_boundary: $out"
+
+# in sync but behind: apply still merges forward, adds no VERSION commit
+printf 'extra\n' >"$WORK4/extra.txt"
+git -C "$WORK4" add extra.txt
+git -C "$WORK4" commit -q -m "chore: advance main again"
+git -C "$WORK4" push -q origin main
+main4b_sha="$(git -C "$WORK4.bare" rev-parse main)"
+out="$(cd "$WORK4" && PATH="$GH5:$PATH" "$SCRIPT" apply --approval-token eph-6 2>&1)"
+code=$?
+merged4b=no
+git -C "$WORK4.bare" merge-base --is-ancestor "$main4b_sha" "release-please--branches--main" && merged4b=yes
+tip4b_subject="$(git -C "$WORK4.bare" log -1 --pretty=%s "release-please--branches--main")"
+{
+  [ "$code" -eq 0 ] &&
+    [ "$merged4b" = "yes" ] &&
+    printf '%s' "$tip4b_subject" | grep -qi 'merge' &&
+    ! printf '%s' "$tip4b_subject" | grep -q 'sync VERSION'
+} &&
+  ok "apply on an in-sync but behind branch merges forward without a VERSION commit" ||
+  bad "apply-merge-only ($code): tip='$tip4b_subject' merged=$merged4b: $out"
+
+# --- #415: forward-merge conflict -> distinct exit 13, nothing pushed --------
+WORK5="$TMP/work5"
+build_fixture "$WORK5" 0
+GH6="$TMP/gh6"
+gh_stub "$GH6" '[{"number":91,"headRefName":"release-please--branches--main","baseRefName":"main"}]'
+
+# a main-side CHANGELOG edit in the same region the release branch rewrote
+cat >"$WORK5/CHANGELOG.md" <<'MD'
+# Changelog
+
+## [0.1.1] - 2026-03-01
+
+### Fixed
+
+- Conflicting entry.
+
+## [0.1.0] - 2026-01-01
+
+### Added
+
+- Initial release.
+MD
+git -C "$WORK5" add CHANGELOG.md
+git -C "$WORK5" commit -q -m "docs: conflicting changelog edit"
+git -C "$WORK5" push -q origin main
+
+bare5_before="$(git -C "$WORK5.bare" rev-parse "release-please--branches--main")"
+out="$(cd "$WORK5" && PATH="$GH6:$PATH" "$SCRIPT" apply --approval-token eph-7 2>&1)"
+code=$?
+bare5_after="$(git -C "$WORK5.bare" rev-parse "release-please--branches--main")"
+{
+  [ "$code" -eq 13 ] &&
+    printf '%s' "$out" | grep -qi 'conflict' &&
+    [ "$bare5_before" = "$bare5_after" ]
+} &&
+  ok "conflicting forward-merge -> exit 13, nothing pushed" ||
+  bad "merge-conflict ($code): $out"
 
 printf '\n%d passed, %d failed\n' "$pass" "$fail"
 [ "$fail" -eq 0 ]
