@@ -45,7 +45,9 @@ python3 skills/package-release-integrity/scripts/release_integrity.py check \
    release-semver-governance category is authoritative here — the helper
    returns `{"mode": "defer", "verdicts": [], "ready": None}` and stops. See
    the defer rule below; do not run the remaining steps against a deferring
-   repo.
+   repo. Deferring then obliges **running the authority, not just naming
+   it**: invoke `<bindle>/bin/domi-release-check.sh --repo <repo>` and relay
+   its outcome (see the defer rule).
 2. **Discover.** In `portable` mode, the helper finds every declared version:
    `pyproject.toml [project].version`, `[tool.poetry].version`, any top-level
    package `__init__.py`'s `__version__`, the `VERSION` file, and the root
@@ -89,6 +91,21 @@ normally. See the `domi-consumer` skill, which owns `.domi-pin` detection
 and the drift vocabulary — this skill reuses that authority signal and does
 not reimplement drift detection itself.
 
+Deferring obliges consulting the authority, not just naming it (#242). Once
+`mode: defer` fires, run
+
+```
+<bindle>/bin/domi-release-check.sh --repo <repo>
+```
+
+as one command — it locates DomI's release-integrity checker, runs it from
+the target repo, and relays DomI's own output and exit code (`domi-exit=<n>`
+banner). Report that relayed verdict as the authority's answer. Exit `4`
+(`checker-unreachable`) is the **only** case where a verbal defer is
+legitimate — report it explicitly as a degraded outcome, never as a pass,
+and say what was searched. Do not reconstruct the checker's judgment by
+hand when it is unreachable.
+
 ## Boundaries / red flags
 
 - **A green check is not publish authorization.** `ready: True` is a
@@ -106,6 +123,11 @@ not reimplement drift detection itself.
 - **Under defer, do not override DomI.** Once `mode: "defer"` fires, this
   skill's own checks are advisory-only at best and must not be run as if
   they were authoritative — don't hand-roll a substitute assessment.
+- **A verbal defer without running `domi-release-check.sh` is a skipped
+  check, not a completed one.** Naming DomI as the authority while its
+  checker sits unrun was the E-series soft spot (#242); the helper exists so
+  that never has to happen silently. If it exits `4`, the degraded outcome
+  is the honest report — never upgrade it to "deferred cleanly."
 
 **REQUIRED BACKGROUND:** `docs/package-release-integrity.md` (the full
 contract: all nine checks, verdict keys, and worked examples) and the

@@ -381,6 +381,19 @@
       "version_introduced": "0.4.0"
     },
     {
+      "name": "domi-release-check",
+      "type": "script",
+      "path": "bin/domi-release-check.sh",
+      "description": "Mechanizes the invoke-not-verbal-defer obligation (#242) for package-release-integrity and release-captain: under a well-formed .domi-pin it locates DomI's release-integrity checker (DOMI_LOCAL_CHECKOUT, the installed-skill symlink, or a sibling ../DomI), runs it from the target repo forwarding args verbatim, and relays DomI's output and exit code untouched; an unreachable checker is an explicit degraded outcome (exit 4), never a pass, and Bindle is never the release authority.",
+      "provider": {
+        "claude": "manual",
+        "codex": "manual"
+      },
+      "maturity": "tested",
+      "mutation": [],
+      "version_introduced": "0.10.1"
+    },
+    {
       "name": "session-notes-format",
       "type": "contract",
       "path": "docs/session-notes-format.md",
@@ -1222,6 +1235,10 @@
     {
       "path": "bin/check-finding-codes.py",
       "reason": "repo-hygiene validator run by make check: asserts every finding code a validator can emit is classified in its surface's invariant-coverage.json or explicitly excluded with a reason, and that no classification is stale; a check, not a capability an agent invokes."
+    },
+    {
+      "path": "bin/test-domi-release-check.sh",
+      "reason": "suite for bin/domi-release-check.sh over throwaway fixture consumers and a stub DomI checkout (pin gate, checker discovery order, verbatim arg forwarding, cwd, degraded unreachable outcome, relayed nonzero exit); test infrastructure, not a capability an agent invokes."
     },
     {
       "path": "bin/test-check-finding-codes.sh",

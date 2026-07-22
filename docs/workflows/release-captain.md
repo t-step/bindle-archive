@@ -83,7 +83,14 @@ releasable."
 - Detect whether Release Please is configured, and whether repository-specific
   release authority exists (a `CODEOWNERS`, a documented release captain).
 - Defer to stronger repository-local or inherited (DomI) release policy where
-  present, rather than overriding it from this contract.
+  present, rather than overriding it from this contract. Deferring to
+  inherited DomI policy obliges consulting the authority, not just naming it
+  (#242): run DomI's release-integrity checker when it is discoverable —
+  mechanized as `bin/domi-release-check.sh` — and relay its actual verdict.
+  A verbal defer is legitimate only when the checker is genuinely
+  unreachable, and is reported explicitly as a degraded outcome, never a
+  pass. Relaying the verdict does not make the deferring toolkit the release
+  authority.
 
 ### Step 2 — Gather release evidence
 

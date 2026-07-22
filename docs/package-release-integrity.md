@@ -56,6 +56,18 @@ portable checks run normally. See the `domi-consumer` skill, which owns
 `.domi-pin` detection and the drift vocabulary; this contract only reuses
 its authority signal, it does not reimplement it.
 
+Deferring obliges consulting the authority, not just naming it (#242). Once
+the defer fires, the caller runs `bin/domi-release-check.sh --repo <repo>`
+(at the Bindle checkout root, beside `bin/domi-status.sh`) — it locates
+DomI's release-integrity checker (`$DOMI_LOCAL_CHECKOUT`, the installed
+`release-integrity` skill symlink, or a sibling `../DomI` of the target),
+runs it from the target repo forwarding any arguments verbatim, and relays
+DomI's output and exit code untouched (`domi-exit=<n>`). Helper exits: `0`
+DomI ran clean, `6` DomI ran and reported nonzero, `4` `checker-unreachable`
+— the one case where a verbal defer is legitimate, reported explicitly as a
+degraded outcome and never as a pass. Bindle relays the verdict; it never
+becomes the release authority.
+
 ## The helper contract
 
 `skills/package-release-integrity/scripts/release_integrity.py` is stdlib-only
