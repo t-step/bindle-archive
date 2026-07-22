@@ -197,6 +197,19 @@ interactive choice; sequential is the default and the recommendation.
   `**Model:** unrecorded` — an explicit unknown, never silence, and never a
   guessed value more precise than the evidence (a historical series known
   only as "Sonnet 5" records that, not an invented dated snapshot);
+- the **content identity** of the skill under test — a `**Content:**` line
+  beside the `**Model:**` line in each series' method statement, recording
+  the output of `bin/skill-content-id.sh <skill>` (e.g. "**Content:**
+  sha256:3f7a29c04d11"), computed **at dispatch time**, never reconstructed
+  afterward. The id covers every tracked file under `skills/<name>/` except
+  `PRESSURE-TESTS.md` itself, hashed from the working tree — it describes
+  the bytes the reps actually exercised, uncommitted edits included.
+  Granularity matches `**Model:**`: per-series, with a per-arm/per-rep
+  override — a REFACTOR mid-series edit means the GREEN arms before and
+  after the edit carry different ids, recorded per arm. RED (no-skill) arms
+  carry no id — nothing was loaded. A series whose id is not known writes
+  `**Content:** unrecorded` — an explicit unknown, never silence, never a
+  value derived after the fact;
 - a FAIL kept as a FAIL. A recorded failure that is neither fixed nor diagnosed
   is honest evidence; quietly dropping it is not.
 
@@ -205,6 +218,13 @@ The `**Model:**` field is the **single source** for model provenance
 model collapses into the field; prose in which the model is part of a
 *finding* — a cross-bracket comparison, a weaker-model failure analysis —
 stays, because that is evidence, not a caveat.
+
+The `**Content:**` field follows the same single-source rule. It is also the
+field tooling keys on: `bin/skill-content-id.sh --check <skill>` is the
+one-command answer to "do this skill's hashed reps still apply to its current
+content?", and `bin/check.sh` prints a warn-only `stale reps` banner when a
+skill's newest hashed series no longer matches — a disclosure, not a gate,
+by the recorded #339 decision.
 
 Counts predating this protocol carry a caveat line saying so — they were
 gathered without arm attribution, and an unknown fraction may be void.
@@ -236,6 +256,14 @@ session notes name, `unrecorded` where nothing does — and are **never re-run
 to learn their model**. The new field is not a re-run obligation, and an
 annotation is not a protocol credit: a pre-protocol series with a `Model:`
 line is still pre-protocol.
+
+The `**Content:**` field (#339) is stricter still: historical series are
+annotated `**Content:** unrecorded`, full stop. The dispatch-time working
+tree is unknowable from a `Status:` date — the exact commit was not
+recorded, and reps may have run against uncommitted content — so a hash
+derived from git archaeology is a guess wearing precision, worse than an
+honest unknown. Never re-run a series to learn its id; an annotation is not
+a protocol credit.
 
 ### What this does to #212's targets
 

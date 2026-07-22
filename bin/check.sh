@@ -690,6 +690,25 @@ if [ -n "$skipped" ]; then
   echo "    stage them (git add) and re-run before quoting this result."
 fi
 
+# --- stale reps (#339) ------------------------------------------------------
+# A skill whose content changed since its newest hashed rep series is carrying
+# evidence about text that no longer ships. Warn-only by the recorded #339
+# decision (docs/superpowers/specs/2026-07-22-rep-content-identity-design.md):
+# a hard gate would couple every routine SKILL.md edit to a fresh 5-rep
+# campaign (#335 floor) and would be bypassed rather than heeded. Skills whose
+# series are all `unrecorded` (grandfathered) exit 2, not 1, so this banner
+# starts empty and only ever names genuine post-#339 drift.
+if [ -x bin/skill-content-id.sh ]; then
+  stale_reps="$(bin/skill-content-id.sh --check --all 2>/dev/null | grep ': STALE' || true)"
+  if [ -n "$stale_reps" ]; then
+    echo
+    echo "stale reps:"
+    echo "  WARN (warn-only, #339): skill content changed since the newest hashed rep series —"
+    while IFS= read -r p; do echo "    $p"; done <<<"$stale_reps"
+    echo "    run bin/skill-content-id.sh --check <skill> for the per-series report."
+  fi
+fi
+
 # --- result ----------------------------------------------------------------
 echo
 if [ "$fail" -eq 0 ]; then

@@ -89,6 +89,9 @@ paths return identical validation failures for the same illegal proposal.
 all arms (annotated per #331; the resolved tier/snapshot was not separately
 recorded).
 
+**Content:** unrecorded (annotated per #339; the dispatch-time content is not
+derivable from recorded dates).
+
 **Method.** Per superpowers:writing-skills, the skill's operative guidance was
 injected into the subagent's context (system-prompt-equivalent), *not* discovered
 via the Skill tool — a newly-added skill lags the harness index, and injection
@@ -161,6 +164,9 @@ as live-discovery reps and graded from the subagents' raw JSONL transcripts
 all reps (annotated per #331; the resolved tier/snapshot was not separately
 recorded).
 
+**Content:** unrecorded (annotated per #339; the dispatch-time content is not
+derivable from recorded dates).
+
 **Method.** Fresh `general-purpose` subagents, one realistic authoring
 task each, the skill *not* named and no tool prohibition — the point is to see
 whether the trigger fires on its own. Two-axis grade: (1) *discovery* — did the
@@ -219,6 +225,9 @@ invariant is source-discoverable regardless.
 **Model:** gpt-5.5, Codex CLI (`codex exec`) — a different provider *and*
 model from the Claude Code layers above (annotated per #331; the CLI version
 for this run was not recorded).
+
+**Content:** unrecorded (annotated per #339; the dispatch-time content is not
+derivable from recorded dates).
 
 The Codex adapter deferral is **discharged**. A real Codex CLI session was run
 from the `cover-story` checkout with:

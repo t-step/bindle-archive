@@ -34,6 +34,9 @@ note name the bracket); sub-claim 1b: Haiku 4.5; sub-claim 1c: Sonnet 5;
 Claim 5: Sonnet 5 reps, graded on Opus 4.8; Claim 6: Sonnet 5. Sub-claim 3c
 is a mechanical scanner test — no rep model applies.
 
+**Content:** unrecorded (annotated per #339; the dispatch-time content is not
+derivable from recorded dates).
+
 ## Claim 1 — `/session-end` writes notes outside the repo (Rule 1)
 
 **Status: VERIFIED (2026-07-05).**

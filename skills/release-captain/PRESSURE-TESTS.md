@@ -50,6 +50,9 @@ improvement trail; see the stated limit on what those 5 reps do and do not prove
 every series in this file (annotated per #331; the resolved tier/snapshot was
 not separately recorded).
 
+**Content:** unrecorded (annotated per #339; the dispatch-time content is not
+derivable from recorded dates).
+
 Per superpowers:writing-skills (RED → GREEN → REFACTOR). Fresh `general-purpose`
 subagents, each in its own throwaway fixture repo — a realistic mini
 Python library (`widgetlib`) with a `VERSION`, a `CHANGELOG.md`, a release tag,
