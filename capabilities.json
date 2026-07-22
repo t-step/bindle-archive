@@ -397,14 +397,14 @@
       "name": "skill-content-id",
       "type": "script",
       "path": "bin/skill-content-id.sh",
-      "description": "Derived content identity for a skill's pressure-test evidence (#339): sha256 over the sorted tracked-file hash list under skills/<name>/ minus PRESSURE-TESTS.md, working-tree bytes, recorded as sha256:<12 hex>; --check compares recorded **Content:** lines against current content (0 fresh / 1 stale / 2 no hashed series), --check --all feeds bin/check.sh's warn-only stale-reps banner.",
+      "description": "Derived content identity for a skill's pressure-test evidence (#339): sha256 over the path-sorted tracked-file hash list under skills/<name>/ minus PRESSURE-TESTS.md, working-tree bytes, recorded as sha256:<12 hex>; --check compares recorded **Content:** lines against current content (0 fresh / 1 stale / 2 no hashed series), --check --all feeds bin/check.sh's warn-only stale-reps banner.",
       "provider": {
         "claude": "manual",
         "codex": "manual"
       },
       "maturity": "tested",
       "mutation": [],
-      "version_introduced": "0.10.1"
+      "version_introduced": "0.11.0"
     },
     {
       "name": "session-notes-format",

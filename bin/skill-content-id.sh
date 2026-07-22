@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 # skill-content-id.sh — derived content identity for a skill's rep evidence
-# (#339). The id is sha256 over the LC_ALL=C-sorted "<sha256>  <path>" lines
-# of every TRACKED file under skills/<name>/ except PRESSURE-TESTS.md (the
-# evidence file cannot be part of the identity it records). Bytes come from
+# (#339). The id is sha256 over the "<sha256>  <path>" lines of every TRACKED
+# file under skills/<name>/ except PRESSURE-TESTS.md (the evidence file cannot
+# be part of the identity it records), composed with the file list in LC_ALL=C
+# path-sorted order — the sort key is the path, not the composed line. Bytes come from
 # the WORKING TREE — reps exercise installed disk content through the
 # ~/.claude symlink, so the id describes what actually ran, uncommitted edits
 # included. Recorded form: "sha256:" + first 12 hex.

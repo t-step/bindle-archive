@@ -43,14 +43,15 @@ A skill's **content-id** is:
 - Bytes: read from the **working tree**, not the index or HEAD. Reps exercise
   installed disk content through the `~/.claude/skills/<name>` symlink, so
   the id must describe what actually ran, including uncommitted edits.
-- Formula: for each member file, one line `<sha256-of-file-hex>  <repo-relative
-  path>` (two spaces, `shasum -a 256` output shape); sort lines with
-  `LC_ALL=C sort`; the content-id is the sha256 of that byte stream.
+- Formula: sort the member paths with `LC_ALL=C sort`; for each file in that
+  order, one line `<sha256-of-file-hex>  <repo-relative path>` (two spaces,
+  `shasum -a 256` output shape); the content-id is the sha256 of that byte
+  stream. The sort key is the path, not the composed line — composition
+  happens after the path sort.
 - Recorded form: `sha256:` + first 12 hex digits.
 
 Error cases: a tracked member file missing from the working tree is a loud
-failure, not a skip. An empty membership list (not a skill directory) is a
-usage error.
+failure, not a skip. An empty membership list (not a skill directory) exits 2 with a message, like a skill with no hashed series — nothing to identify.
 
 Rejected alternatives: `SKILL.md`-only (a `references/` or `scripts/` edit
 silently keeps the old identity — recreates the gap one level down); git tree
