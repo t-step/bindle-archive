@@ -197,5 +197,62 @@ else
   skipt "delegation (current/behind/forked)" "DomI offline_drift_check.sh not found"
 fi
 
+# --- --category verdict detector (#278): a single read replacing the
+# SKILL.md three-row table ---------------------------------------------------
+
+# no pin -> inherited=false, exit 1
+OUT="$TMP/out"
+ERR="$TMP/err"
+bash "$DS" --repo "$TMP/plain" --category release-semver-governance >"$OUT" 2>"$ERR"
+CODE=$?
+# shellcheck disable=SC2015
+[ "$CODE" -eq 1 ] && grep -q "^inherited=false" "$OUT" &&
+  ok "--category, no pin -> inherited=false (exit 1)" ||
+  bad "--category, no pin -> inherited=false (exit 1) [got $CODE, out=$(cat "$OUT")]"
+
+# well-formed pin, known category -> inherited=true, exit 0
+make_consumer "$TMP/wellformed" "$FORTY" "$(printf 'e%.0s' {1..64})"
+OUT="$TMP/out"
+ERR="$TMP/err"
+bash "$DS" --repo "$TMP/wellformed" --category release-semver-governance >"$OUT" 2>"$ERR"
+CODE=$?
+# shellcheck disable=SC2015
+[ "$CODE" -eq 0 ] && grep -q "^inherited=true" "$OUT" &&
+  ok "--category, well-formed pin -> inherited=true (exit 0)" ||
+  bad "--category, well-formed pin -> inherited=true (exit 0) [got $CODE, out=$(cat "$OUT")]"
+
+# malformed pin (bad sha) -> inherited=malformed, exit 5
+OUT="$TMP/out"
+ERR="$TMP/err"
+bash "$DS" --repo "$TMP/bad" --category release-semver-governance >"$OUT" 2>"$ERR"
+CODE=$?
+# shellcheck disable=SC2015
+[ "$CODE" -eq 5 ] && grep -q "^inherited=malformed" "$ERR" &&
+  ok "--category, malformed pin -> inherited=malformed (exit 5)" ||
+  bad "--category, malformed pin -> inherited=malformed (exit 5) [got $CODE, err=$(cat "$ERR")]"
+
+# unknown category name -> usage error, exit 64
+OUT="$TMP/out"
+ERR="$TMP/err"
+bash "$DS" --repo "$TMP/wellformed" --category not-a-real-category >"$OUT" 2>"$ERR"
+CODE=$?
+# shellcheck disable=SC2015
+[ "$CODE" -eq 64 ] && grep -qi "unknown category" "$ERR" &&
+  ok "--category with an unknown slug -> usage error (exit 64)" ||
+  bad "--category unknown slug -> usage error (exit 64) [got $CODE, err=$(cat "$ERR")]"
+
+# every category named in the authority line is independently readable
+for cat in branch-commit-discipline destructive-action-hard-stops \
+  context-session-management delegation-dispatch release-semver-governance \
+  issue-session-workflow sync-update-ownership; do
+  OUT="$TMP/out"
+  bash "$DS" --repo "$TMP/wellformed" --category "$cat" >"$OUT" 2>/dev/null
+  CODE=$?
+  # shellcheck disable=SC2015
+  [ "$CODE" -eq 0 ] && grep -q "^inherited=true" "$OUT" &&
+    ok "--category $cat -> inherited=true (exit 0)" ||
+    bad "--category $cat -> inherited=true (exit 0) [got $CODE]"
+done
+
 printf '\n%d passed, %d failed, %d skipped\n' "$pass" "$fail" "$skip"
 [ "$fail" -eq 0 ]

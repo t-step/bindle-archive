@@ -101,17 +101,16 @@ fabricated recommendation.
    policy** — see below. Both halves of this step are required; the contract
    (`docs/workflows/release-captain.md` §step 1) states them together.
 
-   **Detect inherited release policy.** Check the target repo for a
-   `.domi-pin`. Run `<bindle>/bin/domi-status.sh --repo <repo>` (or the
-   `domi-consumer` skill, which owns pin detection) and read the
-   `authority:` line it prints. Applicability is an **observable test**, not a
-   judgement call — do not reason about whether the pin "looks intentional":
+   **Detect inherited release policy.** Run
+   `<bindle>/bin/domi-status.sh --repo <repo> --category release-semver-governance`
+   (or the `domi-consumer` skill, which owns pin detection) and read its one
+   line of output directly — `inherited=true|false|malformed` is the answer,
+   not an input to evaluate:
 
-   | Condition | Result |
-   |---|---|
-   | no `.domi-pin` | decide locally as normal |
-   | pin present, well-formed, and `release-semver-governance` listed as inherited | **upstream policy is the default** for version class and timing |
-   | pin present but malformed, or the category not listed | decide locally; say which it was |
+   - `inherited=false` (exit 1, no `.domi-pin`) → decide locally as normal.
+   - `inherited=true` (exit 0) → **upstream policy is the default** for
+     version class and timing.
+   - `inherited=malformed` (exit 5) → decide locally; say which field was bad.
 
    When upstream is the default, keep doing the local work this skill owns —
    gather evidence, classify, check changelog and version-source hygiene — but
@@ -206,6 +205,14 @@ later, separate approval request. No approval / no token → stop.
 <bindle>/bin/release-strategy.sh apply --approval-token <operator-approval-token>
 ```
 
+Before dispatching to the strategy script, `apply` itself (issue #278) refuses
+a dirty target tree (exit 65) and refuses to run at all when step 1 found
+`release-semver-governance` inherited and the call has not been routed (exit
+66) — pass `--inherited-policy-routed` once a human confirms the routing
+happened; the flag is stripped before the strategy script ever sees it. Both
+are hard stops enforced by the script, not preconditions trusted to whoever
+read this skill.
+
 `apply` creates or updates the release PR, then (for the `local-release-please`
 strategy) chains `<bindle>/bin/release-please-sync.sh apply` onto that same PR
 branch with the same token — issue #152 — so `VERSION` never disagrees with the
@@ -241,22 +248,30 @@ bin/release-publish.sh apply vX.Y.Z --approval-token <operator-approval-token>
 
 ## Stop conditions (before `apply`)
 
-Halt before `apply` on any of:
+Four of the five are enforced by `release-strategy.sh apply` itself (#278) — a
+skill-reading agent no longer has to remember them, though the reasoning below
+still explains what's happening and why:
 
-- unknown or missing strategy (`which` / the seam exits 64);
-- a dirty precondition where cleanliness is required;
-- stale evidence (the evidence helper degraded to `uncertain` or could not
-  gather);
-- a failed `dry-run`;
-- no operator-supplied approval token at the second approval gate (never
-  substitute a self-generated string);
-- **inherited release policy covers the decision and has not been routed.**
-  Step 1 found a well-formed `.domi-pin` naming `release-semver-governance`, and
-  the version/timing call has not gone upstream. `apply` drives release-PR
-  artifacts off that call; producing them while upstream owns it overrides the
-  policy this skill is required to defer to. Halting here is not the same as
-  declining to help — the evidence, classification, and hygiene checks are still
-  yours to deliver.
+- unknown or missing strategy — the seam exits 64 (`which` shows the same);
+- a dirty target tree — `apply` exits 65;
+- **inherited release policy covers the decision and has not been routed** —
+  `apply` exits 66. Step 1 found a well-formed `.domi-pin` naming
+  `release-semver-governance`, and the version/timing call has not gone
+  upstream. `apply` drives release-PR artifacts off that call; producing them
+  while upstream owns it overrides the policy this skill is required to defer
+  to. This is the #225 failure mode — an agent skipped this precondition 2 of
+  2 times when it was prose only — now a hard stop rather than a rule to
+  remember. Halting here is not the same as declining to help — the evidence,
+  classification, and hygiene checks are still yours to deliver.
+- no operator-supplied approval token at the second approval gate — the
+  strategy script exits 3/4 (never substitute a self-generated string).
+
+One remains a judgement call the script cannot make for you: **stale evidence**
+(the evidence helper degraded to `uncertain` or could not gather). Nothing
+downstream of step 2 knows whether the evidence it was handed is trustworthy —
+halt before proposing `dry-run`/`apply` if it is. A failed `dry-run` is caught
+naturally: `dry-run` and `apply` are separate invocations, so a `dry-run`
+that exited non-zero produced nothing to approve at the second gate.
 
 ## Fit with the rest of Bindle
 

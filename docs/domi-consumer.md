@@ -63,6 +63,23 @@ upgrades that to `current`.
 | issue-session-workflow | `skills/list-issues`, `skills/check-done` |
 | sync-update-ownership | `skills/sync-from-domi` |
 
+## `--category <slug>` mode (#278)
+
+`bin/domi-status.sh --repo <repo> --category <slug>` answers whether ONE
+category above is inherited, as a single-line observable read —
+`inherited=true|false|malformed` — instead of a caller cross-referencing the
+`authority:` line against this table by hand. Every well-formed pin inherits
+all seven categories together (the pin format carries no per-category
+opt-out), so `true`/`false` here tracks pin presence and validity, not a
+category-specific lookup; `<slug>` selects which table row's answer to print,
+not a different verdict. Exit codes: `0` true, `1` false (no `.domi-pin`), `5`
+malformed, `64` usage error (unrecognized `<slug>` or missing value). No drift
+check runs in this mode — it never calls out to DomI's offline delegation, so
+it answers even when neither DomI's scripts nor a local checkout is reachable.
+`release-strategy.sh apply` uses this to enforce the `release-semver-governance`
+stop condition (see `skills/release-captain/SKILL.md`) as a script-level gate
+rather than a rule trusted to whoever read the skill.
+
 ## Provider adapters
 
 Claude and Codex both invoke `bin/domi-status.sh` and honor the same vocabulary.

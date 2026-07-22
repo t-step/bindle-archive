@@ -6,6 +6,15 @@
 # docs/domi-consumer.md). Read-only toward the target repo.
 #
 # Usage: bin/domi-status.sh [--repo <path>]
+#        bin/domi-status.sh [--repo <path>] --category <slug>
+#
+# `--category <slug>` (#278) answers ONE inherited-policy category as an
+# observable read — `inherited=true|false|malformed` — replacing the
+# three-row applicability table release-captain's SKILL.md used to ask the
+# model to evaluate by hand. <slug> must be one of the seven categories in
+# docs/domi-consumer.md's table; every well-formed pin inherits all seven
+# together (the pin carries no per-category opt-out), so this differs from
+# plain mode only in exit code / output shape, not in what it decides.
 #
 # Exit codes (identical to DomI check_pin.sh, so callers can treat the two
 # interchangeably):
@@ -13,9 +22,16 @@
 #   3 forked     4 unverifiable (offline)    5 malformed
 #   64 usage error
 #
+# --category exit codes (a distinct, smaller vocabulary — no drift check runs):
+#   0 inherited=true    1 inherited=false (not a consumer)
+#   5 inherited=malformed    64 usage error (unknown category / missing value)
+#
 set -uo pipefail
 
+KNOWN_CATEGORIES="branch-commit-discipline destructive-action-hard-stops context-session-management delegation-dispatch release-semver-governance issue-session-workflow sync-update-ownership"
+
 TARGET=""
+CATEGORY=""
 while [ $# -gt 0 ]; do
   case "$1" in
     --repo)
@@ -24,6 +40,14 @@ while [ $# -gt 0 ]; do
         exit 64
       }
       TARGET="$2"
+      shift 2
+      ;;
+    --category)
+      [ $# -ge 2 ] || {
+        echo "domi-status.sh: --category requires a value" >&2
+        exit 64
+      }
+      CATEGORY="$2"
       shift 2
       ;;
     -h | --help)
@@ -37,6 +61,16 @@ while [ $# -gt 0 ]; do
   esac
 done
 
+if [ -n "$CATEGORY" ]; then
+  case " $KNOWN_CATEGORIES " in
+    *" $CATEGORY "*) ;;
+    *)
+      echo "domi-status.sh: unknown category '$CATEGORY' (want one of: $KNOWN_CATEGORIES)" >&2
+      exit 64
+      ;;
+  esac
+fi
+
 if [ -z "$TARGET" ]; then
   TARGET="$(git rev-parse --show-toplevel 2>/dev/null || echo ".")"
 fi
@@ -44,6 +78,10 @@ PIN_FILE="$TARGET/.domi-pin"
 
 # 1. No pin → not a consumer.
 if [ ! -f "$PIN_FILE" ]; then
+  if [ -n "$CATEGORY" ]; then
+    echo "inherited=false: no .domi-pin in $TARGET"
+    exit 1
+  fi
   echo "not-a-domi-consumer: no .domi-pin in $TARGET"
   exit 2
 fi
@@ -59,19 +97,35 @@ PINNED_AT="$(pin_get pinned_at)"
 
 # 3. Validate (offline-decidable).
 if [ -z "$UPSTREAM" ]; then
-  echo "malformed: .domi-pin missing 'upstream' field" >&2
+  if [ -n "$CATEGORY" ]; then
+    echo "inherited=malformed: .domi-pin missing 'upstream' field" >&2
+  else
+    echo "malformed: .domi-pin missing 'upstream' field" >&2
+  fi
   exit 5
 fi
 if ! printf '%s' "$SHA" | grep -qE '^[0-9a-f]{40}$'; then
-  echo "malformed: .domi-pin 'sha' is not a 40-hex commit ('$SHA')" >&2
+  if [ -n "$CATEGORY" ]; then
+    echo "inherited=malformed: .domi-pin 'sha' is not a 40-hex commit ('$SHA')" >&2
+  else
+    echo "malformed: .domi-pin 'sha' is not a 40-hex commit ('$SHA')" >&2
+  fi
   exit 5
+fi
+
+# `--category` is answered entirely by pin presence + well-formedness (every
+# well-formed pin inherits all seven categories together) — stop here, no
+# drift check needed.
+if [ -n "$CATEGORY" ]; then
+  echo "inherited=true"
+  exit 0
 fi
 
 # 4. Fact reporting (always, offline-safe).
 echo "pin: $UPSTREAM@${SHA:0:7} branch=$BRANCH pinned_at=$PINNED_AT"
 
 # Inherited-policy categories and their authority (docs/domi-consumer.md).
-echo "authority: $UPSTREAM (inherited: branch-commit-discipline, destructive-action-hard-stops, context-session-management, delegation-dispatch, release-semver-governance, issue-session-workflow, sync-update-ownership)"
+echo "authority: $UPSTREAM (inherited: ${KNOWN_CATEGORIES// /, })"
 
 # 5. Drift verdict — delegate to DomI's own scripts (report, don't reimplement).
 find_domi_scripts() {
