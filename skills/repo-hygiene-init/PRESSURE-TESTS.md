@@ -28,6 +28,9 @@ shipped. 3 reps per arm.
 main-loop model, no `model` override; annotated per #331, exact dated
 snapshots not recorded).
 
+**Content:** unrecorded (annotated per #339; the dispatch-time content is not
+derivable from recorded dates).
+
 Ground truth is the filesystem —
 `git log`/`git diff --stat` against each fixture's initial commit, `git grep`
 for tool names, and the actual `.pre-commit-config.yaml` / `Makefile` /

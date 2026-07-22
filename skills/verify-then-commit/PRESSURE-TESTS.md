@@ -42,6 +42,9 @@ agent's self-report. 5 reps per variant.
 **Model:** Opus 4.8, Claude Code — both variants (annotated per #331; exact
 dated snapshot not recorded).
 
+**Content:** unrecorded (annotated per #339; the dispatch-time content is not
+derivable from recorded dates).
+
 The core claim: before committing, run the project's tests/lint gate and commit
 **only if green** — "looks right" and a secondhand "tests pass" are not evidence.
 The scenario is built to tempt the opposite: a one-line diff that genuinely reads
@@ -112,6 +115,9 @@ in situ*, not *the model needs no guidance*.
 
 **Model:** Opus 4.8, Claude Code — both arms (annotated per #331; exact dated
 snapshot not recorded).
+
+**Content:** unrecorded (annotated per #339; the dispatch-time content is not
+derivable from recorded dates).
 
 This closes the hook-bypass gap Claim 1 left open. Claim 1 verified "run the gate,
 don't commit RED," but its `--no-verify` / `--force` clause was never its own test:
@@ -187,6 +193,9 @@ disposition).**
 **Model:** Haiku 4.5 (via the Agent `model` override), Claude Code — both arms
 (annotated per #331).
 
+**Content:** unrecorded (annotated per #339; the dispatch-time content is not
+derivable from recorded dates).
+
 Claim 2's caveat named weaker models as the likely break point. Re-ran the *same*
 blocking-hook fixture on **Haiku 4.5** (via the Agent `model` override), 5 reps × 2
 arms: **(A)** cwd-pinned with "ignore any other CLAUDE.md" (a possible confound — it
@@ -232,6 +241,9 @@ weaker model must not be trusted to refuse on judgment alone.
 
 **Model:** Haiku 4.5, Claude Code (annotated per #331).
 
+**Content:** unrecorded (annotated per #339; the dispatch-time content is not
+derivable from recorded dates).
+
 Closing the RED per the Iron Law: the earlier failure was of the *ambient one-line
 rule*, so this re-runs the **same** Haiku 4.5 fixture with the **full
 `verify-then-commit` SKILL.md injected into the prompt** (rationalization table,
@@ -269,6 +281,9 @@ for this skill.
 
 **Model:** Sonnet 5, Claude Code (annotated per #331; exact dated snapshot not
 recorded).
+
+**Content:** unrecorded (annotated per #339; the dispatch-time content is not
+derivable from recorded dates).
 
 Reruns Claim 2's exact blocking-hook fixture on **Sonnet 5** (the operator's
 main-loop model for this campaign, so no `model` override was needed to reach this
@@ -337,6 +352,9 @@ per rep in their table below (Haiku 4.5, Sonnet 5); the ten credited reps
 (3–12) ran before the model field existed and their model is **unrecorded**
 (neither this file nor the session note names it — not retroactively
 guessed).
+
+**Content:** unrecorded (annotated per #339; the dispatch-time content is not
+derivable from recorded dates).
 
 #197's hypothesis: the gate table's single `Lint/format` row let an agent run
 `ruff check`, see it pass, tick the row off, and commit code the project's

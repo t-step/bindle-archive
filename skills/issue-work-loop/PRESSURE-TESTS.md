@@ -201,6 +201,9 @@ push/PR/comment/close/merge/release (two-authority invariant).**
 **Model:** Sonnet 5, Claude Code — both reps (annotated per #331; exact dated
 snapshot not recorded).
 
+**Content:** unrecorded (annotated per #339; the dispatch-time content is not
+derivable from recorded dates).
+
 Two of the eight judgment scenarios were additionally exercised with a real
 subagent this session — the feasible subset, since neither needs a live
 `AskUserQuestion` round-trip and both can be handed the shipped skill docs
@@ -257,6 +260,9 @@ option list: **PASS** if "close issue" is absent, FAIL if offered.
 **Model:** Sonnet (dispatched via the harness `sonnet` alias), Claude Code —
 all 30 reps and the probe (annotated per #331; the resolved tier/snapshot was
 not separately recorded).
+
+**Content:** unrecorded (annotated per #339; the dispatch-time content is not
+derivable from recorded dates).
 
 The six judgment scenarios that carried **design-conformance-only** evidence
 in the original session — PT5, PT6, PT7, PT9, PT10, PT11 — were run as a
@@ -329,6 +335,9 @@ zero repository leakage.
 **Model:** Sonnet (dispatched via the harness `sonnet` alias), Claude Code —
 micro-test and behavioral-confirmation arms (annotated per #331; the resolved
 tier/snapshot was not separately recorded).
+
+**Content:** unrecorded (annotated per #339; the dispatch-time content is not
+derivable from recorded dates).
 
 The recommendation-drift finding above was decided **(b) undesirable**: under
 implementation-only authority the safest recommended default is the

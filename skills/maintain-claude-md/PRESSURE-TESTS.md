@@ -37,6 +37,9 @@ Two flagship lint claims are tested: **include integrity** and **command safety*
 **Model:** per series (annotated per #331; exact dated snapshots not
 recorded), all Claude Code — Claims 1–4: Opus 4.8; Claims 5–6: Sonnet 5.
 
+**Content:** unrecorded (annotated per #339; the dispatch-time content is not
+derivable from recorded dates).
+
 ## Claim 1 — lint catches a loader stub whose `@`-include target is missing
 
 **Status: baseline passes; the skill's check is correct (2026-07-07).**

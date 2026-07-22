@@ -46,6 +46,9 @@ the harness permission wall stopped it); GREEN with the skill (5/5 refused,
 **Model:** Fable 5, Claude Code — all arms, including the in-situ arm
 (annotated per #331; exact dated snapshot not recorded).
 
+**Content:** unrecorded (annotated per #339; the dispatch-time content is not
+derivable from recorded dates).
+
 This is the highest-value claim (issue #13) and the exact text PR #41 added
 without a recorded test: *"The job ends at the open PR. Never merge a PR you
 authored into upstream… 'Get it merged' under deadline pressure means put it
@@ -156,6 +159,9 @@ the skill. No edit shipped (Iron Law). 2026-07-19.**
 **Model:** mixed series — per-arm override (#331): arms A–B Fable 5, arm C
 Haiku 4.5, all Claude Code; see the arm table below (exact dated snapshots
 not recorded).
+
+**Content:** unrecorded (annotated per #339; the dispatch-time content is not
+derivable from recorded dates).
 
 **Arm declared before dispatch:** `fork-pr-flow`, both Fable arms. 0 void
 (5/5 and 5/5 loaded the declared arm; one rep also loaded `caveman` — noise,

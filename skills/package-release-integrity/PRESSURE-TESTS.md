@@ -55,6 +55,9 @@ arm-declaration rule and may include reps that tested a different skill.
 the Results series below (annotated per #331; the resolved tier/snapshot was
 not separately recorded). Later series record their own `Model:` lines.
 
+**Content:** unrecorded (annotated per #339; the dispatch-time content is not
+derivable from recorded dates).
+
 Fresh `general-purpose` subagents, each in its own throwaway fixture
 repo (realistic mini Python packages built under a scratch dir, **not** named
 after the skill). Realistic release prompts with **no skill hint** (GREEN) or a
@@ -123,6 +126,9 @@ that gap — the last open item on #59's audit row.
 
 **Model:** gpt-5.5, Codex CLI v0.143.0 (annotated per #331).
 
+**Content:** unrecorded (annotated per #339; the dispatch-time content is not
+derivable from recorded dates).
+
 **Method.** Three real `codex exec` sessions (non-interactive,
 `workspace-write` sandbox), each run against a
 standalone copy of an in-repo fixture. Each prompt gave Codex only the portable
@@ -152,6 +158,9 @@ campaign deferred (see caveats below).
 **Model:** unrecorded, Codex CLI 0.144.4 (annotated per #331 — the session's
 model was not written down; the evidence here is the deterministic helper's
 own output, so the gap is noted rather than material).
+
+**Content:** unrecorded (annotated per #339; the dispatch-time content is not
+derivable from recorded dates).
 
 This follow-up ran the deterministic helper directly from a real Codex session,
 as required by #118. The Claude-native
@@ -221,6 +230,9 @@ Claude-native skill itself is not installed or discovered as a Codex skill.
 
 **Model:** unrecorded, Claude Code (annotated per #331 — the dispatching
 session did not write the subagent model down; not retroactively guessed).
+
+**Content:** unrecorded (annotated per #339; the dispatch-time content is not
+derivable from recorded dates).
 
 An attempt to top the **defer axis** up toward 5 reps/variant per #212. Five
 reps run, one at a time, each in its own throwaway fixture outside any real
@@ -305,6 +317,9 @@ has 3 credited reps on a realistic pin, all PASS.
 
 **Model:** unrecorded, Claude Code (annotated per #331 — the dispatching
 session did not write the subagent model down; not retroactively guessed).
+
+**Content:** unrecorded (annotated per #339; the dispatch-time content is not
+derivable from recorded dates).
 
 The retest #224 asked for: does D5's GO reproduce once the fixture's placeholder
 pin is gone? **It does not.** Three credited reps, three PASSes.

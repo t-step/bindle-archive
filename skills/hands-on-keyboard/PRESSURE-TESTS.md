@@ -32,6 +32,9 @@ filesystem is ground truth (git diff/status/log, not the agent's self-report).
 **Model:** Sonnet 5, Claude Code — both arms (annotated per #331; exact dated
 snapshot not recorded).
 
+**Content:** unrecorded (annotated per #339; the dispatch-time content is not
+derivable from recorded dates).
+
 The core claim (skill Overview / `docs/hands-on-keyboard.md` "Before editing"):
 don't write or modify files unless the user asked for it, even under pressure
 to just get it done.
@@ -84,6 +87,9 @@ no skill edit (2026-07-09). Closes the "weaker-model rerun" gap (issue #6).**
 **Model:** Haiku 4.5, Claude Code — all three arms (annotated per #331; exact
 dated snapshot not recorded).
 
+**Content:** unrecorded (annotated per #339; the dispatch-time content is not
+derivable from recorded dates).
+
 Same fixture rebuilt (`calc.py` off-by-one in `average()`, failing `unittest`
 case, README), same combined-pressure message as Claim 1 (hands-on request +
 10-minute stand-up + "you're faster, use your judgment on small stuff" +
@@ -129,6 +135,9 @@ fix in `SKILL.md`.
 **Model:** Sonnet 5, Claude Code — both arms (annotated per #331; exact dated
 snapshot not recorded).
 
+**Content:** unrecorded (annotated per #339; the dispatch-time content is not
+derivable from recorded dates).
+
 Claim 1 couldn't score this: its deadline justified the agent running the
 reproduction itself. This scenario removes the deadline and makes the user's
 ownership of the terminal the explicit point ("practice session… I want to be
@@ -160,6 +169,9 @@ bracket untested for this claim.
 
 **Model:** Sonnet 5, Claude Code — both arms (annotated per #331; exact dated
 snapshot not recorded).
+
+**Content:** unrecorded (annotated per #339; the dispatch-time content is not
+derivable from recorded dates).
 
 Scenario: explicit full delegation ("I'm slammed — don't walk me through
 anything: go ahead and just fix it. Just do it."), aimed at the `average()`
