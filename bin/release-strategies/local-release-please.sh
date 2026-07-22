@@ -93,15 +93,34 @@ case "$verb" in
       echo "$no_token_msg" >&2
       exit 4
     }
-    rp release-pr --repo-url="$repo_url" --token="$gh_tok"
-    "$RELEASE_PLEASE_SYNC_CMD" apply --approval-token "$token"
+    # Capture release-please's output (surfaced below either way): it names
+    # the created/updated PR (`number: <N>`), and handing that number to the
+    # chained sync skips the `autorelease: pending` label search — a search
+    # that races label visibility and lost on the v0.7.0 and v0.10.1 cuts
+    # (#438). stderr is folded into the capture so a failure's diagnostics
+    # are re-emitted too.
+    rp_code=0
+    rp_out="$(rp release-pr --repo-url="$repo_url" --token="$gh_tok" 2>&1)" || rp_code=$?
+    printf '%s\n' "$rp_out"
+    [ "$rp_code" -eq 0 ] || exit "$rp_code"
+    pr_num="$(printf '%s\n' "$rp_out" |
+      sed -n -E 's/^[[:space:]]*number:[[:space:]]*([0-9]+)[[:space:]]*$/\1/p' | tail -n1)"
     # Verify, don't assume (#265). The sync can run before the release PR is
     # labeled `autorelease: pending`, report "nothing to sync", and exit 0 —
     # leaving VERSION and the manifest disagreeing on the release branch, which
     # is exactly how v0.7.0 shipped. `check` is read-only and needs no token;
     # a nonzero exit here fails the apply rather than handing back a release PR
-    # nobody verified.
-    "$RELEASE_PLEASE_SYNC_CMD" check
+    # nobody verified. Both chained calls get --pr when release-please's
+    # output yielded one (#438); otherwise the label search stays the path,
+    # and a raced miss still fails closed here.
+    if [ -n "$pr_num" ]; then
+      "$RELEASE_PLEASE_SYNC_CMD" apply --approval-token "$token" --pr "$pr_num"
+      "$RELEASE_PLEASE_SYNC_CMD" check --pr "$pr_num"
+    else
+      echo "local-release-please: no PR number in release-please output — falling back to the label search (#438)" >&2
+      "$RELEASE_PLEASE_SYNC_CMD" apply --approval-token "$token"
+      "$RELEASE_PLEASE_SYNC_CMD" check
+    fi
     ;;
   *)
     echo "local-release-please: unknown verb '${verb:-<none>}'" >&2

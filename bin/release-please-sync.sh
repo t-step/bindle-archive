@@ -18,9 +18,18 @@
 # (no chdir to a fixed location; operates on the caller's cwd via `git -C`).
 #
 # Usage:
-#   bin/release-please-sync.sh dry-run
-#   bin/release-please-sync.sh check
-#   bin/release-please-sync.sh apply --approval-token <token>
+#   bin/release-please-sync.sh dry-run [--pr <N>]
+#   bin/release-please-sync.sh check [--pr <N>]
+#   bin/release-please-sync.sh apply --approval-token <token> [--pr <N>]
+#
+# `--pr <N>` (issue #438) names the release PR directly and skips the
+# `autorelease: pending` label search. The chained path in
+# bin/release-strategies/local-release-please.sh runs this script immediately
+# after `release-please release-pr`, and the label is often not yet visible to
+# the search at that moment — a race that failed the v0.7.0 and v0.10.1 cuts.
+# release-please's own output already names the PR, so the strategy passes it
+# through. The label search remains the default for standalone operator runs,
+# where no PR number is at hand.
 #
 # `check` (issue #265) is the deterministic gate: read-only, no token, exit 12
 # when the release PR's VERSION and .release-please-manifest.json disagree. The
@@ -53,23 +62,33 @@ die() {
 verb="${1:-}"
 shift || true
 
+token=""
+pr_arg=""
+while [ "$#" -gt 0 ]; do
+  case "$1" in
+    --approval-token)
+      token="${2:-}"
+      shift 2
+      ;;
+    --approval-token=*)
+      token="${1#*=}"
+      shift
+      ;;
+    --pr)
+      pr_arg="${2:-}"
+      shift 2
+      ;;
+    --pr=*)
+      pr_arg="${1#*=}"
+      shift
+      ;;
+    *) shift ;;
+  esac
+done
+
 case "$verb" in
   dry-run | check) ;;
   apply)
-    token=""
-    while [ "$#" -gt 0 ]; do
-      case "$1" in
-        --approval-token)
-          token="${2:-}"
-          shift 2
-          ;;
-        --approval-token=*)
-          token="${1#*=}"
-          shift
-          ;;
-        *) shift ;;
-      esac
-    done
     [ -n "$token" ] || die "apply refused — no approval token" 3
     ;;
   *)
@@ -77,18 +96,32 @@ case "$verb" in
     ;;
 esac
 
+if [ -n "$pr_arg" ] && ! printf '%s' "$pr_arg" | grep -Eq '^[0-9]+$'; then
+  die "--pr wants a PR number, got '$pr_arg'" 2
+fi
+
 command -v gh >/dev/null 2>&1 || die "gh CLI not found on PATH" 4
 
 repo_root="$(git rev-parse --show-toplevel)"
 
 # --- find the release PR ----------------------------------------------------
-prs_json="$(gh pr list --state open --label "autorelease: pending" \
-  --json number,headRefName,baseRefName)"
-pr_count="$(printf '%s' "$prs_json" | python3 -c 'import json,sys; print(len(json.load(sys.stdin)))')"
-[ "$pr_count" -ne 0 ] || die "no open PR labeled 'autorelease: pending' — nothing to sync" 10
-[ "$pr_count" -eq 1 ] || die "found $pr_count PRs labeled 'autorelease: pending' — expected exactly 1, refusing to guess" 11
-
-pr_field() { printf '%s' "$prs_json" | python3 -c "import json,sys; print(json.load(sys.stdin)[0][\"$1\"])"; }
+if [ -n "$pr_arg" ]; then
+  # #438: the caller already knows the PR — look it up directly instead of
+  # racing the label search. Fail closed (10) on an unresolvable or non-open
+  # PR; never silently fall back to guessing.
+  pr_json="$(gh pr view "$pr_arg" --json number,headRefName,baseRefName,state 2>/dev/null)" ||
+    die "gh could not resolve --pr $pr_arg to a pull request" 10
+  pr_field() { printf '%s' "$pr_json" | python3 -c "import json,sys; print(json.load(sys.stdin)[\"$1\"])"; }
+  pr_state="$(pr_field state)"
+  [ "$pr_state" = "OPEN" ] || die "PR #$pr_arg is $pr_state, not open — refusing to treat it as the release PR" 10
+else
+  prs_json="$(gh pr list --state open --label "autorelease: pending" \
+    --json number,headRefName,baseRefName)"
+  pr_count="$(printf '%s' "$prs_json" | python3 -c 'import json,sys; print(len(json.load(sys.stdin)))')"
+  [ "$pr_count" -ne 0 ] || die "no open PR labeled 'autorelease: pending' — nothing to sync" 10
+  [ "$pr_count" -eq 1 ] || die "found $pr_count PRs labeled 'autorelease: pending' — expected exactly 1, refusing to guess" 11
+  pr_field() { printf '%s' "$prs_json" | python3 -c "import json,sys; print(json.load(sys.stdin)[0][\"$1\"])"; }
+fi
 pr_number="$(pr_field number)"
 head_ref="$(pr_field headRefName)"
 base_ref="$(pr_field baseRefName)"

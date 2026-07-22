@@ -117,17 +117,29 @@ MD
   git -C "$work" checkout -q main
 }
 
-# gh_stub <dir> <pr-list-json> — a fake `gh` on PATH that answers `pr list`
-# with the given JSON and refuses anything else.
+# gh_stub <dir> <pr-list-json> [<pr-view-json>] — a fake `gh` on PATH that
+# answers `pr list` with the list JSON, `pr view` with the view JSON (real-gh
+# "no pull requests found" failure when none was given), and refuses anything
+# else.
 gh_stub() {
-  local dir="$1" json="$2"
+  local dir="$1" json="$2" view_json="${3:-}"
   mkdir -p "$dir"
   printf '%s' "$json" >"$dir/pr-list-response.json"
+  rm -f "$dir/pr-view-response.json"
+  [ -z "$view_json" ] || printf '%s' "$view_json" >"$dir/pr-view-response.json"
   cat >"$dir/gh" <<EOF
 #!/usr/bin/env bash
 if [ "\$1" = "pr" ] && [ "\$2" = "list" ]; then
   cat "$dir/pr-list-response.json"
   exit 0
+fi
+if [ "\$1" = "pr" ] && [ "\$2" = "view" ]; then
+  if [ -f "$dir/pr-view-response.json" ]; then
+    cat "$dir/pr-view-response.json"
+    exit 0
+  fi
+  echo "GraphQL: Could not resolve to a PullRequest" >&2
+  exit 1
 fi
 echo "unexpected gh invocation: \$*" >&2
 exit 1
@@ -382,6 +394,79 @@ bare5_after="$(git -C "$WORK5.bare" rev-parse "release-please--branches--main")"
 } &&
   ok "conflicting forward-merge -> exit 13, nothing pushed" ||
   bad "merge-conflict ($code): $out"
+
+# --- #438: an explicit --pr skips the raced label search ---------------------
+# WORK6 is the race the chained apply keeps losing: the release PR EXISTS but
+# `autorelease: pending` is not yet visible to the label search (`pr list`
+# answers []). The caller (the strategy) already knows the PR number from
+# release-please's own output; --pr must locate the PR directly and proceed.
+WORK6="$TMP/work6"
+build_fixture "$WORK6" 0
+GH7="$TMP/gh7"
+gh_stub "$GH7" '[]' \
+  '{"number":42,"headRefName":"release-please--branches--main","baseRefName":"main","state":"OPEN"}'
+
+# dry-run --pr: reports the diff despite the empty label search, mutates nothing
+bare6_before="$(git -C "$WORK6.bare" show-ref)"
+out="$(cd "$WORK6" && PATH="$GH7:$PATH" "$SCRIPT" dry-run --pr 42 2>&1)"
+code=$?
+bare6_after="$(git -C "$WORK6.bare" show-ref)"
+{
+  [ "$code" -eq 0 ] &&
+    printf '%s' "$out" | grep -q '0.1.0 -> 0.2.0' &&
+    [ "$bare6_before" = "$bare6_after" ]
+} &&
+  ok "dry-run --pr works while the label search still answers empty (#438)" ||
+  bad "dry-run-pr ($code): $out"
+
+# check --pr: reports the mismatch (12), not the raced "no PR" (10)
+out="$(cd "$WORK6" && PATH="$GH7:$PATH" "$SCRIPT" check --pr 42 2>&1)"
+code=$?
+[ "$code" -eq 12 ] &&
+  ok "check --pr reaches the mismatch verdict (12), not the raced 10 (#438)" ||
+  bad "check-pr ($code): $out"
+
+# apply --pr: syncs VERSION onto the branch the view named
+out="$(cd "$WORK6" && PATH="$GH7:$PATH" "$SCRIPT" apply --approval-token eph-8 --pr 42 2>&1)"
+code=$?
+head6_version="$(git -C "$WORK6.bare" show "release-please--branches--main:VERSION" 2>/dev/null || true)"
+{ [ "$code" -eq 0 ] && [ "$head6_version" = "0.2.0" ]; } &&
+  ok "apply --pr syncs VERSION while the label search still answers empty (#438)" ||
+  bad "apply-pr ($code): $out; VERSION on branch = $head6_version"
+
+# and check --pr passes afterwards
+out="$(cd "$WORK6" && PATH="$GH7:$PATH" "$SCRIPT" check --pr 42 2>&1)"
+code=$?
+{ [ "$code" -eq 0 ] && printf '%s' "$out" | grep -qi 'in sync'; } &&
+  ok "check --pr passes once VERSION and the manifest agree (#438)" ||
+  bad "check-pr-in-sync ($code): $out"
+
+# --pr naming a PR that is not open: refuse (10) and say what state it is in —
+# a merged or closed PR is never a syncable release PR.
+GH8="$TMP/gh8"
+gh_stub "$GH8" '[]' \
+  '{"number":43,"headRefName":"release-please--branches--main","baseRefName":"main","state":"MERGED"}'
+out="$(cd "$WORK6" && PATH="$GH8:$PATH" "$SCRIPT" check --pr 43 2>&1)"
+code=$?
+{ [ "$code" -eq 10 ] && printf '%s' "$out" | grep -q 'MERGED'; } &&
+  ok "--pr on a non-open PR refuses (10) and names its state (#438)" ||
+  bad "pr-not-open ($code): $out"
+
+# --pr naming a PR gh cannot resolve: refuse (10), never fall back to guessing
+GH9="$TMP/gh9"
+gh_stub "$GH9" '[]'
+out="$(cd "$WORK6" && PATH="$GH9:$PATH" "$SCRIPT" check --pr 999 2>&1)"
+code=$?
+{ [ "$code" -eq 10 ] && printf '%s' "$out" | grep -q '999'; } &&
+  ok "--pr on an unresolvable PR refuses (10) naming it, no label-search fallback (#438)" ||
+  bad "pr-unresolvable ($code): $out"
+
+# --pr with a non-numeric value is a usage error (2), not a PR verdict
+out="$(cd "$WORK6" && PATH="$GH7:$PATH" "$SCRIPT" check --pr banana 2>&1)"
+code=$?
+[ "$code" -eq 2 ] &&
+  ok "--pr with a non-numeric value -> usage error 2 (#438)" ||
+  bad "pr-non-numeric ($code): $out"
 
 printf '\n%d passed, %d failed\n' "$pass" "$fail"
 [ "$fail" -eq 0 ]
