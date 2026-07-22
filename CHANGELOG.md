@@ -15,6 +15,71 @@ Conventional Commit messages at release time — there is no hand-maintained
 Unreleased section. (`bin/release.sh` survives only as legacy/fallback
 publication tooling and does not regenerate these entries.)
 
+## [0.10.0](https://github.com/thomas-estep/bindle/compare/v0.9.0...v0.10.0) (2026-07-22)
+
+
+### Features
+
+* **#217:** discover VERSION-file versions, drop the [None] changelog probe ([541dcc0](https://github.com/thomas-estep/bindle/commit/541dcc0e01910a18dc94d5f84497b724fc54c093))
+* **#228:** arch-node identity grammar, separate from the context graph ([08418d2](https://github.com/thomas-estep/bindle/commit/08418d2f4badae487ed61535f6ff1138d8cc95b3))
+* **#228:** architecture state layout, frozen schemas, project_id hard abort ([5066434](https://github.com/thomas-estep/bindle/commit/5066434222e9777799dbf773eb9c939b450ecf09))
+* **#228:** confidence-gated continuity matcher (slice 5) ([473ac4f](https://github.com/thomas-estep/bindle/commit/473ac4f9c04163114d0b7136071d0c737d4f5189))
+* **#228:** judgments.jsonl integrity, fold, and identity-commit ordering ([2bf6b75](https://github.com/thomas-estep/bindle/commit/2bf6b75735aaa61efc67a9169b949f57f5de8539))
+* **#228:** project-scoped cross-surface lock (PT28) ([f099db3](https://github.com/thomas-estep/bindle/commit/f099db3493e50faffb051867d657ad6856682283))
+* **#229:** clustering, naming and candidate records (slice C2) ([7122b94](https://github.com/thomas-estep/bindle/commit/7122b946d91bcae14fc076694840fda443be4505)), refs [#229](https://github.com/thomas-estep/bindle/issues/229)
+* **#229:** ranking, caps and deterministic diffs (slice C3) ([6d7b942](https://github.com/thomas-estep/bindle/commit/6d7b9421862dfe7f2e5c90d66da1ae67c637726a))
+* **#229:** ranking, caps and deterministic diffs (slice C3) ([c3bc493](https://github.com/thomas-estep/bindle/commit/c3bc49348d52d003f3d06666f0cd4607135ef4ff)), refs [#229](https://github.com/thomas-estep/bindle/issues/229)
+* **#229:** structural metrics and exclusion filtering (slice C1) ([c87cb2c](https://github.com/thomas-estep/bindle/commit/c87cb2cab1d269b08cfd7cad3cbb389df2356bba)), refs [#229](https://github.com/thomas-estep/bindle/issues/229)
+* **#230:** marker-agnostic region core and note rendering (slice D1) ([7fd4bf6](https://github.com/thomas-estep/bindle/commit/7fd4bf6fdf263a7121d5796a03282d4ccb507d1b))
+* **#230:** marker-agnostic region core and note rendering (slice D1) ([75e6c72](https://github.com/thomas-estep/bindle/commit/75e6c72d03018c19805d717b57f396fe1a0b0c60))
+* **#230:** notes-home containment and external-link allowlisting (slice D2) ([7d2bb69](https://github.com/thomas-estep/bindle/commit/7d2bb69d70e6e23dda020295583b0381c79d95cc))
+* **#230:** notes-home containment and external-link allowlisting (slice D2) ([ab678ee](https://github.com/thomas-estep/bindle/commit/ab678ee09225a0f55919a1216495addbf4c261a0))
+* **#230:** projection apply, resume and orphan classification (slice D4) ([c597bdb](https://github.com/thomas-estep/bindle/commit/c597bdb7b4d4ffa0df33671513231fdd9b415324))
+* **#230:** projection planner, plan fingerprint and cap marking (slice D3) ([e4eafc9](https://github.com/thomas-estep/bindle/commit/e4eafc991c75b98e7ad07d4729de751251a01018))
+* **#265:** gate a release PR whose VERSION disagrees with its manifest ([e3b7909](https://github.com/thomas-estep/bindle/commit/e3b79091c719eefaf2d4aa7e5824acf0ed42eb9e))
+* **#266:** audit the label lifecycle rules against live GitHub state ([dfe2959](https://github.com/thomas-estep/bindle/commit/dfe29594106e92c5f769912e4d8e8c3e4b14d723))
+* **#266:** audit the label lifecycle rules against live GitHub state ([2cd9c32](https://github.com/thomas-estep/bindle/commit/2cd9c32e0f1598d747c3e9e8a1e9dca1af6ae8e6))
+* **#287:** enforce label hygiene with a PreToolUse guard ([8d3441d](https://github.com/thomas-estep/bindle/commit/8d3441d1bc73fb2fe7c42d2340c5d2199c192189))
+* **#287:** enforce label hygiene with a PreToolUse guard ([9e0ff03](https://github.com/thomas-estep/bindle/commit/9e0ff032eb7bd65f604fcb6c922ef8aa524b0865))
+* **#337:** deny a git push to a branch whose PR is already merged ([0aa9b07](https://github.com/thomas-estep/bindle/commit/0aa9b0744a52fe8c02accfb67f79ecfec1330ecf))
+* **#374:** arch-node identity allocator and slug derivation ([214bb87](https://github.com/thomas-estep/bindle/commit/214bb871ebcd87a438fef87c26cfbdb151c68dc8))
+* **#374:** architecture projection CLI, init and config verbs (slice D5a) ([4842967](https://github.com/thomas-estep/bindle/commit/4842967e100a64d4a91afb4f226ed914668debfb))
+* **#374:** architecture projection CLI, init and config verbs (slice D5a) ([e430218](https://github.com/thomas-estep/bindle/commit/e430218632af40c4451d6e3779c453d7d6de1c05))
+* **#374:** architecture projection preview verb (slice D5b) ([fffaecb](https://github.com/thomas-estep/bindle/commit/fffaecb4a8ddbedcf99223a659fab352d243a26c))
+* **#374:** architecture projection preview verb (slice D5b) ([2a71829](https://github.com/thomas-estep/bindle/commit/2a7182969b65cea4d034823586ae6f33f18d78bb))
+* **#374:** Codex-side skill and install registration (D5d) ([b89b74e](https://github.com/thomas-estep/bindle/commit/b89b74e3123a14fc33573e36c4b17ba16579171e))
+* **#374:** Codex-side skill and install registration (D5d) ([1433006](https://github.com/thomas-estep/bindle/commit/1433006b6514c10f3f798eb09cc17e0c137a7d94))
+* **#374:** confirm and apply verbs, closing the projection loop (D5c) ([31e2d09](https://github.com/thomas-estep/bindle/commit/31e2d09939a28910c918e75c31388d16472d35db))
+* **#374:** confirm and apply verbs, closing the projection loop (D5c) ([b019377](https://github.com/thomas-estep/bindle/commit/b019377a433c828664426358f29c2c308d3ec604))
+* **#396:** keep codegraph guard state without transcript reads ([aa37a49](https://github.com/thomas-estep/bindle/commit/aa37a49f9344fe8468538016685cf8d4780c4a35))
+* **#396:** stop codegraph guard reading transcripts ([2923bb0](https://github.com/thomas-estep/bindle/commit/2923bb025190e8869a0e87ce9d6256e518c369dc))
+* add the subagent-concurrency guard ([60fbef5](https://github.com/thomas-estep/bindle/commit/60fbef5615349d59bf4c438821bcee17aab2f172))
+* assert every finding code is classified or explicitly excluded ([b595e40](https://github.com/thomas-estep/bindle/commit/b595e4023704b9f4c81f3b1fa017ed1835ba3574))
+* assert every finding code is classified or explicitly excluded ([a2912b6](https://github.com/thomas-estep/bindle/commit/a2912b663a1e52e70ec1a185e30924daa705a08d)), refs [#348](https://github.com/thomas-estep/bindle/issues/348)
+* wire the subagent-concurrency guard into the installer ([221904c](https://github.com/thomas-estep/bindle/commit/221904c9916dfe0443d5ad38a9cc342b752ff80f))
+
+
+### Bug Fixes
+
+* **#217:** discover VERSION-file versions and stop the [None] changelog probe ([164e121](https://github.com/thomas-estep/bindle/commit/164e1215e784e3d578739ec25635c29a69d7c5d6))
+* **#246:** resolve release-captain.toml from the target repo ([81b1239](https://github.com/thomas-estep/bindle/commit/81b123926c7145729fa941aef217005e6327a1a7))
+* **#278:** make release-captain's inherited-policy check observable and mechanized ([37f5099](https://github.com/thomas-estep/bindle/commit/37f50994df53ed2bac652bfc22afaac2b133e784))
+* **#312:** report hook wiring that bypasses ~/.claude/hooks ([383e4f4](https://github.com/thomas-estep/bindle/commit/383e4f4ed7e1b51a202a31eb4468fe778b067d52))
+* **#327:** refuse to publish a tag whose VERSION disagrees with the manifest ([6e24595](https://github.com/thomas-estep/bindle/commit/6e2459557773ffb6697fa1f995fc2c741ecc792f))
+* **#329:** match wired hooks by stable path ([0ce9dfa](https://github.com/thomas-estep/bindle/commit/0ce9dfad039034a38f88e8e93921e35a126bfaae))
+* **#329:** match wired hooks by stable path ([ed97932](https://github.com/thomas-estep/bindle/commit/ed97932f2ac2af3b4225a421175f1824b9c3e13e))
+* **#347:** disclose scan scope so a pre-`git add` green cannot read as clean ([59b6ca6](https://github.com/thomas-estep/bindle/commit/59b6ca6a68d6b3d2f820af7db50027d798ed6b6e))
+* **#364:** accept a priority label supplied in the same edit command ([ba32828](https://github.com/thomas-estep/bindle/commit/ba328281cd020e64ef9d1e9af14ef93ca20899f3))
+* **#366:** name a runnable command in the close-path denial ([f1dd4a1](https://github.com/thomas-estep/bindle/commit/f1dd4a19e5be107131872caf0bd647406fd30666))
+* **#374:** record the creation event so an identity can be continued ([5b80815](https://github.com/thomas-estep/bindle/commit/5b80815489722fbb9afec517a2676a7ebad8535d))
+* **#374:** record the creation event so an identity can be continued ([c9e7791](https://github.com/thomas-estep/bindle/commit/c9e7791f2b4a6f002b30b4a809c4045efae012b9))
+* **#388:** match gh invocations at a command position, not anywhere ([299bf5a](https://github.com/thomas-estep/bindle/commit/299bf5adbc004b8a6bf61c3527a18708058c32ed))
+* **#393:** bound the hook wire-up assertion structurally, not by line count ([07aee06](https://github.com/thomas-estep/bindle/commit/07aee06de9b9993c8f26c7b4f461189308cede80))
+* **#399:** evaluate every command segment and key the escape hatch by issue ([ac14de1](https://github.com/thomas-estep/bindle/commit/ac14de18fb8f15efb849a31e96a028ad36605c49))
+* **#411:** install.sh resolves hooks/skills to the primary checkout, never a linked worktree ([677e008](https://github.com/thomas-estep/bindle/commit/677e008e63da1c69d109089ef8437324205d72ca))
+* assert slot count in the nested-PostToolUse test case ([a46fbcb](https://github.com/thomas-estep/bindle/commit/a46fbcb076ac1162767fc4465f38df96652d16be))
+* strengthen the nested-PostToolUse test to catch id collisions ([8dde3e0](https://github.com/thomas-estep/bindle/commit/8dde3e0a423cbb29143838290fde0abb1ba62d72))
+
 ## [0.9.0](https://github.com/thomas-estep/bindle/compare/v0.8.0...v0.9.0) (2026-07-20)
 
 
