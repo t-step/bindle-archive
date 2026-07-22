@@ -409,3 +409,17 @@ authority vs. route to it verbally) and the reps that would follow it.
   end-to-end. Not yet exercised by a *Claude* subagent specifically (the skill
   was not installed under its own name this session, so a Claude-side rep would
   hit the harness index-lag; the Codex rep is the agent-facing evidence).
+
+## Contract change (2026-07-21, #242) — the E-series bar has moved; new reps owed
+
+#242 was settled and shipped: deferring under a valid pin now **obliges
+invoking** DomI's release-integrity checker when discoverable, mechanized as
+`bin/domi-release-check.sh` (unit-suite: 12 assertions, 3 predicted-and-killed
+mutants). The E-series above stays credited **under the bar it was scored
+against** — but its recorded authority behavior (3/3 verbal defer only, 0/3
+invoked) is exactly the behavior the new contract makes a FAIL.
+
+No protocol rep has yet exercised the new obligation. The campaign — both
+arms, fixture plan, predeclared PASS bar, and the realistic-pin ingredients —
+is filed as **#429** (v0.11.0), deferred deliberately so reps run against the
+merged, installed skill text rather than a pre-merge branch copy.

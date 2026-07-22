@@ -157,7 +157,11 @@ phrased. The recommendation is the deliverable of steps 1–5; cutting the relea
 is not yours to do. Proceed past this point only when the human explicitly
 approves the next step. Before any publication (i.e. before a human merges the
 resulting release PR and tags), run `package-release-integrity` to verify the
-cut is safe.
+cut is safe. Where that skill defers under a `.domi-pin`, the defer obliges
+running the authority: invoke `<bindle>/bin/domi-release-check.sh --repo <repo>`
+and relay DomI's verdict — an exit-`4` `checker-unreachable` is a degraded
+outcome to report explicitly, never a pass (see "Routing obliges invoking"
+below).
 
 ### Show the resolved strategy
 
@@ -280,12 +284,18 @@ that exited non-zero produced nothing to approve at the second gate.
   *whether and what* to cut. Note that skill defers on the same signal, so under
   a governing pin it returns `mode: defer` rather than a verdict; that is the
   authority working, not a check that failed to run.
-- **Route, don't invoke (a known soft spot).** This skill routes the call
-  upstream; it does not run DomI's own release-integrity itself. That matches
-  the contract's verb ("defer to", not "run"), but it means the authoritative
-  check can go unrun while this skill stays compliant. `package-release-integrity`
-  has the same gap, tracked in **#242** — which covers both skills, deliberately,
-  so the route-vs-invoke question is settled once rather than twice.
+- **Routing obliges invoking (#242, settled).** When step 1 finds inherited
+  policy, routing the call upstream also obliges **running DomI's own
+  release-integrity checker when it is discoverable** — as one command:
+  `<bindle>/bin/domi-release-check.sh --repo <repo>` — and relaying its
+  output and `domi-exit=<n>` verbatim as the authority's answer. Exit `4`
+  (`checker-unreachable`) is the only legitimate verbal defer: report it
+  explicitly as a degraded outcome, never a pass. This closes the E-series
+  soft spot where both this skill and `package-release-integrity` named the
+  authority, left its check unrun, and stayed compliant; the helper is
+  script-enforced for the same reason `--category` is (#278) — advisory
+  prose alone has not bound here. The advisory boundary stands: Bindle
+  relays DomI's verdict and is never the release authority.
 - **Below repository release policy.** Defer to repo-local or inherited (DomI)
   release policy where present — detected in Flow step 1, carried through step
   5, and enforced by the stop condition above. This bullet states the
