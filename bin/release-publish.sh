@@ -76,9 +76,30 @@ if [ "$verb" = "apply" ]; then
   [ -n "$token" ] || die "apply refused — no approval token" 3
 fi
 
+repo_root="$(git rev-parse --show-toplevel)"
+
+# --- VERSION / manifest agreement gate at the tag (#327) --------------------
+# release-please-sync.sh's `check` verb (#265) only gates the release-PR
+# construction path; nothing re-verified the pair after merge. Two known ways
+# they still disagree at publish time: release-please dying mid-apply (the
+# v0.9.0 cut — the chain stops before the sync AND its check ever run), or a
+# hand-edited release branch (VERSION is written only by that sync). Read
+# both files AT THE TAG, not the working tree, so a checkout on a different
+# branch/commit can't hide a stale tag. Exit 12 mirrors release-please-sync.sh
+# check's own mismatch code — same underlying invariant, same "an unrun check
+# is never read as a pass" intent (#265) — and 13 is distinct so a tag that
+# was never fetched isn't misread as a version disagreement.
+tag_version="$(git -C "$repo_root" show "$tag:VERSION" 2>/dev/null)" ||
+  die "tag '$tag' not found (or has no VERSION file) — fetch it first: git fetch --tags" 13
+manifest_json="$(git -C "$repo_root" show "$tag:.release-please-manifest.json" 2>/dev/null)" ||
+  die "tag '$tag' not found (or has no .release-please-manifest.json) — fetch it first: git fetch --tags" 13
+manifest_version="$(printf '%s' "$manifest_json" | python3 -c 'import json,sys; print(json.load(sys.stdin)["."])' 2>/dev/null)" ||
+  die "tag '$tag': .release-please-manifest.json is not valid JSON with a \".\" key" 13
+[ "$tag_version" = "$manifest_version" ] ||
+  die "tag '$tag' is inconsistent: VERSION says $tag_version, manifest says $manifest_version — refusing to publish. The VERSION sync (bin/release-please-sync.sh apply) never reached this tag; fix VERSION on the commit this tag should point to and re-tag, or delete and re-cut the tag" 12
+
 command -v gh >/dev/null 2>&1 || die "gh CLI not found on PATH" 4
 
-repo_root="$(git rev-parse --show-toplevel)"
 ver="${tag#v}"
 
 # --- extract the changelog section for this tag (mirrors release.yml) ------

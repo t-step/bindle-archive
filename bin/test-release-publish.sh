@@ -25,7 +25,15 @@ TMP="$(mktemp -d)"
 trap 'rm -rf "$TMP"' EXIT
 
 # build_fixture <work-dir> — a minimal git repo with a CHANGELOG carrying a
-# [0.6.0] section, for extraction assertions.
+# [0.6.0] section, for extraction assertions. Also lays down three tags for
+# the VERSION/manifest gate (#327):
+#   v0.6.0  VERSION and manifest agree at 0.6.0 (the happy path every other
+#           assertion in this file already exercises)
+#   v0.7.0  the v0.9.0 real-world shape: manifest bumped to 0.7.0, VERSION
+#           left at 0.6.0 -- the mismatch the gate must refuse to publish
+#   v9.9.9  VERSION and manifest agree at 9.9.9, no CHANGELOG section --
+#           exercises the pre-existing fallback-notes path, unrelated to the
+#           gate
 build_fixture() {
   local work="$1"
   git init -q "$work"
@@ -47,8 +55,22 @@ build_fixture() {
 
 - Older stuff.
 MD
+  printf '0.6.0\n' >"$work/VERSION"
+  printf '{\n  ".": "0.6.0"\n}\n' >"$work/.release-please-manifest.json"
   git -C "$work" add -A
   git -C "$work" commit -q -m init
+  git -C "$work" tag v0.6.0
+
+  printf '{\n  ".": "0.7.0"\n}\n' >"$work/.release-please-manifest.json"
+  git -C "$work" add -A
+  git -C "$work" commit -q -m "manifest bumped, VERSION sync never ran"
+  git -C "$work" tag v0.7.0
+
+  printf '9.9.9\n' >"$work/VERSION"
+  printf '{\n  ".": "9.9.9"\n}\n' >"$work/.release-please-manifest.json"
+  git -C "$work" add -A
+  git -C "$work" commit -q -m "9.9.9 matching pair"
+  git -C "$work" tag v9.9.9
 }
 
 # gh_stub <dir> <pr-list-json> <label-list-lines> — a fake `gh` on PATH that
@@ -191,6 +213,48 @@ code=$?
 { [ "$code" -eq 0 ] && printf '%s' "$out" | grep -q 'Release v9.9.9'; } &&
   ok "dry-run falls back to 'Release <tag>' when no changelog section matches" ||
   bad "fallback notes ($code): $out"
+
+# --- VERSION/manifest gate (#327): a trap `gh` that fails loudly if ever
+# invoked, proving the gate refuses BEFORE any gh call (not just before a
+# mutating one) --------------------------------------------------------------
+GHTRAP="$TMP/gh-trap"
+mkdir -p "$GHTRAP"
+ln -sf "$(command -v git)" "$GHTRAP/git"
+ln -sf "$(command -v python3)" "$GHTRAP/python3"
+ln -sf "$(command -v awk)" "$GHTRAP/awk"
+ln -sf "$(command -v bash)" "$GHTRAP/bash"
+ln -sf "$(command -v mktemp)" "$GHTRAP/mktemp"
+ln -sf "$(command -v sed)" "$GHTRAP/sed"
+ln -sf "$(command -v rm)" "$GHTRAP/rm"
+cat >"$GHTRAP/gh" <<'EOF'
+#!/usr/bin/env bash
+echo "UNEXPECTED gh invocation: $*" >&2
+exit 9
+EOF
+chmod +x "$GHTRAP/gh"
+
+out="$(cd "$WORK" && PATH="$GHTRAP" "$SCRIPT" dry-run v0.7.0 2>&1)"
+code=$?
+{
+  [ "$code" -eq 12 ] &&
+    printf '%s' "$out" | grep -q '0.6.0' &&
+    printf '%s' "$out" | grep -q '0.7.0' &&
+    ! printf '%s' "$out" | grep -qi 'UNEXPECTED gh'
+} &&
+  ok "dry-run refuses a tag whose VERSION disagrees with the manifest (v0.9.0 shape) -> exit 12" ||
+  bad "dry-run version/manifest mismatch ($code): $out"
+
+out="$(cd "$WORK" && PATH="$GHTRAP" "$SCRIPT" apply v0.7.0 --approval-token eph-4 2>&1)"
+code=$?
+{ [ "$code" -eq 12 ] && ! printf '%s' "$out" | grep -qi 'UNEXPECTED gh'; } &&
+  ok "apply refuses the same mismatch -> exit 12, never touches gh" ||
+  bad "apply version/manifest mismatch ($code): $out"
+
+out="$(cd "$WORK" && PATH="$GHTRAP" "$SCRIPT" dry-run v5.5.5 2>&1)"
+code=$?
+{ [ "$code" -eq 13 ] && printf '%s' "$out" | grep -qi 'not found'; } &&
+  ok "dry-run refuses a tag that does not exist locally -> exit 13" ||
+  bad "missing tag ref ($code): $out"
 
 printf '\n%d passed, %d failed\n' "$pass" "$fail"
 [ "$fail" -eq 0 ]
