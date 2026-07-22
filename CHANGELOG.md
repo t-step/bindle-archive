@@ -15,6 +15,22 @@ Conventional Commit messages at release time — there is no hand-maintained
 Unreleased section. (`bin/release.sh` survives only as legacy/fallback
 publication tooling and does not regenerate these entries.)
 
+## [0.10.1](https://github.com/thomas-estep/bindle/compare/v0.10.0...v0.10.1) (2026-07-22)
+
+
+### Bug Fixes
+
+* **#242:** mechanize the DomI release-integrity invocation both defer paths owe ([29fea0f](https://github.com/thomas-estep/bindle/commit/29fea0f7b85a2426b32ddb690538321e28fb64f7))
+* **#415:** merge the base branch forward onto a pinned release-PR branch before the hygiene-gated sync ([870e52d](https://github.com/thomas-estep/bindle/commit/870e52d71d34cbec8b7387a60a0c8e9287af0be1))
+* **#415:** merge the base branch forward onto a pinned release-PR branch before the hygiene-gated sync ([c0f0b92](https://github.com/thomas-estep/bindle/commit/c0f0b92038e9251db89458898f0c4f2abce15305))
+* **#435:** give the promote-knowledge cursor a same-day list ([3cde982](https://github.com/thomas-estep/bindle/commit/3cde98202b947f4686dd3aba5501f367aeff6f6b))
+
+
+### Performance Improvements
+
+* **#425:** parallelize bin/run-test-suites.sh ([41b3fe7](https://github.com/thomas-estep/bindle/commit/41b3fe7365ede5c7e9f00d9091cf292c5a8271af))
+* **#425:** parallelize bin/run-test-suites.sh ([b64f19c](https://github.com/thomas-estep/bindle/commit/b64f19cef70140e8fed0b10cd0f79db8de6dfd45)), refs [#425](https://github.com/thomas-estep/bindle/issues/425)
+
 ## [0.10.0](https://github.com/thomas-estep/bindle/compare/v0.9.0...v0.10.0) (2026-07-22)
 
 
