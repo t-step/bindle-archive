@@ -1,7 +1,6 @@
 {
   "schema_version": 1,
-  "sources": [],
-  "ungoverned_reason": "classifies the document-validation codes only; the runtime and CLI codes bin/context_graph emits (E_CONFIRM_*, E_PROPOSAL_*, E_CONFIG_*, E_MAP_UNREADABLE) are not yet triaged per-code — tracked in #348",
+  "sources": ["bin/context_graph"],
   "invariants": [
     { "code": "E_CONFIG_MALFORMED_PROJECT_ID", "classification": "schema-and-native" },
     { "code": "E_CONFIG_PROJECT_ID_REPO_SHAPED", "classification": "native-only" },
@@ -28,5 +27,28 @@
     { "code": "E_CANDIDATE_KEY_CONFLICT", "classification": "native-only" },
     { "code": "E_CANDIDATE_INVALID_ENDPOINT", "classification": "native-only" },
     { "code": "E_JUDGMENT_SUBJECT_TYPE_MISMATCH", "classification": "native-only" }
-  ]
+  ],
+  "excluded_codes": {
+    "E_CONFIG_MISSING": "load-stage (config.py): reports the config file's absence; a document invariant needs a document to validate, and no schema can reject a file that is not there",
+    "E_CONFIG_UNREADABLE": "parse-stage (config.py): file present but not valid JSON; the text never becomes a document either the schema or the native validator could see",
+    "E_CONFIG_MALFORMED_SHAPE": "pre-validation type-shape guard (config.py) so a wrong-shaped JSON document surfaces as a finding instead of an unhandled Python exception; emitted by the loader, not validation.py, whose FINDING_CODES the invariants list above is pinned to by the conformance completeness test",
+    "E_CONFIG_SCHEMA_VERSION_UNSUPPORTED": "load-time version gate (config.py): rejects documents from a different contract version before this version's invariants are applicable to them",
+    "E_CONFIG_UNKNOWN_FIELD": "loader strictness against unknown/typo'd fields (config.py), asserted by the loader's own unit tests; emitted outside validation.py's pinned FINDING_CODES - the schema's additionalProperties covers the same contract for conformance purposes",
+    "E_CONFIG_MALFORMED_BINDING_ID": "loader-side structural finding on binding_id shape (config.py), outside validation.py's pinned FINDING_CODES; asserted by the loader's own unit tests",
+    "E_CONFIG_BINDING_NOT_FOUND": "runtime lookup miss (config.py): a caller-supplied binding id names no configured binding; CLI input resolution, not a property of the document",
+    "E_CONFIG_LOCAL_ORIGIN_DISAGREEMENT": "environment cross-check (config.py): compares the document against the live git checkout's origin remote; no document-only validator, schema or native, can assert it",
+    "E_MAP_UNREADABLE": "I/O failure reading the project map (compiler.py); reports the run's environment, not document content",
+    "E_LEDGER": "generic fallback code carried by ledger.py's LedgerError default finding (confirmed a real emission, not a bare prefix constant - see #348); reports a failed ledger operation, not a document invariant",
+    "E_JUDGMENT_MALFORMED": "ledger read-path guard (ledger.py): a persisted judgment event missing required fields or carrying a bad decision is skipped with this finding at reduce time; robustness against a corrupt ledger, distinct from the E_JUDGMENT_* document invariant validation.py owns",
+    "E_REVIEW": "generic fallback code carried by review.py's ReviewError default finding (confirmed a real emission, not a bare prefix constant - see #348); same shape as E_LEDGER",
+    "E_CONFIRM_INVALID_DECISION": "confirm CLI input validation (review.py): the operator-supplied decision value is not one of the accepted decisions",
+    "E_CONFIRM_UNKNOWN_CANDIDATE": "confirm-time lookup miss (review.py): the caller-supplied candidate key is named by no prior ledger event",
+    "E_CONFIRM_INPUT_REQUIRED": "confirm CLI argument validation (review.py): an edge decision was invoked without the required --input payload",
+    "E_CONFIRM_KEY_MISMATCH": "propose/confirm staleness signal (review.py): the operator-supplied candidate key disagrees with the freshly recomputed one; a check about two runs, not one document",
+    "E_PROPOSAL_MALFORMED": "in-flight proposal payload validation (proposals.py): the proposal is ephemeral tool input en route to a judgment, not a persisted graph document in the conformance corpus",
+    "E_PROPOSAL_BASIS_INVALID": "in-flight proposal payload validation (proposals.py): basis array rejected by the frozen canonicalizer before any key bytes are computed; tool input, not corpus",
+    "E_PROPOSAL_UNKNOWN_ENDPOINT": "requires the live compile preview (proposals.py): endpoint ids are resolved against the current graph, which no single-document validator can express",
+    "E_PROPOSAL_ILLEGAL_ENDPOINT": "requires the live compile preview (proposals.py): endpoint legality is judged against the relationship matrix and both endpoints' current class/kind, a cross-object check on the live graph",
+    "E_PROPOSAL_ADVISORY_KEY_MISMATCH": "propose-time staleness signal (proposals.py): a caller-supplied advisory key disagrees with the recomputed candidate key; a check about two runs, not one document"
+  }
 }
