@@ -63,7 +63,13 @@ rather than dropping it.
    runs in a dedicated worktree whose branch is based on a freshly-resolved
    `origin/main` (or the mandated base) SHA, not a stale local `main`; the
    issue is open, actionable, and not blocked; named dependencies are
-   satisfied. A failed preflight is a stop condition, not something to fix
+   satisfied; and every scope claim in the issue body — any assertion
+   quantifying over a set (*only*, *every other*, *none*, *all of the*, *the
+   exception*) — is evidenced by an enumerating/complement query per
+   [issue-tracking.md](issue-tracking.md) § Conventions, not a
+   single-instance match. An issue is not `status: ready` without that
+   evidence, because the body is the whole contract the delegated worker
+   sees. A failed preflight is a stop condition, not something to fix
    silently.
 3. **Bounded objective** — one PR-able outcome stated in observable terms ("the
    audit's two matrix rows read *provider-specific* and a decision section
@@ -139,6 +145,8 @@ Copy this into an issue body or a handoff prompt and fill every section.
 - For a mutating packet: work runs in a dedicated worktree; branch based on a
   fresh `origin/main` (or `<base>`) SHA `<sha>`, not stale local `main`.
 - Issue #<n> is open, actionable, and unblocked; dependencies <…> satisfied.
+- Scope claims in the body carry complement-query evidence (issue-tracking.md
+  § Conventions), not single-instance matches.
 
 ### Bounded objective
 <One PR-able outcome in observable terms.>
