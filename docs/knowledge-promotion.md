@@ -85,7 +85,7 @@ confirmed proposal names.
 ````markdown
 # <project> — map
 
-updated: YYYY-MM-DD · evidence through: <sessions-filename or "none">
+updated: YYYY-MM-DD · evidence through: <sessions-filename or "none">[ · same-day: <other processed same-date filenames>]
 
 <!-- Purpose: recover the current mental model of this project in under
      five minutes. Owner-curated; /promote-knowledge proposes diffs. -->
@@ -351,12 +351,31 @@ a removal. Deletion is promotion too.
 ## Cursor semantics
 
 - The `evidence through:` value is the **filename** (not path) of the
-  newest session note processed, or `none` before the first run.
+  newest session note processed, or `none` before the first run. When the
+  run processed *other* files sharing that note's date, the line also
+  carries a **same-day list** — ` · same-day: <filenames>` — naming every
+  other processed same-date `sessions/` and `handoffs/` filename,
+  comma-separated. No other same-date files processed → the segment is
+  omitted.
 - "Evidence newer than the cursor" means the project's notes-home files —
   `sessions/*.md` and `handoffs/*.md` by date-stamped filename,
-  `profile.md` by mtime — dated after the cursor note's date.
+  `profile.md` by mtime — dated after the cursor note's date, **plus** any
+  session/handoff file dated *equal* to it whose filename is neither the
+  cursor note nor on the same-day list. A single filename cannot order
+  files within one day: a note written *after* a run but dated the same day
+  fails a strict "dated after" test and is otherwise silently skipped
+  forever (demonstrated on 2026-07-21 — the dogfood run's own session note
+  sorted before the cursor it had just written; Issue #435).
+- **Backward compatibility:** a cursor line with no same-day list treats
+  same-date files other than the cursor note as unprocessed. A map written
+  before this rule may therefore re-surface a few already-screened
+  candidates once — the owner declines them again; adding the list by hand
+  is the migration.
 - **A completed run always advances the cursor**, including a run where
-  the owner confirms nothing. The cursor-line update (and its `updated:`
+  the owner confirms nothing. The advance rewrites the whole cursor line:
+  the cursor becomes the newest processed session note, and the same-day
+  list becomes exactly the other processed files sharing that note's date.
+  The cursor-line update (and its `updated:`
   date) is the only map edit applied without itemized confirmation — it is
   announced, not asked. Consequence: rejected and deferred candidates are
   not re-proposed unless *new* evidence raises them again.
@@ -541,7 +560,8 @@ automates the same steps as `/promote-knowledge`):
    `none`, a rejected/deferred candidate, or a run interrupted before this
    step completes allocates and persists no identity at all — no pending-id
    side file exists anywhere in this contract.
-9. Advance the cursor and `updated:` date; announce it.
+9. Advance the cursor line — cursor, same-day list, and `updated:` date,
+   per Cursor semantics — and announce it.
 10. Summarize: promoted / rejected / deferred counts and the new cursor.
 
 ## Privacy
