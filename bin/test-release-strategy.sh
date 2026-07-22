@@ -275,6 +275,56 @@ code=$?
   ok "apply fails when the post-sync check reports a VERSION/manifest mismatch" ||
   bad "apply-gate-failure ($code): $out"
 
+# --- #438: apply passes the PR number release-please reported to the sync ---
+# The chained sync races the `autorelease: pending` label when it has to SEARCH
+# for the PR. release-please's own output already names the created/updated PR
+# (`number: 437`); apply must capture that and hand it to both chained calls so
+# the search never runs. The no-number stub used by every assertion above
+# proves the fallback: no `--pr` appears there, the label search remains.
+NUM_STUB="$TMP/rp-num-stub.sh"
+cat >"$NUM_STUB" <<'EOF'
+#!/usr/bin/env bash
+echo "STUB-RELEASE-PLEASE $*" >>"$RP_STUB_LOG"
+echo "✔ Successfully opened pull request"
+echo "number: 437"
+echo "title: chore(main): release 0.11.0"
+EOF
+chmod +x "$NUM_STUB"
+: >"$RP_STUB_LOG"
+: >"$SYNC_STUB_LOG"
+out="$(cd "$FIX" && GITHUB_TOKEN=faketoken RC_CONFIG="$TMP/good.toml" RELEASE_PLEASE_CMD="$NUM_STUB" \
+  RELEASE_PLEASE_SYNC_CMD="$SYNC_STUB" \
+  "$SEL" apply --approval-token "eph-438" 2>&1)"
+code=$?
+{
+  [ "$code" -eq 0 ] &&
+    grep -q 'STUB-SYNC apply .*--pr 437' "$SYNC_STUB_LOG" &&
+    grep -q 'STUB-SYNC check .*--pr 437' "$SYNC_STUB_LOG"
+} &&
+  ok "apply hands release-please's PR number to both chained sync calls (#438)" ||
+  bad "apply-pr-number ($code): log=$(cat "$SYNC_STUB_LOG")"
+
+# release-please's output must still reach the operator when captured
+printf '%s' "$out" | grep -q 'Successfully opened pull request' &&
+  ok "apply still surfaces release-please's own output when capturing it (#438)" ||
+  bad "apply-pr-number-output: $out"
+
+# --- #438 fallback: no parsable number -> chain WITHOUT --pr (label search) ---
+: >"$RP_STUB_LOG"
+: >"$SYNC_STUB_LOG"
+out="$(cd "$FIX" && GITHUB_TOKEN=faketoken RC_CONFIG="$TMP/good.toml" RELEASE_PLEASE_CMD="$STUB" \
+  RELEASE_PLEASE_SYNC_CMD="$SYNC_STUB" \
+  "$SEL" apply --approval-token "eph-439" 2>&1)"
+code=$?
+{
+  [ "$code" -eq 0 ] &&
+    grep -q 'STUB-SYNC apply' "$SYNC_STUB_LOG" &&
+    grep -q 'STUB-SYNC check' "$SYNC_STUB_LOG" &&
+    ! grep -q -- '--pr' "$SYNC_STUB_LOG"
+} &&
+  ok "apply without a parsable PR number chains the sync with no --pr (#438)" ||
+  bad "apply-pr-fallback ($code): log=$(cat "$SYNC_STUB_LOG")"
+
 # --- apply precondition: dirty target tree (#278) ---------------------------
 DIRTY="$TMP/dirty"
 git init -q "$DIRTY"
