@@ -165,7 +165,7 @@ Preview first, `--apply` to write; `uninstall` reverses it. See
 [docs/session-notes-format.md](docs/session-notes-format.md#opt-in-hook-automation-breadcrumbs).
 
 The same command wires the `PreToolUse` guards, one at a time and only when
-named — `install --guard nested-notes|label-hygiene|codegraph|git-push-merged`. A bare
+named — `install --guard nested-notes|label-hygiene|codegraph|git-push-merged|subagent-concurrency`. A bare
 `install` never wires a guard, so installing Bindle cannot silently start
 intercepting your tool calls; `bin/doctor.sh` reports which shipped hooks are
 installed but unwired, so opt-in does not mean invisible. (Not to be confused
