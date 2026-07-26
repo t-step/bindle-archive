@@ -711,15 +711,23 @@ so there is no failing test *of the shipped text* to fix. `SKILL.md` and
 
 ## Claim 9 — `/session-start` loads the facts that bear on the session objective
 
-**Status: PILOT COMPLETE, NOT VERIFIED (2026-07-26, #422 Phase 2a).** C1 as
-the design words it is **refuted**; the re-scoped selectivity axis separates
-cleanly (RED 9/11 bodies vs GREEN 5/5) at 2 reps per arm. C2 **FAILS** its
-zero-body criterion. The top-up to 5 reps per variant is owed before any
-VERIFIED claim. Arm declared
-below **before** any dispatch. Third protocol-compliant series in this file,
-after Claims 6 and 8. Pilot is 2 reps per arm on the Claim 8 pattern; the top-up
-to 5 is owed, and the content id below is what proves the two sittings are one
-series.
+**Status: TWO SERIES, NOT VERIFIED (2026-07-26, #422 Phase 2a + #456).** Both
+sittings ran against the same content id, and **their results disagree.**
+
+- **Series 1 — the pilot** (2 reps per arm). Refuted C1 as the design words it,
+  and re-scoped the axis to *selectivity* on RED reading **9 and 11** bodies
+  against GREEN's **5 and 5**.
+- **Series 2 — the #456 top-up** (20 credited reps, at the 5-rep bar). Refutes
+  the re-scoped axis as well, and **inverts** it: RED reads **1–2** bodies and
+  still finds the target **5/5**, while GREEN reads **5 every time**. C2
+  **FAILS 5/5** against the criterion #457 reworded for it, and C3 **PASSES
+  5/5**.
+
+The two series are **not pooled.** An environment defect corrected between them
+moved RED by a factor of four on an unchanged contract, fixture and model — the
+delta is recorded under series 2 and is the most load-bearing result in this
+entry. Arm declared before dispatch in both. Third and fourth protocol-compliant
+series in this file, after Claims 6 and 8.
 
 **Model:** Opus 5 (`claude-opus-5[1m]`), Claude Code — both arms.
 **Content:** GREEN arm `sha256:8125f826c579`, captured at declaration and
@@ -742,8 +750,11 @@ grepped for `Skill` calls (any call ⇒ void).
 - **C1** — with an objective a shed fact bears on, the session reads that fact's
   **body** and cites it. RED arm: the same session without the loader step does
   not.
-- **C2** — with an objective unrelated to every fact, **no** bodies are read (the
-  cap is a ceiling, not a quota).
+- **C2** — with an objective unrelated to the shed target fact, **strictly fewer
+  bodies than the cap** are read and each loaded fact's bearing on the objective
+  is stated (the cap is a ceiling, not a quota). **Reworded 2026-07-26 (#457),
+  after the pilot ran**, from "unrelated to every fact … **no** bodies are read";
+  the record of that change is below.
 - **C3** — with no objective and no handoff next-step, no bodies are read.
 - **C4** — with no notes home at all, orientation completes and says nothing
   about facts. Covered mechanically at the script layer by
@@ -777,13 +788,18 @@ away.
 |---|---|---|---|---|
 | C1 RED — contract @ `66be7a7`, loader absent from contract **and** tree | 2 | **9**, **11** | 2/2 | 0/2 ran `facts-index.sh` (absent); **1/2 hand-rolled one** |
 | C1 GREEN — contract @ `2571599` | 2 | **5**, **5** | 2/2 | 2/2 |
-| C2 GREEN — objective unrelated to every fact | 1 | **2** | n/a | 1/1 |
+| C2 GREEN — objective unrelated to the shed target fact | 1 | **2** (< cap; both bearings stated) | n/a | 1/1 |
 | C3 GREEN — no objective, no handoff next-step | 1 | **0** | n/a | 1/1 |
 | VOID | 2 | — | — | see below |
 
-**Top-up owed:** 3 more reps per C1 arm and 4 more each for C2/C3 to reach the
-5-rep standard. The `**Content:**` id above is what binds that sitting to this
-one.
+**Top-up:** run as **series 2** below (#456) and recorded separately, not added
+to these counts. The `**Content:**` id above is unchanged across both sittings
+— and it constrains the *order* of the remaining #422 work: this file is
+excluded from the id, but every other tracked file under
+`skills/session-continuity/` is in it, so a `SKILL.md` edit landed before the
+top-up would move the id and split these 6 reps off into their own series. The
+#457 pointer-list answer is therefore recorded in `SKILL.md` **after** the
+top-up, not before.
 
 **C1 as the design states it is REFUTED, and that is the finding.** The design
 predicted a RED arm that does not reach the shed fact. Both RED reps reached it,
@@ -805,15 +821,39 @@ contract adds is the **cap** and the **disclosure**, both of which appeared in
 2/2 GREEN reps and 0/2 RED reps ("Facts read (5 of 40) … Say the word if any of
 those was the wrong pick").
 
-**C2 FAILS by the letter and passes on the intent — recorded as a FAIL.** The
-design says an unrelated objective loads **no** bodies. The rep loaded **two**:
+**C2's criterion was changed after the result was known — read this before
+crediting its pass.** The pilot recorded C2 as a **FAIL**: the design said an
+unrelated objective loads **no** bodies, and the rep loaded **two** —
 `docs-site-builds-from-main` (the objective edits `README.md`, and that repo's
-docs site publishes from `main` on merge) and `main-is-protected`. Both are
-defensible — arguably more useful than silence — but the criterion as written is
-not met. The honest reading is that "unrelated to every fact" is not a state a
-40-fact store admits: process facts bear on any objective. Either C2's wording
-needs to become "does not fill the cap," or the criterion stays and this stays a
-FAIL. Not decided here.
+docs site publishes from `main` on merge) and `main-is-protected`. Both picks
+were defensible, arguably more useful than silence, but the criterion as written
+was not met.
+
+#457 settled it by **rewording the criterion** to "strictly fewer bodies than
+the cap, each loaded fact's bearing stated," and the pilot rep is **credited**
+under that wording. The argument for the rewording is that "unrelated to every
+fact" is not a state a populated store admits — process facts (branch
+protection, review rules, publication surfaces) bear on any objective, so the
+old criterion could only ever be met by an empty or contrived store, which is
+not the thing under test.
+
+The argument *against* is that the threshold moved after the data was seen,
+which is the shape of a result fitted to its outcome. Three things bound that
+risk, and a reader should weigh them rather than take the pass at face value:
+
+- The **measurement** did not change. Bodies read (2) and bearings stated (2/2)
+  are read off the same transcript under either wording; only the pass threshold
+  moved.
+- The new criterion is still **falsifiable and not vacuous** — a rep that fills
+  the cap, or that loads a fact without stating its bearing, fails. C1 GREEN's
+  reps read exactly 5 and would fail C2's threshold, so the two variants are not
+  measuring the same thing.
+- The **failure it was originally written to catch** is still caught by C3,
+  which demands zero bodies with no objective at all and got zero.
+
+If the four top-up reps do not hold the line — if C2 starts filling the cap, or
+stops stating bearings — that is the reworded criterion failing, and it stays a
+FAIL.
 
 **The cap is not behaving as a quota, but the C1 evidence alone would not show
 that.** Both C1 GREEN reps read *exactly* 5 — suspicious on its own. C2 (2) and
@@ -860,3 +900,139 @@ clean).
 there is no failing test *of the shipped text* to fix. The failures recorded here
 are in the **design's criteria** (C1's predicted RED, C2's zero-body rule), not
 in the command or the skill.
+
+### Results — series 2, the #456 top-up (2026-07-26)
+
+**Model:** Opus 5 (`claude-opus-5[1m]`), Claude Code — both arms, exact id read
+off each run's own init event rather than assumed.
+**Content:** GREEN arm `sha256:8125f826c579`, re-verified immediately before the
+first rep and unchanged throughout — identical to series 1. The RED arm carries
+no content id: it loads no installed skill, only the pre-Phase-2a contract at
+`66be7a7`.
+
+**Arms unchanged from series 1.** RED = `commands/session-start.md` +
+`skills/session-continuity/SKILL.md` at `66be7a7`, zero mentions of
+`facts-index`; GREEN = the same two files at `2571599`, three mentions. Contract
+supplied as files; the `Skill` tool forbidden in both arms and **0 calls across
+all 20 credited reps**.
+
+| Variant | Reps | Bodies read (of 40) | Target found | Ran an index | Named what it read |
+|---|---|---|---|---|---|
+| C1 RED — loader absent from contract **and** tree | 5 | **1, 2, 1, 1, 1** | 5/5 | 0/5 | 0/5 |
+| C1 GREEN — contract @ `2571599` | 5 | **5, 5, 5, 5, 5** | 5/5 | 5/5 | 5/5 |
+| C2 GREEN — objective unrelated to the shed target fact | 5 | **5, 5, 5, 5, 5** | n/a | 5/5 | 5/5 |
+| C3 GREEN — no objective, no handoff next-step | 5 | **0, 0, 0, 0, 0** | n/a | 5/5 | n/a |
+| VOID | 5 | — | — | — | see below |
+
+**The single most important result is not in the table: the rep environment
+moved RED by a factor of four on an unchanged contract.** The first three C1 RED
+reps read **7, 8 and 5** bodies. The same contract, fixture, model and prompt,
+re-run with one environment defect corrected, read **1, 2 and 1**. Nothing about
+the artifact under test changed. Any body-count comparison across sittings —
+including series 1's headline 9-and-11 — is therefore only as trustworthy as the
+permission environment it was gathered in, and series 1's is not recorded.
+
+**C1's re-scoped axis is refuted, and inverted.** Series 1 concluded the
+loader's margin was selectivity: RED reaching the shed fact expensively (9, 11
+bodies) where GREEN reached it cheaply (5, 5). At 5 reps per arm in a clean
+environment, **RED is the selective one** — 1 or 2 bodies, target found 5/5,
+reached through `profile.md`'s pointer list — and GREEN reads the full cap every
+time. On the axis series 1 re-scoped to, the loader is behind.
+
+**The cap is a quota, not a ceiling — 10/10 where an objective exists.** Every
+C1 GREEN and every C2 rep read exactly 5. Every C3 rep read exactly 0. The
+shipped wording ("**at most 5** … the cap is a ceiling, not a quota") is being
+read as *zero when there is no objective, five when there is* — a binary, not a
+budget. Series 1 could not see this: its C1 GREEN reps also read exactly 5, but
+its single C2 rep read 2, which looked like graduation and was the evidence
+offered that the cap was behaving.
+
+**C2 FAILS 5/5 and the reworded criterion is what makes the failure legible.**
+#457 reworded C2 to "strictly fewer bodies than the cap, each loaded fact's
+bearing stated" after series 1's zero-body wording proved unmeetable. Under it,
+all five reps fail on the count while passing on the bearings: for a
+`--color/--no-color` objective the picks were `cli-uses-click-not-argparse`,
+`dont-refactor-cli-parser`, `config-precedence-order`, `logging-goes-to-stderr`
+and `changelog-entry-per-pr` — every one defensible for adding a CLI flag. The
+criterion change was made after series 1's data was seen; it did not rescue the
+claim, it made the claim fail 5/5 for a stateable reason. **Kept as a FAIL.**
+
+**C3 PASSES 5/5**, and it is now the only variant carrying the "cap is not a
+quota" claim — which, on this evidence, it carries alone precisely because it is
+the case where the cap is not engaged at all.
+
+**What GREEN does earn: disclosure.** 5/5 GREEN reps named the facts they read
+("**Facts read (5):** …", several adding "say the word if any of those was the
+wrong pick"); 0/5 RED reps named anything. GREEN also enumerated the store
+deterministically 15/15 across C1/C2/C3. Enumeration and disclosure are what the
+loader delivers on this evidence; bounded reading is not.
+
+**Five void reps (void rate 5/25 = 20%), every one an environment or harness
+defect, none a rep behaving badly.**
+
+- **1 × no `--add-dir`.** The rep was sandboxed to the repo directory and refused
+  every read of the contract and the notes home. It said so plainly and oriented
+  from the repo alone.
+- **1 × loader denied.** A C1 GREEN rep was refused approval to run the script
+  twice, fell back to enumerating the store from filenames, and **reported both
+  the refusal and the substitution unprompted**. See the finding below.
+- **3 × mixed permission environment.** The three C1 RED reps that read 7/8/5
+  were each refused commands mid-run (`git -C <path>`, compound
+  `date && git branch && …`). Voided rather than kept, because their arm no
+  longer matched GREEN's.
+
+**A shipped-text defect this campaign found, and the one it did not.** The
+auto-mode classifier refuses `<bindle>/bin/facts-index.sh` by absolute path:
+`/session-start`'s `allowed-tools` pre-approves only the repo-relative spelling,
+and `<bindle>` is resolved at runtime, so prefix matching cannot cover it. An
+interactive session prompts; a **non-interactive one is refused outright, so a
+headless `/session-start` orients without its facts step entirely.** That is
+documented in the command as of #456. What was *not* found is a silent failure:
+a rule requiring a blocked index to be disclosed was drafted and then reverted,
+because the rep it was based on had disclosed the blockage and its substitution
+without being asked. No RED failure, no edit (Iron Law).
+
+**Three grading bugs, all caught before they reached this table, all in the
+count that is the axis under test.** Series 1 recorded one that inflated a
+count; series 2 found three that deflated one. A rep's reads were missed when it
+(a) `cd`-ed into `facts/` and paged bare filenames in a `for` loop, (b) used
+`grep -A3` as a partial body read, and (c) looped over **slugs with no `.md`
+suffix** (`for f in <slug> <slug>; do cat $f.md; done`). Case (c) scored a rep at
+**0 bodies** that had disclosed reading five. The grader now matches against the
+known slug set rather than path shapes, counts frontmatter sweeps separately, and
+self-tests on all four reading forms. **A body-read count is not a primitive
+observation — it is a parser, and it should be treated as code under test.**
+
+**Environment controls in force.** Own fixture root per rep (repo + notes home +
+per-arm `bindle/` copy). Dispatch was headless `claude -p` with **cwd = the
+fixture repo**, so Bindle's `CLAUDE.md` was not inherited — but the operator's
+**global** `~/.claude/CLAUDE.md` was, in every rep, and one rep cited it by name.
+That is an uncontrolled input series 1 did not record. `BINDLE_NOTES_DIR` was
+supplied per rep via a `--settings` override, because `settings.json`'s `env`
+block **overrides the inherited environment** — without the override the
+SessionStart hook injected the *real* notes-home path into every rep, which is a
+live answer-key vector. Item-9 isolation is therefore stronger here than in
+series 1. `breadcrumbs.log` (written by the SessionEnd hook, not the rep) is
+excluded from the fixture checksum the way build artifacts are. Answer-key
+reach: **0** reads of any real path across all 20 credited transcripts.
+Primary-checkout guard captured before and after every rep and **identical
+within every one** (the baseline itself moved twice, from this session's own
+commits, never from a rep).
+
+**Fixture: a spec-matched reconstruction, not series 1's bytes.** The series 1
+builder existed only in a session scratchpad and is gone (#260) — the problem
+that issue tracks, now with its second worked consequence. Series 2's store is
+40 facts / **375 body lines** against series 1's stated **560**, one fact
+bearing on the C1 objective, with deliberate distractors (`coverage-gate-is-85`,
+`no-network-in-unit-tests`, `arm64-builds-are-emulated`) so that finding the
+target is a selection task rather than a keyword match. The smaller store is
+cheaper to bulk-read, which biases RED toward reading *less* — conservative
+against the loader, and not the explanation for a 4× swing that the permission
+fix alone reproduced.
+
+**No skill edit (Iron Law).** GREEN complied with the shipped step in 15/15
+reps: it enumerated, it selected, it capped at 5, it named what it read. The
+failures recorded here are in the **design's claims** — C1's predicted RED, the
+re-scoped selectivity axis, and the cap-as-ceiling reading — not in `SKILL.md`.
+Whether "at most 5" should be reworded so the cap stops reading as a quota is a
+design decision this series is the evidence for, and it is **not** taken here.

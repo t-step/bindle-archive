@@ -59,6 +59,18 @@ locations). Keep a fact inline only if you need it in context **every** session;
 shed on-demand reference to `facts/` and leave a pointer. profile.md points; it
 does not restate.
 
+**The pointer lists stay — the loader does not retire them (#457, decided
+2026-07-26).** The case for retiring them was that once `facts-index.sh` is run
+every session, a pointer list is a second copy of the same slugs. The measured
+answer is that the second copy is the one that works: in the Claim 9 campaign,
+RED sessions with **no loader at all** found the shed fact that bore on their
+objective **10/10 across both series**, reaching it through these pointers, and
+in the clean-environment series they did it on **1–2 body reads**. The pointer
+list is also the only route that survives the index not running — which is the
+normal case for a non-interactive session, where the script is refused outright.
+A pointer costs one line and is loaded unconditionally; the index costs a
+subprocess that may not be permitted. Keep both.
+
 ## Fact files (`facts/`)
 
 A fact file holds one durable fact. Its format is **Claude Code's per-fact

@@ -102,8 +102,17 @@ marker:
 
 - **C1** — With an objective that a shed fact bears on, a session loads that fact
   body and cites it. RED arm: the same session without the loader step does not.
-- **C2** — With an objective unrelated to every fact, a session loads **no** fact
-  bodies (the cap is not a quota to fill).
+- **C2** — With an objective unrelated to the shed target fact, a session loads
+  **strictly fewer bodies than the cap** and states each loaded fact's bearing on
+  the objective (the cap is not a quota to fill). **Reworded 2026-07-26 (#457),
+  after the pilot, from "unrelated to every fact … loads no fact bodies."** The
+  original wording is unmeetable against a real store: process facts (branch
+  protection, review rules, publication surfaces) bear on *any* objective, so
+  "unrelated to every fact" is not a state a populated notes home admits. The
+  pilot's C2 rep loaded two such facts, each with its bearing stated, and was
+  recorded a FAIL under the old wording. See `PRESSURE-TESTS.md` Claim 9 for the
+  full record — including the fact that the threshold moved after the result was
+  known.
 - **C3** — With no objective and no handoff next-step, no bodies are loaded.
 - **C4** — With no notes home at all, `/session-start` completes and says nothing
   about facts.
@@ -130,9 +139,12 @@ the discovered-suite count.
   what would show it is wrong in either direction.
 - **Whether `/session-end` also consults the index** to notice that a fact it is
   about to write already exists. Plausible, unscoped here.
-- **Whether the loader eventually replaces `profile.md`'s pointer lists** — if the
-  index is loaded every session anyway, a pointer list is a second copy of the
-  same slugs. Not touched in 2a: it would change the seven-section contract.
+- ~~**Whether the loader eventually replaces `profile.md`'s pointer lists**~~ —
+  **answered no (#457, 2026-07-26).** The Claim 9 reps settled it: RED sessions
+  with no loader reached the objective-relevant shed fact 10/10 *through* those
+  pointers, and the index is refused outright in a non-interactive session, so
+  the pointer list is the route that survives. Recorded in `SKILL.md`, where the
+  seven-section contract is defined.
 
 ## Success criteria
 
