@@ -708,3 +708,63 @@ clean); `refs` moved to 15 only when this branch was cut, after the last rep.
 **No skill edit (Iron Law).** Every GREEN rep that loaded the contract complied,
 so there is no failing test *of the shipped text* to fix. `SKILL.md` and
 `commands/session-end.md` are unchanged by this campaign.
+
+## Claim 9 — `/session-start` loads the facts that bear on the session objective
+
+**Status: PILOT IN PROGRESS (declared 2026-07-26, #422 Phase 2a).** Arm declared
+below **before** any dispatch. Third protocol-compliant series in this file,
+after Claims 6 and 8. Pilot is 2 reps per arm on the Claim 8 pattern; the top-up
+to 5 is owed, and the content id below is what proves the two sittings are one
+series.
+
+**Model:** Opus 5 (`claude-opus-5[1m]`), Claude Code — both arms.
+**Content:** GREEN arm `sha256:8125f826c579`, captured at declaration and
+re-verified immediately before the first GREEN rep. The RED arm carries **no
+content id**: it loaded no installed skill, only the pre-Phase-2a contract at
+`66be7a7`, which is what identifies it.
+
+**Declared arm (before dispatch):** the `/session-start` orientation contract,
+supplied to the subagent **as files** so the version under test is fixed
+regardless of what is installed (Claim 8 precedent). RED =
+`commands/session-start.md` + `skills/session-continuity/SKILL.md` at
+`66be7a7` (`origin/main`), verified to contain **zero** mentions of
+`facts-index`; GREEN = the same two files at `2571599` (3 mentions). The two
+prompts are byte-identical except the contract directory. The `Skill` tool is
+forbidden in both arms, so attribution is by pasted contract; every rep is
+grepped for `Skill` calls (any call ⇒ void).
+
+**Claims under test** (from the Phase 2a design):
+
+- **C1** — with an objective a shed fact bears on, the session reads that fact's
+  **body** and cites it. RED arm: the same session without the loader step does
+  not.
+- **C2** — with an objective unrelated to every fact, **no** bodies are read (the
+  cap is a ceiling, not a quota).
+- **C3** — with no objective and no handoff next-step, no bodies are read.
+- **C4** — with no notes home at all, orientation completes and says nothing
+  about facts. Covered mechanically at the script layer by
+  `bin/test-facts-index.sh` (checks 1–3) rather than by reps.
+
+**Fixture (identical for both arms, one per rep).** A `demo-app` Python CLI repo
+(one commit, one uncommitted change, tests not run) plus a notes home holding
+`profile.md`, one session note, **no** `handoffs/` dir, and **six** facts of
+which exactly one — `ci-badge-red-is-billing` — bears on the C1 objective ("the
+CI badge went red on the last push; find out why and get the build green"). The
+C2 objective (`--color/--no-color` flag) bears on none.
+
+**Environment controls.** Own fixture root per rep. Each fixture carries its
+**own copy** of `bin/facts-index.sh` + `bin/slugify.sh` in a `bindle/` dir with
+no `docs/` and no evidence files, so the real checkout is never named and the
+rubric is unreachable by construction — a stronger item-9 control than Claim 8's,
+and the reason this campaign does not dispatch with cwd inside the Bindle
+checkout. `BINDLE_NOTES_DIR` is supplied explicitly to **every** arm, including
+RED. The prompt never names `facts-index.sh`: naming it would hand RED the
+mechanism whose absence is the measurement.
+
+**What a GREEN pass can earn here.** The GREEN contract states the rule it is
+being graded on (read ≤5 relevant bodies, name them), so a GREEN pass shows the
+*stated* rule is followed — not that it generalizes to a case the wording never
+describes. Recorded per the protocol's item-9 distinction rather than claimed
+away.
+
+<!-- RESULTS APPENDED BELOW AFTER THE PILOT -->
