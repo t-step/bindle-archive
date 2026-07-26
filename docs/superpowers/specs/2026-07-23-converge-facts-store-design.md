@@ -216,20 +216,40 @@ should reference each other.
     harness's frontmatter enrichment — the file lands without `node_type`,
     `originSessionId`, or `modified`, which is precisely what #423's lint must
     reject.
+  - *Enrichment does not survive the symlink.* A follow-up run proved enrichment
+    is applied **at write time**, not at session end: an agent that wrote a
+    memory into a real `memory/` dir and immediately read it back saw
+    `node_type`, `originSessionId`, and `modified` it had not authored. The
+    interactive write through the symlink stayed unenriched indefinitely. So the
+    symlink costs the enrichment on every write, not just on the resolved-path
+    workaround above.
   So the single-store symlink is viable for interactive sessions and breaks
   memory writes in unattended ones. The named fallback — a drift-check over two
   format-identical stores — remains open, and the Phase 2 choice between them is
-  deliberately not made here. Still untested: whether enrichment survives the
-  symlink (confounded by session lifetime), fact-level relevance recall through
-  it (only the index was proven to load), and out-of-tree worktrees.
+  deliberately not made here.
+- **Correction to a premise: the harness does not auto-inject fact *bodies*.**
+  This doc (and #422's body) describe the harness as loading the per-fact store
+  "by relevance." What is injected up front is the **`MEMORY.md` index**; the
+  fact body is not. Asked a question answerable only from a fact file's body and
+  forbidden from using tools, a session replied `NO-FACT` — **in both arms**,
+  symlinked *and* real `memory/` dir. So this is not a symlink defect; it is what
+  the mechanism does. Consequence for the design: the symlink's advertised payoff
+  ("Claude gets proactive surfacing of vault facts for free") is really *index*
+  surfacing for free, with the body still costing a read — and in headless runs a
+  read of a symlink target outside the workspace is itself sandbox-blocked. That
+  narrows the asymmetry between Claude and Codex the loader was meant to close,
+  which makes the Phase 2 portable loader *more* attractive relative to the
+  symlink, not less.
 - **The harness memory dir is keyed to the git repo root, not to cwd** — the
   *transcript* dir is keyed to the encoded cwd, and only that. Measured: a
   session whose cwd is `repo/.worktrees/wt1` gets its own
   `~/.claude/projects/<worktree-key>/` transcript dir but resolves memory to the
   **primary** repo key, and read the vault canary through the primary's symlink.
   Corroborated in this repo, where two historical worktree-keyed project dirs
-  exist and neither has a `memory/`. So one symlink at the primary key covers
-  every worktree; a *moved* repo still remaps. The vault is keyed to the kebab
+  exist and neither has a `memory/`. Confirmed again for a worktree created
+  **outside** the repo tree, which also read the primary key's memory — so the
+  rule is the git repo root, not "a subdirectory of the checkout". One symlink at
+  the primary key covers every worktree; a *moved* repo still remaps. The vault is keyed to the kebab
   slug from `<bindle>/bin/slugify.sh`; the encoded-path mapping is the harness's,
   not Bindle's.
 - **Harness writes become vault git changes.** Every harness memory write dirties
