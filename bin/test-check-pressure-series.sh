@@ -96,7 +96,9 @@ mkdir -p "$TMP/real/skills/session-continuity"
 } >"$TMP/real/skills/session-continuity/PRESSURE-TESTS.md"
 
 out="$("$GATE" --all --root "$TMP/real" 2>&1)"
-check "a real three-field block passes --all" contains "1 block" "$out"
+rc=$?
+check "a real three-field block passes --all" equals 0 "$rc"
+check "a real three-field block registers its one block" contains "1 block" "$out"
 check "a real block is not reported incomplete" not_contains "missing" "$out"
 
 # Same block with **Protocol:** deleted — the pre-A state.
@@ -119,7 +121,9 @@ mkdir -p "$TMP/hok/skills/hands-on-keyboard"
 } >"$TMP/hok/skills/hands-on-keyboard/PRESSURE-TESTS.md"
 
 out="$("$GATE" --all --root "$TMP/hok" 2>&1)"
-check "the blank-line-separated shape passes --all" contains "1 block" "$out"
+rc=$?
+check "the blank-line-separated shape passes --all" equals 0 "$rc"
+check "the blank-line-separated shape registers its one block" contains "1 block" "$out"
 check "the blank-line-separated shape is not reported incomplete" not_contains "missing" "$out"
 
 # ===========================================================================
@@ -131,7 +135,9 @@ extract_real_block "$REPO_ROOT/skills/license-compliance-auditor/PRESSURE-TESTS.
   '^# license-compliance-auditor' >"$TMP/lca/skills/license-compliance-auditor/PRESSURE-TESTS.md"
 
 out="$("$GATE" --all --root "$TMP/lca" 2>&1)"
-check "the prose-interleaved shape passes --all" contains "1 block" "$out"
+rc=$?
+check "the prose-interleaved shape passes --all" equals 0 "$rc"
+check "the prose-interleaved shape registers its one block" contains "1 block" "$out"
 check "the prose-interleaved shape is not reported incomplete" not_contains "missing" "$out"
 
 # ===========================================================================
@@ -165,14 +171,28 @@ mkdir -p "$TMP/override/skills/fork-pr-flow"
 } >"$TMP/override/skills/fork-pr-flow/PRESSURE-TESTS.md"
 
 out="$("$GATE" --all --root "$TMP/override" 2>&1)"
+rc=$?
+# A positive guard first: if extract_real_block ever returns nothing (a
+# reworded heading in fork-pr-flow's file would silently break the
+# '^## Claim — the PR base follows' pattern above), the gate sees zero blocks
+# and prints "0 block(s) complete" — which trivially satisfies both
+# not_contains checks below without ever exercising the override path at all.
+check "the override fixture actually yielded a block" contains "1 block" "$out"
 check "a real per-arm **Protocol:** override is accepted" not_contains "not a legal value" "$out"
 check "a real per-arm **Protocol:** override is not reported missing" not_contains "missing" "$out"
+check "a real per-arm **Protocol:** override makes --all pass" equals 0 "$rc"
 
 # ===========================================================================
 echo
 echo "the live-match count — the #459 alarm. Run against the REAL repo:"
 
 live="$(grep -rh '^\*\*Model:\*\*' "$REPO_ROOT"/skills/*/PRESSURE-TESTS.md | wc -l | tr -d ' ')"
+# A positive floor on $live itself, not just equality with $seen: if the glob
+# ever stops expanding (skills/ renamed, evidence files moved, the suite run
+# from a tree with none), $live is 0 and $seen is 0 too — equals "0" "0"
+# passes while the assertion's own name promises "not zero". This is the
+# #459 shape recurring one layer up, in the suite that exists to catch it.
+check "the real tree actually has evidence files to measure" [ "$live" -gt 0 ]
 seen="$("$GATE" --all --count-only)"
 check "the parser sees every real block, not zero" equals "$live" "$seen"
 
