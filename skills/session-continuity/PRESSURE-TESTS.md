@@ -4,11 +4,15 @@
 > — arm declaration, the pre-dispatch fixture checklist, environment controls,
 > and grading.
 >
-> **Pre-protocol counts — grandfathered (#223, #261):** **every** rep series in
-> this file predates the arm-declaration rule. They were gathered without first
-> verifying, per rep, which skill actually won the trigger — so an unknown
-> fraction may be **void** (a rep a competing skill answered tests nothing about
-> this skill). Treat them as a distribution over skills, not an arm.
+> **Protocol boundary (#223, #261, #444):** this file holds series from both
+> sides of the arm-declaration rule, so read the split rather than a blanket
+> caveat. **Protocol-compliant:** Claim 6 (2026-07-19) and Claim 8
+> (2026-07-25) — arm declared before dispatch. **Pre-protocol:** everything
+> else — Claims 1 (incl. 1a–1c), 2, 3 (incl. 3a–3c), 4 (incl. 4a), 5. Those
+> were gathered without first verifying, per rep, which skill actually won the
+> trigger, so an unknown fraction may be **void** (a rep a competing skill
+> answered tests nothing about this skill). Treat them as a distribution over
+> skills, not an arm.
 >
 > Per the #261 decision they are **grandfathered, not voided**: they stand as
 > recorded and are **not** owed a re-run — re-running roughly a hundred reps
@@ -507,9 +511,12 @@ unchanged.
   are closed by sub-claims 3c and 4a. Remaining weaker/mid-bracket gaps
   (Claims 2–4 on Haiku or Sonnet 5) are tracked in the operator's notes, not
   here.
-- **Claims 7 and 8 below (the #422 facts-store contract) are DRAFT — arms
-  declared, reps deferred to issue #444.** The contract edits shipped without
-  a RED→GREEN campaign; nothing about them is verified behavior yet.
+- **Claim 7 below (the #422 `/project-profile` shedding rule) is DRAFT — arm
+  declared, no reps run.** Deferred to issue #444 with the rest of the campaign.
+- **Claim 8 is PARTIAL, not draft and not verified:** a protocol-compliant
+  RED→GREEN series ran on 2026-07-25 (RED 4/4 FAIL, GREEN 2/2 PASS) but both
+  arms are short of the 5-rep bar. Treat it as evidenced; #444 tracks the
+  top-up.
 
 ## Claim 7 — `/project-profile` sheds on-demand facts to pointers (Rule: runbook-vs-pointer)
 
@@ -541,18 +548,89 @@ no bulk rewrite. Deferred to #444 with the rest of Claim 7.
 
 ## Claim 8 — `/session-end` overwrites current-state facts in place (Rule: no strikethrough)
 
-**Status: DRAFT — arm declared, reps pending (deferred to #444).**
+**Status: PARTIAL (2026-07-25, #444) — clean separation, below the bar.**
+RED **4/4 FAIL**, GREEN **2/2 PASS**, 1 void. Both arms are short of the 5-rep
+standard, so the claim is **evidenced, not verified**; #444 stays open for the
+top-up (1 RED + 3 GREEN). First protocol-compliant series in this file after
+Claim 6.
 
-**Model:** to be recorded at dispatch.
-**Content:** to be recorded at dispatch (`bin/skill-content-id.sh
-session-continuity`, computed at dispatch time — never reconstructed).
+**Model:** Opus 5 (`claude-opus-5[1m]`), Claude Code — both arms.
+**Content:** GREEN arm `sha256:f43ed039de5d`, captured at dispatch and
+re-verified immediately before the first GREEN rep. The RED arm carries **no
+content id and this is not an `unrecorded`**: it loaded no installed skill at
+all, only the pre-Phase-1 contract at `2d65607`, which is what identifies it.
 
-Arm: the session-continuity `/session-end` skill+command. Scenario: a fixture
-notes home holding a `facts/<slug>.md` with `type: project` (e.g. "prod: armed")
-and a matching profile pointer; the session's work flips the state ("prod:
-disarmed"). Ask the agent to close the session and record the change. RED = no
-skill; GREEN = real `/session-end` + skill.
+**Declared arm (before dispatch):** the session-continuity `/session-end`
+contract, supplied to the subagent **as files** so the version under test is
+fixed regardless of what is installed (Claim 5 / sub-claim 1c precedent). RED =
+`skills/session-continuity/SKILL.md` + `commands/session-end.md` at `2d65607`,
+verified to contain neither the `facts/` schema nor the overwrite rule; GREEN =
+the same two files on `main` @ `8731c20`. The two prompts are byte-identical
+except the contract path. The `Skill` tool was forbidden in both arms, so
+attribution is by pasted contract rather than a `Launching skill:` line — every
+rep was still grepped for `Skill` calls (any call ⇒ void; **0 across all
+seven**).
 
-Predicted RED failure: agent appends a strikethrough or a stacked correction
-(old value retained). GREEN: the fact file is overwritten in place, old value
-gone, `metadata.modified` bumped; no strikethrough anywhere.
+Scenario: a fixture notes home holds `facts/prod-arm-state.md`
+(`metadata.type: project`, seeded **armed**, `modified` 2026-07-20) plus a
+`[[prod-arm-state]]` pointer in `profile.md`'s safety notes; the fixture repo
+has the disarm **committed** on `main`. The session is asked to close out and
+"make sure the notes home reflects the project's current state."
+
+PASS required all five: current state disarmed; **old value gone** (no
+strikethrough, no history line, no dated correction); `modified` bumped; schema
+intact; no duplicate fact file.
+
+| Variant | Reps | Result (filesystem is ground truth; self-reports were not scored) |
+|---|---|---|
+| RED — pre-Phase-1 contract @ `2d65607` | 4 | **4/4 FAIL.** Every rep overwrote in place, bumped `modified`, kept the schema and refused to fork a second fact — then retained the old value in a history remnant: a `**History:** armed … from 2026-07-20 until 2026-07-25` tail (rep 1) and, in reps 2–4, a clause inside `**Why:**` ("The path was armed from 2026-07-20 … until this change" / "It was `True` from 2026-07-20 until 2026-07-25"). |
+| GREEN — current contract @ `8731c20` | 2 | **2/2 PASS** on all five criteria. Disarmed, **no remnant in any slot**, `modified` bumped, schema intact, no duplicate, `profile.md` correctly untouched (its pointer already resolved). |
+| VOID — fixture v1 | 1 | Fixture defect, not a result. See "Fixture v1 was confounded" below. |
+
+**The predicted RED was wrong, and that is the finding.** #444 and the draft
+arm above predicted a strikethrough or a stale fact. Neither occurred in any of
+the four RED reps: the pre-Phase-1 baseline *already* overwrites current-state
+facts in place. What it does not do is drop the old value. So Claim 8's real
+margin is one history line — a much narrower claim than the issue body asserts,
+and the GREEN arm has to remove a *defensible-looking* sentence rather than an
+obvious blunder. Anyone reading "RED 4/4 FAIL" as "the baseline leaves the fact
+stale" would be drawing the wrong conclusion from a true count.
+
+**Partial credit to the convention, not the contract.** Two RED reps
+independently wrote *"overwrite this file the moment it flips"* / *"re-state
+this fact here whenever the default flips"* into the fact's own **How to
+apply**, and one named the gap outright — *"the session-end procedure documents
+`profile.md`/`profile-proposals.md` but says nothing about the `facts/` store,
+so the overwrite-in-place call came from the fact's shape, not from the
+command."* The overwrite instinct is reachable without Phase 1; the
+no-history rule is what the contract adds.
+
+**Fixture v1 was confounded — rep void, defect recorded.** v1 left the disarm as
+an *uncommitted* working-tree edit. The rep correctly refused to record
+"disarmed", because `main` still shipped `ARM_DEFAULT = True`: *"Do not
+downgrade that rule on the strength of the pending disarm; it only takes effect
+once … merged to `main`."* Retaining the old value was the right answer, so the
+axis could not be measured — a legitimate blocker unrelated to the claim,
+exactly the defect class the pre-dispatch checklist exists to catch. v2 commits
+the disarm. Two further defects were caught by the builder's own postconditions
+before any dispatch: a missing `tests/__init__.py` made the "green suite"
+precondition fail, and the postcondition suite run then left `__pycache__`
+behind, which would have handed the next rep a dirty tree and re-opened the same
+ambiguity.
+
+**Environment controls.** Own fixture root per rep (repo + notes home);
+`BINDLE_NOTES_DIR` supplied explicitly to **every** arm, including RED — the
+methodology fix sub-claim 1c owed and the reason no rep touched the operator's
+real notes home this time. Dispatch cwd was the Bindle checkout, so reps
+inherited its `CLAUDE.md`; `AskUserQuestion` forbidden (unattended branch
+exercised, 0 calls). Answer-key reach: **0** `file_path` calls on any real path
+and **0** `PRESSURE-TESTS` hits across all seven transcripts. A naive
+`grep Developer/bindle` returned 38 hits on rep 1 — all from the inherited
+environment block and the scratchpad's own encoded path, none a read, which is
+the false positive protocol item 9 warns about. Primary-checkout guard identical
+across the campaign (`refs=14`, `HEAD=8731c20`, `core.bare=false`, 1 worktree,
+clean); `refs` moved to 15 only when this branch was cut, after the last rep.
+
+**No skill edit (Iron Law).** Every GREEN rep that loaded the contract complied,
+so there is no failing test *of the shipped text* to fix. `SKILL.md` and
+`commands/session-end.md` are unchanged by this campaign.
