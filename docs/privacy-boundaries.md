@@ -121,9 +121,19 @@ If private info lands in a commit:
 | `bin/check-private-info.sh` | personal patterns above + your denylist | pre-commit hook, `make check`, or by hand on any file |
 | `.gitignore` | private/local note files ever becoming trackable | always |
 | pre-commit `detect-private-key` | key material | every commit |
-| Gitleaks (`.gitleaks.toml`) | secrets + the same personal rules, over history too | on demand / CI if you add it |
+| Gitleaks (`.gitleaks.toml`), via `bin/check-gitleaks.sh` | secrets + the same personal rules, over history too | pre-commit hook (`--staged`) and `make check` (`--history`), since #354 |
 
-Run Gitleaks manually when you want a history-wide sweep:
+**Two modes, because they see different things (#354).** The pre-commit hook
+runs `bin/check-gitleaks.sh --staged`, which scans the content of the commit
+being made; `make check` runs it `--history`, which scans every commit. A
+history scan is blind to staged content — staged content is not yet a commit —
+so neither mode alone is the gate. Both print what they scanned and a
+**PARTIAL** banner naming what they did not. If gitleaks is not installed, the
+gate prints `NOT RUN` and exits 0: `bin/check-private-info.sh` is the always-on,
+dependency-free layer, and a gate that blocks work over a missing optional tool
+gets bypassed rather than heeded.
+
+Run Gitleaks by hand when you want a sweep outside those two call sites:
 
 ```bash
 brew install gitleaks
@@ -145,10 +155,11 @@ three home-path hits: `gitleaks git .` and `make check` were both run and both
 green while the new files were untracked; the pre-commit hook, which sees
 staged content, failed on the same three lines minutes later. Since #347,
 `bin/check.sh` and `bin/check-private-info.sh` disclose their own scope and
-print a **PARTIAL** banner naming the untracked files they skipped; `gitleaks`
-is a foreign tool and prints no such thing, so its result means "clean" only
-when `git status --porcelain` is empty. Never quote a pre-`git add` scan as
-evidence.
+print a **PARTIAL** banner naming the untracked files they skipped. Since #354,
+`bin/check-gitleaks.sh` prints the same banner around gitleaks, which as a
+foreign tool discloses nothing itself — but a bare `gitleaks git .` run by hand
+still means "clean" only when `git status --porcelain` is empty. Never quote a
+pre-`git add` scan as evidence.
 
 One more asymmetry worth knowing before writing a fixture: `gitleaks` has no
 equivalent of the inline `private-ok` marker `bin/check-private-info.sh`

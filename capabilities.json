@@ -903,6 +903,10 @@
       "reason": "privacy scanner sourced by bin/check.sh and the pre-commit hook; internal machinery, not a standalone capability."
     },
     {
+      "path": "bin/check-gitleaks.sh",
+      "reason": "gitleaks gate invoked by bin/check.sh (--history) and the bindle-gitleaks pre-commit hook (--staged); internal machinery, not a standalone capability."
+    },
+    {
       "path": "bin/run-test-suites.sh",
       "reason": "discovers and runs every tracked bin/test-*.sh; gate machinery invoked by make test and the commit hook, not a capability an agent invokes for its own sake."
     },

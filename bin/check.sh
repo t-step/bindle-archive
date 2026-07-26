@@ -663,6 +663,30 @@ if ! $content_only; then
   fi
 fi
 
+# --- gitleaks, history sweep (#354) ----------------------------------------
+# The secret sweep the private-info scan does not do: gitleaks reads every
+# COMMIT, so it catches what was once committed and later deleted — history the
+# tracked-file scan above cannot see.
+#
+# NOT under --content-only, deliberately. The pre-commit hook runs the same
+# script in `--staged` mode, which is the only mode that sees the content of the
+# commit being made; running the history sweep there as well would scan twice at
+# commit time for no added coverage. The two modes are complementary, not
+# redundant — a history scan is blind to staged content, because staged content
+# is not yet a commit.
+#
+# The script prints its own section header, verdict and scope banner, and exits
+# 0 when gitleaks is not installed (NOT RUN, never "clean").
+#
+# Guarded on the script EXISTING, not merely on the binary. bin/test-check.sh
+# and bin/test-check-frontmatter.sh copy check.sh into minimal throwaway repos
+# that contain no other bin/ script, so an unconditional call here fails their
+# clean-exit regression floors — the trap #295 recorded. Existence of the script
+# in a real checkout is owned by the capability inventory, not by this line.
+if ! $content_only && [ -x bin/check-gitleaks.sh ]; then
+  bin/check-gitleaks.sh --history || problem "gitleaks found something (see above)"
+fi
+
 # --- scan scope (#347) ------------------------------------------------------
 # Every section above enumerates its work with `git ls-files`, so an UNTRACKED
 # file is outside all of them — and the verdict below then reads as a statement

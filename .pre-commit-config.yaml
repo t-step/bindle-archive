@@ -45,6 +45,18 @@ repos:
         entry: bin/check-private-info.sh
         language: script
         types: [text]
+      # The secret sweep over what this commit actually contains. `--staged` is
+      # the only mode that sees it: a history scan reads commits, and staged
+      # content is not a commit yet, so `make check`'s history sweep is blind to
+      # exactly what is being landed here (#354, the PR #345 shape). Exits 0
+      # with a NOT RUN notice when gitleaks is not installed — check-private-info
+      # stays the always-on dependency-free layer.
+      - id: bindle-gitleaks
+        name: gitleaks (secrets in the staged commit)
+        entry: bin/check-gitleaks.sh --staged
+        language: script
+        pass_filenames: false
+        always_run: true
       - id: bindle-content
         name: Bindle content (frontmatter/name/links/version)
         entry: bin/check.sh --content-only
