@@ -139,9 +139,12 @@ the discovered-suite count.
   what would show it is wrong in either direction.
 - **Whether `/session-end` also consults the index** to notice that a fact it is
   about to write already exists. Plausible, unscoped here.
-- **Whether the loader eventually replaces `profile.md`'s pointer lists** — if the
-  index is loaded every session anyway, a pointer list is a second copy of the
-  same slugs. Not touched in 2a: it would change the seven-section contract.
+- ~~**Whether the loader eventually replaces `profile.md`'s pointer lists**~~ —
+  **answered no (#457, 2026-07-26).** The Claim 9 reps settled it: RED sessions
+  with no loader reached the objective-relevant shed fact 10/10 *through* those
+  pointers, and the index is refused outright in a non-interactive session, so
+  the pointer list is the route that survives. Recorded in `SKILL.md`, where the
+  seven-section contract is defined.
 
 ## Success criteria
 
