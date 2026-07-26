@@ -44,6 +44,11 @@ depends on:
   [delegation-profiles.md](delegation-profiles.md)'s recorded #87 decision:
   a cross-model eval is required only when a workflow's own documentation
   explicitly claims weaker-model-safety, never as a blanket requirement.
+  **What counts as such a claim** — its one home, its per-surface form for
+  vendor claims, and what voids it — is
+  [pressure-testing-protocol.md](pressure-testing-protocol.md) § Safety
+  claims. The bar a claim must clear is this document's stopping rule; the
+  claim itself lives beside its evidence, never here.
 - **Why this stays policy, not a harness** is
   [product-boundary.md](product-boundary.md) non-goal 4 — evaluation
   infrastructure is research until recurring need is demonstrated.

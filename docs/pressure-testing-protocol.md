@@ -210,6 +210,12 @@ interactive choice; sequential is the default and the recommendation.
   carry no id — nothing was loaded. A series whose id is not known writes
   `**Content:** unrecorded` — an explicit unknown, never silence, never a
   value derived after the fact;
+- any **safety claim** the series earns — a `**Claim:**` line beside the
+  `**Model:**` and `**Content:**` lines, asserting that a named bracket is
+  safe **for this workflow's task shape**, e.g. "**Claim:** vendor-safe
+  (Codex CLI) for the commit-gate task shape — discovered, read, and
+  behaviorally followed". A claim is optional; most series earn none, and
+  a series that earns none writes no line (see the silence rule below);
 - a FAIL kept as a FAIL. A recorded failure that is neither fixed nor diagnosed
   is honest evidence; quietly dropping it is not.
 
@@ -232,6 +238,50 @@ mentioned in surrounding prose is **not** a record: put every id that counts
 inside the field. (Before #459 the parser required the id to follow
 `**Content:** ` immediately and unquoted, so it matched nothing this repo had
 ever written and the banner never fired.)
+
+### Safety claims (#332)
+
+A **claim** is an assertion in a workflow's own evidence file that a named
+bracket — a weaker Claude tier, or another vendor — is safe for that
+workflow's task shape. It matters because it is a **trigger**:
+[workflow-eval.md](workflow-eval.md) requires a cross-model eval only when a
+workflow explicitly claims weaker-model-safety, never as a blanket
+requirement. Until a claim exists, that machinery never runs.
+
+- **One home.** The `**Claim:**` field is the single declared place, for the
+  same reason `**Model:**` and `**Content:**` are (#312/#323). It sits next to
+  the evidence that earns it, so a reader never has to reconcile a claim in one
+  file against reps in another. Prose that restates a claim collapses into the
+  field; prose in which the bracket is part of a *finding* stays.
+- **The bar is [workflow-eval.md](workflow-eval.md)'s stopping rule** for the
+  workflow's own capability class: 3 reps per variant for C0–C1, 5 for C2–C4,
+  5 unanimous for C5 — with the result schema's state-based fields recorded,
+  which is what the `**Model:**` and `**Content:**` fields exist to supply. A
+  claim below its bar is not a weaker claim; it is not a claim.
+- **Vendor claims name their surface.** "Safe under Codex" is not one property.
+  `skill-portability-audit.md`'s U1–U6 already decompose it — discovered,
+  read, behaviorally followed — and a claim names the surfaces actually
+  evidenced. The asymmetry is live, not hypothetical: U2 is resolved for
+  `verify-then-commit` and explicitly open for `fork-pr-flow`, so a flat
+  "Codex-safe" claim would be false for one of the two.
+- **A claim is scoped to the content that earned it.** It applies to the
+  `**Content:**` id recorded beside it and to nothing else. When the skill's
+  content moves, `bin/check.sh`'s warn-only `stale reps` banner names the
+  file, and every claim in it is **void until re-earned** — the drift signal
+  is the one already shipped for reps (#339), not a second mechanism. Warn-only
+  is deliberate and matches that decision: a stale claim is a disclosure
+  problem, and a gate that blocks commits gets bypassed rather than heeded.
+- **Silence means unknown.** A workflow that claims nothing writes nothing;
+  absence is not a denial, and no counter-statement is owed. The one exception:
+  a file that claims **one** bracket must name the brackets it does **not**
+  claim, so a partial claim cannot be read as a general one.
+- **Neither axis implies the other.** A vendor claim is not a weaker-model
+  claim and a weaker-model claim is not a vendor claim, in either direction.
+- **A claim is never a ranking.** Per `delegation-profiles.md`, this contract
+  names no commercial model and ranks none against another. A claim is scoped
+  to one workflow's task shape — the #87 campaign's framing, "pressure-tested
+  for that task shape, not a general ranking of one model." A claim that
+  generalizes past its task shape is out of scope, however good its reps.
 
 Counts predating this protocol carry a caveat line saying so — they were
 gathered without arm attribution, and an unknown fraction may be void.
