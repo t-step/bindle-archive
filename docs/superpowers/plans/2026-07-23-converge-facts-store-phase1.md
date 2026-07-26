@@ -349,8 +349,20 @@ git commit -m "docs(#422): record Phase 1 plan in the capability ledger"
 
 ## Out of scope (Phase 2 / not this plan)
 
+> **Premise correction (measured 2026-07-25), for whoever plans Phase 2.** This
+> plan and the design it implements assumed the harness auto-loads the per-fact
+> store "by relevance." It does not: it injects the `MEMORY.md` **index**, and
+> fact bodies are never auto-injected — in a symlinked *and* a real `memory/`
+> dir alike. Nothing in Phase 1 depends on that assumption (Phase 1 is a
+> format-and-discipline change), but both Phase 2 items below were scoped
+> against it. See the design doc's "Risks and open validation items".
+
 - The harness `memory/` → vault `facts/` **symlink** and its validation step.
-- The **portable Codex loader** in the command layer.
+  Measured: reads through the symlink work, interactive writes work, **headless
+  writes are refused**, and write-time frontmatter enrichment is lost.
+- The **portable Codex loader** in the command layer. Given the correction above,
+  this is the only mechanism on the table that proactively surfaces fact
+  *bodies* — and it does so for Claude as well as Codex.
 - The frontmatter **lint** (#423) — it enforces the schema this plan freezes.
 - **Vault migration** of bindle's own profile — private-data dogfooding, no repo diff.
 - Any **SQLite/derived index** — Markdown stays canonical.

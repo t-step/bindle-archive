@@ -14,7 +14,9 @@ fact space:
   session by `/session-start`).
 - **The Claude Code harness memory store**
   (`~/.claude/projects/<encoded-repo-path>/memory/` — per-fact `*.md` files plus
-  a thin `MEMORY.md` index), which the harness loads *by relevance* on its own.
+  a thin `MEMORY.md` index). The harness injects that **index** on its own; the
+  fact *bodies* it does not (measured 2026-07-25 — see "Risks and open
+  validation items").
 
 They run the same taxonomy (feedback / project / reference / user) and **drift
 independently**: measured duplication of ~¼–⅓ of the profile's substance,
@@ -36,6 +38,10 @@ store has all three but lives Claude-Code-only under `~/.claude/`.
    that asymmetry is felt every other session, which is exactly the tool-coupling
    the convergence exists to remove, merely relocated from the *store* to the
    *loader*. Whatever we build must give Claude and Codex the **same** behavior.
+   *Measured 2026-07-25:* the free surfacing Claude actually gets is the
+   `MEMORY.md` **index**, not fact bodies — so the asymmetry this constraint
+   guards against is narrower than assumed, and the constraint itself is
+   unchanged (see "Risks and open validation items").
 3. **The fact-file format is not ours to design.** Claude Code already writes
    the per-fact store in a fixed schema (see below). For a single physical store
    to round-trip through the harness unchanged, the canonical `facts/` format
@@ -68,8 +74,10 @@ metadata:
 
 Rules the canonical format inherits from what the harness already writes:
 
-- `name` equals the filename slug; `description` is a quoted one-liner used for
-  relevance-loading.
+- `name` equals the filename slug; `description` is a quoted one-liner. It is
+  what an index entry and any relevance-selection step have to work from; note
+  that no measurement here shows the harness selecting on it — what the harness
+  demonstrably injects is `MEMORY.md`.
 - **`type` is `metadata.type`**, not a top-level key; vocabulary
   `feedback | project | reference | user`.
 - **`modified` is `metadata.modified`**, a full ISO-8601 **datetime** with
@@ -89,8 +97,10 @@ Rules the canonical format inherits from what the harness already writes:
   tracked, Obsidian-browsable, one durable fact per file in the format above.
 - Claude Code's `~/.claude/projects/<encoded-repo-path>/memory/` becomes a
   **symlink onto that `facts/` directory.** Consequences, all intended:
-  - The harness's *native* relevance-loading now reads the vault directly —
-    Claude gets proactive surfacing of vault facts for free.
+  - The harness's *native* loading now reads the vault directly — Claude gets
+    the vault's `MEMORY.md` **index** injected for free. Fact bodies still cost
+    a read (measured; see "Risks and open validation items"), so this buys
+    index surfacing, not proactive recall.
   - The harness's *writes* (new memories, `modified` bumps) land as vault facts,
     so there is genuinely one store, not a mirror to reconcile.
   - The harness's `MEMORY.md` auto-index lives inside `facts/`.
@@ -123,17 +133,23 @@ same fact files, neither restating them. No drift, because indexes point.
 
 ### Retrieval — same behavior for both agents
 
-- **Claude Code:** native harness relevance-loading, now reading the vault via
-  the symlink. No Bindle loader needed for Claude.
+- **Claude Code:** native harness loading, now reading the vault via the
+  symlink — which delivers the `MEMORY.md` index, not the fact bodies.
 - **Codex:** a **portable loader in Bindle's command layer** (`/session-start`
   enumerates `facts/`, reads each `description`, loads what is relevant to the
   session goal). Because Codex runs Bindle's commands through the interop layer,
-  this gives Codex the same proactive surfacing Claude gets natively. This is
-  **Phase 2**.
+  this is **Phase 2**.
 
 Reactive retrieval (an agent that knows it needs a fact greps `facts/`) already
-works for every agent today with zero mechanism; the loader adds only *proactive*
+works for every agent today with zero mechanism; the loader adds *proactive*
 surfacing of the shed tail — which 50/50 makes worth having for both agents.
+
+**The correction below changes the arithmetic of this section.** Since the
+harness injects only the index, the portable loader is the only mechanism on the
+table that surfaces fact *bodies* proactively — and it does so for **both**
+agents, Claude included. The symlink is therefore not "Claude's half of
+retrieval"; it is a single-store convenience whose retrieval benefit stops at
+the index.
 
 ## Phasing
 
@@ -228,8 +244,9 @@ should reference each other.
   format-identical stores — remains open, and the Phase 2 choice between them is
   deliberately not made here.
 - **Correction to a premise: the harness does not auto-inject fact *bodies*.**
-  This doc (and #422's body) describe the harness as loading the per-fact store
-  "by relevance." What is injected up front is the **`MEMORY.md` index**; the
+  This doc as first written (and #422's body) described the harness as loading
+  the per-fact store "by relevance"; the sections above have since been corrected
+  to match what follows. What is injected up front is the **`MEMORY.md` index**; the
   fact body is not. Asked a question answerable only from a fact file's body and
   forbidden from using tools, a session replied `NO-FACT` — **in both arms**,
   symlinked *and* real `memory/` dir. So this is not a symlink defect; it is what
@@ -278,5 +295,7 @@ should reference each other.
 - The canonical `facts/` format is exactly the harness schema plus Bindle's
   tolerated extensions, verified by a file that round-trips through both the
   harness and Bindle tooling without rewriting.
-- (Phase 2) Claude (via symlink) and Codex (via portable loader) proactively
-  surface the same shed-tail facts from the one vault store.
+- (Phase 2) Claude and Codex surface the same shed-tail facts from the one vault
+  store. Note what each mechanism can deliver: the symlink gives Claude the
+  vault's index; only the portable loader surfaces fact *bodies*, and it can do
+  that for either agent.
