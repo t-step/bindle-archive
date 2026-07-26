@@ -327,6 +327,19 @@
       ]
     },
     {
+      "name": "facts-index",
+      "type": "script",
+      "path": "bin/facts-index.sh",
+      "description": "Enumerate the current project's durable facts from the notes home as slug/type/description lines, reading frontmatter only and never a fact body; the deterministic half of the /session-start facts loader.",
+      "provider": {
+        "claude": "installed",
+        "codex": "untested"
+      },
+      "maturity": "tested",
+      "mutation": [],
+      "version_introduced": "0.11.0"
+    },
+    {
       "name": "session-context",
       "type": "script",
       "path": "bin/session-context.sh",
@@ -1288,6 +1301,10 @@
     {
       "path": "docs/superpowers/specs/2026-07-26-facts-loader-phase2a-design.md",
       "reason": "a point-in-time design spec for Phase 2a of the facts-store convergence (#422) — the portable facts loader in the command layer; planning artifact, not itself a capability."
+    },
+    {
+      "path": "docs/superpowers/plans/2026-07-26-facts-loader-phase2a.md",
+      "reason": "a point-in-time implementation plan for Phase 2a of the facts-store convergence (#422), paired with its design spec; planning artifact, not itself a capability."
     }
   ],
   "external_upstreams": [

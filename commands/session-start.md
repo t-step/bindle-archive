@@ -1,7 +1,7 @@
 ---
 description: Orient a new session — repo state, project profile, prior notes, validation gates
 argument-hint: [objective]
-allowed-tools: Bash(git status:*), Bash(git branch:*), Bash(git log:*), Bash(date:*), Bash(gh issue list:*)
+allowed-tools: Bash(git status:*), Bash(git branch:*), Bash(git log:*), Bash(date:*), Bash(gh issue list:*), Bash(bin/facts-index.sh:*)
 ---
 
 <!-- Conventions (notes home layout, slug rules, privacy):
@@ -29,7 +29,19 @@ Steps:
 3. Identify the validation gates for this repo: from the profile if it lists
    them, otherwise infer from the repo (Makefile, CI workflow, test config,
    pre-commit config, CONTRIBUTING/CLAUDE.md). Don't run them yet.
-4. Summarize in ≤15 lines: where the repo stands, what the last session
+4. Load the durable facts that bear on this session — index always, bodies
+   rarely:
+   - Run `<bindle>/bin/facts-index.sh` (resolve `<bindle>` the same way step 1
+     resolves the skill). It prints one `<slug><TAB><type><TAB><description>`
+     line per fact, or nothing at all — no notes home, no `facts/` dir, or an
+     empty one is normal and silent. Say nothing about facts in that case.
+   - Against the session objective ("$ARGUMENTS", or the next step named by the
+     latest handoff), pick the facts whose descriptions bear on it and read
+     **at most 5** bodies. With no objective and no handoff next-step, read
+     **none** — the cap is a ceiling, not a quota.
+   - Name the ones you read in the step-5 summary, so the operator can say
+     "not that one."
+5. Summarize in ≤15 lines: where the repo stands, what the last session
    finished/deferred (per notes), the gates that must pass before committing,
    and any safety notes from the profile (branch discipline, "never touch X").
    If the repo state above lists any in-progress issues, ask whether each is
@@ -37,7 +49,7 @@ Steps:
    live, and catching it here means it doesn't sit for another session. (No
    listing appears if the repo has no such issues, or `gh` isn't installed or
    authenticated — skip silently in that case.)
-5. Objective: if the user provided one ("$ARGUMENTS"), restate it as the
+6. Objective: if the user provided one ("$ARGUMENTS"), restate it as the
    session goal and note anything in the profile/handoff that conflicts with
    it. If none was provided and the latest handoff names a clear next step,
    propose that. Only ask for an objective if you have neither.
