@@ -1,7 +1,28 @@
 # Pressure-test series fields — design (#467, #356)
 
-**Date:** 2026-07-26 **Issues:** #467, #356 **Status:** approved, not yet
-implemented
+**Date:** 2026-07-26 **Issues:** #467, #356 **Status:** record half implemented
+and merged (PR #471); gate half in progress
+
+> **Corrections, 2026-07-26, after PR #471 merged.** Three statements below were
+> measured wrong against the tree and are superseded by the Amendments section
+> of `docs/superpowers/plans/2026-07-26-pressure-series-field-gate.md`:
+>
+> - **Section extent.** The `--staged` trigger paragraph says a triggering
+>   heading's section runs "up to the next heading at the same or shallower
+>   depth". That contradicts the any-depth rule stated earlier in this document,
+>   and it counts the tree as 35 blocks rather than the real 37 — two series nest
+>   a declaring block inside another section. **Any depth is the rule.**
+> - **Depth table.** `verify-then-commit`'s declaring depths are
+>   `{##, ###, ####}`, not `{##, ###}`. Calibration is computed from the file,
+>   never from this table.
+> - **Retrofit derivation.** "the 9 blanket files are `pre-protocol` throughout"
+>   is false: `fork-pr-flow`'s #190 series declared its arm before dispatch and
+>   now records a per-arm override. The blanket caveat that claimed otherwise was
+>   itself stale — which is the decay this design exists to end, and it is why a
+>   per-file assumption is never a substitute for reading each series.
+>
+> These are left in place rather than rewritten: a design doc is a point-in-time
+> artifact, and what it got wrong about the tree is part of the record.
 
 ## Problem
 
