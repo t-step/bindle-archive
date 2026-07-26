@@ -35,6 +35,12 @@ Steps:
      resolves the skill). It prints one `<slug><TAB><type><TAB><description>`
      line per fact, or nothing at all — no notes home, no `facts/` dir, or an
      empty one is normal and silent. Say nothing about facts in that case.
+   - This command's `allowed-tools` entry pre-approves only the
+     **repo-relative** spelling of the script. `<bindle>` is resolved at
+     runtime, so an absolute-path run is not covered by prefix matching: an
+     interactive session prompts, and a **non-interactive one is refused
+     outright** — meaning a headless `/session-start` orients without its facts
+     step. Measured 2026-07-26 (#456).
    - Against the session objective ("$ARGUMENTS", or the next step named by the
      latest handoff), pick the facts whose descriptions bear on it and read
      **at most 5** bodies. With no objective and no handoff next-step, read
