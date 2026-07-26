@@ -23,8 +23,11 @@ one `git add -A` away from being published.
 ~/.bindle/                            # or $BINDLE_NOTES_DIR if set
   private-denylist.txt                # personal terms for check-private-info
   projects/<project>/
-    profile.md                        # durable facts: gates, commands, safety notes
+    profile.md                        # curated runbook + pointer index — NOT a fact store
     profile-proposals.md              # pending profile.md Add/Defer/Reject queue
+    facts/                            # canonical per-fact store — one durable fact per file
+      MEMORY.md                       # Claude Code's auto-index (harness-managed)
+      <fact-slug>.md                  # one fact; harness frontmatter schema (see "Fact files")
     sessions/YYYY-MM-DD-<slug>.md     # one note per session
     handoffs/YYYY-MM-DD-<slug>.md     # paste-ready prompts for future sessions
     breadcrumbs.log                   # opt-in SessionEnd hook only — NOT a note
@@ -46,6 +49,55 @@ one `git add -A` away from being published.
   note appear in the vault — plain Markdown is all Obsidian needs. Nothing here
   may *require* Obsidian (no plugin syntax, no sync assumptions).
 - Create directories on demand (`mkdir -p`). Plain Markdown only.
+
+`profile.md` is a curated runbook + pointer index, not a fact store. Its seven
+sections (unchanged, so the tooling contract holds) are each **either** a small
+inline *runbook block* (the gate list, canonical commands — glance-before-you-
+touch, loaded wholesale every session) **or** a *pointer list* of `[[fact]]`
++ a one-line hook (long-form safety notes, recurring instructions, context
+locations). Keep a fact inline only if you need it in context **every** session;
+shed on-demand reference to `facts/` and leave a pointer. profile.md points; it
+does not restate.
+
+## Fact files (`facts/`)
+
+A fact file holds one durable fact. Its format is **Claude Code's per-fact
+memory schema, adopted verbatim**, so one physical store round-trips through the
+harness unchanged — Bindle does not invent a competing schema.
+
+```
+---
+name: <slug matching the filename>
+description: "<one-line summary — used for relevance-loading>"
+metadata:
+  node_type: memory
+  type: feedback | project | reference | user
+  originSessionId: <uuid>            # harness-written; tolerate, never require
+  modified: <ISO-8601 datetime, ms + Z, e.g. 2026-07-21T20:22:05.367Z>
+---
+
+<the fact>. For feedback/project facts, follow with **Why:** and
+**How to apply:** lines. Link related facts with double-bracketed slugs.
+```
+
+- `type` and `modified` live **under `metadata`**, not at the top level.
+- **`type: project` facts are current-state — overwrite them in place** with a
+  fresh `metadata.modified`. Never append a correction or leave a
+  strikethrough; the old value is gone, the file states only what is true now.
+- `type: user` facts belong in global `~/.claude/CLAUDE.md`; a project-scoped
+  one is advisory-misplaced — flag it, don't delete it. The type stays legal.
+- `MEMORY.md` is Claude Code's flat auto-index; it coexists with `profile.md`.
+  Both point at the same fact files; neither restates them.
+- A fact's relations are double-bracketed slugs in the body; a pointer that
+  names a not-yet-written fact is fine — it marks work, not an error.
+
+### Migration — convert-on-touch (no big-bang)
+
+profile.md shrinks monotonically; there is no flag day. When a session **edits**
+a fact that currently lives as inline profile.md prose but is on-demand
+reference by nature, atomize it: move it to `facts/<slug>.md` and leave a
+`[[slug]]` pointer behind. Touching a fact is the trigger; untouched prose stays
+until a session next needs it. Never do a bulk rewrite as a side effect.
 
 ## Opt-in hook automation
 

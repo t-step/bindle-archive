@@ -507,3 +507,52 @@ unchanged.
   are closed by sub-claims 3c and 4a. Remaining weaker/mid-bracket gaps
   (Claims 2–4 on Haiku or Sonnet 5) are tracked in the operator's notes, not
   here.
+- **Claims 7 and 8 below (the #422 facts-store contract) are DRAFT — arms
+  declared, reps deferred to issue #444.** The contract edits shipped without
+  a RED→GREEN campaign; nothing about them is verified behavior yet.
+
+## Claim 7 — `/project-profile` sheds on-demand facts to pointers (Rule: runbook-vs-pointer)
+
+**Status: DRAFT — arm declared, reps pending (deferred to #444).**
+
+**Model:** to be recorded at dispatch.
+**Content:** to be recorded at dispatch (`bin/skill-content-id.sh
+session-continuity`, computed at dispatch time — never reconstructed).
+
+Arm: the session-continuity `/project-profile` skill+command. Scenario: a fixture
+notes home whose `profile.md` has a fat "safety notes" section (5+ lines of
+long-form prose) plus a lean gate list; ask the agent to refresh the profile.
+RED = no skill; GREEN = real `/project-profile` + skill.
+
+Predicted RED failure: agent rewrites all sections as inline prose, no `facts/`
+files, no pointers. GREEN: gate list stays inline; the long-form safety prose
+becomes `facts/<slug>.md` files (harness schema) + `[[slug]]` pointers in
+profile.md; profile.md line count drops.
+
+### Variant 7a — convert-on-touch atomization
+
+Folded into Claim 7 rather than run as a separate claim: it shares the same
+shed-vs-inline judgment, so a separate series would buy little for the rep cost
+(scale review to stakes). Same arm and same RED/GREEN split; the fixture differs
+in that the profile holds an **existing** inline on-demand fact and the session's
+work *edits* that fact. GREEN: the edited fact moves to `facts/<slug>.md` with a
+`[[slug]]` pointer left behind, and the untouched prose around it is left alone —
+no bulk rewrite. Deferred to #444 with the rest of Claim 7.
+
+## Claim 8 — `/session-end` overwrites current-state facts in place (Rule: no strikethrough)
+
+**Status: DRAFT — arm declared, reps pending (deferred to #444).**
+
+**Model:** to be recorded at dispatch.
+**Content:** to be recorded at dispatch (`bin/skill-content-id.sh
+session-continuity`, computed at dispatch time — never reconstructed).
+
+Arm: the session-continuity `/session-end` skill+command. Scenario: a fixture
+notes home holding a `facts/<slug>.md` with `type: project` (e.g. "prod: armed")
+and a matching profile pointer; the session's work flips the state ("prod:
+disarmed"). Ask the agent to close the session and record the change. RED = no
+skill; GREEN = real `/session-end` + skill.
+
+Predicted RED failure: agent appends a strikethrough or a stacked correction
+(old value retained). GREEN: the fact file is overwritten in place, old value
+gone, `metadata.modified` bumped; no strikethrough anywhere.

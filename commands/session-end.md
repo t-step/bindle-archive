@@ -83,9 +83,22 @@ Steps:
      most 4 questions per call; issue further calls for any remaining
      items). If any answer comes back ambiguous or unresolved, don't guess —
      re-ask only those items before applying anything. Apply the answers:
-     - **Add** → append the exact line to the named section of `profile.md`
-       (create it first via `/project-profile`'s conventions if it doesn't
-       exist yet); drop the item from the pending list.
+     - **Add** → route by the fact's kind (see the skill's "Fact files"):
+       - **Current-state (`type: project`)** — write or **overwrite in place**
+         `facts/<slug>.md` with a fresh `metadata.modified`; put a `[[slug]]`
+         pointer in profile.md if not already present. Never append a corrected
+         line or leave a strikethrough — the file states only what is true now.
+       - **On-demand reference** (long-form safety / recurring / context prose)
+         — write `facts/<slug>.md` (harness schema) and append a `[[slug]]`
+         pointer to the named profile.md section, not the full prose.
+       - **Hot core** (a must-load-every-session gate or one-liner) — append the
+         exact line inline to the named profile.md section (create the section
+         via `/project-profile`'s conventions if absent).
+       Drop the item from the pending list in every case.
+       Convert-on-touch: if applying an Add means editing a fact that still
+       lives as inline profile.md prose and is on-demand by nature, atomize it
+       to `facts/` + a pointer rather than editing it in place inline (see the
+       skill's "Migration — convert-on-touch").
      - **Defer** → leave the item in the pending list, untouched.
      - **Reject** → drop the item from the pending list permanently.
      Rewrite `profile-proposals.md` with whatever remains pending, or delete
