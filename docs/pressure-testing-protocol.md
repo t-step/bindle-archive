@@ -216,7 +216,7 @@ interactive choice; sequential is the default and the recommendation.
   dispatch), `pre-protocol` (predates the arm-declaration rule; grandfathered
   per #261 — stands as recorded, not owed a re-run, not evidence the current
   protocol was met), and `unrecorded` (an honest unknown). Free prose may follow
-  the value, on the line or a continuation. Granularity matches `**Model:**`:
+  the value, on the line or a continuation. An example line reads "**Protocol:** compliant — arm predeclared, fixture checklist 8/8". Granularity matches `**Model:**`:
   per-series, with a per-arm override — a section that declares any of the three
   fields declares all three, and a series whose status differs from its file's
   default carries its own block rather than relying on prose above it. This
@@ -300,10 +300,14 @@ requirement. Until a claim exists, that machinery never runs.
 Counts predating this protocol carry a caveat line saying so — they were
 gathered without arm attribution, and an unknown fraction may be void.
 
-A file that contains **both** pre- and post-protocol series carries a **boundary**
-rather than a blanket caveat: name which series are protocol-compliant and which
-are not. A blanket caveat over a file with a compliant series appended is wrong
-in the other direction — it buries evidence that was actually earned.
+A file that contains **both** pre- and post-protocol series does not carry a
+blanket caveat, and does not enumerate the split in prose either: each series
+records its own `**Protocol:**` field, and the file-head caveat states the
+grandfathering rationale once and points at those fields (#356). A blanket
+caveat over a file with a compliant series appended is wrong in the other
+direction — it buries evidence that was actually earned — and an enumerated
+list in the caveat is wrong in a third way: it decays silently the moment the
+next series is appended without updating it.
 `skills/package-release-integrity/PRESSURE-TESTS.md` and
 `skills/release-captain/PRESSURE-TESTS.md` are the two worked examples.
 
