@@ -224,7 +224,14 @@ field tooling keys on: `bin/skill-content-id.sh --check <skill>` is the
 one-command answer to "do this skill's hashed reps still apply to its current
 content?", and `bin/check.sh` prints a warn-only `stale reps` banner when a
 skill's newest hashed series no longer matches — a disclosure, not a gate,
-by the recorded #339 decision.
+by the recorded #339 decision. What `--check` reads is the whole `**Content:**`
+**field** — the line and its wrapped continuation, up to the next blank line,
+field, heading or list item — so an arm qualifier and backticks around the id
+are fine, and a per-arm override may land on a continuation line. An id
+mentioned in surrounding prose is **not** a record: put every id that counts
+inside the field. (Before #459 the parser required the id to follow
+`**Content:** ` immediately and unquoted, so it matched nothing this repo had
+ever written and the banner never fired.)
 
 Counts predating this protocol carry a caveat line saying so — they were
 gathered without arm attribution, and an unknown fraction may be void.
