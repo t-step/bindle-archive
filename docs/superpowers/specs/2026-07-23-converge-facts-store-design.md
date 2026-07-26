@@ -200,15 +200,38 @@ should reference each other.
 
 ## Risks and open validation items
 
-- **Symlink-through behavior is an assumption** until Phase 2's validation step
-  proves the harness reads/writes through a symlinked `memory/` dir. Named
-  fallback: drift-check over two format-identical stores.
-- **The harness memory dir is keyed to the encoded repo path**
-  (`~/.claude/projects/<encoded-repo-path>/`), while the vault is keyed to the
-  kebab slug. A worktree or a moved repo maps to a *different* harness dir; the
-  symlink mapping is stable only for the primary checkout. The `<project>` slug
-  is `<bindle>/bin/slugify.sh`; the encoded-path mapping is the harness's, not
-  Bindle's.
+- **Symlink-through behavior is MEASURED (2026-07-25), and it is split:**
+  **reads work, headless writes do not.** Fixture probes against throwaway repos
+  with `memory/` symlinked to a vault dir:
+  - *Read:* the loader resolves the symlink and injects the vault's `MEMORY.md`
+    — 3/3 runs quoted a canary that exists only in the vault.
+  - *Write, interactive:* succeeds; the file lands in the vault through the
+    symlink.
+  - *Write, headless (`claude -p`):* refused 3/3 —
+    `… /memory/<file>.md which is a sensitive file` — while the identical write
+    into a **real** `memory/` dir passes. The symlink is the discriminator (a
+    target *inside* the repo is blocked too), and `--add-dir` on the target does
+    not unblock it.
+  - *Corollary:* writing to the symlink's **resolved** path instead bypasses the
+    harness's frontmatter enrichment — the file lands without `node_type`,
+    `originSessionId`, or `modified`, which is precisely what #423's lint must
+    reject.
+  So the single-store symlink is viable for interactive sessions and breaks
+  memory writes in unattended ones. The named fallback — a drift-check over two
+  format-identical stores — remains open, and the Phase 2 choice between them is
+  deliberately not made here. Still untested: whether enrichment survives the
+  symlink (confounded by session lifetime), fact-level relevance recall through
+  it (only the index was proven to load), and out-of-tree worktrees.
+- **The harness memory dir is keyed to the git repo root, not to cwd** — the
+  *transcript* dir is keyed to the encoded cwd, and only that. Measured: a
+  session whose cwd is `repo/.worktrees/wt1` gets its own
+  `~/.claude/projects/<worktree-key>/` transcript dir but resolves memory to the
+  **primary** repo key, and read the vault canary through the primary's symlink.
+  Corroborated in this repo, where two historical worktree-keyed project dirs
+  exist and neither has a `memory/`. So one symlink at the primary key covers
+  every worktree; a *moved* repo still remaps. The vault is keyed to the kebab
+  slug from `<bindle>/bin/slugify.sh`; the encoded-path mapping is the harness's,
+  not Bindle's.
 - **Harness writes become vault git changes.** Every harness memory write dirties
   the (private) notes-home git — intended for single-home, but noisier history.
 - **Two indexes** (`profile.md`, `MEMORY.md`) must both stay pointers, never
