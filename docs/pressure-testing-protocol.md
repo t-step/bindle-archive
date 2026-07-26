@@ -210,6 +210,21 @@ interactive choice; sequential is the default and the recommendation.
   carry no id — nothing was loaded. A series whose id is not known writes
   `**Content:** unrecorded` — an explicit unknown, never silence, never a
   value derived after the fact;
+- the **protocol status** of the series — a `**Protocol:**` line beside the
+  `**Model:**` and `**Content:**` lines, recording whether the series ran under
+  this method of record. Exactly three values: `compliant` (arm declared before
+  dispatch), `pre-protocol` (predates the arm-declaration rule; grandfathered
+  per #261 — stands as recorded, not owed a re-run, not evidence the current
+  protocol was met), and `unrecorded` (an honest unknown). Free prose may
+  follow the value, on the line or a continuation. An example line reads
+  "**Protocol:** compliant — arm predeclared, fixture checklist 8/8".
+  Granularity matches `**Model:**`: per-series, with a per-arm override — a
+  section that declares any of the three fields declares all three, and a
+  series whose status differs from its file's default carries its own block
+  rather than relying on prose above it. This field is the **single source**
+  for protocol status (#356): a file-head caveat states the grandfathering
+  rationale once and points at the fields; it does not enumerate which series
+  are covered, because that list decays on the next append;
 - any **safety claim** the series earns — a `**Claim:**` line beside the
   `**Model:**` and `**Content:**` lines, asserting that a named bracket is
   safe **for this workflow's task shape**, e.g. "**Claim:** vendor-safe
@@ -286,12 +301,17 @@ requirement. Until a claim exists, that machinery never runs.
 Counts predating this protocol carry a caveat line saying so — they were
 gathered without arm attribution, and an unknown fraction may be void.
 
-A file that contains **both** pre- and post-protocol series carries a **boundary**
-rather than a blanket caveat: name which series are protocol-compliant and which
-are not. A blanket caveat over a file with a compliant series appended is wrong
-in the other direction — it buries evidence that was actually earned.
-`skills/package-release-integrity/PRESSURE-TESTS.md` and
-`skills/release-captain/PRESSURE-TESTS.md` are the two worked examples.
+A file that contains **both** pre- and post-protocol series does not carry a
+blanket caveat, and does not enumerate the split in prose either: each series
+records its own `**Protocol:**` field, and the file-head caveat states the
+grandfathering rationale once and points at those fields (#356). A blanket
+caveat over a file with a compliant series appended is wrong in the other
+direction — it buries evidence that was actually earned — and an enumerated
+list in the caveat is wrong in a third way: it decays silently the moment the
+next series is appended without updating it.
+`skills/package-release-integrity/PRESSURE-TESTS.md` is a worked example of the
+shape — an illustration, not a census. Which files are mixed is read off the
+`**Protocol:**` fields, never from a list kept here.
 
 ## Grandfathered pre-protocol counts (#261)
 
@@ -302,8 +322,8 @@ the uncertainty itself but an *unmarked* count: a future session reads "5/5 PASS
 and assumes it was earned under this protocol.
 
 The split is **temporal and per-series**, not per-file. Every series recorded
-before the protocol landed is pre-protocol, including series in the two files
-that also carry compliant ones — and including a same-day series that predates
+before the protocol landed is pre-protocol, including series in files that also
+carry compliant ones — and including a same-day series that predates
 the finding it produced. The discriminator is whether the series **declared its
 arm before dispatch**, not its date.
 
@@ -325,23 +345,28 @@ a protocol credit.
 ### What this does to #212's targets
 
 #212 tracks topping under-repped skills up to the ~5-reps/variant standard. Its
-per-skill numbers are quoted from the `PRESSURE-TESTS.md` files, so they are
-counts of *grandfathered* reps. Restated against the labelling:
+per-skill numbers were quoted from the `PRESSURE-TESTS.md` files as they stood
+when it was filed. The shortfalls it recorded still stand and have no other
+home, so they are kept here:
 
-| Skill | #212's recorded shortfall | Restated |
-|---|---|---|
-| `package-release-integrity` | 1–2 reps/axis across 6 axes; data-only track unexercised by a Claude subagent | Pre-protocol except the 3-rep E-series. The defer axis is the only one with protocol-credited evidence |
-| `license-compliance-auditor` | 3/arm on both claims; Issue-Creation Gate inspected, never run live | All pre-protocol; the gate's live run is owed regardless |
-| `repo-hygiene-init` | 3/arm original, 3–4/arm on the #65 rerun | All pre-protocol |
-| `maintain-claude-md` | Claims 5–6 at 3/arm | All pre-protocol |
-| `scoped-sequential-prs` | Claim 5 at 3/arm, Claim 6 at 3/bracket | All pre-protocol |
-| `release-captain` | restraint GREEN re-test at 4 reps; dry-run → gate → apply never exercised end-to-end | Pre-protocol except the F-series. The unexercised positive path is owed regardless |
-| `context-graph` | closed — topped to 5 live-discovery reps/scenario | All pre-protocol despite its 2026-07-18 date: no arm was predeclared |
-| `issue-work-loop` | PT3 and PT8 at inline `n=1` | All pre-protocol |
-| `domi-consumer`, `fork-pr-flow`, `hands-on-keyboard` | excluded as already at bar (5/arm or 5/variant) | All pre-protocol — at bar on count, not on method |
+| Skill | #212's recorded shortfall |
+|---|---|
+| `package-release-integrity` | 1–2 reps/axis across 6 axes; data-only track unexercised by a Claude subagent |
+| `license-compliance-auditor` | 3/arm on both claims; Issue-Creation Gate inspected, never run live — the gate's live run is owed regardless |
+| `repo-hygiene-init` | 3/arm original, 3–4/arm on the #65 rerun |
+| `maintain-claude-md` | Claims 5–6 at 3/arm |
+| `scoped-sequential-prs` | Claim 5 at 3/arm, Claim 6 at 3/bracket |
+| `release-captain` | restraint GREEN re-test at 4 reps; dry-run → gate → apply never exercised end-to-end — the unexercised positive path is owed regardless |
+| `context-graph` | closed — topped to 5 live-discovery reps/scenario |
+| `issue-work-loop` | PT3 and PT8 at inline `n=1` |
+| `domi-consumer`, `fork-pr-flow`, `hands-on-keyboard` | excluded as already at bar (5/arm or 5/variant) |
 
-`session-continuity` and `verify-then-commit` were not enumerated by #212; both
-are wholly pre-protocol.
+Which of those reps were earned under this protocol is deliberately **not**
+restated here: every series records its own `**Protocol:**` field (#356), and a
+per-skill list in this doc is the shape the field replaced — it decays the
+moment the next series is appended. Read the fields. `session-continuity` and
+`verify-then-commit` were not enumerated by #212, so this table records no
+shortfall for them; that says nothing about their protocol status either.
 
 Two consequences for anyone picking #212 up:
 

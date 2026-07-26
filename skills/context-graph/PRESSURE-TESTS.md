@@ -4,17 +4,18 @@
 > — arm declaration, the pre-dispatch fixture checklist, environment controls,
 > and grading.
 >
-> **Pre-protocol counts — grandfathered (#223, #261):** **every** rep series in
-> this file predates the arm-declaration rule. They were gathered without first
-> verifying, per rep, which skill actually won the trigger — so an unknown
-> fraction may be **void** (a rep a competing skill answered tests nothing about
-> this skill). Treat them as a distribution over skills, not an arm.
->
-> Per the #261 decision they are **grandfathered, not voided**: they stand as
-> recorded and are **not** owed a re-run — re-running roughly a hundred reps
-> costs far more than the uncertainty they carry. They are not evidence that the
-> current protocol was met. Any *new* series appended below runs under the method
-> of record above and must declare its arm.
+> **Protocol boundary (#223, #261, #356).** Which side of the arm-declaration
+> rule a series falls on is recorded in that series' own `**Protocol:**` field,
+> not in this caveat — a list here decays on the next append. `pre-protocol`
+> series were gathered without first verifying, per rep, which skill actually
+> won the trigger, so an unknown fraction may be **void** (a rep a competing
+> skill answered tests nothing about this skill); treat those counts as a
+> distribution over skills, not an arm. Per the #261 decision they are
+> **grandfathered, not voided** — they stand as recorded, are **not** owed a
+> re-run, and are not evidence that the current protocol was met. Because one
+> file's series can fall on either side, **do not read this file's totals as
+> uniformly earned under the method of record** — check each series' field
+> before quoting any count in it.
 
 **Status: VERIFIED (2026-07-18, issues #186/#211).** Four layers of evidence:
 
@@ -92,6 +93,9 @@ recorded).
 **Content:** unrecorded (annotated per #339; the dispatch-time content is not
 derivable from recorded dates).
 
+**Protocol:** pre-protocol — predates the arm-declaration rule (#223);
+grandfathered per #261, not owed a re-run.
+
 **Method.** Per superpowers:writing-skills, the skill's operative guidance was
 injected into the subagent's context (system-prompt-equivalent), *not* discovered
 via the Skill tool — a newly-added skill lags the harness index, and injection
@@ -167,6 +171,9 @@ recorded).
 **Content:** unrecorded (annotated per #339; the dispatch-time content is not
 derivable from recorded dates).
 
+**Protocol:** pre-protocol — predates the arm-declaration rule (#223);
+grandfathered per #261, not owed a re-run.
+
 **Method.** Fresh `general-purpose` subagents, one realistic authoring
 task each, the skill *not* named and no tool prohibition — the point is to see
 whether the trigger fires on its own. Two-axis grade: (1) *discovery* — did the
@@ -228,6 +235,9 @@ for this run was not recorded).
 
 **Content:** unrecorded (annotated per #339; the dispatch-time content is not
 derivable from recorded dates).
+
+**Protocol:** pre-protocol — predates the arm-declaration rule (#223);
+grandfathered per #261, not owed a re-run.
 
 The Codex adapter deferral is **discharged**. A real Codex CLI session was run
 from the `cover-story` checkout with:

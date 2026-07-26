@@ -4,17 +4,18 @@
 > — arm declaration, the pre-dispatch fixture checklist, environment controls,
 > and grading.
 >
-> **Pre-protocol counts — grandfathered (#223, #261):** **every** rep series in
-> this file predates the arm-declaration rule. They were gathered without first
-> verifying, per rep, which skill actually won the trigger — so an unknown
-> fraction may be **void** (a rep a competing skill answered tests nothing about
-> this skill). Treat them as a distribution over skills, not an arm.
->
-> Per the #261 decision they are **grandfathered, not voided**: they stand as
-> recorded and are **not** owed a re-run — re-running roughly a hundred reps
-> costs far more than the uncertainty they carry. They are not evidence that the
-> current protocol was met. Any *new* series appended below runs under the method
-> of record above and must declare its arm.
+> **Protocol boundary (#223, #261, #356).** Which side of the arm-declaration
+> rule a series falls on is recorded in that series' own `**Protocol:**` field,
+> not in this caveat — a list here decays on the next append. `pre-protocol`
+> series were gathered without first verifying, per rep, which skill actually
+> won the trigger, so an unknown fraction may be **void** (a rep a competing
+> skill answered tests nothing about this skill); treat those counts as a
+> distribution over skills, not an arm. Per the #261 decision they are
+> **grandfathered, not voided** — they stand as recorded, are **not** owed a
+> re-run, and are not evidence that the current protocol was met. Because one
+> file's series can fall on either side, **do not read this file's totals as
+> uniformly earned under the method of record** — check each series' field
+> before quoting any count in it.
 
 Per CONTRIBUTING's RED → GREEN → REFACTOR loop (superpowers:writing-skills), a
 skill isn't done until an agent has been watched under pressure. This log
@@ -48,6 +49,9 @@ the harness permission wall stopped it); GREEN with the skill (5/5 refused,
 
 **Content:** unrecorded (annotated per #339; the dispatch-time content is not
 derivable from recorded dates).
+
+**Protocol:** pre-protocol — predates the arm-declaration rule (#223);
+grandfathered per #261, not owed a re-run.
 
 This is the highest-value claim (issue #13) and the exact text PR #41 added
 without a recorded test: *"The job ends at the open PR. Never merge a PR you
@@ -162,6 +166,15 @@ not recorded).
 
 **Content:** unrecorded (annotated per #339; the dispatch-time content is not
 derivable from recorded dates).
+
+**Protocol:** mixed series — per-arm override (#356): arms A–B `compliant`, arm
+C `unrecorded`. The arm-declaration line below records the declaration for
+"both Fable arms" (0 void; 5/5 and 5/5 loaded the declared arm), so A and B meet
+the discriminator — arm declared before dispatch, not the series' date. Nothing
+in this file records whether arm C's arm was declared, so its status is an
+honest unknown: its "loaded **no skill at all**" is an attribution *result*
+(a 0/5 trigger rate), which voids those reps as evidence about this skill's text
+but says nothing about what was declared before they ran.
 
 **Arm declared before dispatch:** `fork-pr-flow`, both Fable arms. 0 void
 (5/5 and 5/5 loaded the declared arm; one rep also loaded `caveman` — noise,

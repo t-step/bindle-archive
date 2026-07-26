@@ -4,30 +4,18 @@
 > — arm declaration, the pre-dispatch fixture checklist, environment controls,
 > and grading.
 >
-> **Protocol boundary — read before quoting any count in this file (#223, #261).**
-> This file straddles the arm-declaration rule. The split is by **series**, not by
-> file, and not by date alone — the 2026-07-18 defer-axis attempt is the campaign
-> that *produced* #223 and so predates its own finding:
->
-> | Series | Date | Under the protocol? |
-> |---|---|---|
-> | Main campaign — 9 agent-facing reps + 2 discovery probes | 2026-07-14 | **no** — pre-protocol |
-> | Codex portability verification | 2026-07-14 | **no** — pre-protocol |
-> | Direct Codex helper verification (#118) | 2026-07-15 | **no** — pre-protocol |
-> | Defer-axis top-up attempt (#212) — D3–D7 | 2026-07-18 | **no** — pre-protocol; voids identified retroactively |
-> | **E-series — clean release, realistic pin (#224)** | 2026-07-18 | **yes** — arm predeclared, fixture checklist 8/8 (item 9 unchecked, see below) |
->
-> The **pre-protocol** series were gathered without first verifying, per rep,
-> which skill actually won the trigger — so an unknown fraction may be **void**
-> (a rep a competing skill answered tests nothing about this skill). Treat those
-> counts as a distribution over skills, not an arm. Per the #261 decision they
-> are **grandfathered, not voided**: they stand as recorded and are **not** owed
-> a re-run, but they are not evidence that the current protocol was met.
->
-> The **E-series** is the only series here earned under the method of record, and
-> only partly — checklist item 9 (knowledge contamination) did not exist when
-> E1–E3 ran and is unverified on them (#225). Quote it as protocol-compliant on
-> attribution and fixture integrity, not on contamination.
+> **Protocol boundary (#223, #261, #356).** Which side of the arm-declaration
+> rule a series falls on is recorded in that series' own `**Protocol:**` field,
+> not in this caveat — a list here decays on the next append. `pre-protocol`
+> series were gathered without first verifying, per rep, which skill actually
+> won the trigger, so an unknown fraction may be **void** (a rep a competing
+> skill answered tests nothing about this skill); treat those counts as a
+> distribution over skills, not an arm. Per the #261 decision they are
+> **grandfathered, not voided** — they stand as recorded, are **not** owed a
+> re-run, and are not evidence that the current protocol was met. Because one
+> file's series can fall on either side, **do not read this file's totals as
+> uniformly earned under the method of record** — check each series' field
+> before quoting any count in it.
 
 **Status: VERIFIED (2026-07-14). One recorded FAILURE (D5, 2026-07-18) —
 diagnosed 2026-07-18 as a fixture artifact and did not reproduce; see
@@ -57,6 +45,9 @@ not separately recorded). Later series record their own `Model:` lines.
 
 **Content:** unrecorded (annotated per #339; the dispatch-time content is not
 derivable from recorded dates).
+
+**Protocol:** pre-protocol — predates the arm-declaration rule (#223);
+grandfathered per #261, not owed a re-run.
 
 Fresh `general-purpose` subagents, each in its own throwaway fixture
 repo (realistic mini Python packages built under a scratch dir, **not** named
@@ -129,6 +120,9 @@ that gap — the last open item on #59's audit row.
 **Content:** unrecorded (annotated per #339; the dispatch-time content is not
 derivable from recorded dates).
 
+**Protocol:** pre-protocol — predates the arm-declaration rule (#223);
+grandfathered per #261, not owed a re-run.
+
 **Method.** Three real `codex exec` sessions (non-interactive,
 `workspace-write` sandbox), each run against a
 standalone copy of an in-repo fixture. Each prompt gave Codex only the portable
@@ -161,6 +155,9 @@ own output, so the gap is noted rather than material).
 
 **Content:** unrecorded (annotated per #339; the dispatch-time content is not
 derivable from recorded dates).
+
+**Protocol:** pre-protocol — predates the arm-declaration rule (#223);
+grandfathered per #261, not owed a re-run.
 
 This follow-up ran the deterministic helper directly from a real Codex session,
 as required by #118. The Claude-native
@@ -233,6 +230,9 @@ session did not write the subagent model down; not retroactively guessed).
 
 **Content:** unrecorded (annotated per #339; the dispatch-time content is not
 derivable from recorded dates).
+
+**Protocol:** pre-protocol — predates the arm-declaration rule (#223);
+grandfathered per #261, not owed a re-run.
 
 An attempt to top the **defer axis** up toward 5 reps/variant per #212. Five
 reps run, one at a time, each in its own throwaway fixture outside any real
@@ -320,6 +320,9 @@ session did not write the subagent model down; not retroactively guessed).
 
 **Content:** unrecorded (annotated per #339; the dispatch-time content is not
 derivable from recorded dates).
+
+**Protocol:** compliant — arm predeclared, fixture checklist 8/8 (item 9
+unchecked, see below).
 
 The retest #224 asked for: does D5's GO reproduce once the fixture's placeholder
 pin is gone? **It does not.** Three credited reps, three PASSes.

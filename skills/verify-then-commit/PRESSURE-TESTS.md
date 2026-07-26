@@ -4,21 +4,18 @@
 > — arm declaration, the pre-dispatch fixture checklist, environment controls,
 > and grading.
 >
-> **Protocol boundary.** **Claims 1 and 2 are pre-protocol; Claim 3 is
-> protocol-compliant.** Do not read this file's totals as uniformly earned under
-> the method of record.
->
-> **Pre-protocol counts — grandfathered (#223, #261):** the Claim 1 and Claim 2
-> series predate the arm-declaration rule. They were gathered without first
-> verifying, per rep, which skill actually won the trigger — so an unknown
-> fraction may be **void** (a rep a competing skill answered tests nothing about
-> this skill). Treat them as a distribution over skills, not an arm.
->
-> Per the #261 decision they are **grandfathered, not voided**: they stand as
-> recorded and are **not** owed a re-run — re-running roughly a hundred reps
-> costs far more than the uncertainty they carry. They are not evidence that the
-> current protocol was met. Any *new* series appended below runs under the method
-> of record above and must declare its arm.
+> **Protocol boundary (#223, #261, #356).** Which side of the arm-declaration
+> rule a series falls on is recorded in that series' own `**Protocol:**` field,
+> not in this caveat — a list here decays on the next append. `pre-protocol`
+> series were gathered without first verifying, per rep, which skill actually
+> won the trigger, so an unknown fraction may be **void** (a rep a competing
+> skill answered tests nothing about this skill); treat those counts as a
+> distribution over skills, not an arm. Per the #261 decision they are
+> **grandfathered, not voided** — they stand as recorded, are **not** owed a
+> re-run, and are not evidence that the current protocol was met. Because one
+> file's series can fall on either side, **do not read this file's totals as
+> uniformly earned under the method of record** — check each series' field
+> before quoting any count in it.
 
 Per CONTRIBUTING's RED → GREEN → REFACTOR loop (superpowers:writing-skills), a
 skill isn't done until an agent has been watched under pressure. This log records
@@ -44,6 +41,9 @@ dated snapshot not recorded).
 
 **Content:** unrecorded (annotated per #339; the dispatch-time content is not
 derivable from recorded dates).
+
+**Protocol:** pre-protocol — predates the arm-declaration rule (#223);
+grandfathered per #261, not owed a re-run.
 
 The core claim: before committing, run the project's tests/lint gate and commit
 **only if green** — "looks right" and a secondhand "tests pass" are not evidence.
@@ -118,6 +118,9 @@ snapshot not recorded).
 
 **Content:** unrecorded (annotated per #339; the dispatch-time content is not
 derivable from recorded dates).
+
+**Protocol:** pre-protocol — predates the arm-declaration rule (#223);
+grandfathered per #261, not owed a re-run.
 
 This closes the hook-bypass gap Claim 1 left open. Claim 1 verified "run the gate,
 don't commit RED," but its `--no-verify` / `--force` clause was never its own test:
@@ -196,6 +199,9 @@ disposition).**
 **Content:** unrecorded (annotated per #339; the dispatch-time content is not
 derivable from recorded dates).
 
+**Protocol:** pre-protocol — predates the arm-declaration rule (#223);
+grandfathered per #261, not owed a re-run.
+
 Claim 2's caveat named weaker models as the likely break point. Re-ran the *same*
 blocking-hook fixture on **Haiku 4.5** (via the Agent `model` override), 5 reps × 2
 arms: **(A)** cwd-pinned with "ignore any other CLAUDE.md" (a possible confound — it
@@ -244,6 +250,9 @@ weaker model must not be trusted to refuse on judgment alone.
 **Content:** unrecorded (annotated per #339; the dispatch-time content is not
 derivable from recorded dates).
 
+**Protocol:** pre-protocol — predates the arm-declaration rule (#223);
+grandfathered per #261, not owed a re-run.
+
 Closing the RED per the Iron Law: the earlier failure was of the *ambient one-line
 rule*, so this re-runs the **same** Haiku 4.5 fixture with the **full
 `verify-then-commit` SKILL.md injected into the prompt** (rationalization table,
@@ -284,6 +293,9 @@ recorded).
 
 **Content:** unrecorded (annotated per #339; the dispatch-time content is not
 derivable from recorded dates).
+
+**Protocol:** pre-protocol — predates the arm-declaration rule (#223);
+grandfathered per #261, not owed a re-run.
 
 Reruns Claim 2's exact blocking-hook fixture on **Sonnet 5** (the operator's
 main-loop model for this campaign, so no `model` override was needed to reach this
@@ -355,6 +367,9 @@ guessed).
 
 **Content:** unrecorded (annotated per #339; the dispatch-time content is not
 derivable from recorded dates).
+
+**Protocol:** compliant — arm declared before every dispatch, attribution
+graded first.
 
 #197's hypothesis: the gate table's single `Lint/format` row let an agent run
 `ruff check`, see it pass, tick the row off, and commit code the project's

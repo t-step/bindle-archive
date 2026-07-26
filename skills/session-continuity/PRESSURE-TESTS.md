@@ -4,21 +4,18 @@
 > — arm declaration, the pre-dispatch fixture checklist, environment controls,
 > and grading.
 >
-> **Protocol boundary (#223, #261, #444):** this file holds series from both
-> sides of the arm-declaration rule, so read the split rather than a blanket
-> caveat. **Protocol-compliant:** Claim 6 (2026-07-19) and Claims 7, 7a and 8
-> (2026-07-25) — arm declared before dispatch. **Pre-protocol:** everything
-> else — Claims 1 (incl. 1a–1c), 2, 3 (incl. 3a–3c), 4 (incl. 4a), 5. Those
-> were gathered without first verifying, per rep, which skill actually won the
-> trigger, so an unknown fraction may be **void** (a rep a competing skill
-> answered tests nothing about this skill). Treat them as a distribution over
-> skills, not an arm.
->
-> Per the #261 decision they are **grandfathered, not voided**: they stand as
-> recorded and are **not** owed a re-run — re-running roughly a hundred reps
-> costs far more than the uncertainty they carry. They are not evidence that the
-> current protocol was met. Any *new* series appended below runs under the method
-> of record above and must declare its arm.
+> **Protocol boundary (#223, #261, #356).** Which side of the arm-declaration
+> rule a series falls on is recorded in that series' own `**Protocol:**` field,
+> not in this caveat — a list here decays on the next append. `pre-protocol`
+> series were gathered without first verifying, per rep, which skill actually
+> won the trigger, so an unknown fraction may be **void** (a rep a competing
+> skill answered tests nothing about this skill); treat those counts as a
+> distribution over skills, not an arm. Per the #261 decision they are
+> **grandfathered, not voided** — they stand as recorded, are **not** owed a
+> re-run, and are not evidence that the current protocol was met. Because one
+> file's series can fall on either side, **do not read this file's totals as
+> uniformly earned under the method of record** — check each series' field
+> before quoting any count in it.
 
 Per CONTRIBUTING's RED → GREEN → REFACTOR loop (superpowers:writing-skills), a
 skill isn't done until an agent has been watched failing without it. This log
@@ -40,6 +37,11 @@ is a mechanical scanner test — no rep model applies.
 
 **Content:** unrecorded (annotated per #339; the dispatch-time content is not
 derivable from recorded dates).
+
+**Protocol:** pre-protocol — the series below through Claim 5, including their
+sub-claims: they predate the arm-declaration rule (#223); grandfathered per
+#261, not owed a re-run. Every later series — sub-claim 1c, and Claims 6
+through 9 — records its own `Protocol:` line.
 
 ## Claim 1 — `/session-end` writes notes outside the repo (Rule 1)
 
@@ -370,6 +372,13 @@ unchanged. Weaker/Haiku bracket untested.
 **Status: VERIFIED (2026-07-19, Sonnet 5 bracket).** First series in this file
 run under the declared-arm protocol.
 
+**Model:** Sonnet 5, Claude Code — the reps in this series (annotated per
+#331; exact dated snapshot not recorded). The RED is mechanical — no rep
+model applies.
+**Content:** unrecorded (annotated per #339; the dispatch-time content is not
+derivable from recorded dates).
+**Protocol:** compliant — arm declared before dispatch (2026-07-19).
+
 **Declared arm:** `session-continuity`. Reps that never fired it are recorded as
 **void** below, not dropped.
 
@@ -447,6 +456,13 @@ valid rep.
 
 **Status: repo isolation VERIFIED on Sonnet 5 (6/6); no edit.** Closes part of
 issue #16 for this skill.
+
+**Model:** Sonnet 5, Claude Code — both arms (annotated per #331; exact dated
+snapshot not recorded).
+**Content:** unrecorded (annotated per #339; the dispatch-time content is not
+derivable from recorded dates).
+**Protocol:** pre-protocol — predates the arm-declaration rule (#223);
+grandfathered per #261, not owed a re-run.
 
 Reruns Claim 1's mid-work fixture on **Sonnet 5** (this campaign's main-loop
 model, so no `model` override was needed) to fill the bracket gap between the
@@ -527,6 +543,7 @@ total separation, both arms at the rep bar.
 **Content:** GREEN arm `sha256:f43ed039de5d`, captured at dispatch. The RED arm
 carries no content id: it loaded no installed skill, only the pre-Phase-1
 contract at `2d65607`.
+**Protocol:** compliant — arm declared before dispatch (2026-07-25).
 
 **Declared arm (before dispatch):** the session-continuity `/project-profile`
 contract, supplied as files (same method as Claim 8). RED =
@@ -633,6 +650,7 @@ bytes and belong to one series rather than two.
 re-verified immediately before the first GREEN rep. The RED arm carries **no
 content id and this is not an `unrecorded`**: it loaded no installed skill at
 all, only the pre-Phase-1 contract at `2d65607`, which is what identifies it.
+**Protocol:** compliant — arm declared before dispatch (2026-07-25).
 
 **Declared arm (before dispatch):** the session-continuity `/session-end`
 contract, supplied to the subagent **as files** so the version under test is
@@ -734,6 +752,7 @@ series in this file, after Claims 6 and 8.
 re-verified immediately before the first GREEN rep. The RED arm carries **no
 content id**: it loaded no installed skill, only the pre-Phase-2a contract at
 `66be7a7`, which is what identifies it.
+**Protocol:** compliant — arm declared before dispatch (2026-07-26).
 
 **Declared arm (before dispatch):** the `/session-start` orientation contract,
 supplied to the subagent **as files** so the version under test is fixed
@@ -909,6 +928,7 @@ off each run's own init event rather than assumed.
 first rep and unchanged throughout — identical to series 1. The RED arm carries
 no content id: it loads no installed skill, only the pre-Phase-2a contract at
 `66be7a7`.
+**Protocol:** compliant — arm declared before dispatch (2026-07-26).
 
 **Arms unchanged from series 1.** RED = `commands/session-start.md` +
 `skills/session-continuity/SKILL.md` at `66be7a7`, zero mentions of

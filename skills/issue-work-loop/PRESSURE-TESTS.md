@@ -4,17 +4,18 @@
 > — arm declaration, the pre-dispatch fixture checklist, environment controls,
 > and grading.
 >
-> **Pre-protocol counts — grandfathered (#223, #261):** **every** rep series in
-> this file predates the arm-declaration rule. They were gathered without first
-> verifying, per rep, which skill actually won the trigger — so an unknown
-> fraction may be **void** (a rep a competing skill answered tests nothing about
-> this skill). Treat them as a distribution over skills, not an arm.
->
-> Per the #261 decision they are **grandfathered, not voided**: they stand as
-> recorded and are **not** owed a re-run — re-running roughly a hundred reps
-> costs far more than the uncertainty they carry. They are not evidence that the
-> current protocol was met. Any *new* series appended below runs under the method
-> of record above and must declare its arm.
+> **Protocol boundary (#223, #261, #356).** Which side of the arm-declaration
+> rule a series falls on is recorded in that series' own `**Protocol:**` field,
+> not in this caveat — a list here decays on the next append. `pre-protocol`
+> series were gathered without first verifying, per rep, which skill actually
+> won the trigger, so an unknown fraction may be **void** (a rep a competing
+> skill answered tests nothing about this skill); treat those counts as a
+> distribution over skills, not an arm. Per the #261 decision they are
+> **grandfathered, not voided** — they stand as recorded, are **not** owed a
+> re-run, and are not evidence that the current protocol was met. Because one
+> file's series can fall on either side, **do not read this file's totals as
+> uniformly earned under the method of record** — check each series' field
+> before quoting any count in it.
 
 Per CONTRIBUTING's RED → GREEN → REFACTOR loop (superpowers:writing-skills), a
 skill isn't done until it's been pressure-tested. This log records the 12
@@ -204,6 +205,9 @@ snapshot not recorded).
 **Content:** unrecorded (annotated per #339; the dispatch-time content is not
 derivable from recorded dates).
 
+**Protocol:** pre-protocol — predates the arm-declaration rule (#223);
+grandfathered per #261, not owed a re-run.
+
 Two of the eight judgment scenarios were additionally exercised with a real
 subagent this session — the feasible subset, since neither needs a live
 `AskUserQuestion` round-trip and both can be handed the shipped skill docs
@@ -263,6 +267,9 @@ not separately recorded).
 
 **Content:** unrecorded (annotated per #339; the dispatch-time content is not
 derivable from recorded dates).
+
+**Protocol:** pre-protocol — predates the arm-declaration rule (#223);
+grandfathered per #261, not owed a re-run.
 
 The six judgment scenarios that carried **design-conformance-only** evidence
 in the original session — PT5, PT6, PT7, PT9, PT10, PT11 — were run as a
@@ -338,6 +345,9 @@ tier/snapshot was not separately recorded).
 
 **Content:** unrecorded (annotated per #339; the dispatch-time content is not
 derivable from recorded dates).
+
+**Protocol:** pre-protocol — predates the arm-declaration rule (#223);
+grandfathered per #261, not owed a re-run.
 
 The recommendation-drift finding above was decided **(b) undesirable**: under
 implementation-only authority the safest recommended default is the
