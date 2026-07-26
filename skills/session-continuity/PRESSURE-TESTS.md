@@ -458,6 +458,13 @@ valid rep.
 **Status: repo isolation VERIFIED on Sonnet 5 (6/6); no edit.** Closes part of
 issue #16 for this skill.
 
+**Model:** Sonnet 5, Claude Code — both arms (annotated per #331; exact dated
+snapshot not recorded).
+**Content:** unrecorded (annotated per #339; the dispatch-time content is not
+derivable from recorded dates).
+**Protocol:** pre-protocol — predates the arm-declaration rule (#223);
+grandfathered per #261, not owed a re-run.
+
 Reruns Claim 1's mid-work fixture on **Sonnet 5** (this campaign's main-loop
 model, so no `model` override was needed) to fill the bracket gap between the
 Opus 4.8 baseline and the Haiku 4.5 rerun (sub-claim 1b). Rebuilt the fixture
