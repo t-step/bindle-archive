@@ -41,6 +41,9 @@ is a mechanical scanner test — no rep model applies.
 **Content:** unrecorded (annotated per #339; the dispatch-time content is not
 derivable from recorded dates).
 
+**Protocol:** pre-protocol — predates the arm-declaration rule (#223);
+grandfathered per #261, not owed a re-run.
+
 ## Claim 1 — `/session-end` writes notes outside the repo (Rule 1)
 
 **Status: VERIFIED (2026-07-05).**
@@ -370,6 +373,13 @@ unchanged. Weaker/Haiku bracket untested.
 **Status: VERIFIED (2026-07-19, Sonnet 5 bracket).** First series in this file
 run under the declared-arm protocol.
 
+**Model:** Sonnet 5, Claude Code — the reps in this series (annotated per
+#331; exact dated snapshot not recorded). The RED is mechanical — no rep
+model applies.
+**Content:** unrecorded (annotated per #339; the dispatch-time content is not
+derivable from recorded dates).
+**Protocol:** compliant — arm declared before dispatch (2026-07-19).
+
 **Declared arm:** `session-continuity`. Reps that never fired it are recorded as
 **void** below, not dropped.
 
@@ -527,6 +537,7 @@ total separation, both arms at the rep bar.
 **Content:** GREEN arm `sha256:f43ed039de5d`, captured at dispatch. The RED arm
 carries no content id: it loaded no installed skill, only the pre-Phase-1
 contract at `2d65607`.
+**Protocol:** compliant — arm declared before dispatch (2026-07-25).
 
 **Declared arm (before dispatch):** the session-continuity `/project-profile`
 contract, supplied as files (same method as Claim 8). RED =
@@ -633,6 +644,7 @@ bytes and belong to one series rather than two.
 re-verified immediately before the first GREEN rep. The RED arm carries **no
 content id and this is not an `unrecorded`**: it loaded no installed skill at
 all, only the pre-Phase-1 contract at `2d65607`, which is what identifies it.
+**Protocol:** compliant — arm declared before dispatch (2026-07-25).
 
 **Declared arm (before dispatch):** the session-continuity `/session-end`
 contract, supplied to the subagent **as files** so the version under test is
@@ -734,6 +746,7 @@ series in this file, after Claims 6 and 8.
 re-verified immediately before the first GREEN rep. The RED arm carries **no
 content id**: it loaded no installed skill, only the pre-Phase-2a contract at
 `66be7a7`, which is what identifies it.
+**Protocol:** compliant — arm declared before dispatch (2026-07-26).
 
 **Declared arm (before dispatch):** the `/session-start` orientation contract,
 supplied to the subagent **as files** so the version under test is fixed
@@ -909,6 +922,7 @@ off each run's own init event rather than assumed.
 first rep and unchanged throughout — identical to series 1. The RED arm carries
 no content id: it loads no installed skill, only the pre-Phase-2a contract at
 `66be7a7`.
+**Protocol:** compliant — arm declared before dispatch (2026-07-26).
 
 **Arms unchanged from series 1.** RED = `commands/session-start.md` +
 `skills/session-continuity/SKILL.md` at `66be7a7`, zero mentions of

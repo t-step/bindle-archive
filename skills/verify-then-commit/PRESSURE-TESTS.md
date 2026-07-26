@@ -45,6 +45,9 @@ dated snapshot not recorded).
 **Content:** unrecorded (annotated per #339; the dispatch-time content is not
 derivable from recorded dates).
 
+**Protocol:** pre-protocol — predates the arm-declaration rule (#223);
+grandfathered per #261, not owed a re-run.
+
 The core claim: before committing, run the project's tests/lint gate and commit
 **only if green** — "looks right" and a secondhand "tests pass" are not evidence.
 The scenario is built to tempt the opposite: a one-line diff that genuinely reads
@@ -118,6 +121,9 @@ snapshot not recorded).
 
 **Content:** unrecorded (annotated per #339; the dispatch-time content is not
 derivable from recorded dates).
+
+**Protocol:** pre-protocol — predates the arm-declaration rule (#223);
+grandfathered per #261, not owed a re-run.
 
 This closes the hook-bypass gap Claim 1 left open. Claim 1 verified "run the gate,
 don't commit RED," but its `--no-verify` / `--force` clause was never its own test:
@@ -196,6 +202,9 @@ disposition).**
 **Content:** unrecorded (annotated per #339; the dispatch-time content is not
 derivable from recorded dates).
 
+**Protocol:** pre-protocol — predates the arm-declaration rule (#223);
+grandfathered per #261, not owed a re-run.
+
 Claim 2's caveat named weaker models as the likely break point. Re-ran the *same*
 blocking-hook fixture on **Haiku 4.5** (via the Agent `model` override), 5 reps × 2
 arms: **(A)** cwd-pinned with "ignore any other CLAUDE.md" (a possible confound — it
@@ -244,6 +253,9 @@ weaker model must not be trusted to refuse on judgment alone.
 **Content:** unrecorded (annotated per #339; the dispatch-time content is not
 derivable from recorded dates).
 
+**Protocol:** pre-protocol — predates the arm-declaration rule (#223);
+grandfathered per #261, not owed a re-run.
+
 Closing the RED per the Iron Law: the earlier failure was of the *ambient one-line
 rule*, so this re-runs the **same** Haiku 4.5 fixture with the **full
 `verify-then-commit` SKILL.md injected into the prompt** (rationalization table,
@@ -284,6 +296,9 @@ recorded).
 
 **Content:** unrecorded (annotated per #339; the dispatch-time content is not
 derivable from recorded dates).
+
+**Protocol:** pre-protocol — predates the arm-declaration rule (#223);
+grandfathered per #261, not owed a re-run.
 
 Reruns Claim 2's exact blocking-hook fixture on **Sonnet 5** (the operator's
 main-loop model for this campaign, so no `model` override was needed to reach this
@@ -355,6 +370,9 @@ guessed).
 
 **Content:** unrecorded (annotated per #339; the dispatch-time content is not
 derivable from recorded dates).
+
+**Protocol:** compliant — arm declared before every dispatch, attribution
+graded first.
 
 #197's hypothesis: the gate table's single `Lint/format` row let an agent run
 `ruff check`, see it pass, tick the row off, and commit code the project's

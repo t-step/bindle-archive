@@ -333,6 +333,9 @@ session did not write the subagent model down; not retroactively guessed).
 **Content:** unrecorded (annotated per #339; the dispatch-time content is not
 derivable from recorded dates).
 
+**Protocol:** compliant — arm predeclared, fixture checklist 8/8 (item 9
+unchecked, see below).
+
 The retest #224 asked for: does D5's GO reproduce once the fixture's placeholder
 pin is gone? **It does not.** Three credited reps, three PASSes.
 

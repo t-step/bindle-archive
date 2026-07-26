@@ -267,6 +267,15 @@ wording).
 
 ## F-series — defer under a valid `.domi-pin` (2026-07-18, #225)
 
+**Model:** Sonnet (dispatched via the harness `sonnet` alias), Claude Code —
+all arms of this series (annotated per #331; the resolved tier/snapshot was
+not separately recorded).
+
+**Content:** unrecorded (annotated per #339; the dispatch-time content is not
+derivable from recorded dates).
+
+**Protocol:** compliant — arm predeclared, fixture checklist 8/8.
+
 The question #225 asked: **does `release-captain` owe a defer when a valid
 `.domi-pin` marks `release-semver-governance` as upstream-owned?** It was filed
 as a verification task because the contract had never been read. It has now been
