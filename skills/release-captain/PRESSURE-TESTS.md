@@ -4,26 +4,15 @@
 > — arm declaration, the pre-dispatch fixture checklist, environment controls,
 > and grading.
 >
-> **Protocol boundary — read before quoting any count in this file (#223, #261).**
-> This file straddles the arm-declaration rule. The split is by **series**, not by
-> file, and not by date alone:
->
-> | Series | Date | Under the protocol? |
-> |---|---|---|
-> | RED baseline, GREEN, REFACTOR, GREEN re-test (4/4) | 2026-07-15 | **no** — pre-protocol |
-> | GREEN — approval-token gate (#155) | 2026-07-16 | **no** — pre-protocol |
-> | **F-series — defer under a valid `.domi-pin` (#225)** | 2026-07-18 | **yes** — arm predeclared, fixture checklist 8/8 |
->
-> The **pre-protocol** series were gathered without first verifying, per rep,
-> which skill actually won the trigger — so an unknown fraction may be **void**
-> (a rep a competing skill answered tests nothing about this skill). Treat those
-> counts as a distribution over skills, not an arm. Per the #261 decision they
-> are **grandfathered, not voided**: they stand as recorded and are **not** owed
-> a re-run, but they are not evidence that the current protocol was met.
->
-> The **F-series** is the only series here earned under the method of record. It
-> declares its arm before dispatch and grades attribution first; quote it as
-> protocol-compliant evidence, and quote nothing above it as such.
+> **Protocol boundary (#223, #261, #356).** Which side of the arm-declaration
+> rule a series falls on is recorded in that series' own `**Protocol:**` field,
+> not in this caveat — a list here decays on the next append. `pre-protocol`
+> series were gathered without first verifying, per rep, which skill actually
+> won the trigger, so an unknown fraction may be **void** (a rep a competing
+> skill answered tests nothing about this skill); treat those counts as a
+> distribution over skills, not an arm. Per the #261 decision they are
+> **grandfathered, not voided** — they stand as recorded, are **not** owed a
+> re-run, and are not evidence that the current protocol was met.
 
 **Status: VERIFIED (2026-07-15).** Full RED → GREEN(fail) → REFACTOR → GREEN(pass)
 campaign this session. The first GREEN arm **failed** (the skill under-triggered

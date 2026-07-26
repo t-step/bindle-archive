@@ -4,21 +4,15 @@
 > — arm declaration, the pre-dispatch fixture checklist, environment controls,
 > and grading.
 >
-> **Protocol boundary.** **Claims 1 and 2 are pre-protocol; Claim 3 is
-> protocol-compliant.** Do not read this file's totals as uniformly earned under
-> the method of record.
->
-> **Pre-protocol counts — grandfathered (#223, #261):** the Claim 1 and Claim 2
-> series predate the arm-declaration rule. They were gathered without first
-> verifying, per rep, which skill actually won the trigger — so an unknown
-> fraction may be **void** (a rep a competing skill answered tests nothing about
-> this skill). Treat them as a distribution over skills, not an arm.
->
-> Per the #261 decision they are **grandfathered, not voided**: they stand as
-> recorded and are **not** owed a re-run — re-running roughly a hundred reps
-> costs far more than the uncertainty they carry. They are not evidence that the
-> current protocol was met. Any *new* series appended below runs under the method
-> of record above and must declare its arm.
+> **Protocol boundary (#223, #261, #356).** Which side of the arm-declaration
+> rule a series falls on is recorded in that series' own `**Protocol:**` field,
+> not in this caveat — a list here decays on the next append. `pre-protocol`
+> series were gathered without first verifying, per rep, which skill actually
+> won the trigger, so an unknown fraction may be **void** (a rep a competing
+> skill answered tests nothing about this skill); treat those counts as a
+> distribution over skills, not an arm. Per the #261 decision they are
+> **grandfathered, not voided** — they stand as recorded, are **not** owed a
+> re-run, and are not evidence that the current protocol was met.
 
 Per CONTRIBUTING's RED → GREEN → REFACTOR loop (superpowers:writing-skills), a
 skill isn't done until an agent has been watched under pressure. This log records
