@@ -6,7 +6,7 @@
 >
 > **Protocol boundary (#223, #261, #444):** this file holds series from both
 > sides of the arm-declaration rule, so read the split rather than a blanket
-> caveat. **Protocol-compliant:** Claim 6 (2026-07-19) and Claim 8
+> caveat. **Protocol-compliant:** Claim 6 (2026-07-19) and Claims 7, 7a and 8
 > (2026-07-25) — arm declared before dispatch. **Pre-protocol:** everything
 > else — Claims 1 (incl. 1a–1c), 2, 3 (incl. 3a–3c), 4 (incl. 4a), 5. Those
 > were gathered without first verifying, per rep, which skill actually won the
@@ -511,38 +511,110 @@ unchanged.
   are closed by sub-claims 3c and 4a. Remaining weaker/mid-bracket gaps
   (Claims 2–4 on Haiku or Sonnet 5) are tracked in the operator's notes, not
   here.
-- **Claim 7 below (the #422 `/project-profile` shedding rule) is DRAFT — arm
-  declared, no reps run.** Deferred to issue #444 with the rest of the campaign.
-- **Claim 8 is VERIFIED** (2026-07-25, RED 5/5 FAIL, GREEN 5/5 PASS) — a
-  protocol-compliant series at the rep bar. Nothing owed.
+- **Claims 7 and 8 (the #422 Phase 1 facts-store contract) are both VERIFIED**
+  (2026-07-25, 5/5 FAIL RED and 5/5 PASS GREEN each) — protocol-compliant
+  series at the rep bar. Nothing owed on either. Two gaps are named in their
+  sections rather than claimed: variant 7a's "leave untouched prose alone" half
+  needs a single-section fixture, and the hot-core inline/shed boundary is a
+  live ambiguity (4/5 agreement).
 
 ## Claim 7 — `/project-profile` sheds on-demand facts to pointers (Rule: runbook-vs-pointer)
 
-**Status: DRAFT — arm declared, reps pending (deferred to #444).**
+**Status: VERIFIED (2026-07-25, #444).** RED **5/5 FAIL**, GREEN **5/5 PASS** —
+total separation, both arms at the rep bar.
 
-**Model:** to be recorded at dispatch.
-**Content:** to be recorded at dispatch (`bin/skill-content-id.sh
-session-continuity`, computed at dispatch time — never reconstructed).
+**Model:** Opus 5 (`claude-opus-5[1m]`), Claude Code — both arms.
+**Content:** GREEN arm `sha256:f43ed039de5d`, captured at dispatch. The RED arm
+carries no content id: it loaded no installed skill, only the pre-Phase-1
+contract at `2d65607`.
 
-Arm: the session-continuity `/project-profile` skill+command. Scenario: a fixture
-notes home whose `profile.md` has a fat "safety notes" section (5+ lines of
-long-form prose) plus a lean gate list; ask the agent to refresh the profile.
-RED = no skill; GREEN = real `/project-profile` + skill.
+**Declared arm (before dispatch):** the session-continuity `/project-profile`
+contract, supplied as files (same method as Claim 8). RED =
+`commands/project-profile.md` + `SKILL.md` at `2d65607`, verified to contain
+neither the runbook-vs-pointer rule nor the `facts/` schema; GREEN = the same
+files on `main`. Prompts byte-identical except the contract path; `Skill` tool
+forbidden in both arms (0 calls in all 10 reps).
 
-Predicted RED failure: agent rewrites all sections as inline prose, no `facts/`
-files, no pointers. GREEN: gate list stays inline; the long-form safety prose
-becomes `facts/<slug>.md` files (harness schema) + `[[slug]]` pointers in
-profile.md; profile.md line count drops.
+Scenario: a fixture notes home for `ledger-api` whose `profile.md` (59 lines)
+carries a lean three-item gate list and three-item command list (hot core)
+alongside 16 lines of long-form safety-note prose and a fat recurring
+instruction — no `facts/` directory and no `[[pointer]]` anywhere, so anything
+that appears was produced by the rep. The repo itself has drifted from the
+profile (README overstates `make setup`, no `tests/` directory), so the refresh
+has real work to do beyond the shed. Task: "refresh it against what the repo
+actually says now."
+
+PASS required: gates and commands still inline; the long-form safety and
+recurring prose moved to `facts/<slug>.md` in the harness schema
+(`node_type: memory`, a `type:`, ms-precision `modified`, Why / How to apply);
+`[[slug]]` pointers with one-line hooks left in their sections.
+
+| Variant | Reps | Result |
+|---|---|---|
+| RED — pre-Phase-1 contract @ `2d65607` | 5 | **5/5 FAIL.** No rep created a `facts/` directory or a single pointer — `0` in all five. Every rep preserved the long prose inline and every rep grew the file: 63, 75, 67, 73, 67 lines against a 59-line seed. |
+| GREEN — current contract | 5 | **5/5 PASS.** 3–4 fact files per rep, all in correct harness schema; safety notes reduced to `[[pointer]]` + hook lists; gates and commands stayed inline in 5/5. |
+
+**The line-count criterion in the draft arm was wrong — do not restore it.** It
+predicted "profile.md line count drops". Across the GREEN reps the file landed
+at 59, 51, 64, 60 and 60 lines against a 59-line seed: two *above* it, while
+shedding perfectly. A refresh also *adds* repo-derived content (repo path,
+`Makefile` as an authority, notes-home layout), which offsets what left. The
+measurement that actually tracks the behavior is section-level: 16 lines of
+inline safety prose became 4 lines of pointers. A whole-file line count would
+have scored two correct reps as failures.
+
+**The RED arm fails by budget conflict, not ignorance.** Three of the five RED
+reps noticed the ~60-line cap and consciously blew it to protect the content —
+*"67 lines against the ~60 guidance … I traded the line budget"*, *"75 lines
+against the ~60 guideline … say the word if you'd rather I tighten"*. Without a
+shed mechanism the cap and the irreplaceable prose are in direct conflict and
+the prose wins, every time. Phase 1 is what dissolves the conflict; the reps
+show the baseline reaching for a resolution it does not have.
+
+**Open ambiguity — the hot-core boundary (candidate REFACTOR).** The one-line
+"re-read `CONTRIBUTING.md` before opening a PR" instruction was kept inline by
+GREEN reps 1, 3, 4 and 5 ("too short to shed", "glance-every-session") and
+atomized to `facts/` by rep 2. Both readings are defensible under the shipped
+wording, which says to keep "hot core (a must-load-every-session gate or
+one-liner)" inline without saying how short is too short to shed. 4/5 agreement
+is not a failure of the claim — every rep shed the *fat* prose — but it is the
+one place the contract leaves a judgment call open, and the first thing to
+tighten if it starts costing anything.
+
+**Fact typing was not uniform, and the contract permits that.** Reps typed the
+shed safety facts `type: project` throughout; one rep typed the recurring
+reconciliation instruction `type: feedback` while others used `project`. Both
+are legal under the schema's four types and the instruction genuinely sits on
+the boundary — recorded as an observation, not a defect.
+
+**No skill edit (Iron Law).** Every GREEN rep produced the specified structure,
+so there is no failing test of the shipped text. `SKILL.md` and
+`commands/project-profile.md` are unchanged by this campaign.
+
+**Fixture defect caught mid-campaign.** The builder's "repo code imports and
+runs" postcondition left `src/__pycache__` behind, so RED rep 1 was handed a
+dirty tree — the same postcondition-ordering bug as Claim 8's v1 fixture. It
+cannot reach this axis (the claim is about profile structure, not repo state),
+so rep 1 stands; the builder now cleans and re-asserts a clean tree, and reps
+2–5 ran on clean fixtures.
 
 ### Variant 7a — convert-on-touch atomization
 
-Folded into Claim 7 rather than run as a separate claim: it shares the same
-shed-vs-inline judgment, so a separate series would buy little for the rep cost
-(scale review to stakes). Same arm and same RED/GREEN split; the fixture differs
-in that the profile holds an **existing** inline on-demand fact and the session's
-work *edits* that fact. GREEN: the edited fact moves to `facts/<slug>.md` with a
-`[[slug]]` pointer left behind, and the untouched prose around it is left alone —
-no bulk rewrite. Deferred to #444 with the rest of Claim 7.
+**Status: VERIFIED as part of Claim 7's series (2026-07-25) — not separately
+repped, and the fixture is why.** Folded in rather than run as its own claim
+(scale review to stakes), and the Claim 7 fixture turned out to *be* the
+convert-on-touch case: the profile holds **existing** inline on-demand prose and
+the refresh is what edits it. So every GREEN rep exercised atomization of
+already-inline facts, not greenfield fact authoring — 5/5 moved the touched
+prose to `facts/<slug>.md` and left `[[slug]]` + a one-line hook behind.
+
+The "leave untouched prose alone" half is **weakly evidenced**: a whole-profile
+refresh touches every section by definition, so this fixture cannot show a rep
+declining to atomize prose it had no reason to edit. A rep that atomized
+*everything*, including the short inline one-liner, would look identical on this
+fixture — and rep 2 did exactly that. Testing the no-bulk-rewrite half needs a
+fixture where the session's work touches one section and demonstrably leaves the
+others alone. Not run; recorded as the gap rather than claimed.
 
 ## Claim 8 — `/session-end` overwrites current-state facts in place (Rule: no strikethrough)
 
