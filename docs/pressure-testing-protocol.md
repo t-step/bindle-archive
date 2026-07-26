@@ -210,6 +210,20 @@ interactive choice; sequential is the default and the recommendation.
   carry no id — nothing was loaded. A series whose id is not known writes
   `**Content:** unrecorded` — an explicit unknown, never silence, never a
   value derived after the fact;
+- the **protocol status** of the series — a `**Protocol:**` line beside the
+  `**Model:**` and `**Content:**` lines, recording whether the series ran under
+  this method of record. Exactly three values: `compliant` (arm declared before
+  dispatch), `pre-protocol` (predates the arm-declaration rule; grandfathered
+  per #261 — stands as recorded, not owed a re-run, not evidence the current
+  protocol was met), and `unrecorded` (an honest unknown). Free prose may follow
+  the value, on the line or a continuation. Granularity matches `**Model:**`:
+  per-series, with a per-arm override — a section that declares any of the three
+  fields declares all three, and a series whose status differs from its file's
+  default carries its own block rather than relying on prose above it. This
+  field is the **single source** for protocol status (#356): a file-head caveat
+  states the grandfathering rationale once and points at the fields; it does not
+  enumerate which series are covered, because that list decays on the next
+  append;
 - any **safety claim** the series earns — a `**Claim:**` line beside the
   `**Model:**` and `**Content:**` lines, asserting that a named bracket is
   safe **for this workflow's task shape**, e.g. "**Claim:** vendor-safe
