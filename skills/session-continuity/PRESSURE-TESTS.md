@@ -711,7 +711,11 @@ so there is no failing test *of the shipped text* to fix. `SKILL.md` and
 
 ## Claim 9 — `/session-start` loads the facts that bear on the session objective
 
-**Status: PILOT IN PROGRESS (declared 2026-07-26, #422 Phase 2a).** Arm declared
+**Status: PILOT COMPLETE, NOT VERIFIED (2026-07-26, #422 Phase 2a).** C1 as
+the design words it is **refuted**; the re-scoped selectivity axis separates
+cleanly (RED 9/11 bodies vs GREEN 5/5) at 2 reps per arm. C2 **FAILS** its
+zero-body criterion. The top-up to 5 reps per variant is owed before any
+VERIFIED claim. Arm declared
 below **before** any dispatch. Third protocol-compliant series in this file,
 after Claims 6 and 8. Pilot is 2 reps per arm on the Claim 8 pattern; the top-up
 to 5 is owed, and the content id below is what proves the two sittings are one
@@ -767,4 +771,92 @@ being graded on (read ≤5 relevant bodies, name them), so a GREEN pass shows th
 describes. Recorded per the protocol's item-9 distinction rather than claimed
 away.
 
-<!-- RESULTS APPENDED BELOW AFTER THE PILOT -->
+### Results — pilot (2026-07-26)
+
+| Variant | Reps | Bodies read (of 40) | Target fact found | Ran an index |
+|---|---|---|---|---|
+| C1 RED — contract @ `66be7a7`, loader absent from contract **and** tree | 2 | **9**, **11** | 2/2 | 0/2 ran `facts-index.sh` (absent); **1/2 hand-rolled one** |
+| C1 GREEN — contract @ `2571599` | 2 | **5**, **5** | 2/2 | 2/2 |
+| C2 GREEN — objective unrelated to every fact | 1 | **2** | n/a | 1/1 |
+| C3 GREEN — no objective, no handoff next-step | 1 | **0** | n/a | 1/1 |
+| VOID | 2 | — | — | see below |
+
+**Top-up owed:** 3 more reps per C1 arm and 4 more each for C2/C3 to reach the
+5-rep standard. The `**Content:**` id above is what binds that sitting to this
+one.
+
+**C1 as the design states it is REFUTED, and that is the finding.** The design
+predicted a RED arm that does not reach the shed fact. Both RED reps reached it,
+cited it, and correctly told the operator that "get the build green" was the
+wrong goal. Phase 1 already ships the two things that make this possible: the
+skill documents `facts/`, and `profile.md`'s pointer list advertises the slugs.
+Anyone reading a future "GREEN 5/5 PASS" as "the loader is how the fact gets
+found" would be drawing the wrong conclusion from a true count.
+
+**The real axis is selectivity, not retrieval.** RED reached the target by
+reading **9 and 11** bodies; GREEN reached it by reading **5** and **5**. The
+loader's margin is the bounded, disclosed read — not the finding.
+
+**The baseline invents the index.** RED rep 1, with no loader in its contract or
+its tree, ran `grep -H '^description:' *.md` over the facts dir — a
+frontmatter-only sweep that is exactly what `bin/facts-index.sh` mechanizes. So
+the script automates a move a capable agent already reaches for; what the
+contract adds is the **cap** and the **disclosure**, both of which appeared in
+2/2 GREEN reps and 0/2 RED reps ("Facts read (5 of 40) … Say the word if any of
+those was the wrong pick").
+
+**C2 FAILS by the letter and passes on the intent — recorded as a FAIL.** The
+design says an unrelated objective loads **no** bodies. The rep loaded **two**:
+`docs-site-builds-from-main` (the objective edits `README.md`, and that repo's
+docs site publishes from `main` on merge) and `main-is-protected`. Both are
+defensible — arguably more useful than silence — but the criterion as written is
+not met. The honest reading is that "unrelated to every fact" is not a state a
+40-fact store admits: process facts bear on any objective. Either C2's wording
+needs to become "does not fill the cap," or the criterion stays and this stays a
+FAIL. Not decided here.
+
+**The cap is not behaving as a quota, but the C1 evidence alone would not show
+that.** Both C1 GREEN reps read *exactly* 5 — suspicious on its own. C2 (2) and
+C3 (0) are what establish the cap is a ceiling rather than a target. This is the
+case for keeping C2/C3 in the series rather than folding them into C1.
+
+**Two void reps, both fixture defects, both caught by the rep under test.**
+
+- **v1 — the 6-fact fixture.** RED bulk-read every body with
+  `for f in *.md; do cat "$f"; done` and cited the right one. With six facts
+  totalling ~90 lines that is a *rational* strategy, so the fixture could not
+  distinguish selectivity from brute force. Rebuilt at **40 facts / 560 lines**,
+  where RED stopped bulk-reading and started selecting — the fixture scale is
+  itself a finding about when the loader earns its place.
+- **v2 — the RED fixture carried `bin/facts-index.sh`.** Built both arms with an
+  identical `bindle/bin/` for symmetry. The RED rep ran `ls bindle/bin`, found
+  the script its contract never mentions, and **ran it unprompted**. A fixture
+  must mirror its arm's **tree**, not just its contract: at `66be7a7` the script
+  does not exist. Rebuilt with `slugify.sh` only in RED.
+
+**A grading bug that inverted a result, recorded because the count looked
+plausible.** The first grader counted any glob over the facts dir as reaching
+every body, so RED rep 1's frontmatter-only `grep '^description:' *.md` scored as
+**40/40 bodies** when the true count was **9**. A reader would have concluded the
+baseline bulk-loads everything — the opposite of what it did. Frontmatter sweeps
+and body reads are now counted separately.
+
+**Environment controls in force.** Own fixture root per rep (repo + notes home +
+`bindle/` copy). `BINDLE_NOTES_DIR` supplied explicitly to every arm, RED
+included. Dispatch cwd was the **fixture repo**, not the Bindle checkout — a
+deliberate departure from Claim 8, because this campaign's answer key (the Phase
+2a design, its plan, and this file) all sit in the real checkout and all state
+the rubric verbatim. Cost of the departure: reps did **not** inherit Bindle's
+`CLAUDE.md`, so caveman did not fire and these reps are not directly comparable
+to Claim 8's on verbosity. Answer-key reach: **0** reads of any real path in all
+6 credited transcripts; the naive `grep Developer/bindle` returned 26 hits on one
+rep, all from the inherited environment block — the false positive protocol item
+9 warns about. `Skill` tool forbidden: **0 calls across all 6**. Fixture
+integrity: all six notes homes byte-identical to a fresh build after their rep.
+Primary-checkout guard identical throughout (`refs=15`, `bare=false`, 1 worktree,
+clean).
+
+**No skill edit (Iron Law).** Every GREEN rep complied with the shipped step, so
+there is no failing test *of the shipped text* to fix. The failures recorded here
+are in the **design's criteria** (C1's predicted RED, C2's zero-body rule), not
+in the command or the skill.
