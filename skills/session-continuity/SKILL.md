@@ -91,6 +91,16 @@ metadata:
 - A fact's relations are double-bracketed slugs in the body; a pointer that
   names a not-yet-written fact is fine — it marks work, not an error.
 
+### Reading facts (the loader)
+
+`<bindle>/bin/facts-index.sh` prints one
+`<slug><TAB><type><TAB><description>` line per fact and never reads a body, so
+enumerating the whole store is cheap. `/session-start` runs it and then reads
+**at most five** bodies — the ones whose descriptions bear on the session
+objective — and names them in its summary. With no objective and no handoff
+next-step it reads none. Selection is the model's job: Bindle ships no ranker,
+and the index is the only thing loaded unconditionally.
+
 ### Migration — convert-on-touch (no big-bang)
 
 profile.md shrinks monotonically; there is no flag day. When a session **edits**
