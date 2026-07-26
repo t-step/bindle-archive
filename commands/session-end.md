@@ -95,6 +95,10 @@ Steps:
          exact line inline to the named profile.md section (create the section
          via `/project-profile`'s conventions if absent).
        Drop the item from the pending list in every case.
+       Convert-on-touch: if applying an Add means editing a fact that still
+       lives as inline profile.md prose and is on-demand by nature, atomize it
+       to `facts/` + a pointer rather than editing it in place inline (see the
+       skill's "Migration — convert-on-touch").
      - **Defer** → leave the item in the pending list, untouched.
      - **Reject** → drop the item from the pending list permanently.
      Rewrite `profile-proposals.md` with whatever remains pending, or delete

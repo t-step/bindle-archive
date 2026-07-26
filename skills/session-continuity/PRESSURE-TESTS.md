@@ -529,6 +529,16 @@ files, no pointers. GREEN: gate list stays inline; the long-form safety prose
 becomes `facts/<slug>.md` files (harness schema) + `[[slug]]` pointers in
 profile.md; profile.md line count drops.
 
+### Variant 7a — convert-on-touch atomization
+
+Folded into Claim 7 rather than run as a separate claim: it shares the same
+shed-vs-inline judgment, so a separate series would buy little for the rep cost
+(scale review to stakes). Same arm and same RED/GREEN split; the fixture differs
+in that the profile holds an **existing** inline on-demand fact and the session's
+work *edits* that fact. GREEN: the edited fact moves to `facts/<slug>.md` with a
+`[[slug]]` pointer left behind, and the untouched prose around it is left alone —
+no bulk rewrite. Deferred to #444 with the rest of Claim 7.
+
 ## Claim 8 — `/session-end` overwrites current-state facts in place (Rule: no strikethrough)
 
 **Status: DRAFT — arm declared, reps pending (deferred to #444).**

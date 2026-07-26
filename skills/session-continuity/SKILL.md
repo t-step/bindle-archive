@@ -91,6 +91,14 @@ metadata:
 - A fact's relations are double-bracketed slugs in the body; a pointer that
   names a not-yet-written fact is fine — it marks work, not an error.
 
+### Migration — convert-on-touch (no big-bang)
+
+profile.md shrinks monotonically; there is no flag day. When a session **edits**
+a fact that currently lives as inline profile.md prose but is on-demand
+reference by nature, atomize it: move it to `facts/<slug>.md` and leave a
+`[[slug]]` pointer behind. Touching a fact is the trigger; untouched prose stays
+until a session next needs it. Never do a bulk rewrite as a side effect.
+
 ## Opt-in hook automation
 
 Two hooks can carry part of this without anyone running a command. They are
