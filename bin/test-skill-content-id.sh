@@ -121,6 +121,86 @@ check "newest hashed line differing is STALE exit 1" exit_is "$rc" 1
 check "verdict names the newest recorded id" \
   contains "newest hashed series sha256:000000000000" "$out"
 
+echo "recorded form as this repo actually writes it (#459):"
+
+# The forms below are copied from skills/session-continuity/PRESSURE-TESTS.md —
+# an arm qualifier before the id, the id in backticks, the field wrapped over
+# several lines. The pre-#459 parser required the id to follow "**Content:** "
+# immediately and unquoted, so it matched none of them.
+FIX3="$TMP/fix3"
+build_fixture "$FIX3"
+cur3="$(cd "$FIX3" && bin/skill-content-id.sh demo)"
+pt3() { cat >"$FIX3/skills/demo/PRESSURE-TESTS.md"; } # body on stdin
+
+pt3 <<EOF
+**Model:** Opus 5 (\`claude-opus-5[1m]\`), Claude Code — both arms.
+**Content:** GREEN arm \`$cur3\`, captured at dispatch and
+re-verified immediately before the first GREEN rep. The RED arm carries no
+content id: it loaded no installed skill.
+EOF
+out="$(cd "$FIX3" && bin/skill-content-id.sh --check demo)"
+rc=$?
+check "arm-qualified, backticked id is read as a hashed series (exit 0)" \
+  exit_is "$rc" 0
+check "verdict names it FRESH" contains "demo: FRESH" "$out"
+
+pt3 <<EOF
+**Content:** GREEN arm \`sha256:000000000000\`, captured at dispatch and
+re-verified immediately before the first GREEN rep.
+EOF
+out="$(cd "$FIX3" && bin/skill-content-id.sh --check demo)"
+rc=$?
+check "arm-qualified id that no longer matches is STALE (exit 1)" \
+  exit_is "$rc" 1
+check "the stale arm-qualified id is named per-line" \
+  contains "sha256:000000000000 STALE" "$out"
+
+pt3 <<EOF
+**Content:** GREEN arm \`sha256:000000000000\`, captured at declaration.
+
+**Content:** GREEN arm \`$cur3\`, captured at dispatch and re-verified
+immediately before the first GREEN rep.
+EOF
+out="$(cd "$FIX3" && bin/skill-content-id.sh --check demo)"
+rc=$?
+check "two hashed series: the newest (last in file) decides the verdict" \
+  exit_is "$rc" 0
+check "two hashed series: the older one is still reported STALE" \
+  contains "sha256:000000000000 STALE" "$out"
+
+pt3 <<EOF
+**Content:** GREEN arm A \`sha256:000000000000\`; after the REFACTOR the GREEN
+arm B ran at \`$cur3\`.
+EOF
+out="$(cd "$FIX3" && bin/skill-content-id.sh --check demo)"
+rc=$?
+check "per-arm override wrapped onto a continuation line is read (exit 0)" \
+  exit_is "$rc" 0
+check "per-arm override: the superseded arm is reported STALE" \
+  contains "sha256:000000000000 STALE" "$out"
+
+pt3 <<EOF
+**Content:** unrecorded (annotated per #339; the dispatch-time content is not
+recoverable).
+
+- \`candidate_key\`: \`candidate:sha256:1f80fbd3b3553a0300665e15e9ac0deafcfc4fb200b5cda635a85b070b07f65e\`
+EOF
+out="$(cd "$FIX3" && bin/skill-content-id.sh --check demo)"
+rc=$?
+check "a 64-hex key elsewhere in the file is not read as a content id" \
+  exit_is "$rc" 2
+
+pt3 <<EOF
+**Content:** unrecorded (annotated per #339).
+
+\`bin/skill-content-id.sh\` returned \`$cur3\` before the pilot and again before
+the top-up, so all ten reps belong to one series.
+EOF
+out="$(cd "$FIX3" && bin/skill-content-id.sh --check demo)"
+rc=$?
+check "an id in prose outside the **Content:** field is not a record" \
+  exit_is "$rc" 2
+
 echo "--check --all:"
 
 out="$(cd "$FIX2" && bin/skill-content-id.sh --check --all)"

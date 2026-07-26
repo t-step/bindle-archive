@@ -11,7 +11,7 @@
 # Usage:
 #   bin/skill-content-id.sh <skill>          print the current id
 #   bin/skill-content-id.sh --check <skill>  compare against the skill's
-#                                            recorded **Content:** lines
+#                                            recorded **Content:** fields
 #   bin/skill-content-id.sh --check --all    every skills/* except _template
 #
 # --check exits: 0 newest hashed series matches current; 1 drift; 2 no hashed
@@ -50,6 +50,24 @@ compute_id() { # compute_id <name> — prints sha256:<12 hex>
   printf 'sha256:%s\n' "${id:0:12}"
 }
 
+content_fields() { # content_fields <pressure-tests.md> — the **Content:** fields
+  # The field wraps, and the protocol allows a per-arm/per-rep override inside
+  # one field, so an id can land on a continuation line. Emit the whole field:
+  # the **Content:** line plus following lines until a blank line, the next
+  # **Field:**, a heading or a list item. Ids in ordinary prose are NOT records
+  # (#459) — the field is the single source, per docs/pressure-testing-protocol.md.
+  awk '
+    /\*\*Content:\*\*/ { inblk = 1; print; next }
+    inblk {
+      if ($0 ~ /^[[:space:]]*$/ || $0 ~ /^[[:space:]]*(\*\*|#|-|\*[^*])/) {
+        inblk = 0
+        next
+      }
+      print
+    }
+  ' "$1"
+}
+
 check_skill() { # check_skill <name> [quiet] — verdict line(s); 0/1/2/3
   local name="$1" quiet="${2:-}" current line r rc
   current="$(compute_id "$name")" || {
@@ -62,8 +80,8 @@ check_skill() { # check_skill <name> [quiet] — verdict line(s); 0/1/2/3
     while IFS= read -r line; do
       [ -n "$line" ] || continue
       recorded+=("$line")
-    done < <(grep -oE '\*\*Content:\*\* sha256:[0-9a-f]{12}' "$pt" |
-      grep -oE 'sha256:[0-9a-f]{12}')
+    done < <(content_fields "$pt" |
+      grep -oE 'sha256:[0-9a-f]+' | grep -xE 'sha256:[0-9a-f]{12}')
   fi
   if [ "${#recorded[@]}" -eq 0 ]; then
     echo "$name: NO-HASHED-SERIES (grandfathered-only or no evidence file; current $current)"
