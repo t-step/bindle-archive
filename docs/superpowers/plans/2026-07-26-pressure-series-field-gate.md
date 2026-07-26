@@ -508,16 +508,26 @@ Run: `chmod +x bin/test-check-pressure-series.sh && bin/test-check-pressure-seri
 Expected: every assertion fails — the gate does not exist yet (`command not found`).
 Record the failing count; it is the RED baseline.
 
-- [ ] **Step 3: Commit the RED suite**
+- [ ] **Step 3: Do NOT commit yet — record the RED baseline**
 
-```bash
-git add bin/test-check-pressure-series.sh
-git commit -m "test(#467): add the RED suite for the pressure-series field gate"
-```
+**A deliberately-failing suite cannot be committed in this repo.** `git commit`
+runs the `test suites (discovered bin/test-*.sh)` pre-commit hook, which runs
+every tracked `bin/test-*.sh`; a RED suite makes the hook red and the commit
+never lands. This is not a reason to weaken the suite or to pass `--no-verify`.
 
-Note: `bin/run-test-suites.sh` discovers suites via `git ls-files`, so an
-untracked new suite is silently not discovered and the run still reports all
-suites passing. Commit it before trusting any count.
+So the RED→GREEN boundary here is a *run*, not a commit: write the suite, run
+it, write down which assertions fail and why (that record is the RED evidence
+the protocol wants), and let Task B2 commit the suite and the script together.
+`bin/check-gitleaks.sh` was built exactly this way — 24 assertions, 12 failing
+on the first run with no script present, one commit.
+
+Run: `chmod +x bin/test-check-pressure-series.sh && bin/test-check-pressure-series.sh`
+Record the failing count and the failure text in your report.
+
+Note for later: `bin/run-test-suites.sh` discovers suites via `git ls-files`, so
+an untracked new suite is silently **not** discovered and the run still reports
+all suites passing. Until B2 stages it, a green `bin/run-test-suites.sh` says
+nothing about this suite.
 
 ---
 
@@ -650,12 +660,20 @@ Expected: every `--all` assertion passes, including the live-match count.
 **If `--count-only` reports 0 against the real repo, stop** — the parser does not
 meet the tree, and passing fixtures mean nothing (#459).
 
-- [ ] **Step 4: Commit**
+- [ ] **Step 4: Commit the suite and the script together**
+
+The suite from Task B1 is still uncommitted by design (see B1 Step 3). Stage
+both, so the tree never carries a red discovered suite:
 
 ```bash
-git add bin/check-pressure-series.sh
+git add bin/test-check-pressure-series.sh bin/check-pressure-series.sh
 git commit -m "feat(#467): add the series-field parser and its --all completeness mode"
 ```
+
+Before committing, `capabilities.json` needs a `not_a_capability` entry for
+**both** new files or `make check` fails with `unclassified — add it to the
+inventory or to not_a_capability`. The entries are written out in Task B5
+Step 3; add them here, in this commit, rather than leaving the tree unclassified.
 
 ---
 
