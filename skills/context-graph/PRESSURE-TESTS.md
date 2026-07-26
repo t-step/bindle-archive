@@ -92,6 +92,9 @@ recorded).
 **Content:** unrecorded (annotated per #339; the dispatch-time content is not
 derivable from recorded dates).
 
+**Protocol:** pre-protocol — predates the arm-declaration rule (#223);
+grandfathered per #261, not owed a re-run.
+
 **Method.** Per superpowers:writing-skills, the skill's operative guidance was
 injected into the subagent's context (system-prompt-equivalent), *not* discovered
 via the Skill tool — a newly-added skill lags the harness index, and injection
@@ -167,6 +170,9 @@ recorded).
 **Content:** unrecorded (annotated per #339; the dispatch-time content is not
 derivable from recorded dates).
 
+**Protocol:** pre-protocol — predates the arm-declaration rule (#223);
+grandfathered per #261, not owed a re-run.
+
 **Method.** Fresh `general-purpose` subagents, one realistic authoring
 task each, the skill *not* named and no tool prohibition — the point is to see
 whether the trigger fires on its own. Two-axis grade: (1) *discovery* — did the
@@ -228,6 +234,9 @@ for this run was not recorded).
 
 **Content:** unrecorded (annotated per #339; the dispatch-time content is not
 derivable from recorded dates).
+
+**Protocol:** pre-protocol — predates the arm-declaration rule (#223);
+grandfathered per #261, not owed a re-run.
 
 The Codex adapter deferral is **discharged**. A real Codex CLI session was run
 from the `cover-story` checkout with:

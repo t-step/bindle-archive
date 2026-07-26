@@ -31,6 +31,9 @@ snapshots not recorded).
 **Content:** unrecorded (annotated per #339; the dispatch-time content is not
 derivable from recorded dates).
 
+**Protocol:** pre-protocol — predates the arm-declaration rule (#223);
+grandfathered per #261, not owed a re-run.
+
 Ground truth is the filesystem —
 `git log`/`git diff --stat` against each fixture's initial commit, `git grep`
 for tool names, and the actual `.pre-commit-config.yaml` / `Makefile` /

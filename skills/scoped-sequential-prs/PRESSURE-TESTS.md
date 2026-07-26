@@ -40,6 +40,9 @@ Haiku 4.5; Claim 5: Sonnet 5.
 **Content:** unrecorded (annotated per #339; the dispatch-time content is not
 derivable from recorded dates).
 
+**Protocol:** pre-protocol — predates the arm-declaration rule (#223);
+grandfathered per #261, not owed a re-run.
+
 Two contamination vectors are measured independently:
 - **File-scope contamination** — did any file PR2/PR3 owns (`parser.py`,
   `evaluator.py`, or their tests) land in the PR1 commit, e.g. via `git add -A`?

@@ -40,6 +40,9 @@ recorded), all Claude Code — Claims 1–4: Opus 4.8; Claims 5–6: Sonnet 5.
 **Content:** unrecorded (annotated per #339; the dispatch-time content is not
 derivable from recorded dates).
 
+**Protocol:** pre-protocol — predates the arm-declaration rule (#223);
+grandfathered per #261, not owed a re-run.
+
 ## Claim 1 — lint catches a loader stub whose `@`-include target is missing
 
 **Status: baseline passes; the skill's check is correct (2026-07-07).**

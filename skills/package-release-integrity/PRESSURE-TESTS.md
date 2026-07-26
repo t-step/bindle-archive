@@ -58,6 +58,9 @@ not separately recorded). Later series record their own `Model:` lines.
 **Content:** unrecorded (annotated per #339; the dispatch-time content is not
 derivable from recorded dates).
 
+**Protocol:** pre-protocol — predates the arm-declaration rule (#223);
+grandfathered per #261, not owed a re-run.
+
 Fresh `general-purpose` subagents, each in its own throwaway fixture
 repo (realistic mini Python packages built under a scratch dir, **not** named
 after the skill). Realistic release prompts with **no skill hint** (GREEN) or a
@@ -129,6 +132,9 @@ that gap — the last open item on #59's audit row.
 **Content:** unrecorded (annotated per #339; the dispatch-time content is not
 derivable from recorded dates).
 
+**Protocol:** pre-protocol — predates the arm-declaration rule (#223);
+grandfathered per #261, not owed a re-run.
+
 **Method.** Three real `codex exec` sessions (non-interactive,
 `workspace-write` sandbox), each run against a
 standalone copy of an in-repo fixture. Each prompt gave Codex only the portable
@@ -161,6 +167,9 @@ own output, so the gap is noted rather than material).
 
 **Content:** unrecorded (annotated per #339; the dispatch-time content is not
 derivable from recorded dates).
+
+**Protocol:** pre-protocol — predates the arm-declaration rule (#223);
+grandfathered per #261, not owed a re-run.
 
 This follow-up ran the deterministic helper directly from a real Codex session,
 as required by #118. The Claude-native
@@ -233,6 +242,9 @@ session did not write the subagent model down; not retroactively guessed).
 
 **Content:** unrecorded (annotated per #339; the dispatch-time content is not
 derivable from recorded dates).
+
+**Protocol:** pre-protocol — predates the arm-declaration rule (#223);
+grandfathered per #261, not owed a re-run.
 
 An attempt to top the **defer axis** up toward 5 reps/variant per #212. Five
 reps run, one at a time, each in its own throwaway fixture outside any real

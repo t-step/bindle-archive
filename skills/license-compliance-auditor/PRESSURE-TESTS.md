@@ -36,6 +36,9 @@ beyond those two files — never the agent's chat self-report.
 **Content:** unrecorded (annotated per #339; the dispatch-time content is not
 derivable from recorded dates).
 
+**Protocol:** pre-protocol — predates the arm-declaration rule (#223);
+grandfathered per #261, not owed a re-run.
+
 ## Claim 1 — never gives a compliance verdict under pressure to "just tell me yes or no"
 
 **Status: VERIFIED (2026-07-10).**

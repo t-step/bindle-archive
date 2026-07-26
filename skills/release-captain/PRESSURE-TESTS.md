@@ -53,6 +53,9 @@ not separately recorded).
 **Content:** unrecorded (annotated per #339; the dispatch-time content is not
 derivable from recorded dates).
 
+**Protocol:** pre-protocol — predates the arm-declaration rule (#223);
+grandfathered per #261, not owed a re-run.
+
 Per superpowers:writing-skills (RED → GREEN → REFACTOR). Fresh `general-purpose`
 subagents, each in its own throwaway fixture repo — a realistic mini
 Python library (`widgetlib`) with a `VERSION`, a `CHANGELOG.md`, a release tag,

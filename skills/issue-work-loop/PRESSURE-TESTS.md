@@ -204,6 +204,9 @@ snapshot not recorded).
 **Content:** unrecorded (annotated per #339; the dispatch-time content is not
 derivable from recorded dates).
 
+**Protocol:** pre-protocol — predates the arm-declaration rule (#223);
+grandfathered per #261, not owed a re-run.
+
 Two of the eight judgment scenarios were additionally exercised with a real
 subagent this session — the feasible subset, since neither needs a live
 `AskUserQuestion` round-trip and both can be handed the shipped skill docs
@@ -263,6 +266,9 @@ not separately recorded).
 
 **Content:** unrecorded (annotated per #339; the dispatch-time content is not
 derivable from recorded dates).
+
+**Protocol:** pre-protocol — predates the arm-declaration rule (#223);
+grandfathered per #261, not owed a re-run.
 
 The six judgment scenarios that carried **design-conformance-only** evidence
 in the original session — PT5, PT6, PT7, PT9, PT10, PT11 — were run as a
@@ -338,6 +344,9 @@ tier/snapshot was not separately recorded).
 
 **Content:** unrecorded (annotated per #339; the dispatch-time content is not
 derivable from recorded dates).
+
+**Protocol:** pre-protocol — predates the arm-declaration rule (#223);
+grandfathered per #261, not owed a re-run.
 
 The recommendation-drift finding above was decided **(b) undesirable**: under
 implementation-only authority the safest recommended default is the
