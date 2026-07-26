@@ -20,7 +20,11 @@ Steps:
    test/build/lint entry points, CI config, pre-commit hooks, CONTRIBUTING,
    `CLAUDE.md`, or `AGENTS.md` rules. Ask the user only for what the repo can't tell you
    (safety notes, recurring instructions).
-3. Write/refresh these sections:
+3. Write/refresh these sections. Each section is **either** an inline runbook
+   block **or** a pointer list of `[[fact]]` + one-line hook (see the
+   session-continuity skill's "Fact files"). Keep gates and common commands
+   inline; shed long-form safety-note and recurring-instruction prose to
+   `facts/` and point at it.
    - **project** — name, repo path, one-line purpose, project type/stack;
    - **common commands** — run/build/test/lint, copy-pasteable;
    - **validation gates** — what must pass before a commit/PR, in order;
@@ -31,7 +35,9 @@ Steps:
    - **context locations** — where sessions/handoffs for this project live,
      plus any external context (issue tracker, design docs) by name.
    - No secrets, no tokens, no personal-life details — profiles travel.
-4. Keep it under ~60 lines. Facts the project's own README/provider guidance already
+4. Keep the inline runbook under ~60 lines. On-demand reference goes to
+   `facts/` as `[[fact]]` pointers, not inline prose — profile.md shrinks as
+   facts atomize. Facts the project's own README/provider guidance already
    states get a pointer, not a copy.
 
 **Export (only when the user explicitly says "export"):** write a sanitized

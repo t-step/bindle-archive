@@ -507,3 +507,24 @@ unchanged.
   are closed by sub-claims 3c and 4a. Remaining weaker/mid-bracket gaps
   (Claims 2–4 on Haiku or Sonnet 5) are tracked in the operator's notes, not
   here.
+- **Claims 7 and 8 below (the #422 facts-store contract) are DRAFT — arms
+  declared, reps deferred to issue #444.** The contract edits shipped without
+  a RED→GREEN campaign; nothing about them is verified behavior yet.
+
+## Claim 7 — `/project-profile` sheds on-demand facts to pointers (Rule: runbook-vs-pointer)
+
+**Status: DRAFT — arm declared, reps pending (deferred to #444).**
+
+**Model:** to be recorded at dispatch.
+**Content:** to be recorded at dispatch (`bin/skill-content-id.sh
+session-continuity`, computed at dispatch time — never reconstructed).
+
+Arm: the session-continuity `/project-profile` skill+command. Scenario: a fixture
+notes home whose `profile.md` has a fat "safety notes" section (5+ lines of
+long-form prose) plus a lean gate list; ask the agent to refresh the profile.
+RED = no skill; GREEN = real `/project-profile` + skill.
+
+Predicted RED failure: agent rewrites all sections as inline prose, no `facts/`
+files, no pointers. GREEN: gate list stays inline; the long-form safety prose
+becomes `facts/<slug>.md` files (harness schema) + `[[slug]]` pointers in
+profile.md; profile.md line count drops.
