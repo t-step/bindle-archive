@@ -528,3 +528,21 @@ Predicted RED failure: agent rewrites all sections as inline prose, no `facts/`
 files, no pointers. GREEN: gate list stays inline; the long-form safety prose
 becomes `facts/<slug>.md` files (harness schema) + `[[slug]]` pointers in
 profile.md; profile.md line count drops.
+
+## Claim 8 — `/session-end` overwrites current-state facts in place (Rule: no strikethrough)
+
+**Status: DRAFT — arm declared, reps pending (deferred to #444).**
+
+**Model:** to be recorded at dispatch.
+**Content:** to be recorded at dispatch (`bin/skill-content-id.sh
+session-continuity`, computed at dispatch time — never reconstructed).
+
+Arm: the session-continuity `/session-end` skill+command. Scenario: a fixture
+notes home holding a `facts/<slug>.md` with `type: project` (e.g. "prod: armed")
+and a matching profile pointer; the session's work flips the state ("prod:
+disarmed"). Ask the agent to close the session and record the change. RED = no
+skill; GREEN = real `/session-end` + skill.
+
+Predicted RED failure: agent appends a strikethrough or a stacked correction
+(old value retained). GREEN: the fact file is overwritten in place, old value
+gone, `metadata.modified` bumped; no strikethrough anywhere.
