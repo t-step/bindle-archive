@@ -327,6 +327,19 @@
       ]
     },
     {
+      "name": "facts-index",
+      "type": "script",
+      "path": "bin/facts-index.sh",
+      "description": "Enumerate the current project's durable facts from the notes home as slug/type/description lines, reading frontmatter only and never a fact body; the deterministic half of the /session-start facts loader.",
+      "provider": {
+        "claude": "installed",
+        "codex": "untested"
+      },
+      "maturity": "tested",
+      "mutation": [],
+      "version_introduced": "0.11.0"
+    },
+    {
       "name": "session-context",
       "type": "script",
       "path": "bin/session-context.sh",
