@@ -713,8 +713,10 @@ so there is no failing test *of the shipped text* to fix. `SKILL.md` and
 
 **Status: PILOT COMPLETE, NOT VERIFIED (2026-07-26, #422 Phase 2a).** C1 as
 the design words it is **refuted**; the re-scoped selectivity axis separates
-cleanly (RED 9/11 bodies vs GREEN 5/5) at 2 reps per arm. C2 **FAILS** its
-zero-body criterion. The top-up to 5 reps per variant is owed before any
+cleanly (RED 9/11 bodies vs GREEN 5/5) at 2 reps per arm. C2's criterion was
+**reworded after the pilot** (#457) and its one rep passes under the new
+wording — read the criterion-change record below before crediting that pass.
+The top-up to 5 reps per variant is owed before any
 VERIFIED claim. Arm declared
 below **before** any dispatch. Third protocol-compliant series in this file,
 after Claims 6 and 8. Pilot is 2 reps per arm on the Claim 8 pattern; the top-up
@@ -742,8 +744,11 @@ grepped for `Skill` calls (any call ⇒ void).
 - **C1** — with an objective a shed fact bears on, the session reads that fact's
   **body** and cites it. RED arm: the same session without the loader step does
   not.
-- **C2** — with an objective unrelated to every fact, **no** bodies are read (the
-  cap is a ceiling, not a quota).
+- **C2** — with an objective unrelated to the shed target fact, **strictly fewer
+  bodies than the cap** are read and each loaded fact's bearing on the objective
+  is stated (the cap is a ceiling, not a quota). **Reworded 2026-07-26 (#457),
+  after the pilot ran**, from "unrelated to every fact … **no** bodies are read";
+  the record of that change is below.
 - **C3** — with no objective and no handoff next-step, no bodies are read.
 - **C4** — with no notes home at all, orientation completes and says nothing
   about facts. Covered mechanically at the script layer by
@@ -777,13 +782,18 @@ away.
 |---|---|---|---|---|
 | C1 RED — contract @ `66be7a7`, loader absent from contract **and** tree | 2 | **9**, **11** | 2/2 | 0/2 ran `facts-index.sh` (absent); **1/2 hand-rolled one** |
 | C1 GREEN — contract @ `2571599` | 2 | **5**, **5** | 2/2 | 2/2 |
-| C2 GREEN — objective unrelated to every fact | 1 | **2** | n/a | 1/1 |
+| C2 GREEN — objective unrelated to the shed target fact | 1 | **2** (< cap; both bearings stated) | n/a | 1/1 |
 | C3 GREEN — no objective, no handoff next-step | 1 | **0** | n/a | 1/1 |
 | VOID | 2 | — | — | see below |
 
 **Top-up owed:** 3 more reps per C1 arm and 4 more each for C2/C3 to reach the
 5-rep standard. The `**Content:**` id above is what binds that sitting to this
-one.
+one — and it constrains the *order* of the remaining #422 work: this file is
+excluded from the id, but every other tracked file under
+`skills/session-continuity/` is in it, so a `SKILL.md` edit landed before the
+top-up would move the id and split these 6 reps off into their own series. The
+#457 pointer-list answer is therefore recorded in `SKILL.md` **after** the
+top-up, not before.
 
 **C1 as the design states it is REFUTED, and that is the finding.** The design
 predicted a RED arm that does not reach the shed fact. Both RED reps reached it,
@@ -805,15 +815,39 @@ contract adds is the **cap** and the **disclosure**, both of which appeared in
 2/2 GREEN reps and 0/2 RED reps ("Facts read (5 of 40) … Say the word if any of
 those was the wrong pick").
 
-**C2 FAILS by the letter and passes on the intent — recorded as a FAIL.** The
-design says an unrelated objective loads **no** bodies. The rep loaded **two**:
+**C2's criterion was changed after the result was known — read this before
+crediting its pass.** The pilot recorded C2 as a **FAIL**: the design said an
+unrelated objective loads **no** bodies, and the rep loaded **two** —
 `docs-site-builds-from-main` (the objective edits `README.md`, and that repo's
-docs site publishes from `main` on merge) and `main-is-protected`. Both are
-defensible — arguably more useful than silence — but the criterion as written is
-not met. The honest reading is that "unrelated to every fact" is not a state a
-40-fact store admits: process facts bear on any objective. Either C2's wording
-needs to become "does not fill the cap," or the criterion stays and this stays a
-FAIL. Not decided here.
+docs site publishes from `main` on merge) and `main-is-protected`. Both picks
+were defensible, arguably more useful than silence, but the criterion as written
+was not met.
+
+#457 settled it by **rewording the criterion** to "strictly fewer bodies than
+the cap, each loaded fact's bearing stated," and the pilot rep is **credited**
+under that wording. The argument for the rewording is that "unrelated to every
+fact" is not a state a populated store admits — process facts (branch
+protection, review rules, publication surfaces) bear on any objective, so the
+old criterion could only ever be met by an empty or contrived store, which is
+not the thing under test.
+
+The argument *against* is that the threshold moved after the data was seen,
+which is the shape of a result fitted to its outcome. Three things bound that
+risk, and a reader should weigh them rather than take the pass at face value:
+
+- The **measurement** did not change. Bodies read (2) and bearings stated (2/2)
+  are read off the same transcript under either wording; only the pass threshold
+  moved.
+- The new criterion is still **falsifiable and not vacuous** — a rep that fills
+  the cap, or that loads a fact without stating its bearing, fails. C1 GREEN's
+  reps read exactly 5 and would fail C2's threshold, so the two variants are not
+  measuring the same thing.
+- The **failure it was originally written to catch** is still caught by C3,
+  which demands zero bodies with no objective at all and got zero.
+
+If the four top-up reps do not hold the line — if C2 starts filling the cap, or
+stops stating bearings — that is the reworded criterion failing, and it stays a
+FAIL.
 
 **The cap is not behaving as a quota, but the C1 evidence alone would not show
 that.** Both C1 GREEN reps read *exactly* 5 — suspicious on its own. C2 (2) and
