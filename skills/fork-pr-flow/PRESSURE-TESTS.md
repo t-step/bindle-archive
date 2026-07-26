@@ -12,7 +12,10 @@
 > skill answered tests nothing about this skill); treat those counts as a
 > distribution over skills, not an arm. Per the #261 decision they are
 > **grandfathered, not voided** — they stand as recorded, are **not** owed a
-> re-run, and are not evidence that the current protocol was met.
+> re-run, and are not evidence that the current protocol was met. Because one
+> file's series can fall on either side, **do not read this file's totals as
+> uniformly earned under the method of record** — check each series' field
+> before quoting any count in it.
 
 Per CONTRIBUTING's RED → GREEN → REFACTOR loop (superpowers:writing-skills), a
 skill isn't done until an agent has been watched under pressure. This log
@@ -164,8 +167,14 @@ not recorded).
 **Content:** unrecorded (annotated per #339; the dispatch-time content is not
 derivable from recorded dates).
 
-**Protocol:** pre-protocol — predates the arm-declaration rule (#223);
-grandfathered per #261, not owed a re-run.
+**Protocol:** mixed series — per-arm override (#356): arms A–B `compliant`, arm
+C `unrecorded`. The arm-declaration line below records the declaration for
+"both Fable arms" (0 void; 5/5 and 5/5 loaded the declared arm), so A and B meet
+the discriminator — arm declared before dispatch, not the series' date. Nothing
+in this file records whether arm C's arm was declared, so its status is an
+honest unknown: its "loaded **no skill at all**" is an attribution *result*
+(a 0/5 trigger rate), which voids those reps as evidence about this skill's text
+but says nothing about what was declared before they ran.
 
 **Arm declared before dispatch:** `fork-pr-flow`, both Fable arms. 0 void
 (5/5 and 5/5 loaded the declared arm; one rep also loaded `caveman` — noise,

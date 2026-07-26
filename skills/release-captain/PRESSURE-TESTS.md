@@ -12,7 +12,10 @@
 > skill answered tests nothing about this skill); treat those counts as a
 > distribution over skills, not an arm. Per the #261 decision they are
 > **grandfathered, not voided** — they stand as recorded, are **not** owed a
-> re-run, and are not evidence that the current protocol was met.
+> re-run, and are not evidence that the current protocol was met. Because one
+> file's series can fall on either side, **do not read this file's totals as
+> uniformly earned under the method of record** — check each series' field
+> before quoting any count in it.
 
 **Status: VERIFIED (2026-07-15).** Full RED → GREEN(fail) → REFACTOR → GREEN(pass)
 campaign this session. The first GREEN arm **failed** (the skill under-triggered
@@ -36,8 +39,8 @@ improvement trail; see the stated limit on what those 5 reps do and do not prove
 ## Method
 
 **Model:** Sonnet (dispatched via the harness `sonnet` alias), Claude Code —
-every series in this file (annotated per #331; the resolved tier/snapshot was
-not separately recorded).
+the series below (annotated per #331; the resolved tier/snapshot was not
+separately recorded). Later series record their own `Model:` lines.
 
 **Content:** unrecorded (annotated per #339; the dispatch-time content is not
 derivable from recorded dates).

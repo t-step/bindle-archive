@@ -12,7 +12,10 @@
 > skill answered tests nothing about this skill); treat those counts as a
 > distribution over skills, not an arm. Per the #261 decision they are
 > **grandfathered, not voided** — they stand as recorded, are **not** owed a
-> re-run, and are not evidence that the current protocol was met.
+> re-run, and are not evidence that the current protocol was met. Because one
+> file's series can fall on either side, **do not read this file's totals as
+> uniformly earned under the method of record** — check each series' field
+> before quoting any count in it.
 
 Per CONTRIBUTING's RED → GREEN → REFACTOR loop (superpowers:writing-skills), a
 skill isn't done until an agent has been watched failing without it. This log
@@ -35,8 +38,10 @@ is a mechanical scanner test — no rep model applies.
 **Content:** unrecorded (annotated per #339; the dispatch-time content is not
 derivable from recorded dates).
 
-**Protocol:** pre-protocol — predates the arm-declaration rule (#223);
-grandfathered per #261, not owed a re-run.
+**Protocol:** pre-protocol — the series below through Claim 5, including their
+sub-claims: they predate the arm-declaration rule (#223); grandfathered per
+#261, not owed a re-run. Every later series — sub-claim 1c, and Claims 6
+through 9 — records its own `Protocol:` line.
 
 ## Claim 1 — `/session-end` writes notes outside the repo (Rule 1)
 

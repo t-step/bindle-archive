@@ -12,7 +12,10 @@
 > skill answered tests nothing about this skill); treat those counts as a
 > distribution over skills, not an arm. Per the #261 decision they are
 > **grandfathered, not voided** — they stand as recorded, are **not** owed a
-> re-run, and are not evidence that the current protocol was met.
+> re-run, and are not evidence that the current protocol was met. Because one
+> file's series can fall on either side, **do not read this file's totals as
+> uniformly earned under the method of record** — check each series' field
+> before quoting any count in it.
 
 **Status: VERIFIED (2026-07-14). One recorded FAILURE (D5, 2026-07-18) —
 diagnosed 2026-07-18 as a fixture artifact and did not reproduce; see
