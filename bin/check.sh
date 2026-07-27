@@ -687,6 +687,21 @@ if ! $content_only && [ -x bin/check-gitleaks.sh ]; then
   bin/check-gitleaks.sh --history || problem "gitleaks found something (see above)"
 fi
 
+# --- pressure-test series fields (#467, #356) -------------------------------
+# Every rep series in skills/*/PRESSURE-TESTS.md records **Model:**,
+# **Content:** and **Protocol:**. This is the COMPLETENESS half: every existing
+# block, whole tree. The pre-commit hook runs the same script in `--staged`,
+# which fires on an appended series heading — the two are complementary in the
+# same way the gitleaks pair above is, and for the same reason: staged content
+# is not yet a commit, and a whole-tree sweep is blind to it.
+#
+# Guarded on the script existing, exactly like the gitleaks call and for the
+# same #295 reason — bin/test-check.sh's throwaway fixture repos carry no other
+# bin/ script, and an unconditional call fails their clean-exit floors.
+if ! $content_only && [ -x bin/check-pressure-series.sh ]; then
+  bin/check-pressure-series.sh --all || problem "pressure-test series fields incomplete (see above)"
+fi
+
 # --- scan scope (#347) ------------------------------------------------------
 # Every section above enumerates its work with `git ls-files`, so an UNTRACKED
 # file is outside all of them — and the verdict below then reads as a statement

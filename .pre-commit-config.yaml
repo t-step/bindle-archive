@@ -57,6 +57,20 @@ repos:
         language: script
         pass_filenames: false
         always_run: true
+      # The append gate for pressure-test evidence (#467, #356). `--staged` is
+      # the mode that makes grandfathered series free: it fires on the APPEND —
+      # a new series heading, at one of the depths that file already declares
+      # at, arriving without its **Model:**/**Content:**/**Protocol:** block —
+      # so nothing already recorded is asked to change, and #261's
+      # grandfathering is not re-litigated. `make check`'s `--all` is the
+      # complementary mode: every existing block complete and well-formed.
+      # Exits 0 with a NOT RUN notice when there is nothing it can read.
+      - id: bindle-pressure-series
+        name: pressure-test series fields (Model/Content/Protocol)
+        entry: bin/check-pressure-series.sh --staged
+        language: script
+        pass_filenames: false
+        always_run: true
       - id: bindle-content
         name: Bindle content (frontmatter/name/links/version)
         entry: bin/check.sh --content-only
