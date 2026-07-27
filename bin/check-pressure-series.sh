@@ -28,7 +28,11 @@
 #              nothing it can read (not a git repository, or no staged
 #              evidence files) — a mode that hard-fails outside a git
 #              repository would break any consumer that runs it in a scratch
-#              tree.
+#              tree. Because that disclosure is also what a hole looks like,
+#              every path this mode reads is anchored to the repository and to
+#              the index, never to the caller's cwd or to disk: pathspecs carry
+#              `:(top)`, the filter is `AMR` so a `git mv` cannot slip a series
+#              past it, and even depth calibration reads the staged blob.
 #
 #              A file's TRIGGERING DEPTHS — the heading depths at which a new
 #              series must declare its fields to be flagged — are computed
@@ -70,12 +74,16 @@ while [ $# -gt 0 ]; do
   shift
 done
 if [ -z "$root" ]; then
-  # --staged runs from inside whatever repo is being committed to, which need
-  # not be the repo this script happens to be installed in — a throwaway
-  # fixture repo in the test suite, or a linked worktree. Prefer the caller's
-  # own toplevel; fall back to this script's install location only when the
-  # caller isn't in a git repository at all (--all can still walk a --root
-  # given explicitly, or its own install tree, with no git present).
+  # --all walks a directory tree, and the tree it should walk is the caller's
+  # own — a linked worktree checked out at a different commit is not the
+  # install tree this script sits in. Prefer the caller's toplevel; fall back
+  # to the install location only when the caller isn't in a git repository at
+  # all, so --all still works on an explicit --root with no git present.
+  #
+  # --staged does NOT read $root: every path it touches comes from git, which
+  # already answers relative to the repository being committed to. That is
+  # deliberate — routing the staged mode through a filesystem root is what made
+  # its scan depend on the caller's cwd and on unstaged disk state.
   if git rev-parse --show-toplevel >/dev/null 2>&1; then
     root="$(git rev-parse --show-toplevel)"
   else
@@ -150,9 +158,17 @@ staged_sections() { # staged_sections FILE
 # verify-then-commit and session-continuity, narrative everywhere else, and
 # #### is real only in verify-then-commit (`#### GREEN follow-up`). A file
 # with no declaring section yet defaults to ##.
-trigger_depths() { # trigger_depths FILE
+#
+# Read from the STAGED blob, like every other read this mode makes. Calibration
+# is part of the scan, so taking it from the working tree would let unstaged
+# disk state decide what the commit is judged against — a block edited in but
+# not staged would add a triggering depth and redden the commit over content the
+# commit does not contain. That contradicts the scope line this mode prints, in
+# the direction opposite to (and no better than) the #354 blind spot
+# staged_sections closes.
+trigger_depths() { # trigger_depths FILE (repo-relative)
   local d
-  d="$(sections | awk -v F="$1" -F'\t' '$1 == F && $3 > 0 { print $3 }' | sort -un | tr '\n' ' ')"
+  d="$(staged_sections "$1" | awk -F'\t' '$3 > 0 { print $3 }' | sort -un | tr '\n' ' ')"
   [ -n "${d// /}" ] || d="2 "
   printf '%s' "$d"
 }
@@ -162,8 +178,11 @@ trigger_depths() { # trigger_depths FILE
 # lines (no context), so every `+` line is genuinely new; LINENO is the
 # heading's line number in the staged (new) blob — the same numbering
 # section_declares_all reads via `git show`.
+#
+# `:(top)` because FILE is repo-relative while a plain pathspec is resolved
+# against the CALLER's cwd — see run_staged.
 added_headings() { # added_headings FILE
-  git diff --cached -U0 -- "$1" | awk '
+  git diff --cached -U0 -- ":(top)$1" | awk '
     /^@@/ {
       split($0, hdr, " ")
       newspec = hdr[3]
@@ -200,8 +219,21 @@ run_staged() {
     return 0
   fi
 
+  # `:(top)` anchors the pathspec to the repository root. A plain pathspec is
+  # resolved against the CALLER's cwd, and this mode's caller is a pre-commit
+  # hook, which inherits the directory `git commit` was issued from — routinely
+  # a subdirectory. From there `skills/*/...` matches nothing, and the mode
+  # disclosed "no staged evidence files" and exited 0 with a field-less series
+  # staged: silence that reads as a pass.
+  #
+  # `R` in the filter because rename detection is on by default and `AM` drops
+  # renames outright — measured: `git mv` plus a field-less append prints
+  # NOTHING under `AM` and the destination path under `AMR`. `--name-only`
+  # reports the destination, which is the path to scan; restricted to that path
+  # git renders the entry as an add, so the moved file's existing series are
+  # re-checked and pass on their own fields.
   local files
-  files="$(git diff --cached --name-only --diff-filter=AM -- 'skills/*/PRESSURE-TESTS.md')"
+  files="$(git diff --cached --name-only --diff-filter=AMR -- ':(top)skills/*/PRESSURE-TESTS.md')"
   if [ -z "$files" ]; then
     echo "  NOT RUN: no staged evidence files, so nothing was read."
     return 0
@@ -210,7 +242,7 @@ run_staged() {
   local problems=0 checked=0 file heading depth line depths hit
   while IFS= read -r file; do
     [ -n "$file" ] || continue
-    depths=" $(trigger_depths "$root/$file") "
+    depths=" $(trigger_depths "$file") "
     while IFS= read -r hit; do
       [ -n "$hit" ] || continue
       line="${hit%%:*}"

@@ -59,6 +59,19 @@ not_contains() { ! grep -qF -- "$1" <<<"$2"; } # not_contains NEEDLE HAYSTACK
 # shellcheck disable=SC2329 # invoked indirectly, by name, via check
 equals() { [ "$1" = "$2" ]; } # equals EXPECTED ACTUAL
 
+# A bare not_contains passes VACUOUSLY whenever the fixture produced nothing at
+# all — a NOT RUN, a reworded heading that broke an extract pattern, a pathspec
+# that matched no file. The ✗ it was written to catch is absent because nothing
+# ran, and the suite prints a ✓ beside a sentence whose English is false: the
+# #459 shape recurring one layer up, inside the suite built to catch it. Every
+# negative assertion below therefore carries its own floor, folded into the SAME
+# predicate so it can never show ✓ while its own claim is false — the same
+# reasoning as nonzero_and_equal further down.
+# shellcheck disable=SC2329 # invoked indirectly, by name, via check
+present_and_absent() { # present_and_absent FLOOR NEEDLE HAYSTACK
+  grep -qF -- "$1" <<<"$3" && ! grep -qF -- "$2" <<<"$3"
+}
+
 TMP="$(mktemp -d)"
 trap 'rm -rf "$TMP"' EXIT
 
@@ -104,7 +117,7 @@ out="$("$GATE" --all --root "$TMP/real" 2>&1)"
 rc=$?
 check "a real three-field block passes --all" equals 0 "$rc"
 check "a real three-field block registers its one block" contains "1 block" "$out"
-check "a real block is not reported incomplete" not_contains "missing" "$out"
+check "a real block is not reported incomplete" present_and_absent "1 block" "missing" "$out"
 
 # Same block with **Protocol:** deleted — the pre-A state.
 mkdir -p "$TMP/incomplete/skills/session-continuity"
@@ -129,7 +142,8 @@ out="$("$GATE" --all --root "$TMP/hok" 2>&1)"
 rc=$?
 check "the blank-line-separated shape passes --all" equals 0 "$rc"
 check "the blank-line-separated shape registers its one block" contains "1 block" "$out"
-check "the blank-line-separated shape is not reported incomplete" not_contains "missing" "$out"
+check "the blank-line-separated shape is not reported incomplete" \
+  present_and_absent "1 block" "missing" "$out"
 
 # ===========================================================================
 echo
@@ -143,7 +157,8 @@ out="$("$GATE" --all --root "$TMP/lca" 2>&1)"
 rc=$?
 check "the prose-interleaved shape passes --all" equals 0 "$rc"
 check "the prose-interleaved shape registers its one block" contains "1 block" "$out"
-check "the prose-interleaved shape is not reported incomplete" not_contains "missing" "$out"
+check "the prose-interleaved shape is not reported incomplete" \
+  present_and_absent "1 block" "missing" "$out"
 
 # ===========================================================================
 echo
@@ -183,8 +198,10 @@ rc=$?
 # and prints "0 block(s) complete" — which trivially satisfies both
 # not_contains checks below without ever exercising the override path at all.
 check "the override fixture actually yielded a block" contains "1 block" "$out"
-check "a real per-arm **Protocol:** override is accepted" not_contains "not a legal value" "$out"
-check "a real per-arm **Protocol:** override is not reported missing" not_contains "missing" "$out"
+check "a real per-arm **Protocol:** override is accepted" \
+  present_and_absent "1 block" "not a legal value" "$out"
+check "a real per-arm **Protocol:** override is not reported missing" \
+  present_and_absent "1 block" "missing" "$out"
 check "a real per-arm **Protocol:** override makes --all pass" equals 0 "$rc"
 
 # ===========================================================================
@@ -192,7 +209,12 @@ echo
 echo "the live-match count — the #459 alarm. Run against the REAL repo:"
 
 live="$(grep -rh '^\*\*Model:\*\*' "$REPO_ROOT"/skills/*/PRESSURE-TESTS.md | wc -l | tr -d ' ')"
-seen="$("$GATE" --all --count-only)"
+# --root is passed EXPLICITLY: the gate's default root is now the caller's own
+# `git rev-parse --show-toplevel`, so a bare --count-only measures whatever
+# repository the suite happens to be invoked from. `live` is already anchored to
+# $REPO_ROOT; leaving `seen` floating would compare two different trees and, in
+# a tree with no skills/ at all, would compare two zeros.
+seen="$("$GATE" --all --count-only --root "$REPO_ROOT")"
 # A single assertion, not two: a floor check ("live > 0") and an equality
 # check ("live == seen") run as SEPARATE assertions can each show a green ✓
 # on a zero-evidence tree — the floor fails alone (correctly), but the
@@ -236,7 +258,8 @@ cp "$REPO_ROOT/skills/release-captain/PRESSURE-TESTS.md" "$TMP/nogit/skills/s/PR
 out="$(cd "$TMP/nogit" && "$GATE" --staged 2>&1)"
 rc=$?
 check "--staged outside a git repository discloses NOT RUN, not a crash" contains "NOT RUN" "$out"
-check "--staged outside a git repository names no false problem" not_contains "missing" "$out"
+check "--staged outside a git repository names no false problem" \
+  present_and_absent "NOT RUN" "missing" "$out"
 check "--staged outside a git repository exits 0" equals 0 "$rc"
 
 # Inside a git repository, but nothing staged that matches the evidence glob.
@@ -276,7 +299,8 @@ printf '\n### Honest coverage caveat (new)\n\nProse only.\n' >>"$d/skills/s/PRES
 git -C "$d" add -A
 out="$(cd "$d" && "$GATE" --staged 2>&1)"
 rc=$?
-check "a ### append does not trigger in a ##-only file" not_contains "missing" "$out"
+check "a ### append does not trigger in a ##-only file" \
+  present_and_absent "0 new series" "missing" "$out"
 check "a ### append that does not trigger leaves --staged exit 0" equals 0 "$rc"
 
 # A ## append always triggers...
@@ -299,7 +323,8 @@ printf '\n## Closed mechanically <!-- not-a-series: no reps, bookkeeping only --
 git -C "$d" add -A
 out="$(cd "$d" && "$GATE" --staged 2>&1)"
 rc=$?
-check "the not-a-series marker exempts a ## append" not_contains "missing" "$out"
+check "the not-a-series marker exempts a ## append" \
+  present_and_absent "0 new series" "missing" "$out"
 check "the not-a-series marker leaves --staged exit 0" equals 0 "$rc"
 
 # A ## append WITH all three fields passes.
@@ -318,9 +343,79 @@ out="$(cd "$d" && "$GATE" --staged 2>&1)"
 rc=$?
 check "a ## append carrying all three fields is counted as a checked series" \
   contains "1 new series" "$out"
-check "a ## append carrying all three fields passes" not_contains "missing" "$out"
+check "a ## append carrying all three fields passes" \
+  present_and_absent "1 new series" "missing" "$out"
 check "a ## append carrying all three fields makes --staged exit 0" equals 0 "$rc"
 
+echo
+echo "scan scope — not the caller's cwd, not the working tree, not defeated by a rename:"
+
+# The three findings below share one root cause: what the gate scans was left
+# dependent on where it was called from and on what happened to be on disk,
+# while its own output claims "staged content only". Each is a SILENT hole —
+# every one of them exits 0 with a green-looking disclosure while a field-less
+# series sits staged.
+
+# M1 — a pre-commit hook inherits the cwd `git commit` was issued from, which is
+# routinely a subdirectory. A pathspec without :(top) resolves RELATIVE TO CWD,
+# matches nothing there, and the mode discloses "NOT RUN: no staged evidence
+# files, so nothing was read" — an honest-sounding sentence that is false.
+d="$(fixture_repo subdircwd "$REPO_ROOT/skills/release-captain/PRESSURE-TESTS.md")"
+printf '\n## Claim 102 — a new series staged from a subdirectory\n\nRED 0/5.\n' \
+  >>"$d/skills/s/PRESSURE-TESTS.md"
+git -C "$d" add -A
+out="$(cd "$d/skills" && "$GATE" --staged 2>&1)"
+rc=$?
+check "--staged run from a subdirectory still finds the staged evidence file" \
+  not_contains "NOT RUN" "$out"
+check "--staged run from a subdirectory still flags the field-less series" \
+  contains "Claim 102" "$out"
+check "--staged run from a subdirectory exits 1" equals 1 "$rc"
+
+# M2 — depth calibration is part of the scan, so it must read the STAGED blob
+# too. Here the staged file declares at ## only, making the staged ### append
+# narrative; the working tree is THEN dirtied, unstaged, with a block that
+# declares at ###. A calibration that reads disk sees {##, ###}, triggers on the
+# staged ### append and reddens the commit over content the commit does not
+# contain — the inverse direction of the #354 blind spot below, and just as
+# wrong: the mode advertises "staged content only" in its own scope line.
+d="$(fixture_repo wtdepth "$REPO_ROOT/skills/release-captain/PRESSURE-TESTS.md")"
+printf '\n### Narrative subsection (new)\n\nProse only.\n' >>"$d/skills/s/PRESSURE-TESTS.md"
+git -C "$d" add -A
+{
+  echo
+  echo '### An unstaged block that declares at ###'
+  echo
+  # shellcheck disable=SC2016 # single-quoted on purpose: literal markdown, not interpolation
+  echo '**Model:** Opus 5 — never staged.'
+  echo '**Content:** unrecorded (never staged).'
+  echo '**Protocol:** compliant — never staged.'
+} >>"$d/skills/s/PRESSURE-TESTS.md"
+out="$(cd "$d" && "$GATE" --staged 2>&1)"
+rc=$?
+check "depth calibration ignores a working-tree-only block at a new depth" \
+  present_and_absent "0 new series" "missing" "$out"
+check "a working-tree-only block at a new depth leaves --staged exit 0" equals 0 "$rc"
+
+# M3 — --diff-filter=AM drops renames outright. Measured against a fixture:
+# `git mv` plus an append prints NOTHING under AM and the destination path under
+# AMR, so reorganizing skills/ and appending a field-less series in the same
+# commit reads as nothing staged. With the pathspec restricted to the
+# destination, git renders the entry as an ADD, so every heading in the moved
+# file is re-checked — the already-compliant ones pass on their own fields and
+# the new one is caught.
+d="$(fixture_repo renamed "$REPO_ROOT/skills/release-captain/PRESSURE-TESTS.md")"
+git -C "$d" mv skills/s skills/renamed
+printf '\n## Claim 103 — a new series appended in the same commit as a rename\n\nRED 0/5.\n' \
+  >>"$d/skills/renamed/PRESSURE-TESTS.md"
+git -C "$d" add -A
+out="$(cd "$d" && "$GATE" --staged 2>&1)"
+rc=$?
+check "a renamed evidence file is still scanned" not_contains "NOT RUN" "$out"
+check "a field-less series appended alongside a rename is flagged" contains "Claim 103" "$out"
+check "a rename carrying a field-less series makes --staged exit 1" equals 1 "$rc"
+
+# ===========================================================================
 echo
 echo "reads the STAGED blob, not the working tree — the #354 blind spot, one layer up:"
 
@@ -348,7 +443,7 @@ rc=$?
 check "a staged-compliant block is counted as a checked series despite the dirty disk copy" \
   contains "1 new series" "$out"
 check "a staged-compliant block stays green though the working tree was dirtied after staging" \
-  not_contains "missing" "$out"
+  present_and_absent "1 new series" "missing" "$out"
 check "a staged-compliant block dirtied afterward still exits 0" equals 0 "$rc"
 
 # ===========================================================================
