@@ -65,7 +65,7 @@ Verified behavior of `install.sh` (`link_item` / `prune_dir`):
 
 ## Test / check coverage
 
-`bin/test-install.sh` (runs on every commit via pre-commit, and in CI):
+`bin/test-install.sh` (runs on every commit via pre-commit):
 
 - fresh install links all four item types;
 - re-run is idempotent (`0 linked`, `4 already current`);
@@ -73,12 +73,26 @@ Verified behavior of `install.sh` (`link_item` / `prune_dir`):
 - broken owned link survives without `--prune`, is removed with it.
 
 `bin/check.sh` covers frontmatter validity, name matching, link integrity,
-formatting, and version sanity. CI (`.github/workflows/ci.yml`) runs
-`pre-commit run --all-files` on PRs, on pushes to `main`, and on a weekly
-schedule (Mondays 07:00 UTC) — the PR run is the primary gate, and the other
-two triggers cover a direct/admin push to `main`, a branch-protection
-misconfiguration, and tool drift (Python, shellcheck, shfmt, pre-commit)
-between PRs, none of which a PR-only trigger would catch.
+formatting, and version sanity.
+
+GitHub Actions is **not** part of this repo's gate (#267).
+`.github/workflows/ci.yml` would run `pre-commit run --all-files` on PRs, on
+pushes to `main`, and on a weekly schedule, but its runs never start (standing
+account billing condition, which the operator has decided not to resolve), and
+this private repo cannot have branch protection at all — the protection API
+answers 403 "Upgrade to GitHub Pro or make this repository public" — so no
+status check could be required even if they did. A red badge on a PR here says
+nothing about the change.
+
+The gate of record is local: the pre-commit hooks at commit time, `make check`,
+and `make test` (`bin/run-test-suites.sh`). The all-files sweep the workflow
+would have performed is available as
+`SKIP=no-commit-to-branch pre-commit run --all-files --show-diff-on-failure`,
+and it is on the operator to run it — nothing schedules it.
+
+What Actions genuinely provided and a local run does not is a clean checkout
+with freshly-resolved tool versions, so tool drift (Python, shellcheck, shfmt,
+pre-commit) now surfaces only when someone looks. That gap is open, not closed.
 
 **Not covered today:** no tests for privacy/PII in committed content beyond
 `detect-private-key`; no coverage that new command/skill *content* behaves as
@@ -91,9 +105,9 @@ intended (CONTRIBUTING's RED→GREEN→REFACTOR loop is manual discipline).
   `no-commit-to-branch` for `main`, local hooks for `check.sh --content-only`,
   `test-install.sh`, and `test-check.sh`, and a post-merge hook that re-runs
   `install.sh`.
-- CI runs the same suite on PRs, on pushes to `main`, and on a weekly
-  schedule; Dependabot + a weekly `pre-commit autoupdate` workflow keep
-  hook/action versions current.
+- CI and the weekly `pre-commit autoupdate` workflow are both configured but
+  neither runs — see the note above and #267. Hook/action versions are current
+  only as far as someone has bumped them by hand.
 - Deliberately **no** markdown formatter (would churn carefully-phrased
   instruction prose).
 - Branch discipline: `main` is protected by the `no-commit-to-branch` hook;

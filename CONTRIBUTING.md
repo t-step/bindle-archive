@@ -21,8 +21,37 @@ an `--agents-skills-home` target.
   `fix/<x>` branch cut fresh off `main`, one PR-able unit per branch.
 - If the hook blocks a commit, that's the control working — branch, don't
   `--no-verify` past it.
-- **Verify before committing:** `make check` must pass. Never bypass hooks.
+- **Verify before committing:** `make check` must pass. Never bypass hooks. It
+  is not the whole gate — see "The gate of record is local" below.
 - Small, single-purpose commits over one large blob.
+
+### The gate of record is local — CI is not a signal
+
+**A red check on a PR here tells you nothing about the change.** GitHub Actions
+runs do not start on this repo: every run since at least 2026-07-15 has failed
+within seconds with an account-level billing annotation, and the operator has
+decided not to resolve that condition. Treat it as the standing state, not an
+outage to wait out (#267).
+
+Nor could a check be *required*. This repo is private, and
+`GET /repos/:owner/:repo/branches/main/protection` answers 403 "Upgrade to
+GitHub Pro or make this repository public to enable this feature" — there is no
+branch protection here to enforce anything. `main` is protected by the
+`no-commit-to-branch` pre-commit hook, which is a local guard in your checkout,
+not a server-side rule.
+
+So the gate is, in full:
+
+1. the pre-commit hooks at commit time (they run the discovered suites);
+2. `make check`;
+3. `make test` (`bin/run-test-suites.sh`) — `make check` does **not** run the
+   suites, so a change can be green under `make check` and still fail at commit;
+4. the all-files sweep, when you want what CI would have covered:
+   `SKIP=no-commit-to-branch pre-commit run --all-files --show-diff-on-failure`.
+
+Nothing schedules any of these. The one thing Actions gave that a local run
+cannot is a clean checkout with freshly-resolved tool versions, so tool drift
+(Python, shellcheck, shfmt, pre-commit) surfaces only when someone goes looking.
 
 ### Test suites are discovered, not registered
 
