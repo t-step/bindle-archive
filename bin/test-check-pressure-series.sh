@@ -125,7 +125,16 @@ sed '/^\*\*Protocol:\*\*/,/^$/d' "$TMP/real/skills/session-continuity/PRESSURE-T
   >"$TMP/incomplete/skills/session-continuity/PRESSURE-TESTS.md"
 out="$("$GATE" --all --root "$TMP/incomplete" 2>&1)"
 check "a block missing **Protocol:** is red" equals 1 "$?"
-check "the finding names the field" contains "Protocol" "$out"
+# The needle is the WHOLE finding, not the bare word "Protocol". A loose
+# substring here survived the mutation pass: with the missing-field branch
+# disabled, a block with no **Protocol:** at all falls through to the legality
+# branch and is still rejected — but the finding then reads `**Protocol:** ""
+# is not a legal value`, telling the maintainer to fix a value that does not
+# exist. The verdict is preserved; the diagnosis is not, and "Protocol" matched
+# both. Two branches, two different messages, one assertion that could not tell
+# them apart.
+check "the finding names the field as missing, not as illegal" \
+  contains "is missing **Protocol:**" "$out"
 
 # ===========================================================================
 echo
@@ -171,6 +180,34 @@ out="$(
   "$GATE" --all --root "$TMP/illegal" 2>&1
 )"
 check "an illegal **Protocol:** value is red" contains "not a legal value" "$out"
+
+# ===========================================================================
+echo
+echo "the other two fields, and an unreadable flag:"
+#
+# Predicted gap, written before the mutation pass: every assertion above grades
+# **Protocol:**, because that is the field this work adds. A mutant that
+# stopped checking **Model:** or **Content:** entirely would have survived —
+# the gate's stated contract is that a section declaring ANY of the three
+# declares ALL three, and two thirds of that had no test.
+
+mkdir -p "$TMP/onlyprotocol/skills/s"
+printf '%s\n' '# s — pressure-test log' '' '## Claim 1' '' \
+  '**Protocol:** compliant — arm declared before dispatch.' \
+  >"$TMP/onlyprotocol/skills/s/PRESSURE-TESTS.md"
+out="$("$GATE" --all --root "$TMP/onlyprotocol" 2>&1)"
+rc=$?
+check "a section declaring only **Protocol:** is red" equals 1 "$rc"
+check "the finding names the missing **Model:**" contains "missing **Model:**" "$out"
+check "the finding names the missing **Content:**" contains "missing **Content:**" "$out"
+
+# An unreadable flag must not be silently treated as a mode. Exit 2 is neither
+# green nor red — it is "you asked for something I do not implement", and a
+# consumer that got 0 here would read a typo'd invocation as a pass.
+out="$("$GATE" --staged --nonsense 2>&1)"
+rc=$?
+check "an unknown flag exits 2, neither green nor red" equals 2 "$rc"
+check "an unknown flag prints the usage line" contains "usage:" "$out"
 
 # ===========================================================================
 echo
@@ -292,6 +329,27 @@ out="$(cd "$d" && "$GATE" --staged 2>&1)"
 rc=$?
 check "a #### append triggers in a file that declares at ####" contains "missing" "$out"
 check "a #### append that triggers makes --staged exit 1" equals 1 "$rc"
+
+# Predicted gap, written before the mutation pass: every depth assertion here
+# uses a REAL file, and all thirteen real files already declare at ##. So
+# trigger_depths' `no declaring section yet -> default to ##` branch — the one
+# that decides what happens to a brand-new evidence file — was never taken by
+# any fixture. A mutant changing that default would have survived while the
+# ##-append assertions below kept passing on calibration read from the file.
+d="$(fixture_repo firstever "$REPO_ROOT/skills/release-captain/PRESSURE-TESTS.md")"
+: >"$d/skills/s/PRESSURE-TESTS.md"
+printf '%s\n' '# a brand-new skill — pressure-test log' '' 'No reps yet.' \
+  >"$d/skills/s/PRESSURE-TESTS.md"
+git -C "$d" add -A
+git -C "$d" -c user.email=t@e -c user.name=t commit -qm "empty log"
+printf '\n## Claim 1 — the first series this file has ever carried\n\nRED 0/5.\n' \
+  >>"$d/skills/s/PRESSURE-TESTS.md"
+git -C "$d" add -A
+out="$(cd "$d" && "$GATE" --staged 2>&1)"
+rc=$?
+check "a ## append triggers in a file with no declaring section yet" \
+  contains "Claim 1" "$out"
+check "a first-ever series with no fields makes --staged exit 1" equals 1 "$rc"
 
 # release-captain declares at ## only -> a new ### is narrative, no trigger.
 d="$(fixture_repo rc "$REPO_ROOT/skills/release-captain/PRESSURE-TESTS.md")"
