@@ -971,6 +971,10 @@
       "reason": "internal engineering contract restricting what Bindle's own automatic/executable assets (hooks, scripts) may ship with; governs contributions, not a capability an agent follows during ordinary session work."
     },
     {
+      "path": "docs/gate-scope.md",
+      "reason": "internal reference for what each of this repo's own gates scans and how to add one; governs contributions, not a capability an agent follows during ordinary session work."
+    },
+    {
       "path": "docs/sharing-skills.md",
       "reason": "internal guidance on distributing this personal kit to collaborators; reference prose, not a capability."
     },

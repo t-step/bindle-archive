@@ -49,6 +49,13 @@ So the gate is, in full:
 4. the all-files sweep, when you want what CI would have covered:
    `SKIP=no-commit-to-branch pre-commit run --all-files --show-diff-on-failure`.
 
+These four do not read the same files. `make check` reads git's tracked set,
+the hooks read the index, and a secret-history scan reads commits — so a green
+run from one says nothing about the others.
+[docs/gate-scope.md](docs/gate-scope.md) is the reference for what each gate
+actually scans, the four ways to get a meaningless green, and the rules for
+adding a gate of your own.
+
 Nothing schedules any of these. The one thing Actions gave that a local run
 cannot is a clean checkout with freshly-resolved tool versions, so tool drift
 (Python, shellcheck, shfmt, pre-commit) surfaces only when someone goes looking.

@@ -40,7 +40,7 @@ below). One record per capability:
 | `provider` | yes | authored | object `{claude, codex}`, each enum: `installed·manual·untested·unsupported·n/a` |
 | `maturity` | yes | authored | enum: `draft·documented·tested`; a `skill` marked `tested` must have a `PRESSURE-TESTS.md` |
 | `mutation` | yes | authored | array, subset of `{disk, network, external}`; `[]` = read-only |
-| `version_introduced` | yes | authored | valid semver, `<=` repo `VERSION` |
+| `version_introduced` | yes | authored | valid semver, `<=` repo `VERSION` **or** exactly one bump ahead of it (next patch, minor, or major) — see [Rules that bite](#rules-that-bite) |
 | `install_destination` | no | authored | optional per-row override of the derived destination. Destinations are otherwise derived from `type` into the generated `install-manifest.tsv`, which `make check` drift-checks and `install.sh`/`doctor.sh` consume (see #79). Honored for a same-directory rename; a cross-subdirectory override is not fully wired (parent-dir creation and prune coverage) and no row uses one today. |
 | `dependencies` | no | authored | array of other capability `name`s or external tool names |
 | `related_docs` | no | authored | array of repo-relative doc paths (must exist) |
@@ -107,8 +107,23 @@ consulted, so they never need hand entries:
 - `docs/design/**`, `docs/plans/**` — specs and plans (this doc's own design
   spec lives here and is excluded).
 
-Candidate sets are git-tracked files only: `bin/*.sh` and `docs/**/*.md`
-(minus the auto-excludes above).
+That list is the whole list. In particular `docs/superpowers/specs/**` and
+`docs/superpowers/plans/**` are **not** excluded despite being specs and plans:
+each one needs its own `not_a_capability` entry, and the existing entries are
+the precedent to copy.
+
+Candidate sets are git-tracked files only, minus the auto-excludes above:
+
+- everything under `bin/` ending in `.sh` **or `.py`**, at any depth — not just
+  `bin/*.sh`;
+- `docs/**/*.md`.
+
+Two consequences of that first bullet are easy to miss. A new **Python package**
+under `bin/` fails `make check` with `unclassified — add it to the inventory or
+to not_a_capability` until *every* one of its files has a ledger entry,
+including `__init__.py` and each test module; add them in the same commit as the
+package. And the `bin/test-*.sh` auto-exclude is spelled `.sh`, so a Python test
+module under `bin/` is **not** auto-excluded.
 
 ### Bound table (criterion c)
 
@@ -175,6 +190,69 @@ behavior in any tracked Markdown outside the historical records (`CHANGELOG.md`,
 `docs/design/**`, `docs/plans/**`, `docs/superpowers/plans/**`). It is a fixed
 doc list plus two literal claim patterns, deliberately not a prose linter; the
 allow/skip lists live at the top of `bin/check.sh` with a comment per entry.
+
+## Rules that bite
+
+Each of these cost a gate round-trip at least once. The scope rules for the
+gates *around* the inventory — what `make check` reads versus what the commit
+hooks read — are in [gate-scope.md](gate-scope.md).
+
+**Classification goes by who invokes a script, not by its filename prefix.**
+Every existing `bin/check-*.sh` is a `not_a_capability` ledger entry — but only
+because each is machinery called *by* `bin/check.sh`, and each ledger `reason`
+says exactly that. A user-invoked `bin/check-*.sh` is a `script` capability row
+instead, like `bin/issue-dedup-scan.sh`. Pattern-matching on the prefix nearly
+filed `bin/check-issue-labels.sh` as a ledger entry.
+
+**A row's `description` must match the item's frontmatter verbatim** — enforced
+for `skill`, `command` *and* `agent`. A paraphrase fails `make check`, and so
+does editing a `SKILL.md` `description` without syncing the row.
+
+**One `name` may carry more than one row, across different `type`s.**
+`release-captain` has both a `skill` and a `contract`; `context-graph` likewise.
+The bijection is per-artifact-kind, not global, so a sync script that stops at
+the first name match can silently edit the wrong row.
+
+**`version_introduced` for a *new* entry names the next unreleased release, not
+the current `VERSION`** (the `bin/domi-release-check.sh` precedent — e.g.
+`0.11.0` while `VERSION` is `0.10.1`). The gate accepts both, since a
+current-`VERSION` value is legal for anything already shipped, so a wrong
+current-`VERSION` value on a new row ships silently — the #442 final review
+caught exactly that. Two or more bumps ahead is rejected.
+
+**Run `make manifest` after adding or removing rows,** or `install-manifest.tsv`
+goes stale and fails the check. `bin/new.sh` regenerates it for you; a hand edit
+to the manifest is reverted by the next regen. Adding a `contract` row shows *no*
+manifest drift, because contracts are not installed — that is correct, not a
+missed step.
+
+**Codex eligibility is one field, and it is silent when misplaced.**
+`provider.codex: "installed"` emits a Codex manifest row **only** for
+`type: "skill"`. Setting it on a `script` or `contract` row produces no row, no
+error and a green `make check` — a no-op that reads as an install.
+
+**A method or contract doc registers as a `contract` row, not a ledger
+entry** — whether it sits at `docs/` root (`docs/pressure-testing-protocol.md`)
+or under `docs/workflows/` (`docs/workflows/issue-work-loop.md`). Contracts need
+no `docs/skill-portability-audit.md` row; that bound table is skills-only.
+Internal governance and process docs go the other way, into the ledger — the
+existing `reason` strings ("governs contributions, not a capability an agent
+follows during ordinary session work") are the test to apply.
+
+**A new `bin/test-*.sh` needs no row at all** — `bin/check-inventory.py`
+auto-excludes it as "the test harness, never a capability". This narrows the
+"a new file is not done until every ledger describing it is updated" rule,
+which holds for a new `bin/` package and for new `E_*` finding codes, but not
+for suites.
+
+**Promoting a skill draft → tested touches four places,** and `make check`
+catches only two of them. `CHANGELOG.md` and `PRESSURE-TESTS.md` are the
+obvious pair; the row's own `maturity` is checked (a `tested` skill without a
+`PRESSURE-TESTS.md` fails); but the `docs/skill-portability-audit.md` row's
+status/evidence cells are **not** — the bound table enforces only that the two
+skill *name sets* match. So the audit table can silently lag reality, and did:
+`domi-consumer`'s row read "draft" for about three days after #107 flipped it
+to tested.
 
 ## Deferred follow-ups
 
