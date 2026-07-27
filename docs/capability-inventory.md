@@ -84,7 +84,7 @@ non-template capability appears — is enforced differently for each.
 ### Clean types — bijection
 
 Inventory rows of each clean type must exactly match the filesystem set. A
-missing, extra, or renamed capability fails CI:
+missing, extra, or renamed capability fails `make check`:
 
 - `skill` ⟷ `skills/*/` (dirs with a `SKILL.md`, excluding `_template`)
 - `command` ⟷ `commands/*.md` (excluding `_template.md`)
@@ -96,9 +96,9 @@ missing, extra, or renamed capability fails CI:
 Every candidate `bin/*.sh` or `docs/**/*.md` file must be **either** an
 inventory row (type `script` or `contract`) **or** an explicit entry in the
 `not_a_capability` ledger carrying a one-line `reason`. An unclassified new
-file fails CI until it's classified one way or the other — this is what
-converts the fuzzy boundary into an enforced, auditable decision instead of a
-silent omission.
+file fails `make check` until it's classified one way or the other — this is
+what converts the fuzzy boundary into an enforced, auditable decision instead
+of a silent omission.
 
 Auto-exclude rules keep the ledger small — matched *before* the ledger is
 consulted, so they never need hand entries:
@@ -144,9 +144,9 @@ diagnostic until it's added.
    capability. If it is, add a row with `type: script` or `type: contract`.
    If it's internal machinery, a test harness, an audit artifact, or a
    planning doc that isn't itself invoked as a capability, add it to
-   `not_a_capability` instead, with a one-line `reason`. Either way, CI fails
-   on an unclassified file — that's the enforcement mechanism, not an
-   optional courtesy.
+   `not_a_capability` instead, with a one-line `reason`. Either way,
+   `make check` fails on an unclassified file — that's the enforcement
+   mechanism, not an optional courtesy.
 4. **Run the validator** and let its diagnostics drive what's still missing:
    `python3 bin/check-inventory.py --root .` (or just `make check`, which
    runs it as one of its numbered sections). It reports schema errors,

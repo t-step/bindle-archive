@@ -1,14 +1,32 @@
 name: CI
 
-# The PR run is the primary gate — enforced in branch protection ("Require
-# status checks" + "Require branches to be up to date before merging"). But
-# branch protection is a repo *setting*, not something this repo can assert
-# about itself, so PR-only CI is not a complete guarantee on its own: an
-# admin/direct push to main would get no CI run, a branch-protection
-# misconfiguration would be invisible from here, and tool drift (Python,
-# shellcheck, shfmt, pre-commit) would only surface on the next PR. The push
-# and schedule triggers below close those gaps independently of any
-# branch-protection setting.
+# THIS WORKFLOW DOES NOT RUN, AND IS NOT A GATE (#267).
+#
+# Two independent conditions, both observed rather than inferred:
+#
+#   1. Runs do not start. Every run since at least 2026-07-15 has failed within
+#      seconds with an account-level billing annotation ("recent account
+#      payments have failed or your spending limit needs to be increased"). The
+#      operator has decided not to resolve that condition, so this is a standing
+#      state and not an outage to wait out.
+#   2. A status check could not be *required* even if runs worked. This repo is
+#      private, and `GET /repos/:owner/:repo/branches/main/protection` answers
+#      403 "Upgrade to GitHub Pro or make this repository public to enable this
+#      feature" — so there is no branch protection to enforce anything, and an
+#      earlier version of this comment claiming the PR run was "the primary
+#      gate — enforced in branch protection" described a setting this repo
+#      cannot have.
+#
+# The gate of record is therefore local, and always was in practice: the
+# pre-commit hooks at commit time, `make check`, and `make test`
+# (`bin/run-test-suites.sh`). The all-files sweep this job would have run is
+# available locally as the same command with the same SKIP:
+#   SKIP=no-commit-to-branch pre-commit run --all-files --show-diff-on-failure
+#
+# The file is kept, not deleted, because both conditions are account/visibility
+# settings rather than anything about the code: making the repo public (or
+# restoring billing) makes this workflow correct again as written. Until then, a
+# red badge here carries no information about the change that produced it.
 on:
   pull_request:
   push:
