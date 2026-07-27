@@ -224,7 +224,19 @@ interactive choice; sequential is the default and the recommendation.
   rather than relying on prose above it. This field is the **single source**
   for protocol status (#356): a file-head caveat states the grandfathering
   rationale once and points at the fields; it does not enumerate which series
-  are covered, because that list decays on the next append;
+  are covered, because that list decays on the next append. Enforced by
+  `bin/check-pressure-series.sh` (#467), which is why the three fields are a
+  contract rather than a convention: `--staged`, wired as the
+  `bindle-pressure-series` pre-commit hook, reddens when a new series heading is
+  appended without its field block — at one of the heading depths that file
+  already declares at, so calibration is read from the file and never from a
+  table here; `--all`, wired into `make check`, reddens when any existing block
+  is incomplete or carries a value outside the three. Because the gate fires on
+  the **append**, a grandfathered series needs no edit to stay legal — the
+  #261 decision is enforced, not re-opened. A heading that records no reps
+  (bookkeeping, a closing note) is exempted in place with
+  `<!-- not-a-series: reason -->`, which states the reason where a reader will
+  find it;
 - any **safety claim** the series earns — a `**Claim:**` line beside the
   `**Model:**` and `**Content:**` lines, asserting that a named bracket is
   safe **for this workflow's task shape**, e.g. "**Claim:** vendor-safe

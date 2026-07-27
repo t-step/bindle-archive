@@ -907,6 +907,14 @@
       "reason": "gitleaks gate invoked by bin/check.sh (--history) and the bindle-gitleaks pre-commit hook (--staged); internal machinery, not a standalone capability."
     },
     {
+      "path": "bin/check-pressure-series.sh",
+      "reason": "a gate: every rep series in skills/*/PRESSURE-TESTS.md records **Model:**, **Content:** and **Protocol:** (#467, #356). Tooling, not a capability."
+    },
+    {
+      "path": "bin/test-check-pressure-series.sh",
+      "reason": "the self-test for bin/check-pressure-series.sh. Tooling, not a capability."
+    },
+    {
       "path": "bin/run-test-suites.sh",
       "reason": "discovers and runs every tracked bin/test-*.sh; gate machinery invoked by make test and the commit hook, not a capability an agent invokes for its own sake."
     },

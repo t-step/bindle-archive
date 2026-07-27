@@ -70,6 +70,62 @@ A file's **triggering depths** are the heading depths of its declaring sections
 (preamble ⇒ the file default `##`); a file with no declaring section triggers on
 `##`.
 
+## Amendments — 2026-07-26, after PR #471 merged
+
+PR A shipped the record, and the whole-branch review measured the resulting tree
+against this plan. Four things below were wrong about the tree. **These override
+any conflicting text later in this document**, including the code snippets,
+which have been patched to match.
+
+**1. Count blocks by field line, not by section.** The design spec's `:108` says
+a section runs "up to the next heading at the same or shallower depth", which
+contradicts the any-depth rule above. It matters: two real series nest a
+declaring block inside another section — `verify-then-commit`'s
+`#### GREEN follow-up` inside `### Weaker-model rerun`, and
+`session-continuity`'s `### Results — series 2` inside `## Claim 9`. Under
+same-or-shallower scoping the tree counts **35** blocks; under any-depth, **37**,
+which is the real number. **Any-depth is the rule, everywhere.** The suite's
+count assertion compares against the line-anchored `**Model:**` count and must
+land on 37 — and a green produced by computing both sides the same wrong way is
+the #459 failure, not a pass.
+
+**2. The depth set of `verify-then-commit` is `{##, ###, ####}`.** This plan and
+the spec both record `{##, ###}`. The block under `#### GREEN follow-up` is real
+and predates all of this work. Calibration must be **computed from the file**,
+never from a table in a document — a parser written from the table leaves `####`
+appends unguarded, and the fixture then proves two of three depths.
+
+**3. A `**Protocol:**` value may be a per-arm override.** `fork-pr-flow`'s #190
+series records:
+
+```
+**Protocol:** mixed series — per-arm override (#356): arms A–B compliant,
+arm C unrecorded
+```
+
+A first-token match against the three legal values rejects this — simulated
+against the tree, it produces exactly one false failure. The protocol doc grants
+`**Protocol:**` the same per-arm override granularity as `**Model:**`, so the
+tree is right and the parser learns the shape. The rule:
+
+- first word is a legal token ⇒ simple form, accept;
+- else the field must begin `mixed series` **and** contain at least two legal
+  tokens ⇒ override form, accept;
+- else reject.
+
+**4. One fixture is not enough — three block shapes exist.** `session-continuity`
+Claim 9, which this plan names, is the **contiguous** shape (fields on
+consecutive lines): 8 of 37. The **blank-line-separated** shape is 29 of 37, and
+`license-compliance-auditor` carries a **prose-interleaved** shape where an
+unrelated sentence continues the `**Model:**` line with no blank line and is
+swallowed into the field's value. Copy one of each out of the repo. A parser
+proved against Claim 9 alone is proved against 22% of the tree.
+
+**Also true, and cheap to get wrong:** an unanchored
+`grep -c '\*\*Protocol:\*\*'` now returns **50** against 37 line-anchored,
+because all thirteen head caveats quote the field name inside a blockquote.
+Re-measure; never quote a count from this document.
+
 ---
 
 # PR A — the record (`feature/356-protocol-field`)
@@ -402,6 +458,13 @@ repo**, never hand-written:
 # Copied from skills/session-continuity/PRESSURE-TESTS.md — a real, complete,
 # three-field block. A fixture hand-written in the form the parser expects
 # proves the parser agrees with itself, not with the tree (#459).
+#
+# THREE shapes must be copied, not one (Amendment 4). Claim 9 below is the
+# CONTIGUOUS shape (fields on consecutive lines), only 8 of 37 blocks. Also
+# copy a BLANK-LINE-SEPARATED block (29 of 37 — e.g. skills/hands-on-keyboard)
+# and the PROSE-INTERLEAVED shape in skills/license-compliance-auditor, where a
+# sentence continues the **Model:** line with no blank line and is swallowed
+# into the field's value. Assert on all three.
 extract_real_block() { # extract_real_block FILE HEADING_REGEX > fixture
   awk -v pat="$2" '
     $0 ~ pat {inblock=1}
@@ -445,16 +508,26 @@ Run: `chmod +x bin/test-check-pressure-series.sh && bin/test-check-pressure-seri
 Expected: every assertion fails — the gate does not exist yet (`command not found`).
 Record the failing count; it is the RED baseline.
 
-- [ ] **Step 3: Commit the RED suite**
+- [ ] **Step 3: Do NOT commit yet — record the RED baseline**
 
-```bash
-git add bin/test-check-pressure-series.sh
-git commit -m "test(#467): add the RED suite for the pressure-series field gate"
-```
+**A deliberately-failing suite cannot be committed in this repo.** `git commit`
+runs the `test suites (discovered bin/test-*.sh)` pre-commit hook, which runs
+every tracked `bin/test-*.sh`; a RED suite makes the hook red and the commit
+never lands. This is not a reason to weaken the suite or to pass `--no-verify`.
 
-Note: `bin/run-test-suites.sh` discovers suites via `git ls-files`, so an
-untracked new suite is silently not discovered and the run still reports all
-suites passing. Commit it before trusting any count.
+So the RED→GREEN boundary here is a *run*, not a commit: write the suite, run
+it, write down which assertions fail and why (that record is the RED evidence
+the protocol wants), and let Task B2 commit the suite and the script together.
+`bin/check-gitleaks.sh` was built exactly this way — 24 assertions, 12 failing
+on the first run with no script present, one commit.
+
+Run: `chmod +x bin/test-check-pressure-series.sh && bin/test-check-pressure-series.sh`
+Record the failing count and the failure text in your report.
+
+Note for later: `bin/run-test-suites.sh` discovers suites via `git ls-files`, so
+an untracked new suite is silently **not** discovered and the run still reports
+all suites passing. Until B2 stages it, a green `bin/run-test-suites.sh` says
+nothing about this suite.
 
 ---
 
@@ -504,6 +577,18 @@ done
 
 LEGAL='compliant|pre-protocol|unrecorded'
 
+# A value is either the simple form (first word is a legal token) or the per-arm
+# override form the protocol doc sanctions for **Model:** and **Protocol:**
+# alike — `mixed series — per-arm override (#356): arms A–B compliant, arm C
+# unrecorded`. A first-token match alone rejects the override and produces one
+# false failure against the real tree (fork-pr-flow's #190 series).
+legal_protocol_value() { # legal_protocol_value FIELD_TEXT
+  local v="$1"
+  printf '%s' "$v" | grep -Eq "^($LEGAL)\b" && return 0
+  printf '%s' "$v" | grep -q '^mixed series' &&
+    [ "$(printf '%s' "$v" | grep -Eo "($LEGAL)" | wc -l | tr -d ' ')" -ge 2 ]
+}
+
 # Emit one line per declaring section: FILE<TAB>LINE<TAB>DEPTH<TAB>M<TAB>C<TAB>P<TAB>PVALUE
 sections() {
   local f
@@ -543,7 +628,7 @@ run_all() {
     if [ "$p" != 1 ]; then
       echo "  $f:$line — section declares fields but is missing **Protocol:**"
       problems=$((problems + 1))
-    elif ! printf '%s' "$pval" | grep -Eq "^($LEGAL)\b"; then
+    elif ! legal_protocol_value "$pval"; then
       echo "  $f:$line — **Protocol:** \"${pval%% *}\" is not a legal value ($LEGAL)"
       problems=$((problems + 1))
     fi
@@ -575,12 +660,20 @@ Expected: every `--all` assertion passes, including the live-match count.
 **If `--count-only` reports 0 against the real repo, stop** — the parser does not
 meet the tree, and passing fixtures mean nothing (#459).
 
-- [ ] **Step 4: Commit**
+- [ ] **Step 4: Commit the suite and the script together**
+
+The suite from Task B1 is still uncommitted by design (see B1 Step 3). Stage
+both, so the tree never carries a red discovered suite:
 
 ```bash
-git add bin/check-pressure-series.sh
+git add bin/test-check-pressure-series.sh bin/check-pressure-series.sh
 git commit -m "feat(#467): add the series-field parser and its --all completeness mode"
 ```
+
+Before committing, `capabilities.json` needs a `not_a_capability` entry for
+**both** new files or `make check` fails with `unclassified — add it to the
+inventory or to not_a_capability`. The entries are written out in Task B5
+Step 3; add them here, in this commit, rather than leaving the tree unclassified.
 
 ---
 
@@ -611,7 +704,9 @@ fixture_repo() {
   printf '%s\n' "$d"
 }
 
-# verify-then-commit declares at ## AND ### -> a new ### triggers there.
+# verify-then-commit declares at ##, ### AND #### -> a new ### triggers there,
+# and so does a new ####. Calibration is computed from the file, never from a
+# table in a document (Amendment 2).
 d="$(fixture_repo vtc "$REPO_ROOT/skills/verify-then-commit/PRESSURE-TESTS.md")"
 printf '\n### Weaker-model rerun — Opus 5 (2026-07-27)\n\nRED 0/5, GREEN 5/5.\n' \
   >>"$d/skills/s/PRESSURE-TESTS.md"
