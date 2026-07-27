@@ -53,6 +53,13 @@ Nothing schedules any of these. The one thing Actions gave that a local run
 cannot is a clean checkout with freshly-resolved tool versions, so tool drift
 (Python, shellcheck, shfmt, pre-commit) surfaces only when someone goes looking.
 
+That gap is **accepted, not overlooked** (#267, decided 2026-07-26). A local
+drift gate was considered and declined: it would have to pin expected tool
+versions, and a pinned version list in a repo with one developer and one machine
+goes stale in exactly the way it is meant to catch. Until this repo has a second
+machine or a second contributor, drift is caught by a run failing, and that is
+the whole mitigation. Revisit if either of those changes.
+
 ### Test suites are discovered, not registered
 
 Any tracked `bin/test-<name>.sh` is a suite. `make test` and the commit gate
