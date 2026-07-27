@@ -94,6 +94,7 @@ done
 run_total=$(($(date +%s) - run_start))
 
 failed=()
+failed_idx=()
 i=0
 while [ "$i" -lt "$n" ]; do
   s="${suites[$i]}"
@@ -106,10 +107,12 @@ while [ "$i" -lt "$n" ]; do
     not-executable)
       printf '  ✗ %s (not executable)\n' "$s"
       failed+=("$s")
+      failed_idx+=("$i")
       ;;
     *)
       printf '  ✗ %s (%ss)\n' "$s" "$elapsed"
       failed+=("$s")
+      failed_idx+=("$i")
       ;;
   esac
   i=$((i + 1))
@@ -125,5 +128,45 @@ fi
 printf '  %d of %d suites FAILED:\n' "${#failed[@]}" "$n"
 printf '    %s\n' "${failed[@]}"
 echo
-echo "  re-run a failing suite directly to see its output."
+
+# Print each failing suite's captured output (#470). Until this existed the
+# runner captured every suite's output to "$workdir/$idx.log", printed only the
+# NAMES, and deleted the workdir in its EXIT trap — so a red run's sole artifact
+# was a name plus "re-run it directly". For a flake that hint is worse than
+# nothing: re-running directly is exactly what makes the evidence disappear
+# (observed 2026-07-26 — test-package-release-integrity.sh failed once inside a
+# batch and passed twice immediately afterwards on identical content, and the
+# failure itself was never seen).
+#
+# Bounded, and the bound is DISCLOSED rather than silent: a long log prints its
+# tail and says how much it withheld, and every failing log is copied somewhere
+# that outlives the EXIT trap so the full text is still readable.
+log_lines="${BINDLE_TEST_LOG_LINES:-40}"
+keep=""
+for idx in "${failed_idx[@]}"; do
+  s="${suites[$idx]}"
+  log="$workdir/$idx.log"
+  printf '  ── output: %s ──\n' "$s"
+  if [ ! -f "$log" ]; then
+    printf '    (no output captured — the suite was never executed)\n'
+  elif [ ! -s "$log" ]; then
+    printf '    (no output — the suite failed silently)\n'
+  else
+    [ -n "$keep" ] || keep="$(mktemp -d "${TMPDIR:-/tmp}/bindle-test-failures.XXXXXX")"
+    dest="$keep/$(basename "$s" .sh).log"
+    cp "$log" "$dest"
+    total="$(wc -l <"$log" | tr -d ' ')"
+    if [ "$total" -gt "$log_lines" ] 2>/dev/null; then
+      printf '    (showing the last %s of %s lines — full log: %s)\n' \
+        "$log_lines" "$total" "$dest"
+    fi
+    tail -n "$log_lines" "$log" | sed 's/^/    /'
+  fi
+  printf '  ── end: %s ──\n\n' "$s"
+done
+
+if [ -n "$keep" ]; then
+  printf '  failing logs kept: %s\n' "$keep"
+  echo
+fi
 exit 1
