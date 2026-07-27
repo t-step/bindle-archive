@@ -1056,3 +1056,55 @@ failures recorded here are in the **design's claims** — C1's predicted RED, th
 re-scoped selectivity axis, and the cap-as-ceiling reading — not in `SKILL.md`.
 Whether "at most 5" should be reworded so the cap stops reading as a quota is a
 design decision this series is the evidence for, and it is **not** taken here.
+
+## Content drift since the newest hashed series (#465) <!-- not-a-series: records a judgment about the series above, runs no reps of its own -->
+
+**Judgment: the `sha256:8125f826c579` → `sha256:d23b4047693f` delta does not
+invalidate the Claim 9 series above. Recorded 2026-07-26; no reps were re-run.**
+`bin/check.sh`'s warn-only `stale reps` banner has named this file since that
+delta landed, and this section is the explanation it points at.
+
+**What moved.** Exactly one commit changed a tracked file inside the content id:
+`3343876` *docs(#457): keep profile.md's pointer lists — the loader does not
+retire them*. Reconstructed from the object store, the id is
+`sha256:8125f826c579` at `3343876^` and `sha256:d23b4047693f` at `3343876`, and
+has not moved since. The four `docs(#356)` commits that follow it touch only
+`PRESSURE-TESTS.md`, which the id excludes by construction.
+
+**What that commit did.** It added a twelve-line prose block to `SKILL.md`
+recording the #457 decision and the measured evidence behind it. It added no
+step, removed none, and reworded none. The "Reading facts (the loader)" section
+— the contract every Claim 9 variant exercised — is byte-identical either side
+of it.
+
+**Why that is immaterial to this evidence.** The credited reps measured three
+things: whether a session enumerates the store via `facts-index.sh`, how many
+fact bodies it reads against the "at most 5" cap, and whether it names them. The
+steps driving all three live in `commands/session-start.md` and in the loader
+section, neither of which the commit touched. No variant tested whether a
+session retires or preserves `profile.md`'s pointer lists — the proposition the
+new block settles — so there is no recorded result the block could move.
+
+**This is not a re-hash.** The content fields above still record the older id,
+because that is the id the reps actually ran at; the
+protocol's single-source rule means the field records what happened, not what is
+still believed to hold. Writing the current id into a field no rep ran at would
+silence the banner by falsifying the record. So the banner **stays lit**, and is
+meant to: it discloses a real gap between shipped text and hashed evidence. What
+it is no longer is unexplained.
+
+**The re-run branch, declined on cost.** Re-running would clear the banner
+outright. It was rejected because the series 2 fixture builder and grader were
+scratchpad-only (#260's third worked instance), so a re-run reconstructs the
+harness rather than replaying it — series 2's own reconstruction already differed
+from the pilot's (40 facts / 375 body lines against a stated 560), so the new
+numbers would not be comparable to the ones they replaced. That is a steep price
+to re-evidence a prose block no variant tests.
+
+**Expiry.** This judgment covers `d23b4047693f` and nothing past it. The next
+change to `SKILL.md` that touches a step gets its own call, and a change to the
+loader contract owes reps rather than a paragraph. Note the asymmetry the banner
+cannot cover: `commands/session-start.md` carries most of the contract these reps
+exercised and sits **outside** the content id, so a step edit there moves no id
+and fires no warning — the id is evidence about `skills/session-continuity/`,
+not about the whole surface under test.
