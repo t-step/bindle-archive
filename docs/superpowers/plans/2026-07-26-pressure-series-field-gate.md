@@ -22,6 +22,33 @@ The gate would be red against an un-retrofitted tree, so A lands first.
 
 **Design spec:** `docs/superpowers/specs/2026-07-26-pressure-series-field-gate-design.md`
 
+## Execution record — complete
+
+Both deliveries landed: PR A as #471, PR B as #474. Every task below is
+executed; the boxes are ticked to say so, and the gate is live at both call
+sites. Three things the plan did not predict, recorded here so a reader does not
+have to reconstruct them from the commits:
+
+- **The plan's own tree assumptions were wrong four ways**, found by measuring
+  rather than by executing — the Amendments section below is that correction,
+  written before Task B1. Two of the four (any-depth sections, `verify-then-commit`'s
+  `####`) would have shipped a parser blind to real series.
+- **Three Major findings in `--staged`, all one root cause**: the scan depended
+  on the caller's cwd and on unstaged disk state while the mode's output claimed
+  "staged content only". Found by whole-branch review, not by any task's own
+  verification step, and fixed in `bc2c88e`. The suite could not have caught
+  them — eight of its negative assertions passed vacuously on a no-op run, which
+  is exactly what each finding produced.
+- **Task B6's mutation pass found one survivor that was not dead code**: a
+  Protocol-less block stays rejected via the legality branch, so the verdict
+  survives while the diagnosis degrades to `"" is not a legal value`. The
+  assertion was a loose substring matching both messages.
+
+Two follow-ups filed rather than absorbed: **#472** (the vacuous-negative class
+across 13 suites) and **#473** (a first-ever series at `###` in a file that
+declares no fields yet is outside `--staged`'s reach — a stated, disclosed
+limit, not a defect).
+
 ## Global Constraints
 
 - **bash 3.2 is the floor.** Guard every array expansion with
@@ -142,7 +169,7 @@ Branch already exists and carries the design spec at `aae0f6b`.
 - Produces: the three legal values and the inheritance rule every later task and
   the gate's parser depend on.
 
-- [ ] **Step 1: Add the field definition**
+- [x] **Step 1: Add the field definition**
 
 Insert as a new bullet immediately after the `**Content:**` bullet, before the
 `any **safety claim**` bullet:
@@ -164,13 +191,13 @@ Insert as a new bullet immediately after the `**Content:**` bullet, before the
   append;
 ```
 
-- [ ] **Step 2: Run the gates**
+- [x] **Step 2: Run the gates**
 
 Run: `make check` then `bin/run-test-suites.sh`
 Expected: `All checks passed.` and `all 37 suites pass`. The `stale reps` WARN
 for `session-continuity` is pre-existing (#465) and unrelated.
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add docs/pressure-testing-protocol.md
@@ -208,7 +235,7 @@ Line numbers drift as you edit. Re-derive before each file with:
 awk 'BEGIN{h=""} /^#{2,3} /{h=$0} /^\*\*Model:\*\*/{printf "L%-5s %s\n", NR, (h==""?"(preamble)":h)}' <file>
 ```
 
-- [ ] **Step 1: Add the field to every listed section**
+- [x] **Step 1: Add the field to every listed section**
 
 After the section's `**Content:**` field (including its continuation lines, i.e.
 immediately before the next blank line), add:
@@ -218,7 +245,7 @@ immediately before the next blank line), add:
 grandfathered per #261, not owed a re-run.
 ```
 
-- [ ] **Step 2: Verify each declaring section now has all three fields**
+- [x] **Step 2: Verify each declaring section now has all three fields**
 
 Run:
 
@@ -237,12 +264,12 @@ done
 
 Expected: `M`, `C` and `P` equal on every row.
 
-- [ ] **Step 3: Run the gates**
+- [x] **Step 3: Run the gates**
 
 Run: `make check` then `bin/run-test-suites.sh`
 Expected: both green.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add skills/
@@ -280,7 +307,7 @@ Values, each derived from the file's own caveat — not guessed:
 | `session-continuity` | **new** block under Claim 6 | `compliant` |
 | `release-captain` | **new** block under F-series | `compliant` — table row reads **yes**, checklist 8/8 |
 
-- [ ] **Step 1: Add `**Protocol:**` to the nine existing declaring sections**
+- [x] **Step 1: Add `**Protocol:**` to the nine existing declaring sections**
 
 `pre-protocol` sections take the Task A2 wording. `compliant` sections take:
 
@@ -295,7 +322,7 @@ For `package-release-integrity`'s E-series, keep its recorded qualifier:
 unchecked, see below).
 ```
 
-- [ ] **Step 2: Add the two new blocks**
+- [x] **Step 2: Add the two new blocks**
 
 `release-captain`, under `## F-series — defer under a valid .domi-pin (2026-07-18, #225)`,
 overriding the file-default `## Method` block:
@@ -322,13 +349,13 @@ Before writing either, read the surrounding section and copy its own recorded
 model/date rather than the text above if they disagree — the block must state
 what the file already says, not what this plan guessed.
 
-- [ ] **Step 3: Verify counts, per file**
+- [x] **Step 3: Verify counts, per file**
 
 Run the Step-2 loop from Task A2 against these four files.
 Expected: `M = C = P` on every row; `package-release-integrity` 5/5/5,
 `verify-then-commit` 6/6/6, `session-continuity` 6/6/6, `release-captain` 2/2/2.
 
-- [ ] **Step 4: Verify the whole-tree total**
+- [x] **Step 4: Verify the whole-tree total**
 
 Run:
 
@@ -340,12 +367,12 @@ done
 
 Expected: `36 36 36` — the 34 blocks at `91cab1c` plus the two new ones.
 
-- [ ] **Step 5: Run the gates**
+- [x] **Step 5: Run the gates**
 
 Run: `make check` then `bin/run-test-suites.sh`
 Expected: both green.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add skills/
@@ -363,7 +390,7 @@ compliant and omits Claim 9, appended 2026-07-26.
 **Files:**
 - Modify: all 13 `skills/*/PRESSURE-TESTS.md` (the blockquote below the `# ` title)
 
-- [ ] **Step 1: Replace the enumerating body in each caveat**
+- [x] **Step 1: Replace the enumerating body in each caveat**
 
 Keep the `**Method of record:**` line untouched. Replace the enumerating portion
 with the pointer form — the rationale stays, the list goes:
@@ -380,21 +407,21 @@ with the pointer form — the rationale stays, the list goes:
 > re-run, and are not evidence that the current protocol was met.
 ```
 
-- [ ] **Step 2: Delete the two per-series tables**
+- [x] **Step 2: Delete the two per-series tables**
 
 In `release-captain` and `package-release-integrity`, remove the
 `| Series | Date | Under the protocol? |` table entirely — every row it carried
 is now a `**Protocol:**` field on the series itself. Verify no row's information
 is lost: each table row must have a corresponding field added in Task A3.
 
-- [ ] **Step 3: Delete the per-claim prose splits**
+- [x] **Step 3: Delete the per-claim prose splits**
 
 In `verify-then-commit`, remove "**Claims 1 and 2 are pre-protocol; Claim 3 is
 protocol-compliant.**". In `session-continuity`, remove the
 "**Protocol-compliant:** … **Pre-protocol:** …" enumeration. Both are now
 per-series fields.
 
-- [ ] **Step 4: Verify no enumeration survives**
+- [x] **Step 4: Verify no enumeration survives**
 
 Run:
 
@@ -404,12 +431,12 @@ grep -rn 'Under the protocol?\|Pre-protocol:\*\*\|are pre-protocol' skills/*/PRE
 
 Expected: no output.
 
-- [ ] **Step 5: Run the gates**
+- [x] **Step 5: Run the gates**
 
 Run: `make check` then `bin/run-test-suites.sh`
 Expected: both green.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add skills/
@@ -420,11 +447,11 @@ git commit -m "docs(#356): collapse the thirteen head caveats from enumerations 
 
 ### Task A5: Open PR A
 
-- [ ] **Step 1: Confirm the branch is clean and gates are green**
+- [x] **Step 1: Confirm the branch is clean and gates are green**
 
 Run: `git status --porcelain` (expect empty) and `make check`.
 
-- [ ] **Step 2: Ask the operator before pushing**
+- [x] **Step 2: Ask the operator before pushing**
 
 The operator handles all pushes. Do not push or open the PR without an explicit
 request. When asked, the PR body states: the record change only, no gate yet;
@@ -448,7 +475,7 @@ post-merge hook runs all suites and relinks, so run it in the foreground).
   `--all` and `--staged`; helpers `check`, `contains`, `not_contains`, `equals`
   copied from `bin/test-check-gitleaks.sh`.
 
-- [ ] **Step 1: Write the failing suite**
+- [x] **Step 1: Write the failing suite**
 
 Model the header, helpers, `TMP` sandbox, hook-env scrub and guard-refs pattern
 on `bin/test-check-gitleaks.sh`. The first fixture is **copied verbatim from the
@@ -502,13 +529,13 @@ seen="$("$GATE" --all --count-only)"
 check "the parser sees every real block, not zero" equals "$live" "$seen"
 ```
 
-- [ ] **Step 2: Run it to verify it fails**
+- [x] **Step 2: Run it to verify it fails**
 
 Run: `chmod +x bin/test-check-pressure-series.sh && bin/test-check-pressure-series.sh`
 Expected: every assertion fails — the gate does not exist yet (`command not found`).
 Record the failing count; it is the RED baseline.
 
-- [ ] **Step 3: Do NOT commit yet — record the RED baseline**
+- [x] **Step 3: Do NOT commit yet — record the RED baseline**
 
 **A deliberately-failing suite cannot be committed in this repo.** `git commit`
 runs the `test suites (discovered bin/test-*.sh)` pre-commit hook, which runs
@@ -541,7 +568,7 @@ nothing about this suite.
 - Produces: `--all`, `--count-only`, `--root <dir>` (test seam; defaults to the
   repo root). Exit 0 green / 1 red / 0 with `NOT RUN`.
 
-- [ ] **Step 1: Write the minimal implementation**
+- [x] **Step 1: Write the minimal implementation**
 
 ```bash
 #!/usr/bin/env bash
@@ -609,7 +636,7 @@ sections() {
 }
 ```
 
-- [ ] **Step 2: Add the `--all` verdict logic**
+- [x] **Step 2: Add the `--all` verdict logic**
 
 ```bash
 run_all() {
@@ -653,14 +680,14 @@ case "$mode" in
 esac
 ```
 
-- [ ] **Step 3: Format, then run the suite**
+- [x] **Step 3: Format, then run the suite**
 
 Run: `shfmt -i 2 -ci -w bin/check-pressure-series.sh && chmod +x bin/check-pressure-series.sh && bin/test-check-pressure-series.sh`
 Expected: every `--all` assertion passes, including the live-match count.
 **If `--count-only` reports 0 against the real repo, stop** — the parser does not
 meet the tree, and passing fixtures mean nothing (#459).
 
-- [ ] **Step 4: Commit the suite and the script together**
+- [x] **Step 4: Commit the suite and the script together**
 
 The suite from Task B1 is still uncommitted by design (see B1 Step 3). Stage
 both, so the tree never carries a red discovered suite:
@@ -686,7 +713,7 @@ Step 3; add them here, in this commit, rather than leaving the tree unclassified
 - Consumes: `sections()` output from Task B2.
 - Produces: assertions for `--staged` and the per-file triggering depths.
 
-- [ ] **Step 1: Add the failing assertions**
+- [x] **Step 1: Add the failing assertions**
 
 Each fixture is a throwaway git repo under `$TMP`, staged so `--staged` has
 something to read. Two fixtures are copied from real files with **opposite**
@@ -750,13 +777,13 @@ out="$(cd "$d" && "$GATE" --staged 2>&1)"
 check "a ## append carrying all three fields passes" not_contains "missing" "$out"
 ```
 
-- [ ] **Step 2: Run to verify the new assertions fail**
+- [x] **Step 2: Run to verify the new assertions fail**
 
 Run: `bin/test-check-pressure-series.sh`
 Expected: the `--all` assertions still pass; every `--staged` assertion fails
 (the mode is unimplemented).
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add bin/test-check-pressure-series.sh
@@ -770,7 +797,7 @@ git commit -m "test(#467): add RED assertions for --staged and per-file depth ca
 **Files:**
 - Modify: `bin/check-pressure-series.sh`
 
-- [ ] **Step 1: Implement the mode**
+- [x] **Step 1: Implement the mode**
 
 ```bash
 # A file's triggering depths are the depths at which it ALREADY declares
@@ -830,19 +857,23 @@ re-reads the **staged** content (`git show ":$file"`) and applies the same
 section rule as `--all`. Implement both with the same awk used by `sections()` —
 one parsing model, two callers.
 
-- [ ] **Step 2: Format and run the suite**
+- [x] **Step 2: Format and run the suite**
 
 Run: `shfmt -i 2 -ci -w bin/check-pressure-series.sh && bin/test-check-pressure-series.sh`
 Expected: `all N assertions pass`.
 
-- [ ] **Step 3: Verify against the real repo, both modes**
+- [x] **Step 3: Verify against the real repo, both modes**
 
 Run: `bin/check-pressure-series.sh --all` and, with something staged,
 `bin/check-pressure-series.sh --staged`.
-Expected: `--all` reports 36 blocks across 13 files; `--staged` reports 0 new
-headings and prints its scope line.
+Expected: `--all` reports 37 blocks across 13 files; `--staged` reports 0 new
+headings and prints its scope line. **37, not 36** — Amendment 1 records the
+any-depth section rule that makes it 37, and Task A3's own `36 36 36` was
+correct when it ran: the 37th block arrived after it, when `330a86f` gave
+sub-claim 1c its own block. Measure it, per Amendment 4's closing line; do not
+quote either number from this document.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add bin/check-pressure-series.sh bin/test-check-pressure-series.sh
@@ -858,7 +889,7 @@ git commit -m "feat(#467): add the --staged mode with per-file depth calibration
 - Modify: `bin/check.sh` (beside the gitleaks section, ~line 686)
 - Modify: `capabilities.json`
 
-- [ ] **Step 1: Add the pre-commit hook**
+- [x] **Step 1: Add the pre-commit hook**
 
 ```yaml
       - id: bindle-pressure-series
@@ -869,7 +900,7 @@ git commit -m "feat(#467): add the --staged mode with per-file depth calibration
         always_run: true
 ```
 
-- [ ] **Step 2: Add the `bin/check.sh` section**
+- [x] **Step 2: Add the `bin/check.sh` section**
 
 Guarded on existence, exactly like the gitleaks call — fixture repos in
 `bin/test-check.sh` contain no `bin/` script, and an unconditional call fails
@@ -881,7 +912,7 @@ if ! $content_only && [ -x bin/check-pressure-series.sh ]; then
 fi
 ```
 
-- [ ] **Step 3: Add both ledger entries**
+- [x] **Step 3: Add both ledger entries**
 
 Insert textually in `capabilities.json`'s `not_a_capability` array, beside the
 other `bin/*.sh` rows:
@@ -897,24 +928,24 @@ other `bin/*.sh` rows:
     },
 ```
 
-- [ ] **Step 4: Verify the ledger did not reorder**
+- [x] **Step 4: Verify the ledger did not reorder**
 
 Run: `git add -A && git diff --cached --stat capabilities.json`
 Expected: 8 insertions, 0 deletions.
 
-- [ ] **Step 5: Re-run the check.sh regression floors**
+- [x] **Step 5: Re-run the check.sh regression floors**
 
 Run: `bin/test-check.sh`
 Expected: pass. This is the suite that catches a `check.sh` edit breaking
 fixture-repo clean exits while `make check` stays green.
 
-- [ ] **Step 6: Run the full gates**
+- [x] **Step 6: Run the full gates**
 
 Run: `make check` then `bin/run-test-suites.sh`
 Expected: `make check` now prints the `pressure-test series fields:` section
 green; 38 suites pass (37 + the new one).
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add .pre-commit-config.yaml bin/check.sh capabilities.json
@@ -930,13 +961,13 @@ git commit -m "feat(#467): wire the series-field gate into pre-commit and make c
   committed — this repo has recorded four instances of losing such a harness,
   tracked as #260)
 
-- [ ] **Step 1: Predict before mutating**
+- [x] **Step 1: Predict before mutating**
 
 Write down which guarantees have no test that would fail if the code stopped
 providing them. Write those tests *first*; a test written after watching a
 mutant survive tends to assert the mutation rather than the guarantee.
 
-- [ ] **Step 2: Run these mutants**
+- [x] **Step 2: Run these mutants**
 
 Save the target byte-identically first (`cp`, never `git checkout --`), and
 guard each mutant on its target text still being present — a stale mutant
@@ -953,18 +984,18 @@ reports GUARD FAILED rather than a false kill.
 | 7 | `sections()` requires all three to emit a row | the missing-field assertions |
 | 8 | `--staged` reads the worktree instead of `git show :` | a staged-vs-worktree assertion |
 
-- [ ] **Step 3: Check every survivor for dead code before writing a test**
+- [x] **Step 3: Check every survivor for dead code before writing a test**
 
 A surviving mutant may mean the mutated code is unreachable, or that two
 survivors implement one guarantee twice. The fix is then deletion, not a new
 test.
 
-- [ ] **Step 4: Restore the target and confirm green**
+- [x] **Step 4: Restore the target and confirm green**
 
 Run: `bin/test-check-pressure-series.sh` and `git diff --stat bin/check-pressure-series.sh`
 Expected: suite green, empty diff.
 
-- [ ] **Step 5: Commit any tests the pass added**
+- [x] **Step 5: Commit any tests the pass added**
 
 ```bash
 git add bin/test-check-pressure-series.sh
@@ -979,7 +1010,7 @@ git commit -m "test(#467): kill the mutants the prediction pass missed"
 - Modify: `docs/pressure-testing-protocol.md` (§ Recording, the `**Protocol:**`
   bullet from Task A1)
 
-- [ ] **Step 1: Name the gate in the field's definition**
+- [x] **Step 1: Name the gate in the field's definition**
 
 Append to the `**Protocol:**` bullet:
 
@@ -990,19 +1021,19 @@ Append to the `**Protocol:**` bullet:
   is incomplete or carries an illegal value.
 ```
 
-- [ ] **Step 2: Run the gates**
+- [x] **Step 2: Run the gates**
 
 Run: `make check` then `bin/run-test-suites.sh`
 Expected: both green.
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add docs/pressure-testing-protocol.md
 git commit -m "docs(#467): name the gate that enforces the three recorded fields"
 ```
 
-- [ ] **Step 4: Ask the operator before pushing**
+- [x] **Step 4: Ask the operator before pushing**
 
 Do not push or open the PR without an explicit request. When asked, the PR body
 carries the closing keywords for **#467 and #356** (body only, never a commit
