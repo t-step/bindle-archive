@@ -13,7 +13,18 @@ run() {
   OUT="$("$@" 2>&1)"
   RC=$?
 }
-contains() { echo "$OUT" | grep -qF "$1"; }
+# NOT `echo "$OUT" | grep -qF "$1"` (#470). Under `set -o pipefail`, `grep -q`
+# exits the instant it matches; if the left-hand side of the pipe has not
+# finished writing, it takes an EPIPE/SIGPIPE, and pipefail promotes that to a
+# failed predicate — so the assertion reports its needle MISSING while the
+# needle is sitting in $OUT, printed two lines below by expect_contains. The
+# race needs contention to lose, which is why it surfaced inside
+# run-test-suites.sh's parallel batch and vanished on every direct re-run.
+# Measured: 12 red in 80 runs under fork pressure with the pipe form, 0 in 80
+# with this one; an isolated probe caught PIPESTATUS=[1 0] — grep matched, echo
+# failed. Same trap as #289; a herestring cannot lose it because there is no
+# second process to interrupt.
+contains() { grep -qF -- "$1" <<<"$OUT"; }
 
 expect_contains() {
   local desc="$1" needle="$2"
@@ -158,7 +169,7 @@ expect_contains "plain repo -> portable mode" "mode: portable"
 echo "defer-fixture provenance:"
 PIN="$FIX/domi-governed/.domi-pin"
 pin_field() { grep -E "^$1:" "$PIN" | head -1 | sed -E "s/^$1:[[:space:]]*//"; }
-if printf '%s' "$(pin_field sha)" | grep -qE '^[0-9a-f]{40}$'; then
+if grep -qE '^[0-9a-f]{40}$' <<<"$(pin_field sha)"; then
   echo "  ok: pin sha is 40-hex (well-formed)"
   pass=$((pass + 1))
 else
@@ -172,7 +183,7 @@ else
   echo "  ok: pin sha is not the all-zeros placeholder"
   pass=$((pass + 1))
 fi
-if printf '%s' "$(pin_field manifest_sha256)" | grep -qE '^0{64}$'; then
+if grep -qE '^0{64}$' <<<"$(pin_field manifest_sha256)"; then
   echo "  FAIL: pin manifest_sha256 is the all-zeros placeholder (checklist item 8)"
   fail=$((fail + 1))
 else
